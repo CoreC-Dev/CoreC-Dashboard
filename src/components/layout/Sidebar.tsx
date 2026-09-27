@@ -20,7 +20,7 @@ export const Sidebar: React.FC = () => {
 
   const navGroups = [
     {
-      title: 'South & Northbound',
+      title: t('nav.groupSouthbound'),
       items: [
         { path: '/admin/drivers', label: t('nav.drivers'), icon: Cpu },
         { path: '/admin/transports', label: t('nav.transports'), icon: Send },
@@ -28,7 +28,7 @@ export const Sidebar: React.FC = () => {
       ],
     },
     {
-      title: 'Control Plane',
+      title: t('nav.groupControl'),
       items: [
         { path: '/admin/write', label: t('nav.write'), icon: TerminalSquare },
         { path: '/admin/dashboard-editor', label: t('nav.dashboardEditor'), icon: LayoutGrid },
@@ -36,7 +36,7 @@ export const Sidebar: React.FC = () => {
       ],
     },
     {
-      title: 'System & Mesh',
+      title: t('nav.groupSystem'),
       items: [
         { path: '/admin/topology', label: t('nav.topology'), icon: Network },
         { path: '/admin/diagnostics', label: t('nav.diagnostics'), icon: Gauge },
@@ -84,7 +84,7 @@ export const Sidebar: React.FC = () => {
         <Radio className="w-3.5 h-3.5 text-primary shrink-0 animate-pulse" />
         <div className="truncate">
           <div className="font-medium text-foreground">CoreC Engine</div>
-          <div className="text-[10px] text-muted-foreground/80">Connect · Collect · Control</div>
+          <div className="text-[10px] text-muted-foreground/80">{t('nav.brandTagline')}</div>
         </div>
       </div>
     </aside>

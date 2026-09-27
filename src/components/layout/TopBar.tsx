@@ -12,6 +12,7 @@ import {
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useLocation } from 'react-router-dom'
+import { useShallow } from 'zustand/react/shallow'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { setLocale } from '@/i18n'
@@ -21,8 +22,18 @@ import { useThemeStore } from '@/stores/themeStore'
 export const TopBar: React.FC = () => {
   const { t, i18n } = useTranslation()
   const location = useLocation()
-  const { isConnected, baseUrl, serverName, serverVersion, disconnect } = useConnectionStore()
-  const { theme, resolvedTheme, setTheme } = useThemeStore()
+  const { isConnected, baseUrl, serverName, serverVersion, disconnect } = useConnectionStore(
+    useShallow((s) => ({
+      isConnected: s.isConnected,
+      baseUrl: s.baseUrl,
+      serverName: s.serverName,
+      serverVersion: s.serverVersion,
+      disconnect: s.disconnect,
+    })),
+  )
+  const { theme, resolvedTheme, setTheme } = useThemeStore(
+    useShallow((s) => ({ theme: s.theme, resolvedTheme: s.resolvedTheme, setTheme: s.setTheme })),
+  )
   const [isFullscreen, setIsFullscreen] = React.useState(false)
 
   const isMonitor = location.pathname.startsWith('/monitor')

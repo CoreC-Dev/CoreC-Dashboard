@@ -38,12 +38,17 @@ export const ConnectionPage: React.FC = () => {
     }
 
     setLoading(true)
-    setConnection(cleanUrl, cleanToken)
+
+    // AbortController so a hung host can't leave the connect button spinning
+    // forever. 10s matches the revalidate probe timeout.
+    const ctrl = new AbortController()
+    const timeoutId = setTimeout(() => ctrl.abort(), 10_000)
 
     try {
       // Test connectivity against CoreC / endpoint and /version
       const res = await fetch(`${cleanUrl}/`, {
         headers: { Authorization: `Bearer ${cleanToken}` },
+        signal: ctrl.signal,
       })
 
       if (!res.ok) {
@@ -51,12 +56,20 @@ export const ConnectionPage: React.FC = () => {
       }
 
       const info = await res.json()
+      // Persist credentials only after the endpoint has validated, so an
+      // invalid URL/token never lands in localStorage.
+      setConnection(cleanUrl, cleanToken)
       setConnected(true, { name: info.name, version: info.version })
       navigate('/monitor/dashboard')
     } catch (err: any) {
-      setErrorMsg(err.message || t('connection.connectionFailed'))
-      setError(err.message)
+      const msg =
+        err?.name === 'AbortError'
+          ? t('connection.connectionFailed', { defaultValue: 'Connection timed out' })
+          : err.message || t('connection.connectionFailed')
+      setErrorMsg(msg)
+      setError(msg)
     } finally {
+      clearTimeout(timeoutId)
       setLoading(false)
     }
   }
@@ -94,7 +107,9 @@ export const ConnectionPage: React.FC = () => {
               </label>
               <Input
                 type="text"
-                placeholder="http://127.0.0.1:9090"
+                placeholder={t('connection.urlPlaceholder', {
+                  defaultValue: 'http://127.0.0.1:9090',
+                })}
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 required
@@ -115,9 +130,7 @@ export const ConnectionPage: React.FC = () => {
                 required
                 className="font-mono text-xs"
               />
-              <p className="text-[10px] text-muted-foreground">
-                * CoreC 要求 secret 长度 &ge; 8 字符
-              </p>
+              <p className="text-[10px] text-muted-foreground">{t('connection.secretHint')}</p>
             </div>
           </CardContent>
 

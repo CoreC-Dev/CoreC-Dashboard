@@ -1,5 +1,5 @@
 import type React from 'react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   Area,
   AreaChart,
@@ -12,18 +12,43 @@ import {
 import { CoreCWebSocket } from '@/api/websocket'
 import type { TrafficFrame } from '@/types/models'
 
+/**
+ * Traffic rate chart.
+ *
+ * CoreC's `/traffic` WebSocket pushes CUMULATIVE monotonic counters
+ * (`stats.TotalRead/TotalPublish/TotalDropped`), NOT per-second rates.
+ * Labelling the raw cumulative values as "Read / s" (the original bug)
+ * produced a misleading ever-rising line. We convert cumulative counters
+ * to per-interval rates by diffing against the previous frame.
+ *
+ * The stream interval is 1s, so delta == reads/second. Counter resets
+ * (server restart → counters drop back to 0) are handled: when current
+ * < previous we treat the whole current value as the delta.
+ */
 export const TrafficChart: React.FC = () => {
   const [data, setData] = useState<
     { time: string; read: number; publish: number; dropped: number }[]
   >([])
+  const prevRef = useRef<TrafficFrame | null>(null)
 
   useEffect(() => {
     const ws = new CoreCWebSocket<TrafficFrame>('/traffic', { interval: '1s' }, (frame) => {
+      const prev = prevRef.current
+      prevRef.current = frame
+      // First frame establishes the baseline; no rate to compute yet.
+      if (!prev) return
+
+      const delta = (cur: number, old: number) => (cur >= old ? cur - old : cur)
       const timeStr = new Date().toLocaleTimeString()
-      setData((prev) => {
+      setData((old) => {
         const next = [
-          ...prev,
-          { time: timeStr, read: frame.read, publish: frame.publish, dropped: frame.dropped },
+          ...old,
+          {
+            time: timeStr,
+            read: delta(frame.read, prev.read),
+            publish: delta(frame.publish, prev.publish),
+            dropped: delta(frame.dropped, prev.dropped),
+          },
         ]
         if (next.length > 25) next.shift() // keep last 25 points
         return next

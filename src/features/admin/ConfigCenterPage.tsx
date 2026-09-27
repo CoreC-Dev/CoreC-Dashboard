@@ -1,8 +1,21 @@
 import Editor from '@monaco-editor/react'
-import { AlertCircle, CheckCircle2, Code2, FileText, Flame, Sliders } from 'lucide-react'
+import {
+  AlertCircle,
+  CheckCircle2,
+  Code2,
+  Cpu,
+  FileText,
+  Flame,
+  KeyRound,
+  ListChecks,
+  Network,
+  Sliders,
+} from 'lucide-react'
 import type React from 'react'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useConfigs, usePatchConfig, useUpdateConfig } from '@/api/hooks'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useThemeStore } from '@/stores/themeStore'
@@ -53,9 +66,67 @@ rules:
     priority: 100
 `
 
+const LOG_LEVELS = ['debug', 'info', 'warn', 'error'] as const
+
+const STATUS_AUTO_DISMISS_MS = 2500
+
+interface ComponentEntry {
+  name: string
+  type: string
+  action?: string
+  priority?: number
+}
+
+const ComponentList: React.FC<{
+  title: string
+  icon: React.ReactNode
+  entries: ComponentEntry[]
+  typeLabel: string
+  emptyText: string
+}> = ({ title, icon, entries, typeLabel, emptyText }) => (
+  <div className="rounded-lg border border-border/50 bg-muted/30 overflow-hidden">
+    <div className="px-3 py-2 border-b border-border/50 bg-muted/40 flex items-center space-x-1.5">
+      {icon}
+      <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+        {title} · {entries.length}
+      </span>
+    </div>
+    <div className="max-h-56 overflow-y-auto divide-y divide-border/40">
+      {entries.length === 0 ? (
+        <div className="px-3 py-4 text-[11px] text-muted-foreground">{emptyText}</div>
+      ) : (
+        entries.map((e, i) => (
+          <div
+            key={`${title}-${e.name}-${i}`}
+            className="px-3 py-2 flex items-center justify-between gap-2"
+          >
+            <div className="min-w-0">
+              <div className="text-xs font-semibold text-foreground truncate">{e.name}</div>
+              <div className="text-[10px] font-mono text-muted-foreground truncate">
+                {typeLabel}: {e.type}
+              </div>
+            </div>
+            <div className="flex items-center space-x-1.5 shrink-0">
+              {e.action && (
+                <Badge variant="outline" className="text-[10px]">
+                  {e.action}
+                </Badge>
+              )}
+              {typeof e.priority === 'number' && (
+                <span className="text-[10px] font-mono text-muted-foreground">#{e.priority}</span>
+              )}
+            </div>
+          </div>
+        ))
+      )}
+    </div>
+  </div>
+)
+
 export const ConfigCenterPage: React.FC = () => {
   const { resolvedTheme } = useThemeStore()
-  const { data: configData, refetch } = useConfigs()
+  const { t } = useTranslation()
+  const { data: configData, refetch, isLoading: isLoadingConfigs } = useConfigs()
   const patchMutation = usePatchConfig()
   const updateMutation = useUpdateConfig()
 
@@ -66,14 +137,43 @@ export const ConfigCenterPage: React.FC = () => {
     null,
   )
 
+  // Auto-dismiss the status notice and clear the pending timer on unmount so we
+  // never call setState on a disposed component.
+  const statusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => {
+    if (!statusMsg) return
+    if (statusTimerRef.current) clearTimeout(statusTimerRef.current)
+    statusTimerRef.current = setTimeout(() => {
+      setStatusMsg(null)
+      statusTimerRef.current = null
+    }, STATUS_AUTO_DISMISS_MS)
+    return () => {
+      if (statusTimerRef.current) {
+        clearTimeout(statusTimerRef.current)
+        statusTimerRef.current = null
+      }
+    }
+  }, [statusMsg])
+
+  // Sync the displayed log level from the server-side config overview once it
+  // loads (or whenever it changes after a PATCH/PUT).
+  useEffect(() => {
+    const serverLevel = configData?.global?.['log-level']
+    if (serverLevel) setCurrentLogLevel(serverLevel)
+  }, [configData])
+
   const handleLogLevelChange = async (lvl: string) => {
+    const prev = currentLogLevel
+    // Optimistic update for snappy UI; reverted on failure.
     setCurrentLogLevel(lvl)
     setStatusMsg(null)
     try {
+      // The server only supports `log-level` for PATCH /configs.
       await patchMutation.mutateAsync({ 'log-level': lvl })
-      setStatusMsg({ type: 'success', text: `Log level updated to ${lvl} in CoreC runtime` })
+      setStatusMsg({ type: 'success', text: t('config.logLevelUpdated', { level: lvl }) })
     } catch (err: any) {
-      setStatusMsg({ type: 'error', text: err.message || 'Failed to update log level' })
+      setCurrentLogLevel(prev)
+      setStatusMsg({ type: 'error', text: err.message || t('config.logLevelUpdateFailed') })
     }
   }
 
@@ -83,23 +183,27 @@ export const ConfigCenterPage: React.FC = () => {
       await updateMutation.mutateAsync({ payload: yamlContent })
       setStatusMsg({
         type: 'success',
-        text: 'Configuration diff applied and hot reloaded successfully!',
+        text: t('config.reloadSuccess'),
       })
       refetch()
     } catch (err: any) {
-      setStatusMsg({ type: 'error', text: err.message || 'Hot reload failed' })
+      setStatusMsg({ type: 'error', text: err.message || t('config.reloadFailed') })
     }
   }
+
+  // Derived overview values (graceful when the server omits a field).
+  const apiListen = configData?.global?.api?.listen
+  const secretSet = configData?.global?.api?.['secret-set']
+  const drivers = configData?.drivers ?? []
+  const transports = configData?.transports ?? []
+  const rules = configData?.rules ?? []
 
   return (
     <div className="space-y-6 max-w-5xl">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold tracking-tight">Configuration Center</h1>
-          <p className="text-xs text-muted-foreground">
-            Differential hot-reload (Suspend &rarr; Diff &rarr; Apply &rarr; Resume) & runtime
-            parameter tuning
-          </p>
+          <h1 className="text-xl font-bold tracking-tight">{t('config.title')}</h1>
+          <p className="text-xs text-muted-foreground">{t('config.subtitle')}</p>
         </div>
 
         <div className="flex items-center space-x-2">
@@ -115,7 +219,7 @@ export const ConfigCenterPage: React.FC = () => {
               }`}
             >
               <Sliders className="w-3.5 h-3.5" />
-              <span>Form View</span>
+              <span>{t('config.formView')}</span>
             </button>
             <button
               type="button"
@@ -127,7 +231,7 @@ export const ConfigCenterPage: React.FC = () => {
               }`}
             >
               <Code2 className="w-3.5 h-3.5" />
-              <span>YAML Code</span>
+              <span>{t('config.yamlCode')}</span>
             </button>
           </div>
 
@@ -139,7 +243,9 @@ export const ConfigCenterPage: React.FC = () => {
               className="h-8 text-xs glow-primary"
             >
               <Flame className="w-3.5 h-3.5 mr-1 text-amber-400" />
-              <span>{updateMutation.isPending ? 'Reloading...' : 'Hot Reload Core'}</span>
+              <span>
+                {updateMutation.isPending ? t('config.reloading') : t('config.hotReload')}
+              </span>
             </Button>
           )}
         </div>
@@ -169,23 +275,23 @@ export const ConfigCenterPage: React.FC = () => {
             <CardHeader className="p-4 pb-2">
               <CardTitle className="text-sm font-semibold flex items-center space-x-2">
                 <Sliders className="w-4 h-4 text-primary" />
-                <span>Runtime Live Parameters (Zero Downtime)</span>
+                <span>{t('config.runtimeParams')}</span>
               </CardTitle>
-              <CardDescription className="text-xs">
-                Parameters that can be altered instantaneously via PATCH /configs
-              </CardDescription>
+              <CardDescription className="text-xs">{t('config.runtimeParamsDesc')}</CardDescription>
             </CardHeader>
             <CardContent className="p-4 pt-1 space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-lg bg-muted/40 border border-border/50">
                 <div>
-                  <div className="text-xs font-semibold text-foreground">Global Log Level</div>
+                  <div className="text-xs font-semibold text-foreground">
+                    {t('config.globalLogLevel')}
+                  </div>
                   <div className="text-[11px] text-muted-foreground">
-                    Modifies engine logging verbosity on the fly
+                    {t('config.globalLogLevelDesc')}
                   </div>
                 </div>
 
                 <div className="flex items-center space-x-2">
-                  {['debug', 'info', 'warn', 'error'].map((lvl) => (
+                  {LOG_LEVELS.map((lvl) => (
                     <Button
                       key={lvl}
                       variant={currentLogLevel === lvl ? 'default' : 'outline'}
@@ -202,41 +308,95 @@ export const ConfigCenterPage: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* Configuration Summary Card */}
+          {/* Current Configuration (synced from GET /configs overview) */}
           <Card className="border-border/80 bg-card/60">
             <CardHeader className="p-4 pb-2">
-              <CardTitle className="text-sm font-semibold">Active Configuration Summary</CardTitle>
-              <CardDescription className="text-xs">
-                Reflected from CoreC GET /configs endpoint
-              </CardDescription>
+              <CardTitle className="text-sm font-semibold flex items-center space-x-2">
+                <ListChecks className="w-4 h-4 text-primary" />
+                <span>{t('config.activeSummary')}</span>
+              </CardTitle>
+              <CardDescription className="text-xs">{t('config.activeSummaryDesc')}</CardDescription>
             </CardHeader>
-            <CardContent className="p-4 pt-1 space-y-3">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="p-3 rounded-lg bg-muted/40 border border-border/50">
-                  <div className="text-[10px] text-muted-foreground uppercase font-semibold">
-                    API Listener
-                  </div>
-                  <div className="font-mono text-xs font-bold text-foreground mt-1">
-                    {configData?.global?.api?.listen || '0.0.0.0:9090'}
-                  </div>
+            <CardContent className="p-4 pt-1 space-y-4">
+              {isLoadingConfigs && !configData ? (
+                <div className="text-xs text-muted-foreground py-6 text-center">
+                  {t('config.loadingOverview')}
                 </div>
-                <div className="p-3 rounded-lg bg-muted/40 border border-border/50">
-                  <div className="text-[10px] text-muted-foreground uppercase font-semibold">
-                    Drivers Registered
+              ) : (
+                <>
+                  {/* Global + API summary tiles */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div className="p-3 rounded-lg bg-muted/40 border border-border/50">
+                      <div className="text-[10px] text-muted-foreground uppercase font-semibold">
+                        {t('config.globalLogLevel')}
+                      </div>
+                      <div className="font-mono text-xs font-bold text-foreground mt-1 uppercase">
+                        {configData?.global?.['log-level'] ?? t('config.notAvailable')}
+                      </div>
+                    </div>
+                    <div className="p-3 rounded-lg bg-muted/40 border border-border/50">
+                      <div className="text-[10px] text-muted-foreground uppercase font-semibold">
+                        {t('config.apiListener')}
+                      </div>
+                      <div className="font-mono text-xs font-bold text-foreground mt-1">
+                        {apiListen ?? t('config.notAvailable')}
+                      </div>
+                    </div>
+                    <div className="p-3 rounded-lg bg-muted/40 border border-border/50">
+                      <div className="text-[10px] text-muted-foreground uppercase font-semibold flex items-center space-x-1">
+                        <KeyRound className="w-3 h-3" />
+                        <span>{t('config.apiSecret')}</span>
+                      </div>
+                      <div className="mt-1">
+                        {secretSet === undefined ? (
+                          <span className="text-xs text-muted-foreground">
+                            {t('config.notAvailable')}
+                          </span>
+                        ) : secretSet ? (
+                          <Badge variant="success">{t('config.secretSet')}</Badge>
+                        ) : (
+                          <Badge variant="warning">{t('config.secretUnset')}</Badge>
+                        )}
+                      </div>
+                    </div>
+                    <div className="p-3 rounded-lg bg-muted/40 border border-border/50">
+                      <div className="text-[10px] text-muted-foreground uppercase font-semibold">
+                        {t('config.components')}
+                      </div>
+                      <div className="font-mono text-xs font-bold text-foreground mt-1">
+                        {t('config.componentsTotal', {
+                          count: drivers.length + transports.length + rules.length,
+                        })}
+                      </div>
+                    </div>
                   </div>
-                  <div className="font-mono text-xs font-bold text-foreground mt-1">
-                    {configData?.drivers?.length || 0} Southbound units
+
+                  {/* Drivers / Transports / Rules summaries */}
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                    <ComponentList
+                      title={t('config.drivers')}
+                      icon={<Cpu className="w-3 h-3 text-primary" />}
+                      entries={drivers}
+                      typeLabel={t('config.colType')}
+                      emptyText={t('config.noDrivers')}
+                    />
+                    <ComponentList
+                      title={t('config.transports')}
+                      icon={<Network className="w-3 h-3 text-primary" />}
+                      entries={transports}
+                      typeLabel={t('config.colType')}
+                      emptyText={t('config.noTransports')}
+                    />
+                    <ComponentList
+                      title={t('config.rules')}
+                      icon={<ListChecks className="w-3 h-3 text-primary" />}
+                      entries={rules}
+                      typeLabel={t('config.colMatch')}
+                      emptyText={t('config.noRules')}
+                    />
                   </div>
-                </div>
-                <div className="p-3 rounded-lg bg-muted/40 border border-border/50">
-                  <div className="text-[10px] text-muted-foreground uppercase font-semibold">
-                    Transports Registered
-                  </div>
-                  <div className="font-mono text-xs font-bold text-foreground mt-1">
-                    {configData?.transports?.length || 0} Northbound channels
-                  </div>
-                </div>
-              </div>
+                </>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -246,11 +406,9 @@ export const ConfigCenterPage: React.FC = () => {
           <CardHeader className="p-3 bg-muted/30 border-b border-border/60 flex flex-row items-center justify-between">
             <div className="flex items-center space-x-2 text-xs font-mono text-muted-foreground">
               <FileText className="w-3.5 h-3.5 text-primary" />
-              <span>corec.yaml</span>
+              <span>{t('config.corecYaml')}</span>
             </div>
-            <span className="text-[10px] text-muted-foreground">
-              Supports ${'{ENV_VAR}'} placeholder resolution
-            </span>
+            <span className="text-[10px] text-muted-foreground">{t('config.envVarNote')}</span>
           </CardHeader>
           <div className="h-[480px]">
             <Editor

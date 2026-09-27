@@ -14,7 +14,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { ConnStateLabel, QualityLabel } from '@/lib/constants'
-import { formatNumber } from '@/lib/utils'
+import { formatNumber, isZeroTime } from '@/lib/utils'
 import type { DriverStatus } from '@/types/models'
 
 export const DriversPage: React.FC = () => {
@@ -28,10 +28,8 @@ export const DriversPage: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold tracking-tight">Southbound Drivers</h1>
-          <p className="text-xs text-muted-foreground">
-            Industrial Southbound protocol clients: Modbus TCP/RTU/TLS, Siemens S7, OPC UA
-          </p>
+          <h1 className="text-xl font-bold tracking-tight">{t('drivers.title')}</h1>
+          <p className="text-xs text-muted-foreground">{t('drivers.subtitle')}</p>
         </div>
         <Button
           variant="outline"
@@ -49,7 +47,7 @@ export const DriversPage: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {drivers.length === 0 ? (
           <Card className="col-span-full p-8 text-center text-xs text-muted-foreground border-dashed">
-            No drivers currently configured in CoreC. Add drivers in the YAML configuration.
+            {t('drivers.empty')}
           </Card>
         ) : (
           drivers.map((drv) => {
@@ -75,7 +73,7 @@ export const DriversPage: React.FC = () => {
                     </div>
                     <Badge variant="outline" className={`text-[10px] ${st.badgeColor}`}>
                       <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${st.dotColor}`} />
-                      {st.text}
+                      {t(st.key)}
                     </Badge>
                   </div>
                 </CardHeader>
@@ -83,32 +81,34 @@ export const DriversPage: React.FC = () => {
                 <CardContent className="p-4 pt-2 space-y-3">
                   <div className="grid grid-cols-3 gap-2 text-center p-2 rounded-lg bg-muted/40 border border-border/50 text-[11px]">
                     <div>
-                      <div className="text-muted-foreground text-[10px]">Tags</div>
+                      <div className="text-muted-foreground text-[10px]">{t('drivers.tags')}</div>
                       <div className="font-mono font-bold">{drv.tag_count}</div>
                     </div>
                     <div>
-                      <div className="text-muted-foreground text-[10px]">Reads</div>
+                      <div className="text-muted-foreground text-[10px]">{t('drivers.reads')}</div>
                       <div className="font-mono font-bold text-emerald-400">
                         {formatNumber(drv.read_count)}
                       </div>
                     </div>
                     <div>
-                      <div className="text-muted-foreground text-[10px]">Errors</div>
+                      <div className="text-muted-foreground text-[10px]">{t('drivers.errors')}</div>
                       <div className="font-mono font-bold text-rose-400">{drv.error_count}</div>
                     </div>
                   </div>
 
                   <div className="text-[11px] space-y-1 text-muted-foreground">
                     <div className="flex items-center justify-between">
-                      <span>Reconnect Failures:</span>
+                      <span>{t('drivers.reconnectFailures')}</span>
                       <span className="font-mono font-medium text-foreground">
                         {drv.reconnect_count}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span>Last Read:</span>
+                      <span>{t('drivers.lastRead')}</span>
                       <span className="font-mono text-foreground truncate max-w-[140px]">
-                        {drv.last_read ? new Date(drv.last_read).toLocaleTimeString() : 'Never'}
+                        {isZeroTime(drv.last_read)
+                          ? t('drivers.never')
+                          : new Date(drv.last_read).toLocaleTimeString()}
                       </span>
                     </div>
                   </div>
@@ -121,7 +121,7 @@ export const DriversPage: React.FC = () => {
                   )}
 
                   <div className="pt-1 flex items-center justify-end text-[11px] text-primary group-hover:underline">
-                    <span>View tags & registers</span>
+                    <span>{t('drivers.viewDetails')}</span>
                     <ExternalLink className="w-3 h-3 ml-1" />
                   </div>
                 </CardContent>
@@ -143,6 +143,7 @@ const DriverDetailDialog: React.FC<{
   driver: DriverStatus
   onClose: () => void
 }> = ({ driver, onClose }) => {
+  const { t } = useTranslation()
   const { data: tagsData, isLoading } = useDriverTags(driver.name)
   const tags = tagsData?.tags ? Object.values(tagsData.tags) : []
 
@@ -188,23 +189,23 @@ const DriverDetailDialog: React.FC<{
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/60">
-                  {tags.map((t) => {
-                    const q = QualityLabel[t.quality] || QualityLabel[0]
+                  {tags.map((tag) => {
+                    const q = QualityLabel[tag.quality] || QualityLabel[0]
                     return (
-                      <tr key={t.tag} className="hover:bg-muted/30">
-                        <td className="px-3 py-2 font-mono font-semibold">{t.tag}</td>
-                        <td className="px-3 py-2 text-muted-foreground">{t.group || '-'}</td>
+                      <tr key={tag.tag} className="hover:bg-muted/30">
+                        <td className="px-3 py-2 font-mono font-semibold">{tag.tag}</td>
+                        <td className="px-3 py-2 text-muted-foreground">{tag.group || '-'}</td>
                         <td className="px-3 py-2 font-mono font-bold text-foreground">
-                          {String(t.value)}
+                          {String(tag.value)}
                         </td>
-                        <td className="px-3 py-2 font-mono text-[10px]">{t.type}</td>
+                        <td className="px-3 py-2 font-mono text-[10px]">{tag.type}</td>
                         <td className="px-3 py-2">
                           <Badge variant="outline" className={`text-[9px] py-0 h-4 ${q.color}`}>
-                            {q.text}
+                            {t(q.key)}
                           </Badge>
                         </td>
                         <td className="px-3 py-2 text-muted-foreground font-mono text-[10px]">
-                          {t.timestamp ? new Date(t.timestamp).toLocaleTimeString() : '-'}
+                          {tag.timestamp ? new Date(tag.timestamp).toLocaleTimeString() : '-'}
                         </td>
                       </tr>
                     )

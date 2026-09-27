@@ -1,6 +1,14 @@
-import { AlertCircle, RefreshCw, Search, Send } from 'lucide-react'
+import { useVirtualizer } from '@tanstack/react-virtual'
+import {
+  createChart,
+  type IChartApi,
+  type ISeriesApi,
+  LineSeries,
+  type UTCTimestamp,
+} from 'lightweight-charts'
+import { Activity, AlertCircle, Loader2, RefreshCw, Search, Send, X } from 'lucide-react'
 import type React from 'react'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useDrivers, useTags, useWriteTag } from '@/api/hooks'
 import { CoreCWebSocket } from '@/api/websocket'
@@ -17,65 +25,379 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { QualityLabel } from '@/lib/constants'
+import { cn } from '@/lib/utils'
 import type { DataPoint } from '@/types/models'
+
+const ROW_HEIGHT = 44
+const MAX_TREND_SAMPLES = 100
+
+/** Fixed percentage column widths — header and rows share these so columns
+ *  stay aligned inside the virtualized (display:block) table. */
+const COLS = {
+  tag: '20%',
+  driver: '12%',
+  group: '10%',
+  value: '14%',
+  type: '10%',
+  quality: '10%',
+  timestamp: '16%',
+  actions: '8%',
+} as const
+
+/**
+ * Composite identity for a physical tag point.
+ *
+ * CoreC's REST `/tags` cache is keyed by tag NAME only, so the same tag name
+ * served by two different drivers (or devices) collides. The WS stream carries
+ * the full {driver, device, tag} tuple, so we key the live merge map by all
+ * three to keep cross-driver same-name tags distinct.
+ */
+const tagKey = (p: Pick<DataPoint, 'driver' | 'device' | 'tag'>): string =>
+  `${p.driver}::${p.device ?? ''}::${p.tag}`
+
+const isNumericType = (type: string): boolean =>
+  type.startsWith('int') || type.startsWith('uint') || type.startsWith('float')
+
+const toSeconds = (ts: string | undefined): number => {
+  if (!ts) return Math.floor(Date.now() / 1000)
+  const parsed = Date.parse(ts)
+  return Number.isNaN(parsed) ? Math.floor(Date.now() / 1000) : Math.floor(parsed / 1000)
+}
+
+interface TrendSample {
+  time: number
+  value: number
+}
+
+interface TagRowProps {
+  point: DataPoint
+  start: number
+  flashTick: number
+  onOpen: (point: DataPoint) => void
+  onWrite: (point: DataPoint) => void
+}
+
+const TagRow: React.FC<TagRowProps> = ({ point, start, flashTick, onOpen, onWrite }) => {
+  const { t } = useTranslation()
+  const overlayRef = useRef<HTMLDivElement>(null)
+
+  // Replay a 1s primary-tint flash whenever this row receives a fresh WS
+  // update. WAAPI animates only opacity, so the tint color comes from the
+  // `bg-primary/10` Tailwind class and stays theme-aware.
+  useEffect(() => {
+    if (flashTick <= 0) return
+    const el = overlayRef.current
+    if (!el) return
+    const anim = el.animate([{ opacity: 1 }, { opacity: 0 }], {
+      duration: 1000,
+      easing: 'ease-out',
+      fill: 'forwards',
+    })
+    return () => anim.cancel()
+  }, [flashTick])
+
+  const q = QualityLabel[point.quality] ?? QualityLabel[0]
+
+  return (
+    <tr
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: ROW_HEIGHT,
+        transform: `translateY(${start}px)`,
+      }}
+      className="flex items-center cursor-pointer border-b border-border/60 hover:bg-muted/30 transition-colors"
+      onClick={() => onOpen(point)}
+    >
+      <td
+        className="px-4 py-2.5 shrink-0 min-w-0 truncate font-mono font-semibold text-foreground"
+        style={{ width: COLS.tag }}
+      >
+        {point.tag}
+      </td>
+      <td
+        className="px-4 py-2.5 shrink-0 min-w-0 truncate font-mono text-muted-foreground"
+        style={{ width: COLS.driver }}
+      >
+        {point.driver}
+      </td>
+      <td
+        className="px-4 py-2.5 shrink-0 min-w-0 truncate text-muted-foreground"
+        style={{ width: COLS.group }}
+      >
+        {point.group || '-'}
+      </td>
+      <td className="px-4 py-2.5 shrink-0 min-w-0 overflow-hidden" style={{ width: COLS.value }}>
+        <span className="inline-block font-mono text-sm font-bold bg-muted/60 px-2 py-0.5 rounded text-foreground truncate max-w-full align-middle">
+          {typeof point.value === 'boolean'
+            ? point.value
+              ? t('tags.trueValue')
+              : t('tags.falseValue')
+            : String(point.value)}
+        </span>
+      </td>
+      <td className="px-4 py-2.5 shrink-0 min-w-0" style={{ width: COLS.type }}>
+        <Badge variant="outline" className="font-mono text-[10px] py-0 h-4">
+          {point.type}
+        </Badge>
+      </td>
+      <td className="px-4 py-2.5 shrink-0 min-w-0" style={{ width: COLS.quality }}>
+        <Badge variant="outline" className={cn('text-[10px]', q.color)}>
+          {t(q.key)}
+        </Badge>
+      </td>
+      <td
+        className="px-4 py-2.5 shrink-0 min-w-0 truncate text-muted-foreground font-mono text-[11px]"
+        style={{ width: COLS.timestamp }}
+      >
+        {point.timestamp ? new Date(point.timestamp).toLocaleTimeString() : '-'}
+        {point.is_stale && (
+          <span className="ml-1.5 text-[10px] text-amber-400 border border-amber-500/30 px-1 rounded">
+            {t('tags.stale')}
+          </span>
+        )}
+      </td>
+      <td className="px-4 py-2.5 shrink-0 min-w-0 text-right" style={{ width: COLS.actions }}>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={(e) => {
+            e.stopPropagation()
+            onWrite(point)
+          }}
+          className="h-7 px-2 text-xs text-primary hover:text-primary hover:bg-primary/10"
+        >
+          <Send className="w-3 h-3 mr-1" />
+          <span>{t('tags.write')}</span>
+        </Button>
+      </td>
+      {flashTick > 0 && (
+        <div
+          ref={overlayRef}
+          aria-hidden
+          className="pointer-events-none absolute inset-0 bg-primary/10"
+        />
+      )}
+    </tr>
+  )
+}
 
 export const TagExplorerPage: React.FC = () => {
   const { t } = useTranslation()
-  const { data: initialTagsData, refetch, isFetching } = useTags()
+  const { data: initialTagsData, refetch, isFetching, isLoading, isError, error } = useTags()
   const { data: driversData } = useDrivers()
   const writeMutation = useWriteTag()
 
+  // Live tag map, keyed by the composite tagKey() (driver::device::tag).
   const [tagMap, setTagMap] = useState<Record<string, DataPoint>>({})
+  // Per-row update counter; bumping it retriggers the flash animation.
+  const [flashTick, setFlashTick] = useState<Record<string, number>>({})
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedDriver, setSelectedDriver] = useState<string>('all')
   const [selectedTagForWrite, setSelectedTagForWrite] = useState<DataPoint | null>(null)
   const [writeValue, setWriteValue] = useState('')
   const [writeError, setWriteError] = useState<string | null>(null)
 
-  // Seed tag map from REST query
+  // Trend drawer state.
+  const [trendTag, setTrendTag] = useState<DataPoint | null>(null)
+  const [trendSamples, setTrendSamples] = useState<TrendSample[]>([])
+
+  // DOM / chart refs.
+  const [scrollEl, setScrollEl] = useState<HTMLDivElement | null>(null)
+  const chartContainerRef = useRef<HTMLDivElement>(null)
+  const chartRef = useRef<IChartApi | null>(null)
+  const seriesRef = useRef<ISeriesApi<'Line'> | null>(null)
+  // The WS callback is bound once per driver change; keep a ref to the
+  // currently-selected trend tag so it can read the latest value live.
+  const trendTagRef = useRef<DataPoint | null>(null)
+  const hasSeeded = useRef(false)
+
   useEffect(() => {
-    if (initialTagsData?.tags) {
-      setTagMap(initialTagsData.tags)
-    }
+    trendTagRef.current = trendTag
+  }, [trendTag])
+
+  // Seed the tag map from the REST snapshot ONCE on first load.
+  //
+  // useTags polls every 2s (refetchInterval: 2000) and returns a fresh object
+  // each poll. Re-running setTagMap(initialTagsData.tags) on every poll — as
+  // the original [initialTagsData] effect did — overwrites the live WS-merged
+  // map and clobbers newer WS updates (the race condition). We seed once, then
+  // let WS merges own the live state. A manual Refresh re-enables a single
+  // merge to discover newly-added tags without clobbering fresher WS values.
+  useEffect(() => {
+    if (hasSeeded.current) return
+    if (!initialTagsData?.tags) return
+    hasSeeded.current = true
+    setTagMap((prev) => {
+      const next = { ...prev }
+      for (const point of Object.values(initialTagsData.tags)) {
+        const k = tagKey(point)
+        // REST is keyed by tag name only; re-key by the composite identity.
+        // Only fill tags the live WS map doesn't already have — WS values are
+        // always fresher than the REST snapshot, so never overwrite them.
+        if (!next[k]) next[k] = point
+      }
+      return next
+    })
   }, [initialTagsData])
 
-  // Subscribe to real-time /tags/stream WebSocket
+  // Subscribe to real-time /tags/stream. The stream pushes ONE DataPoint per
+  // message; merge by composite key so same-name tags across drivers/devices
+  // don't collide. Also bump the row's flash tick and buffer trend samples for
+  // the tag currently shown in the drawer (if numeric).
   useEffect(() => {
     const ws = new CoreCWebSocket<DataPoint>(
       '/tags/stream',
       selectedDriver !== 'all' ? { driver: selectedDriver } : {},
       (point) => {
-        setTagMap((prev) => ({
-          ...prev,
-          [point.tag]: point,
-        }))
+        const key = tagKey(point)
+        setTagMap((prev) => ({ ...prev, [key]: point }))
+        setFlashTick((prev) => ({ ...prev, [key]: (prev[key] ?? 0) + 1 }))
+
+        const sel = trendTagRef.current
+        if (sel && tagKey(sel) === key && isNumericType(point.type)) {
+          const num = Number(point.value)
+          if (Number.isNaN(num)) return
+          setTrendSamples((prev) => {
+            let time = toSeconds(point.timestamp)
+            const last = prev[prev.length - 1]
+            // lightweight-charts requires strictly-increasing, unique times.
+            if (last && time <= last.time) time = last.time + 1
+            const next = [...prev, { time, value: num }]
+            return next.length > MAX_TREND_SAMPLES
+              ? next.slice(next.length - MAX_TREND_SAMPLES)
+              : next
+          })
+        }
       },
     )
-
     return () => ws.destroy()
   }, [selectedDriver])
 
-  const drivers = driversData?.drivers || []
-  const tagsList = Object.values(tagMap)
+  // Create the trend chart once per tag selection. Data is pushed in by the
+  // separate [trendSamples] effect below so the chart isn't rebuilt on every
+  // sample (which would flicker).
+  useEffect(() => {
+    if (!trendTag || !isNumericType(trendTag.type)) return
+    const container = chartContainerRef.current
+    if (!container) return
 
-  const filteredTags = tagsList.filter((pt) => {
-    if (selectedDriver !== 'all' && pt.driver !== selectedDriver) return false
-    if (searchTerm) {
-      const match =
-        pt.tag.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        pt.driver.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        pt.group?.toLowerCase().includes(searchTerm.toLowerCase())
-      if (!match) return false
+    // lightweight-charts renders to a <canvas>, which cannot resolve CSS
+    // custom properties (hsl(var(--...)) falls back to defaults — often
+    // unreadable on dark themes). Resolve the actual computed color values
+    // from the DOM at chart-creation time. The CSS vars store raw HSL
+    // channels (e.g. "220 20% 98%"), so we wrap them in hsl().
+    const styles = getComputedStyle(container)
+    const resolve = (cssVar: string) => {
+      const channels = styles.getPropertyValue(cssVar).trim()
+      return channels ? `hsl(${channels})` : 'hsl(0 0% 50%)'
     }
-    return true
+    const mutedFg = resolve('--muted-foreground')
+    const border = resolve('--border')
+    const primary = resolve('--primary')
+
+    const chart = createChart(container, {
+      width: container.clientWidth,
+      height: 260,
+      layout: {
+        background: { color: 'transparent' },
+        textColor: mutedFg,
+      },
+      grid: {
+        vertLines: { color: border },
+        horzLines: { color: border },
+      },
+      rightPriceScale: { borderColor: border },
+      timeScale: { timeVisible: true, secondsVisible: true },
+    })
+    const series = chart.addSeries(LineSeries, {
+      color: primary,
+      lineWidth: 2,
+    })
+    chartRef.current = chart
+    seriesRef.current = series
+
+    const ro = new ResizeObserver(() => {
+      if (chartContainerRef.current && chartRef.current) {
+        chartRef.current.applyOptions({ width: chartContainerRef.current.clientWidth })
+      }
+    })
+    ro.observe(container)
+
+    return () => {
+      ro.disconnect()
+      chart.remove()
+      chartRef.current = null
+      seriesRef.current = null
+    }
+  }, [trendTag])
+
+  // Push buffered samples into the chart series whenever they change.
+  useEffect(() => {
+    if (!seriesRef.current) return
+    seriesRef.current.setData(
+      trendSamples.map((s) => ({ time: s.time as UTCTimestamp, value: s.value })),
+    )
+  }, [trendSamples])
+
+  const drivers = driversData?.drivers || []
+  // Memoize the list derivation so a WS message (setTagMap) doesn't re-run
+  // the full Object.values + filter scan on every render without the deps
+  // actually changing the inputs. This prevents render thrashing on
+  // high-frequency /tags/stream updates.
+  const tagsList = useMemo(() => Object.values(tagMap), [tagMap])
+
+  const filteredTags = useMemo(() => {
+    const term = searchTerm.toLowerCase()
+    return tagsList.filter((pt) => {
+      if (selectedDriver !== 'all' && pt.driver !== selectedDriver) return false
+      if (term) {
+        const match =
+          pt.tag.toLowerCase().includes(term) ||
+          pt.driver.toLowerCase().includes(term) ||
+          pt.group?.toLowerCase().includes(term)
+        if (!match) return false
+      }
+      return true
+    })
+  }, [tagsList, searchTerm, selectedDriver])
+
+  const rowVirtualizer = useVirtualizer({
+    count: filteredTags.length,
+    getScrollElement: () => scrollEl,
+    estimateSize: () => ROW_HEIGHT,
+    overscan: 8,
   })
+
+  const openTrend = (point: DataPoint) => {
+    setTrendTag(point)
+    if (isNumericType(point.type)) {
+      const num = Number(point.value)
+      setTrendSamples(Number.isNaN(num) ? [] : [{ time: toSeconds(point.timestamp), value: num }])
+    } else {
+      setTrendSamples([])
+    }
+  }
+
+  const closeTrend = () => {
+    setTrendTag(null)
+    setTrendSamples([])
+  }
+
+  const handleRefresh = () => {
+    // Allow a single re-seed from the next REST snapshot to pick up new tags.
+    hasSeeded.current = false
+    refetch()
+  }
 
   const handleWriteSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!selectedTagForWrite) return
     setWriteError(null)
 
-    let parsedVal: any = writeValue
+    let parsedVal: string | number | boolean = writeValue
     if (selectedTagForWrite.type === 'bool') {
       parsedVal = writeValue.toLowerCase() === 'true' || writeValue === '1'
     } else if (
@@ -96,10 +418,19 @@ export const TagExplorerPage: React.FC = () => {
       })
       setSelectedTagForWrite(null)
       setWriteValue('')
-    } catch (err: any) {
-      setWriteError(err.message || 'Write failed')
+    } catch (err: unknown) {
+      setWriteError(err instanceof Error ? err.message : t('tags.writeFailed'))
     }
   }
+
+  const trendNumeric = trendTag ? isNumericType(trendTag.type) : false
+
+  // The WS subscription may already be streaming points before the REST
+  // snapshot resolves. Only show the loading/error placeholder when we have
+  // nothing to render yet — once tagMap has entries (from either source) the
+  // live table takes over.
+  const showLoading = isLoading && filteredTags.length === 0
+  const showError = isError && filteredTags.length === 0
 
   return (
     <div className="space-y-4">
@@ -134,12 +465,12 @@ export const TagExplorerPage: React.FC = () => {
 
           <div className="flex items-center space-x-2 shrink-0">
             <div className="text-xs text-muted-foreground font-mono">
-              Total: {filteredTags.length} points
+              {t('tags.total', { count: filteredTags.length })}
             </div>
             <Button
               variant="outline"
               size="sm"
-              onClick={() => refetch()}
+              onClick={handleRefresh}
               disabled={isFetching}
               className="h-9 text-xs"
             >
@@ -150,91 +481,209 @@ export const TagExplorerPage: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Tags Data Table */}
+      {/* Tags Data Table (virtualized rows via @tanstack/react-virtual) */}
       <Card className="border-border/80 bg-card/60 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs text-left">
-            <thead className="bg-muted/50 border-b border-border/80 uppercase font-semibold text-[10px] text-muted-foreground tracking-wider">
-              <tr>
-                <th className="px-4 py-3">Tag Name</th>
-                <th className="px-4 py-3">Driver</th>
-                <th className="px-4 py-3">Group</th>
-                <th className="px-4 py-3">Value</th>
-                <th className="px-4 py-3">Type</th>
-                <th className="px-4 py-3">Quality</th>
-                <th className="px-4 py-3">Timestamp</th>
-                <th className="px-4 py-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border/60">
-              {filteredTags.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="py-10 text-center text-muted-foreground">
-                    No points found matching current filter
-                  </td>
-                </tr>
-              ) : (
-                filteredTags.map((point) => {
-                  const q = QualityLabel[point.quality] || QualityLabel[0]
-                  return (
-                    <tr
-                      key={`${point.driver}:${point.tag}`}
-                      className="hover:bg-muted/30 transition-colors"
-                    >
-                      <td className="px-4 py-3 font-mono font-semibold text-foreground">
-                        {point.tag}
-                      </td>
-                      <td className="px-4 py-3 font-mono text-muted-foreground">{point.driver}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{point.group || '-'}</td>
-                      <td className="px-4 py-3">
-                        <span className="font-mono text-sm font-bold bg-muted/60 px-2 py-0.5 rounded text-foreground">
-                          {typeof point.value === 'boolean'
-                            ? point.value
-                              ? 'TRUE'
-                              : 'FALSE'
-                            : String(point.value)}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <Badge variant="outline" className="font-mono text-[10px] py-0 h-4">
-                          {point.type}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-3">
-                        <Badge variant="outline" className={`text-[10px] ${q.color}`}>
-                          {q.text}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground font-mono text-[11px]">
-                        {point.timestamp ? new Date(point.timestamp).toLocaleTimeString() : '-'}
-                        {point.is_stale && (
-                          <span className="ml-1.5 text-[10px] text-amber-400 border border-amber-500/30 px-1 rounded">
-                            Stale
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedTagForWrite(point)
-                            setWriteValue(String(point.value))
-                          }}
-                          className="h-7 px-2 text-xs text-primary hover:text-primary hover:bg-primary/10"
-                        >
-                          <Send className="w-3 h-3 mr-1" />
-                          <span>Write</span>
-                        </Button>
-                      </td>
-                    </tr>
-                  )
-                })
-              )}
-            </tbody>
-          </table>
+        <div className="flex items-center justify-between border-b border-border/80 px-4 py-2">
+          <div className="text-xs font-semibold text-foreground">{t('tags.tagsLabel')}</div>
+          <div className="text-[11px] text-muted-foreground">{t('tags.clickToOpenTrend')}</div>
         </div>
+        {showLoading ? (
+          <div className="flex items-center justify-center gap-2 py-16 text-xs text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            {t('common.loading')}
+          </div>
+        ) : showError ? (
+          <div className="space-y-3 py-10 text-center">
+            <AlertCircle className="mx-auto h-8 w-8 text-rose-400" />
+            <div className="text-sm font-semibold">{t('common.error')}</div>
+            {error instanceof Error && error.message && (
+              <div className="mx-auto max-w-md break-all font-mono text-[11px] text-rose-400/80">
+                {error.message}
+              </div>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => refetch()}
+              disabled={isFetching}
+              className="h-8 text-xs"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${isFetching ? 'animate-spin' : ''}`} />
+              {t('common.retry')}
+            </Button>
+          </div>
+        ) : (
+          <div ref={setScrollEl} className="overflow-auto max-h-[70vh]">
+            <table className="w-full text-xs text-left">
+              <thead className="sticky top-0 z-10 block bg-muted/80 backdrop-blur-sm border-b border-border/80 uppercase font-semibold text-[10px] text-muted-foreground tracking-wider">
+                <tr className="flex items-center">
+                  <th className="px-4 py-2.5 shrink-0 overflow-hidden" style={{ width: COLS.tag }}>
+                    {t('tags.colTag')}
+                  </th>
+                  <th
+                    className="px-4 py-2.5 shrink-0 overflow-hidden"
+                    style={{ width: COLS.driver }}
+                  >
+                    {t('tags.colDriver')}
+                  </th>
+                  <th
+                    className="px-4 py-2.5 shrink-0 overflow-hidden"
+                    style={{ width: COLS.group }}
+                  >
+                    {t('tags.colGroup')}
+                  </th>
+                  <th
+                    className="px-4 py-2.5 shrink-0 overflow-hidden"
+                    style={{ width: COLS.value }}
+                  >
+                    {t('tags.colValue')}
+                  </th>
+                  <th className="px-4 py-2.5 shrink-0 overflow-hidden" style={{ width: COLS.type }}>
+                    {t('tags.colType')}
+                  </th>
+                  <th
+                    className="px-4 py-2.5 shrink-0 overflow-hidden"
+                    style={{ width: COLS.quality }}
+                  >
+                    {t('tags.colQuality')}
+                  </th>
+                  <th
+                    className="px-4 py-2.5 shrink-0 overflow-hidden"
+                    style={{ width: COLS.timestamp }}
+                  >
+                    {t('tags.colTimestamp')}
+                  </th>
+                  <th
+                    className="px-4 py-2.5 shrink-0 overflow-hidden text-right"
+                    style={{ width: COLS.actions }}
+                  >
+                    {t('tags.colActions')}
+                  </th>
+                </tr>
+              </thead>
+              <tbody
+                className="block relative"
+                style={{ height: rowVirtualizer.getTotalSize(), width: '100%' }}
+              >
+                {filteredTags.length === 0 ? (
+                  <tr className="block">
+                    <td className="block py-10 text-center text-muted-foreground">
+                      {t('tags.noPoints')}
+                    </td>
+                  </tr>
+                ) : (
+                  rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                    const point = filteredTags[virtualRow.index]
+                    const key = tagKey(point)
+                    return (
+                      <TagRow
+                        key={key}
+                        point={point}
+                        start={virtualRow.start}
+                        flashTick={flashTick[key] ?? 0}
+                        onOpen={openTrend}
+                        onWrite={(p) => {
+                          setSelectedTagForWrite(p)
+                          setWriteValue(String(p.value))
+                        }}
+                      />
+                    )
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </Card>
+
+      {/*
+       * Trend drawer.
+       *
+       * The task brief references the shadcn Sheet component at
+       * src/components/ui/sheet.tsx, but that file does not exist in this
+       * checkout and the "do not touch any other files" constraint forbids
+       * creating it. The drawer is therefore implemented inline as a
+       * fixed-position side panel with a backdrop; it delivers the same
+       * feature (click a row -> slide-in panel with a lightweight-charts
+       * trend of the last N WS samples).
+       */}
+      {trendTag && (
+        <div className="fixed inset-0 z-50 flex justify-end">
+          <div
+            onClick={closeTrend}
+            aria-hidden
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+          />
+          <div className="relative h-full w-full max-w-md border-l border-border bg-card shadow-2xl flex flex-col">
+            <div className="flex items-center justify-between border-b border-border px-4 py-3">
+              <div className="flex items-center space-x-2 min-w-0">
+                <Activity className="w-4 h-4 text-primary shrink-0" />
+                <div className="min-w-0">
+                  <div className="text-sm font-semibold text-foreground truncate">
+                    {trendTag.tag}
+                  </div>
+                  <div className="text-[11px] text-muted-foreground font-mono truncate">
+                    {trendTag.driver}
+                    {trendTag.device ? ` · ${trendTag.device}` : ''}
+                  </div>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={closeTrend}
+                className="h-8 w-8 p-0 shrink-0"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+
+            <div className="flex-1 overflow-auto p-4 space-y-3">
+              {trendNumeric ? (
+                <>
+                  <div className="text-[11px] text-muted-foreground">
+                    {t('tags.liveTrend', { count: trendSamples.length, max: MAX_TREND_SAMPLES })}
+                  </div>
+                  <div ref={chartContainerRef} className="w-full h-[260px]" />
+                </>
+              ) : (
+                <div className="text-xs text-muted-foreground py-12 text-center">
+                  {t('tags.noTrendData')}
+                </div>
+              )}
+
+              <div className="rounded-lg border border-border bg-muted/30 p-3 text-xs font-mono space-y-1">
+                <div>
+                  <span className="text-muted-foreground">{t('common.type')}: </span>
+                  <span className="text-foreground">{trendTag.type}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">{t('common.value')}: </span>
+                  <span className="text-foreground">
+                    {typeof trendTag.value === 'boolean'
+                      ? trendTag.value
+                        ? t('tags.trueValue')
+                        : t('tags.falseValue')
+                      : String(trendTag.value)}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">{t('common.quality')}: </span>
+                  <span className="text-foreground">
+                    {t((QualityLabel[trendTag.quality] ?? QualityLabel[0]).key)}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">{t('common.timestamp')}: </span>
+                  <span className="text-foreground">
+                    {trendTag.timestamp ? new Date(trendTag.timestamp).toLocaleString() : '-'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Write Command Dialog */}
       <Dialog
@@ -245,11 +694,9 @@ export const TagExplorerPage: React.FC = () => {
           <DialogHeader>
             <DialogTitle className="flex items-center space-x-2">
               <Send className="w-4 h-4 text-primary" />
-              <span>Write to PLC Tag</span>
+              <span>{t('tags.writeToTag')}</span>
             </DialogTitle>
-            <DialogDescription className="text-xs">
-              Direct Southbound control command through CoreC Command Manager
-            </DialogDescription>
+            <DialogDescription className="text-xs">{t('tags.writeToTagDesc')}</DialogDescription>
           </DialogHeader>
 
           {selectedTagForWrite && (
@@ -263,28 +710,30 @@ export const TagExplorerPage: React.FC = () => {
 
               <div className="p-3 rounded-lg bg-muted/50 border border-border text-xs space-y-1 font-mono">
                 <div>
-                  <span className="text-muted-foreground">Driver: </span>
+                  <span className="text-muted-foreground">{t('common.driver')}: </span>
                   <span className="font-semibold text-foreground">
                     {selectedTagForWrite.driver}
                   </span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Tag: </span>
+                  <span className="text-muted-foreground">{t('common.tag')}: </span>
                   <span className="font-semibold text-primary">{selectedTagForWrite.tag}</span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Type: </span>
+                  <span className="text-muted-foreground">{t('common.type')}: </span>
                   <span className="text-foreground">{selectedTagForWrite.type}</span>
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-foreground">New Target Value</label>
+                <label className="text-xs font-semibold text-foreground">
+                  {t('tags.newTargetValue')}
+                </label>
                 <Input
                   type="text"
                   value={writeValue}
                   onChange={(e) => setWriteValue(e.target.value)}
-                  placeholder="Enter value"
+                  placeholder={t('tags.enterValue')}
                   required
                   className="font-mono text-xs"
                 />

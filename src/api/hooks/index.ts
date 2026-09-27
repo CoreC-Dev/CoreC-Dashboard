@@ -29,7 +29,7 @@ export function useDrivers() {
     queryKey: ['drivers'],
     queryFn: api.getDrivers,
     enabled: isConnected,
-    refetchInterval: 2000,
+    refetchInterval: 5000,
   })
 }
 
@@ -39,7 +39,7 @@ export function useDriver(name: string) {
     queryKey: ['driver', name],
     queryFn: () => api.getDriver(name),
     enabled: isConnected && !!name,
-    refetchInterval: 2000,
+    refetchInterval: 5000,
   })
 }
 
@@ -49,7 +49,7 @@ export function useDriverTags(name: string) {
     queryKey: ['driverTags', name],
     queryFn: () => api.getDriverTags(name),
     enabled: isConnected && !!name,
-    refetchInterval: 1000,
+    refetchInterval: 3000,
   })
 }
 
@@ -59,7 +59,17 @@ export function useTransports() {
     queryKey: ['transports'],
     queryFn: api.getTransports,
     enabled: isConnected,
-    refetchInterval: 2000,
+    refetchInterval: 5000,
+  })
+}
+
+export function useTransport(name: string) {
+  const isConnected = useConnectionStore((s) => s.isConnected)
+  return useQuery({
+    queryKey: ['transport', name],
+    queryFn: () => api.getTransport(name),
+    enabled: isConnected && !!name,
+    refetchInterval: 5000,
   })
 }
 
@@ -69,7 +79,7 @@ export function useTags() {
     queryKey: ['tags'],
     queryFn: api.getTags,
     enabled: isConnected,
-    refetchInterval: 2000,
+    refetchInterval: 5000,
   })
 }
 
@@ -89,7 +99,7 @@ export function useStats() {
     queryKey: ['stats'],
     queryFn: api.getStats,
     enabled: isConnected,
-    refetchInterval: 2000,
+    refetchInterval: 5000,
   })
 }
 
@@ -117,9 +127,13 @@ export function useWriteTag() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (cmd: WriteCommand) => api.writeTag(cmd),
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['tags'] })
       queryClient.invalidateQueries({ queryKey: ['deadLetters'] })
+      // Invalidate the specific driver's tags and status so the UI reflects
+      // the write immediately rather than waiting for the next poll.
+      queryClient.invalidateQueries({ queryKey: ['driverTags', variables.driver] })
+      queryClient.invalidateQueries({ queryKey: ['driver', variables.driver] })
     },
   })
 }

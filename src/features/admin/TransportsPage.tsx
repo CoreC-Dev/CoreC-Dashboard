@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { ConnStateLabel } from '@/lib/constants'
-import { formatNumber } from '@/lib/utils'
+import { formatNumber, isZeroTime } from '@/lib/utils'
 
 export const TransportsPage: React.FC = () => {
   const { t } = useTranslation()
@@ -17,10 +17,8 @@ export const TransportsPage: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold tracking-tight">Northbound Transports</h1>
-          <p className="text-xs text-muted-foreground">
-            Northbound streaming channels: MQTT Brokers, HTTP Push Webhooks, Chained Inbound
-          </p>
+          <h1 className="text-xl font-bold tracking-tight">{t('transports.title')}</h1>
+          <p className="text-xs text-muted-foreground">{t('transports.subtitle')}</p>
         </div>
         <Button
           variant="outline"
@@ -37,7 +35,7 @@ export const TransportsPage: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {transports.length === 0 ? (
           <Card className="col-span-full p-8 text-center text-xs text-muted-foreground border-dashed">
-            No northbound transports configured in CoreC.
+            {t('transports.empty')}
           </Card>
         ) : (
           transports.map((tr) => {
@@ -62,7 +60,7 @@ export const TransportsPage: React.FC = () => {
                     </div>
                     <Badge variant="outline" className={`text-[10px] ${st.badgeColor}`}>
                       <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${st.dotColor}`} />
-                      {st.text}
+                      {t(st.key)}
                     </Badge>
                   </div>
                 </CardHeader>
@@ -70,38 +68,46 @@ export const TransportsPage: React.FC = () => {
                 <CardContent className="p-4 pt-2 space-y-3">
                   <div className="grid grid-cols-3 gap-2 text-center p-2 rounded-lg bg-muted/40 border border-border/50 text-[11px]">
                     <div>
-                      <div className="text-muted-foreground text-[10px]">Published</div>
+                      <div className="text-muted-foreground text-[10px]">
+                        {t('transports.published')}
+                      </div>
                       <div className="font-mono font-bold text-emerald-400">
                         {formatNumber(tr.published)}
                       </div>
                     </div>
                     <div>
-                      <div className="text-muted-foreground text-[10px]">Failed</div>
+                      <div className="text-muted-foreground text-[10px]">
+                        {t('transports.failed')}
+                      </div>
                       <div className="font-mono font-bold text-rose-400">{tr.failed}</div>
                     </div>
                     <div>
-                      <div className="text-muted-foreground text-[10px]">Queue Size</div>
+                      <div className="text-muted-foreground text-[10px]">
+                        {t('transports.queueSize')}
+                      </div>
                       <div className="font-mono font-bold">{tr.queue_size}</div>
                     </div>
                   </div>
 
                   <div className="text-[11px] space-y-1 text-muted-foreground">
                     <div className="flex items-center justify-between">
-                      <span>Commands Received:</span>
+                      <span>{t('transports.commandsReceived')}</span>
                       <span className="font-mono font-medium text-foreground">
                         {formatNumber(tr.received)}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span>Dropped Commands:</span>
+                      <span>{t('transports.droppedCommands')}</span>
                       <span className="font-mono font-medium text-rose-400">
                         {tr.dropped_commands}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span>Last Published:</span>
+                      <span>{t('transports.lastPublished')}</span>
                       <span className="font-mono text-foreground truncate max-w-[140px]">
-                        {tr.last_publish ? new Date(tr.last_publish).toLocaleTimeString() : 'Never'}
+                        {isZeroTime(tr.last_publish)
+                          ? t('transports.never')
+                          : new Date(tr.last_publish).toLocaleTimeString()}
                       </span>
                     </div>
                   </div>

@@ -44,7 +44,7 @@ export const MonitorLayout: React.FC = () => {
         </div>
         <div className="text-[11px] text-muted-foreground flex items-center space-x-1.5">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
-          <span>Real-time Stream Connected</span>
+          <span>{t('monitor.realtimeStreamConnected')}</span>
         </div>
       </div>
 

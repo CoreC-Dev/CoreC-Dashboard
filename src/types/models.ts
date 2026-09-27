@@ -52,7 +52,8 @@ export interface RuleStat {
   match: string
   action: 'forward' | 'drop' | 'alert' | 'transform' | 'mirror'
   target: string
-  targets: string[]
+  // CoreC serializes targets as null (not []) when empty.
+  targets: string[] | null
   priority: number
   disabled: boolean
   hit_count: number

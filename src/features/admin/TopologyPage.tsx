@@ -1,26 +1,65 @@
-import { Cpu, Radio, Send } from 'lucide-react'
+import { Cpu, GitBranch, Radio, Send } from 'lucide-react'
 import type React from 'react'
-import { useDrivers, useServerInfo, useTransports } from '@/api/hooks'
+import { useTranslation } from 'react-i18next'
+import {
+  useConfigs,
+  useDrivers,
+  useRules,
+  useServerInfo,
+  useStats,
+  useTransports,
+} from '@/api/hooks'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
+import { ConnStateLabel } from '@/lib/constants'
+import { formatNumber, formatUptime } from '@/lib/utils'
 
 export const TopologyPage: React.FC = () => {
+  const { t } = useTranslation()
   const { data: serverInfo } = useServerInfo()
   const { data: driversData } = useDrivers()
   const { data: transportsData } = useTransports()
+  const { data: stats } = useStats()
+  const { data: rulesData } = useRules()
+  const { data: configsData } = useConfigs()
 
   const drivers = driversData?.drivers || []
   const transports = transportsData?.transports || []
+  const rules = rulesData?.rules || []
+  const activeRules = rules.filter((r) => !r.disabled)
 
   return (
     <div className="space-y-6 max-w-5xl">
       <div>
-        <h1 className="text-xl font-bold tracking-tight">Chained-Core Mesh Topology</h1>
-        <p className="text-xs text-muted-foreground">
-          Hexagonal port & adapter topology: Southbound drivers, priority data bus, rule pipeline,
-          and northbound relay sinks
-        </p>
+        <h1 className="text-xl font-bold tracking-tight">{t('topology.title')}</h1>
+        <p className="text-xs text-muted-foreground">{t('topology.subtitle')}</p>
       </div>
+
+      {/* Node Identity */}
+      {configsData?.global && (
+        <Card className="border-border/80 bg-card/60 p-4">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs">
+            <div className="flex items-center gap-1.5">
+              <span className="text-muted-foreground">{t('topology.nodeId')}:</span>
+              <span className="font-mono font-semibold text-primary">
+                {serverInfo?.name || 'corec'}
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-muted-foreground">{t('topology.version')}:</span>
+              <span className="font-mono">{serverInfo?.version || 'dev'}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-muted-foreground">{t('topology.listen')}:</span>
+              <span className="font-mono">{configsData.global.api?.listen || '—'}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-muted-foreground">{t('topology.logLevel')}:</span>
+              <span className="font-mono">{configsData.global['log-level'] || 'info'}</span>
+            </div>
+          </div>
+        </Card>
+      )}
 
       {/* Visual Interactive Architecture Diagram */}
       <Card className="border-border/80 bg-card/60 p-6 overflow-hidden">
@@ -29,29 +68,42 @@ export const TopologyPage: React.FC = () => {
           <div className="flex-1 w-full space-y-3">
             <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center space-x-1.5">
               <Cpu className="w-3.5 h-3.5 text-primary" />
-              <span>Southbound Field Devices ({drivers.length})</span>
+              <span>{t('topology.southboundDevices', { count: drivers.length })}</span>
             </div>
 
             <div className="space-y-2">
               {drivers.length === 0 ? (
                 <div className="p-3 rounded-lg border border-dashed text-xs text-muted-foreground text-center">
-                  No southbound drivers attached
+                  {t('topology.noDrivers', { defaultValue: 'No southbound drivers attached' })}
                 </div>
               ) : (
-                drivers.map((d) => (
-                  <div
-                    key={d.name}
-                    className="p-3 rounded-lg border border-border/80 bg-card/40 flex items-center justify-between text-xs"
-                  >
-                    <div>
-                      <div className="font-semibold text-foreground">{d.name}</div>
-                      <div className="text-[10px] text-muted-foreground font-mono">{d.type}</div>
+                drivers.map((d) => {
+                  const st = ConnStateLabel[d.state] || ConnStateLabel[0]
+                  return (
+                    <div
+                      key={d.name}
+                      className="p-3 rounded-lg border border-border/80 bg-card/40 flex items-center justify-between text-xs"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className={`w-2 h-2 rounded-full ${st.dotColor}`} />
+                        <div>
+                          <div className="font-semibold text-foreground">{d.name}</div>
+                          <div className="text-[10px] text-muted-foreground font-mono">
+                            {d.type}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-[10px]">
+                          {d.tag_count} Tags
+                        </Badge>
+                        <Badge variant="outline" className={`text-[10px] ${st.badgeColor}`}>
+                          {t(st.key)}
+                        </Badge>
+                      </div>
                     </div>
-                    <Badge variant="outline" className="text-[10px]">
-                      {d.tag_count} Tags
-                    </Badge>
-                  </div>
-                ))
+                  )
+                })
               )}
             </div>
           </div>
@@ -65,12 +117,18 @@ export const TopologyPage: React.FC = () => {
               {serverInfo?.name || 'corec-node-01'}
             </div>
             <div className="text-xs text-primary font-mono font-medium mt-0.5">
-              Role: Collector / Gateway
+              Status: {stats?.status || '—'}
+            </div>
+            <div className="text-[10px] text-muted-foreground mt-1">
+              Uptime: {formatUptime(stats?.uptime || 0)}
             </div>
             <div className="text-[10px] text-muted-foreground mt-2 border-t border-border/60 pt-2 w-full space-y-1">
-              <div>Zero-Lock DataBus (8192 buffer)</div>
-              <div>Rule Pipeline (First-Match-Wins)</div>
-              <div>Command Manager (16 Semaphore)</div>
+              <div>Throughput: {stats?.points_per_sec?.toFixed(1) || '0.0'} pts/s</div>
+              <div>
+                Read: {formatNumber(stats?.total_read || 0)} · Pub:{' '}
+                {formatNumber(stats?.total_publish || 0)}
+              </div>
+              <div>{t('topology.tagline')}</div>
             </div>
           </div>
 
@@ -78,34 +136,93 @@ export const TopologyPage: React.FC = () => {
           <div className="flex-1 w-full space-y-3">
             <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center space-x-1.5">
               <Send className="w-3.5 h-3.5 text-indigo-400" />
-              <span>Northbound Sinks ({transports.length})</span>
+              <span>{t('topology.northboundSinks', { count: transports.length })}</span>
             </div>
 
             <div className="space-y-2">
               {transports.length === 0 ? (
                 <div className="p-3 rounded-lg border border-dashed text-xs text-muted-foreground text-center">
-                  No northbound transports attached
+                  {t('topology.noTransports', {
+                    defaultValue: 'No northbound transports attached',
+                  })}
                 </div>
               ) : (
-                transports.map((t) => (
-                  <div
-                    key={t.name}
-                    className="p-3 rounded-lg border border-border/80 bg-card/40 flex items-center justify-between text-xs"
-                  >
-                    <div>
-                      <div className="font-semibold text-foreground">{t.name}</div>
-                      <div className="text-[10px] text-muted-foreground font-mono">{t.type}</div>
+                transports.map((t) => {
+                  const st = ConnStateLabel[t.state] || ConnStateLabel[0]
+                  return (
+                    <div
+                      key={t.name}
+                      className="p-3 rounded-lg border border-border/80 bg-card/40 flex items-center justify-between text-xs"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className={`w-2 h-2 rounded-full ${st.dotColor}`} />
+                        <div>
+                          <div className="font-semibold text-foreground">{t.name}</div>
+                          <div className="text-[10px] text-muted-foreground font-mono">
+                            {t.type}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-[10px]">
+                          {formatNumber(t.published)} sent
+                        </Badge>
+                        <Badge variant="outline" className={`text-[10px] ${st.badgeColor}`}>
+                          {t(st.key)}
+                        </Badge>
+                      </div>
                     </div>
-                    <Badge variant="outline" className="text-[10px]">
-                      {t.published} sent
-                    </Badge>
-                  </div>
-                ))
+                  )
+                })
               )}
             </div>
           </div>
         </div>
       </Card>
+
+      {/* Rule Pipeline */}
+      {rules.length > 0 && (
+        <Card className="border-border/80 bg-card/60 p-4">
+          <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center space-x-1.5 mb-3">
+            <GitBranch className="w-3.5 h-3.5 text-amber-400" />
+            <span>
+              Rule Pipeline ({activeRules.length}/{rules.length} active)
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {rules
+              .sort((a, b) => a.priority - b.priority)
+              .map((rule) => (
+                <div
+                  key={rule.index}
+                  className={`px-3 py-1.5 rounded-lg border text-xs flex items-center gap-2 ${
+                    rule.disabled
+                      ? 'border-border/40 bg-muted/20 opacity-50'
+                      : 'border-amber-500/30 bg-amber-500/5'
+                  }`}
+                >
+                  <span className="font-mono text-[10px] text-muted-foreground">
+                    #{rule.priority}
+                  </span>
+                  <span className="font-semibold text-foreground">{rule.name}</span>
+                  <Badge variant="outline" className="text-[9px]">
+                    {rule.action}
+                  </Badge>
+                  {rule.disabled && (
+                    <Badge variant="outline" className="text-[9px] text-muted-foreground">
+                      OFF
+                    </Badge>
+                  )}
+                  {(rule.hit_count > 0 || rule.miss_count > 0) && (
+                    <span className="text-[9px] text-muted-foreground font-mono">
+                      {rule.hit_count}↑/{rule.miss_count}↓
+                    </span>
+                  )}
+                </div>
+              ))}
+          </div>
+        </Card>
+      )}
     </div>
   )
 }

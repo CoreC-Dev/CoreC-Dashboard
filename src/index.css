@@ -1,5 +1,47 @@
 @import "tailwindcss";
 
+/*
+ * Tailwind v4 design-token registration.
+ *
+ * Tailwind v4 no longer reads an opaque tailwind.config.js for the shadcn/ui
+ * semantic color palette. Instead, every color utility (bg-card, text-muted-
+ * foreground, border-border, ring-ring, ...) is generated ONLY from tokens
+ * declared inside an `@theme` block. Without this block, 600+ semantic utility
+ * usages across the app resolve to nothing and the entire UI renders unstyled.
+ *
+ * `@theme inline` keeps the token values referencing the HSL channel variables
+ * defined in :root / .dark below, so the existing dark/light theme switching
+ * (toggling the `.dark` class) keeps working without duplicating color values.
+ */
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: var(--radius);
+  --radius-lg: var(--radius);
+
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+}
+
 @layer base {
   :root {
     --background: 220 20% 98%;
@@ -99,4 +141,23 @@ body {
 }
 .glow-primary {
   box-shadow: 0 0 12px rgba(59, 130, 246, 0.45);
+}
+
+/*
+ * Dashboard layout grid.
+ * 12-column responsive grid matching the react-grid-layout coordinate
+ * schema used by dashboardStore. Each card is positioned via inline
+ * grid-column/grid-row styles derived from its stored x/y/w/h.
+ */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-auto-rows: 60px;
+  gap: 1rem;
+  width: 100%;
+}
+
+.dashboard-grid-item {
+  min-width: 0;
+  min-height: 0;
 }

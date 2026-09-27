@@ -46,7 +46,9 @@ export interface DriversListResponse {
 }
 
 export interface DriverTagsResponse {
-  tags: Record<string, DataPoint>
+  // CoreC returns {"tags": null} (not 404) for unknown drivers or drivers
+  // with no cached tag values. Callers must guard for null.
+  tags: Record<string, DataPoint> | null
 }
 
 export interface TransportsListResponse {

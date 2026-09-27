@@ -18,11 +18,46 @@ import { CoreCWebSocket } from '@/api/websocket'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { type MetricEntry, parsePrometheusMetrics } from '@/lib/prometheus'
+import { formatNumber } from '@/lib/utils'
 import { useConnectionStore } from '@/stores/connectionStore'
+
+const PPROF_PROFILES = [
+  'heap',
+  'goroutine',
+  'profile?seconds=5',
+  'trace?seconds=5',
+  'block',
+  'mutex',
+] as const
+
+const fmtNum = (v: number | null): string => (v === null ? 'N/A' : formatNumber(v))
+
+const fmtSec = (v: number | null): string => {
+  if (v === null) return 'N/A'
+  if (v < 1) return `${(v * 1000).toFixed(2)}ms`
+  return `${v.toFixed(3)}s`
+}
+
+const HistTile: React.FC<{
+  label: string
+  metric: string
+  avg: number | null
+  count: number | null
+  sum: number | null
+  accent: string
+}> = ({ label, metric, avg, count, sum, accent }) => (
+  <div className="p-3 rounded-lg bg-muted/40 border border-border/50">
+    <div className="text-[10px] text-muted-foreground uppercase font-semibold">{label}</div>
+    <div className={`text-xl font-bold font-mono mt-1 ${accent}`}>{fmtSec(avg)}</div>
+    <div className="text-[10px] text-muted-foreground mt-1 font-mono">
+      n={fmtNum(count)} · Σ={fmtSec(sum)}
+    </div>
+    <div className="text-[9px] text-muted-foreground/70 mt-0.5 font-mono truncate">{metric}</div>
+  </div>
+)
 
 export const DiagnosticsPage: React.FC = () => {
   const { t } = useTranslation()
-  const { baseUrl } = useConnectionStore()
 
   // Terminal state
   const terminalRef = useRef<HTMLDivElement>(null)
@@ -34,6 +69,9 @@ export const DiagnosticsPage: React.FC = () => {
   // Metrics state
   const [metrics, setMetrics] = useState<MetricEntry[]>([])
   const [loadingMetrics, setLoadingMetrics] = useState(false)
+
+  // pprof download state
+  const [pprofLoading, setPprofLoading] = useState<string | null>(null)
 
   // Initialize xterm.js
   useEffect(() => {
@@ -67,7 +105,39 @@ export const DiagnosticsPage: React.FC = () => {
     xtermInstance.current = term
     fitAddonRef.current = fitAddon
 
-    term.writeln('\x1b[38;5;39m[CoreC Stream]\x1b[0m Connected to event logging bus...\r\n')
+    // convertEol is true, so rely on writeln's appended line break instead of
+    // an explicit "\r\n" (which would render a blank line after the banner).
+    term.writeln('\x1b[38;5;39m[CoreC Stream]\x1b[0m Connected to event logging bus...')
+
+    // Log-rate limiting: buffer incoming log lines and flush to xterm via a
+    // 16ms timer (≈1 frame). This coalesces log floods (error storms can
+    // emit hundreds/sec) so the JS thread isn't saturated by per-message
+    // writeln calls, which would freeze the UI.
+    const logBuffer: string[] = []
+    let flushTimer: ReturnType<typeof setTimeout> | null = null
+    let droppedSinceFlush = 0
+    const MAX_BATCH = 200 // cap lines per flush to bound work
+
+    const flushBuffer = () => {
+      flushTimer = null
+      if (logBuffer.length === 0) return
+      const toWrite = logBuffer.splice(0, MAX_BATCH)
+      for (const line of toWrite) {
+        term.writeln(line)
+      }
+      if (droppedSinceFlush > 0) {
+        term.writeln(
+          `\x1b[33m[CoreC Stream]\x1b[0m ${droppedSinceFlush} log lines dropped (rate limit)\x1b[0m`,
+        )
+        droppedSinceFlush = 0
+      }
+    }
+
+    const scheduleFlush = () => {
+      if (flushTimer === null) {
+        flushTimer = setTimeout(flushBuffer, 16)
+      }
+    }
 
     // Subscribe to /logs WebSocket
     const ws = new CoreCWebSocket('/logs', {}, (evt: any) => {
@@ -90,17 +160,24 @@ export const DiagnosticsPage: React.FC = () => {
         levelTag = '[ERROR]'
       }
 
-      term.writeln(
-        `\x1b[90m${time}\x1b[0m ${color}${levelTag}\x1b[0m \x1b[1m${evt.type || ''}\x1b[0m: ${
-          evt.payload || ''
-        }`,
-      )
+      const line = `\x1b[90m${time}\x1b[0m ${color}${levelTag}\x1b[0m \x1b[1m${evt.type || ''}\x1b[0m: ${
+        evt.payload || ''
+      }`
+
+      // If buffer is already full for this frame, drop and count.
+      if (logBuffer.length >= MAX_BATCH) {
+        droppedSinceFlush++
+      } else {
+        logBuffer.push(line)
+      }
+      scheduleFlush()
     })
 
     const handleResize = () => fitAddon.fit()
     window.addEventListener('resize', handleResize)
 
     return () => {
+      if (flushTimer !== null) clearTimeout(flushTimer)
       ws.destroy()
       window.removeEventListener('resize', handleResize)
       term.dispose()
@@ -134,12 +211,67 @@ export const DiagnosticsPage: React.FC = () => {
     xtermInstance.current?.clear()
   }
 
+  // Fetch a pprof profile with the Bearer auth header and trigger a local
+  // download. Direct <a href> links would receive a 401 because pprof is
+  // mounted inside CoreC's authed route group.
+  const downloadPprof = async (profile: string) => {
+    const { baseUrl, secret } = useConnectionStore.getState()
+    const cleanBase = baseUrl.trim().replace(/\/+$/, '')
+    const url = `${cleanBase}/debug/pprof/${profile}`
+    setPprofLoading(profile)
+    try {
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${secret}` },
+      })
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status} ${res.statusText}`)
+      }
+      const blob = await res.blob()
+      const objectUrl = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = objectUrl
+      const baseName = profile.split('?')[0].replace(/\/+$/, '')
+      a.download = `pprof_${baseName.replace(/\//g, '_')}.pb.gz`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(objectUrl)
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e)
+      console.error('pprof download failed', e)
+      xtermInstance.current?.writeln(
+        `\x1b[31m[pprof]\x1b[0m failed to fetch /debug/pprof/${profile}: ${msg}`,
+      )
+    } finally {
+      setPprofLoading(null)
+    }
+  }
+
   // Filter key metrics
   const goroutines = metrics.find((m) => m.name === 'corec_goroutines')?.value ?? 0
   const heapAllocBytes = metrics.find((m) => m.name === 'corec_mem_heap_alloc_bytes')?.value ?? 0
   const gcCount = metrics.find((m) => m.name === 'corec_gc_count')?.value ?? 0
   const totalDropped = metrics.find((m) => m.name === 'corec_dropped_total')?.value ?? 0
   const offlinePending = metrics.find((m) => m.name === 'corec_offline_buffer_pending')?.value ?? 0
+
+  // Additional metrics (graceful "N/A" when absent from /metrics).
+  const findMetric = (name: string): number | null => {
+    const m = metrics.find((mt) => mt.name === name)
+    return m ? m.value : null
+  }
+  const histogram = (base: string) => {
+    const count = findMetric(`${base}_count`)
+    const sum = findMetric(`${base}_sum`)
+    const avg = count !== null && sum !== null && count > 0 ? sum / count : null
+    return { count, sum, avg }
+  }
+
+  const readLatency = histogram('corec_read_latency_seconds')
+  const publishLatency = histogram('corec_publish_latency_seconds')
+  const httpReq = histogram('corec_http_request_duration_seconds')
+  const dataAge = findMetric('corec_data_age_seconds') ?? histogram('corec_data_age_seconds').avg
+  const driverReads = metrics.filter((m) => m.name === 'corec_driver_read_total')
+  const transportPublishes = metrics.filter((m) => m.name === 'corec_transport_published_total')
 
   return (
     <div className="space-y-6 max-w-5xl">
@@ -165,12 +297,12 @@ export const DiagnosticsPage: React.FC = () => {
               {isPaused ? (
                 <>
                   <Play className="w-3 h-3 mr-1 text-emerald-400" />
-                  <span>Resume</span>
+                  <span>{t('diagnostics.resume')}</span>
                 </>
               ) : (
                 <>
                   <Pause className="w-3 h-3 mr-1 text-amber-400" />
-                  <span>Pause</span>
+                  <span>{t('diagnostics.pause')}</span>
                 </>
               )}
             </Button>
@@ -181,7 +313,7 @@ export const DiagnosticsPage: React.FC = () => {
               className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
             >
               <Trash2 className="w-3 h-3 mr-1" />
-              <span>Clear</span>
+              <span>{t('diagnostics.clear')}</span>
             </Button>
           </div>
         </CardHeader>
@@ -194,11 +326,9 @@ export const DiagnosticsPage: React.FC = () => {
           <div>
             <CardTitle className="text-sm font-semibold flex items-center space-x-2">
               <Gauge className="w-4 h-4 text-primary" />
-              <span>Prometheus Runtime Metrics</span>
+              <span>{t('diagnostics.runtimeMetrics')}</span>
             </CardTitle>
-            <CardDescription className="text-xs">
-              Live scrape from CoreC GET /metrics endpoint
-            </CardDescription>
+            <CardDescription className="text-xs">{t('diagnostics.metricsDesc')}</CardDescription>
           </div>
           <Button
             variant="outline"
@@ -252,31 +382,191 @@ export const DiagnosticsPage: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* pprof Debugging Links */}
+      {/* Latency & Data Age Histograms */}
+      <Card className="border-border/80 bg-card/60">
+        <CardHeader className="p-4 pb-2">
+          <CardTitle className="text-sm font-semibold">Latency & Data Age</CardTitle>
+          <CardDescription className="text-xs">
+            Histogram snapshots (avg = Σ/n) and gauges parsed from /metrics
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-4 pt-0">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <HistTile
+              label="Read Latency"
+              metric="corec_read_latency_seconds"
+              avg={readLatency.avg}
+              count={readLatency.count}
+              sum={readLatency.sum}
+              accent="text-cyan-400"
+            />
+            <HistTile
+              label="Publish Latency"
+              metric="corec_publish_latency_seconds"
+              avg={publishLatency.avg}
+              count={publishLatency.count}
+              sum={publishLatency.sum}
+              accent="text-emerald-400"
+            />
+            <HistTile
+              label="HTTP Requests"
+              metric="corec_http_request_duration_seconds"
+              avg={httpReq.avg}
+              count={httpReq.count}
+              sum={httpReq.sum}
+              accent="text-blue-400"
+            />
+            <div className="p-3 rounded-lg bg-muted/40 border border-border/50">
+              <div className="text-[10px] text-muted-foreground uppercase font-semibold">
+                Data Age
+              </div>
+              <div className="text-xl font-bold font-mono text-amber-400 mt-1">
+                {fmtSec(dataAge)}
+              </div>
+              <div className="text-[10px] text-muted-foreground mt-1 font-mono">
+                current max age
+              </div>
+              <div className="text-[9px] text-muted-foreground/70 mt-0.5 font-mono truncate">
+                corec_data_age_seconds
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Per-Driver Read Counts */}
+      <Card className="border-border/80 bg-card/60 overflow-hidden">
+        <CardHeader className="p-4 pb-2">
+          <CardTitle className="text-sm font-semibold">Per-Driver Read Counts</CardTitle>
+          <CardDescription className="text-xs">
+            corec_driver_read_total{'{driver,type}'} counters
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs text-left">
+              <thead className="bg-muted/50 border-b border-border/80 uppercase font-semibold text-[10px] text-muted-foreground tracking-wider">
+                <tr>
+                  <th className="px-4 py-2">Driver</th>
+                  <th className="px-4 py-2">Type</th>
+                  <th className="px-4 py-2 text-right">Reads</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/60">
+                {driverReads.length === 0 ? (
+                  <tr>
+                    <td colSpan={3} className="py-6 text-center text-muted-foreground">
+                      N/A — no driver read counters exposed
+                    </td>
+                  </tr>
+                ) : (
+                  driverReads.map((m, i) => (
+                    <tr
+                      key={`driver-${m.labels.driver}-${m.labels.type}-${i}`}
+                      className="hover:bg-muted/30 transition-colors"
+                    >
+                      <td className="px-4 py-2 font-semibold text-foreground">
+                        {m.labels.driver || '—'}
+                      </td>
+                      <td className="px-4 py-2 font-mono text-muted-foreground">
+                        {m.labels.type || '—'}
+                      </td>
+                      <td className="px-4 py-2 text-right font-mono font-bold text-cyan-400">
+                        {formatNumber(m.value)}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Per-Transport Publish Counts */}
+      <Card className="border-border/80 bg-card/60 overflow-hidden">
+        <CardHeader className="p-4 pb-2">
+          <CardTitle className="text-sm font-semibold">Per-Transport Publish Counts</CardTitle>
+          <CardDescription className="text-xs">
+            corec_transport_published_total{'{transport,type}'} counters
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs text-left">
+              <thead className="bg-muted/50 border-b border-border/80 uppercase font-semibold text-[10px] text-muted-foreground tracking-wider">
+                <tr>
+                  <th className="px-4 py-2">Transport</th>
+                  <th className="px-4 py-2">Type</th>
+                  <th className="px-4 py-2 text-right">Published</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/60">
+                {transportPublishes.length === 0 ? (
+                  <tr>
+                    <td colSpan={3} className="py-6 text-center text-muted-foreground">
+                      N/A — no transport publish counters exposed
+                    </td>
+                  </tr>
+                ) : (
+                  transportPublishes.map((m, i) => (
+                    <tr
+                      key={`transport-${m.labels.transport}-${m.labels.type}-${i}`}
+                      className="hover:bg-muted/30 transition-colors"
+                    >
+                      <td className="px-4 py-2 font-semibold text-foreground">
+                        {m.labels.transport || '—'}
+                      </td>
+                      <td className="px-4 py-2 font-mono text-muted-foreground">
+                        {m.labels.type || '—'}
+                      </td>
+                      <td className="px-4 py-2 text-right font-mono font-bold text-emerald-400">
+                        {formatNumber(m.value)}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* pprof Debugging Downloads */}
       <Card className="border-border/80 bg-card/60">
         <CardHeader className="p-4">
           <CardTitle className="text-sm font-semibold">Go pprof Profiling Endpoints</CardTitle>
           <CardDescription className="text-xs">
-            Direct heap, goroutine, and CPU profile download URLs
+            Authenticated heap, goroutine, and CPU profile downloads (Bearer token attached)
           </CardDescription>
         </CardHeader>
         <CardContent className="p-4 pt-0">
           <div className="flex flex-wrap gap-2 text-xs">
-            {['heap', 'goroutine', 'profile?seconds=5', 'trace?seconds=5', 'block', 'mutex'].map(
-              (p) => (
-                <a
+            {PPROF_PROFILES.map((p) => {
+              const loading = pprofLoading === p
+              return (
+                <Button
                   key={p}
-                  href={`${baseUrl}/debug/pprof/${p}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="px-3 py-1.5 rounded-lg border border-border/80 bg-muted/30 hover:border-primary/50 font-mono text-muted-foreground hover:text-foreground transition-colors flex items-center space-x-1.5"
+                  variant="outline"
+                  size="sm"
+                  disabled={pprofLoading !== null}
+                  onClick={() => downloadPprof(p)}
+                  className="h-8 px-3 font-mono text-xs"
                 >
-                  <Download className="w-3.5 h-3.5 text-primary" />
+                  {loading ? (
+                    <RefreshCw className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                  ) : (
+                    <Download className="w-3.5 h-3.5 mr-1.5 text-primary" />
+                  )}
                   <span>/debug/pprof/{p}</span>
-                </a>
-              ),
-            )}
+                </Button>
+              )
+            })}
           </div>
+          <p className="text-[10px] text-muted-foreground mt-3">
+            Profiles are fetched with the Authorization header and downloaded locally — direct links
+            would receive a 401 because pprof is mounted inside CoreC's authed route group.
+          </p>
         </CardContent>
       </Card>
     </div>

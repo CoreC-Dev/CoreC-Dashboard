@@ -34,3 +34,23 @@ export function formatBytes(bytes: number, decimals = 2): string {
 export function formatNumber(num: number): string {
   return new Intl.NumberFormat('en-US').format(num)
 }
+
+/**
+ * Detect Go's zero-value timestamp "0001-01-01T00:00:00Z" and Unix epoch
+ * "1970-01-01T00:00:00Z" (which CoreC emits for rule hit_at/miss_at via
+ * time.Unix(0,...) in rule/wrapper.go — the contract claims Go zero time,
+ * but the live server emits Unix epoch). Also catches timezone-shifted
+ * variants like "1970-01-01T08:00:00+08:00" by checking getTime() <= 0
+ * relative to epoch start (timezone offset doesn't change the underlying
+ * instant). A zero/epoch-time string is truthy, so a plain `ts ? ... :
+ * 'Never'` check never reaches the fallback.
+ */
+export function isZeroTime(ts: string | null | undefined): boolean {
+  if (!ts) return true
+  if (ts.startsWith('0001-01-01')) return true
+  if (ts.startsWith('1970-01-01')) return true
+  // Catch any timestamp at or before Unix epoch (timezone variants).
+  const d = new Date(ts)
+  if (!Number.isNaN(d.getTime()) && d.getTime() <= 0) return true
+  return false
+}

@@ -1,4 +1,5 @@
 import {
+  AlertCircle,
   AlertOctagon,
   AlertTriangle,
   Bell,
@@ -16,7 +17,7 @@ import { CoreCWebSocket } from '@/api/websocket'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import type { LogEvent } from '@/types/models'
+import type { LogEvent, WriteCommand } from '@/types/models'
 
 export const AlertsPage: React.FC = () => {
   const { t } = useTranslation()
@@ -25,6 +26,7 @@ export const AlertsPage: React.FC = () => {
   const writeMutation = useWriteTag()
 
   const [liveLogs, setLiveLogs] = useState<LogEvent[]>([])
+  const [retryError, setRetryError] = useState<string | null>(null)
 
   // Subscribe to /logs WebSocket for warn/error
   useEffect(() => {
@@ -40,9 +42,14 @@ export const AlertsPage: React.FC = () => {
   const deadLetters = deadLettersData?.failed_writes || []
   const alertRules = (rulesData?.rules || []).filter((r) => r.action === 'alert')
 
-  const handleRetryDeadLetter = async (cmd: any) => {
-    await writeMutation.mutateAsync(cmd)
-    refetch()
+  const handleRetryDeadLetter = async (cmd: WriteCommand) => {
+    setRetryError(null)
+    try {
+      await writeMutation.mutateAsync(cmd)
+      await refetch()
+    } catch (err: unknown) {
+      setRetryError(err instanceof Error ? err.message : 'Failed to retry dead letter command')
+    }
   }
 
   return (
@@ -52,39 +59,45 @@ export const AlertsPage: React.FC = () => {
         <Card className="border-border/80 bg-card/60">
           <CardHeader className="p-4 pb-1">
             <CardDescription className="text-xs flex items-center justify-between">
-              <span>Dead Letter Queue</span>
+              <span>{t('alerts.deadLetterQueue')}</span>
               <AlertOctagon className="w-4 h-4 text-rose-500" />
             </CardDescription>
           </CardHeader>
           <CardContent className="p-4 pt-1">
             <div className="text-2xl font-bold font-mono text-rose-400">{deadLetters.length}</div>
-            <div className="text-[11px] text-muted-foreground mt-1">Retries exhausted writes</div>
+            <div className="text-[11px] text-muted-foreground mt-1">
+              {t('alerts.retriesExhausted')}
+            </div>
           </CardContent>
         </Card>
 
         <Card className="border-border/80 bg-card/60">
           <CardHeader className="p-4 pb-1">
             <CardDescription className="text-xs flex items-center justify-between">
-              <span>Alert Rules Configured</span>
+              <span>{t('alerts.alertRulesConfigured')}</span>
               <Bell className="w-4 h-4 text-amber-500" />
             </CardDescription>
           </CardHeader>
           <CardContent className="p-4 pt-1">
             <div className="text-2xl font-bold font-mono text-amber-400">{alertRules.length}</div>
-            <div className="text-[11px] text-muted-foreground mt-1">Active alarm triggers</div>
+            <div className="text-[11px] text-muted-foreground mt-1">
+              {t('alerts.activeAlarmTriggers')}
+            </div>
           </CardContent>
         </Card>
 
         <Card className="border-border/80 bg-card/60">
           <CardHeader className="p-4 pb-1">
             <CardDescription className="text-xs flex items-center justify-between">
-              <span>System Error Stream</span>
+              <span>{t('alerts.systemErrorStream')}</span>
               <ShieldAlert className="w-4 h-4 text-primary" />
             </CardDescription>
           </CardHeader>
           <CardContent className="p-4 pt-1">
             <div className="text-2xl font-bold font-mono text-foreground">{liveLogs.length}</div>
-            <div className="text-[11px] text-muted-foreground mt-1">Warnings & errors received</div>
+            <div className="text-[11px] text-muted-foreground mt-1">
+              {t('alerts.realtimeWarningDesc', { defaultValue: 'Warnings & errors received' })}
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -95,11 +108,9 @@ export const AlertsPage: React.FC = () => {
           <div>
             <CardTitle className="text-sm font-semibold flex items-center space-x-2 text-rose-400">
               <AlertOctagon className="w-4 h-4" />
-              <span>Dead Letter Control Queue</span>
+              <span>{t('alerts.deadLetterControlQueue')}</span>
             </CardTitle>
-            <CardDescription className="text-xs">
-              Commands that failed after maximum retry attempts (write-retry-count: 3)
-            </CardDescription>
+            <CardDescription className="text-xs">{t('alerts.deadLetterDesc')}</CardDescription>
           </div>
           <Button
             variant="outline"
@@ -113,16 +124,26 @@ export const AlertsPage: React.FC = () => {
           </Button>
         </CardHeader>
         <CardContent className="p-4 pt-0">
+          {retryError && (
+            <div className="mb-3 p-2 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-center space-x-2">
+              <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+              <span>{retryError}</span>
+            </div>
+          )}
           {deadLetters.length === 0 ? (
             <div className="py-8 text-center text-xs text-muted-foreground flex flex-col items-center space-y-1">
               <CheckCircle2 className="w-6 h-6 text-emerald-400 mb-1" />
-              <span>No failed dead letter commands recorded.</span>
+              <span>
+                {t('alerts.noDeadLetters', {
+                  defaultValue: 'No failed dead letter commands recorded.',
+                })}
+              </span>
             </div>
           ) : (
             <div className="space-y-2">
-              {deadLetters.map((entry, idx) => (
+              {deadLetters.map((entry) => (
                 <div
-                  key={idx}
+                  key={`${entry.command.driver}-${entry.command.tag}-${entry.timestamp}`}
                   className="p-3 rounded-lg border border-rose-500/20 bg-rose-500/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
                 >
                   <div className="space-y-1">
@@ -135,7 +156,7 @@ export const AlertsPage: React.FC = () => {
                       <Clock className="w-3 h-3" />
                       <span>{new Date(entry.failed_at).toLocaleString()}</span>
                       <span>•</span>
-                      <span>{entry.attempts} attempts exhausted</span>
+                      <span>{t('alerts.attemptsExhausted', { count: entry.attempts })}</span>
                     </div>
                   </div>
 
@@ -161,22 +182,22 @@ export const AlertsPage: React.FC = () => {
         <CardHeader className="p-4">
           <CardTitle className="text-sm font-semibold flex items-center space-x-2">
             <AlertTriangle className="w-4 h-4 text-amber-400" />
-            <span>Real-time Warning & Error Events</span>
+            <span>{t('alerts.realtimeWarning')}</span>
           </CardTitle>
-          <CardDescription className="text-xs">
-            Pushed live over WebSocket /logs filter (level &ge; 4)
-          </CardDescription>
+          <CardDescription className="text-xs">{t('alerts.realtimeWarningDesc')}</CardDescription>
         </CardHeader>
         <CardContent className="p-4 pt-0">
           {liveLogs.length === 0 ? (
             <div className="py-8 text-center text-xs text-muted-foreground">
-              No recent warning or error events emitted by CoreC core
+              {t('alerts.noEvents', {
+                defaultValue: 'No recent warning or error events emitted by CoreC core',
+              })}
             </div>
           ) : (
             <div className="space-y-1.5 max-h-96 overflow-y-auto font-mono text-xs">
-              {liveLogs.map((log, idx) => (
+              {liveLogs.map((log) => (
                 <div
-                  key={idx}
+                  key={`${log.timestamp}-${log.level}-${log.message?.slice(0, 20)}`}
                   className={`p-2 rounded border flex items-start space-x-2 ${
                     log.level >= 8
                       ? 'border-rose-500/30 bg-rose-500/10 text-rose-400'

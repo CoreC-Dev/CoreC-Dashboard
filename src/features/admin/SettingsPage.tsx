@@ -1,7 +1,8 @@
 import { Download, Globe, HardDrive, Moon, RotateCcw, Save, Server, Sun } from 'lucide-react'
 import type React from 'react'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useShallow } from 'zustand/react/shallow'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -12,19 +13,38 @@ import { type ThemeMode, useThemeStore } from '@/stores/themeStore'
 
 export const SettingsPage: React.FC = () => {
   const { t, i18n } = useTranslation()
-  const { baseUrl, secret, setConnection } = useConnectionStore()
-  const { theme, setTheme } = useThemeStore()
-  const { currentLayout, resetToDefault } = useDashboardStore()
+  const { baseUrl, secret, setConnection } = useConnectionStore(
+    useShallow((s) => ({ baseUrl: s.baseUrl, secret: s.secret, setConnection: s.setConnection })),
+  )
+  const { theme, setTheme } = useThemeStore(
+    useShallow((s) => ({ theme: s.theme, setTheme: s.setTheme })),
+  )
+  const { currentLayout, resetToDefault } = useDashboardStore(
+    useShallow((s) => ({ currentLayout: s.currentLayout, resetToDefault: s.resetToDefault })),
+  )
 
   const [url, setUrl] = useState(baseUrl)
   const [token, setToken] = useState(secret)
   const [savedNotice, setSavedNotice] = useState(false)
+  const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Clear any pending "Saved!" auto-hide timer when the page unmounts so we
+  // never call setState on an unmounted component.
+  useEffect(() => {
+    return () => {
+      if (savedTimerRef.current) clearTimeout(savedTimerRef.current)
+    }
+  }, [])
 
   const handleSaveConnection = (e: React.FormEvent) => {
     e.preventDefault()
     setConnection(url, token)
     setSavedNotice(true)
-    setTimeout(() => setSavedNotice(false), 2000)
+    // Probe the new endpoint so isConnected reflects the freshly saved creds.
+    // revalidate() handles its own errors internally, so fire-and-forget.
+    void useConnectionStore.getState().revalidate()
+    if (savedTimerRef.current) clearTimeout(savedTimerRef.current)
+    savedTimerRef.current = setTimeout(() => setSavedNotice(false), 2000)
   }
 
   const exportLayoutJson = () => {
@@ -41,9 +61,7 @@ export const SettingsPage: React.FC = () => {
     <div className="space-y-6 max-w-4xl">
       <div>
         <h1 className="text-xl font-bold tracking-tight">{t('nav.settings')}</h1>
-        <p className="text-xs text-muted-foreground">
-          CoreC server credentials, UI preferences, and dashboard layout backup
-        </p>
+        <p className="text-xs text-muted-foreground">{t('settings.subtitle')}</p>
       </div>
 
       {/* CoreC Endpoint Settings */}
@@ -51,10 +69,12 @@ export const SettingsPage: React.FC = () => {
         <CardHeader className="p-4 pb-2">
           <CardTitle className="text-sm font-semibold flex items-center space-x-2">
             <Server className="w-4 h-4 text-primary" />
-            <span>CoreC Engine Endpoint Connection</span>
+            <span>{t('settings.connection')}</span>
           </CardTitle>
           <CardDescription className="text-xs">
-            Target REST and WebSocket host URL and Bearer security token
+            {t('settings.endpointConnectionDesc', {
+              defaultValue: 'Target REST and WebSocket host URL and Bearer security token',
+            })}
           </CardDescription>
         </CardHeader>
 
@@ -89,7 +109,11 @@ export const SettingsPage: React.FC = () => {
 
             <Button type="submit" size="sm" className="h-8 text-xs glow-primary">
               <Save className="w-3.5 h-3.5 mr-1" />
-              <span>{savedNotice ? 'Saved!' : 'Update Credentials'}</span>
+              <span>
+                {savedNotice
+                  ? t('settings.saved', { defaultValue: 'Saved!' })
+                  : t('settings.updateCredentials', { defaultValue: 'Update Credentials' })}
+              </span>
             </Button>
           </CardContent>
         </form>
@@ -100,19 +124,25 @@ export const SettingsPage: React.FC = () => {
         <CardHeader className="p-4 pb-2">
           <CardTitle className="text-sm font-semibold flex items-center space-x-2">
             <Globe className="w-4 h-4 text-primary" />
-            <span>Language & Theme Preferences</span>
+            <span>{t('settings.theme')}</span>
           </CardTitle>
           <CardDescription className="text-xs">
-            System defaults and personal display customisation
+            {t('settings.preferencesDesc', {
+              defaultValue: 'System defaults and personal display customisation',
+            })}
           </CardDescription>
         </CardHeader>
 
         <CardContent className="p-4 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-lg bg-muted/40 border border-border/50">
             <div>
-              <div className="text-xs font-semibold text-foreground">Theme Mode</div>
+              <div className="text-xs font-semibold text-foreground">
+                {t('settings.themeMode', { defaultValue: 'Theme Mode' })}
+              </div>
               <div className="text-[11px] text-muted-foreground">
-                Follow OS prefers-color-scheme or lock to dark/light
+                {t('settings.themeModeDesc', {
+                  defaultValue: 'Follow OS prefers-color-scheme or lock to dark/light',
+                })}
               </div>
             </div>
 
@@ -138,9 +168,13 @@ export const SettingsPage: React.FC = () => {
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-lg bg-muted/40 border border-border/50">
             <div>
-              <div className="text-xs font-semibold text-foreground">Interface Language (i18n)</div>
+              <div className="text-xs font-semibold text-foreground">
+                {t('settings.interfaceLanguage', { defaultValue: 'Interface Language (i18n)' })}
+              </div>
               <div className="text-[11px] text-muted-foreground">
-                Chinese (zh-CN) / English (en)
+                {t('settings.interfaceLanguageDesc', {
+                  defaultValue: 'Chinese (zh-CN) / English (en)',
+                })}
               </div>
             </div>
 
@@ -171,17 +205,19 @@ export const SettingsPage: React.FC = () => {
         <CardHeader className="p-4 pb-2">
           <CardTitle className="text-sm font-semibold flex items-center space-x-2">
             <HardDrive className="w-4 h-4 text-primary" />
-            <span>Dashboard Layout Backup</span>
+            <span>{t('settings.layoutBackup', { defaultValue: 'Dashboard Layout Backup' })}</span>
           </CardTitle>
           <CardDescription className="text-xs">
-            Export or reset your custom large-screen grid layout
+            {t('settings.layoutBackupDesc', {
+              defaultValue: 'Export or reset your custom large-screen grid layout',
+            })}
           </CardDescription>
         </CardHeader>
 
         <CardContent className="p-4 flex items-center space-x-3">
           <Button variant="outline" size="sm" onClick={exportLayoutJson} className="h-8 text-xs">
             <Download className="w-3.5 h-3.5 mr-1" />
-            <span>Export Layout JSON</span>
+            <span>{t('settings.exportLayout', { defaultValue: 'Export Layout JSON' })}</span>
           </Button>
 
           <Button
@@ -191,7 +227,7 @@ export const SettingsPage: React.FC = () => {
             className="h-8 text-xs text-rose-400 hover:text-rose-500 hover:bg-rose-500/10"
           >
             <RotateCcw className="w-3.5 h-3.5 mr-1" />
-            <span>Reset to Factory Default</span>
+            <span>{t('settings.resetFactory', { defaultValue: 'Reset to Factory Default' })}</span>
           </Button>
         </CardContent>
       </Card>

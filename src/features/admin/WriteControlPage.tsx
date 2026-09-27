@@ -3,14 +3,17 @@ import {
   AlertOctagon,
   CheckCircle2,
   Clock,
+  Loader2,
   RefreshCw,
   RotateCcw,
   Send,
+  ShieldAlert,
   Terminal,
 } from 'lucide-react'
 import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { ApiError } from '@/api/client'
 import { useDeadLetters, useDrivers, useWriteTag } from '@/api/hooks'
 import { Button } from '@/components/ui/button'
 import {
@@ -21,20 +24,48 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import type { DataTypeString } from '@/lib/constants'
+import type { WriteCommand } from '@/types/models'
 
-const DATA_TYPES = [
+const DATA_TYPES: DataTypeString[] = [
   'bool',
+  'int8',
   'int16',
   'int32',
   'int64',
+  'uint8',
   'uint16',
   'uint32',
   'uint64',
   'float32',
   'float64',
   'string',
+  'bytes',
 ]
+
+// Extracts a human-readable error message from CoreC's JSON error response
+// body (e.g. {"error":"unsupported patch key(s): [foo]"}). Falls back to the
+// raw body if it's not JSON or has no "error" field; the caller supplies the
+// final fallback string (translated) for an empty body.
+function extractApiError(body: string, fallback: string): string {
+  try {
+    const parsed = JSON.parse(body)
+    if (parsed?.error) return parsed.error
+    if (typeof parsed === 'string') return parsed
+  } catch {
+    // body is not JSON
+  }
+  return body.slice(0, 200) || fallback
+}
 
 export const WriteControlPage: React.FC = () => {
   const { t } = useTranslation()
@@ -43,58 +74,147 @@ export const WriteControlPage: React.FC = () => {
     data: deadLettersData,
     refetch: refetchDeadLetters,
     isFetching: fetchingDlq,
+    isLoading: loadingDlq,
+    isError: errorDlq,
+    error: dlqError,
   } = useDeadLetters()
   const writeMutation = useWriteTag()
 
   const [driver, setDriver] = useState('')
   const [device, setDevice] = useState('')
   const [tag, setTag] = useState('')
-  const [type, setType] = useState('float32')
+  const [type, setType] = useState<DataTypeString>('float32')
   const [value, setValue] = useState('')
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const [replayError, setReplayError] = useState<string | null>(null)
+  const [pendingCmd, setPendingCmd] = useState<WriteCommand | null>(null)
+  const [confirmOpen, setConfirmOpen] = useState(false)
 
   const drivers = driversData?.drivers || []
   const deadLetters = deadLettersData?.failed_writes || []
 
-  const handleWriteSubmit = async (e: React.FormEvent) => {
+  const parseValue = (raw: string, dt: DataTypeString): string | number | boolean => {
+    if (dt === 'bool') {
+      return raw.toLowerCase() === 'true' || raw === '1'
+    }
+    if (dt.startsWith('int') || dt.startsWith('uint') || dt.startsWith('float')) {
+      return Number(raw)
+    }
+    return raw
+  }
+
+  // Numeric range bounds per CoreC data type. Prevents a malformed write
+  // command from silently sending null (NaN serializes to null in JSON) or
+  // an out-of-range value to a physical actuator.
+  const NUMERIC_RANGES: Record<string, [number, number]> = {
+    int8: [-128, 127],
+    int16: [-32768, 32767],
+    int32: [-2147483648, 2147483647],
+    int64: [Number.MIN_SAFE_INTEGER, Number.MAX_SAFE_INTEGER],
+    uint8: [0, 255],
+    uint16: [0, 65535],
+    uint32: [0, 4294967295],
+    uint64: [0, Number.MAX_SAFE_INTEGER],
+    float32: [-3.4e38, 3.4e38],
+    float64: [Number.MIN_SAFE_INTEGER, Number.MAX_SAFE_INTEGER],
+  }
+
+  // Validates the raw input for the chosen data type. Returns an error
+  // message string if invalid, or null if valid.
+  const validateValue = (raw: string, dt: DataTypeString): string | null => {
+    if (dt === 'bool') {
+      const v = raw.trim().toLowerCase()
+      if (v !== 'true' && v !== 'false' && v !== '0' && v !== '1') {
+        return t('write.errBoolInvalid')
+      }
+      return null
+    }
+    if (dt.startsWith('int') || dt.startsWith('uint') || dt.startsWith('float')) {
+      const n = Number(raw)
+      if (raw.trim() === '' || Number.isNaN(n)) {
+        return t('write.errNotNumber', { raw, dt })
+      }
+      if (!Number.isFinite(n)) {
+        return t('write.errNotFinite')
+      }
+      const range = NUMERIC_RANGES[dt]
+      if (range && (n < range[0] || n > range[1])) {
+        return t('write.errOutOfRange', { n, dt, min: range[0], max: range[1] })
+      }
+      return null
+    }
+    // string / bytes — any non-empty input is accepted (required attr guards empty)
+    return null
+  }
+
+  // Industrial safety: the form only stages the command and opens a
+  // confirmation dialog. The actual write fires from handleConfirmWrite after
+  // an explicit second "Confirm Write" click.
+  const handleWriteSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     setSuccessMsg(null)
     setErrorMsg(null)
+    setReplayError(null)
 
     if (!driver || !tag) {
-      setErrorMsg('Please select a driver and specify a tag name')
+      setErrorMsg(t('write.selectDriverAndTag'))
       return
     }
 
-    let parsedVal: any = value
-    if (type === 'bool') {
-      parsedVal = value.toLowerCase() === 'true' || value === '1'
-    } else if (type.startsWith('int') || type.startsWith('uint') || type.startsWith('float')) {
-      parsedVal = Number(value)
+    const validationError = validateValue(value, type)
+    if (validationError) {
+      setErrorMsg(validationError)
+      return
     }
 
+    setPendingCmd({
+      driver,
+      device: device || undefined,
+      tag,
+      type,
+      value: parseValue(value, type),
+    })
+    setConfirmOpen(true)
+  }
+
+  const handleConfirmWrite = async () => {
+    if (!pendingCmd) return
     try {
-      await writeMutation.mutateAsync({
-        driver,
-        device: device || undefined,
-        tag,
-        type: type as any,
-        value: parsedVal,
-      })
-      setSuccessMsg(`Command successfully written to [${driver}] ${tag} = ${value}`)
+      await writeMutation.mutateAsync(pendingCmd)
+      setSuccessMsg(
+        t('write.writeSuccess', { driver: pendingCmd.driver, tag: pendingCmd.tag, value }),
+      )
       setValue('')
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Write command failed')
+      setConfirmOpen(false)
+      setPendingCmd(null)
+    } catch (err) {
+      // Surface CoreC's error body (e.g. "unsupported patch key(s)") when
+      // available — ApiError carries the response body in .body.
+      const msg =
+        err instanceof ApiError && err.body
+          ? extractApiError(err.body, t('write.unknownError'))
+          : err instanceof Error
+            ? err.message
+            : t('write.writeFailed')
+      setErrorMsg(msg)
+      setConfirmOpen(false)
     }
   }
 
-  const handleReplay = async (cmd: any) => {
+  const handleReplay = async (cmd: WriteCommand) => {
+    setReplayError(null)
     try {
       await writeMutation.mutateAsync(cmd)
       refetchDeadLetters()
-    } catch (err: any) {
-      alert(`Replay failed: ${err.message}`)
+    } catch (err) {
+      const msg =
+        err instanceof ApiError && err.body
+          ? extractApiError(err.body, t('write.unknownError'))
+          : err instanceof Error
+            ? err.message
+            : t('write.unknownError')
+      setReplayError(msg)
     }
   }
 
@@ -102,10 +222,7 @@ export const WriteControlPage: React.FC = () => {
     <div className="space-y-6 max-w-5xl">
       <div>
         <h1 className="text-xl font-bold tracking-tight">{t('write.title')}</h1>
-        <p className="text-xs text-muted-foreground">
-          Direct PLC coil/register control through Command Manager concurrency pool with deadlock
-          protection
-        </p>
+        <p className="text-xs text-muted-foreground">{t('write.subtitle')}</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -114,11 +231,9 @@ export const WriteControlPage: React.FC = () => {
           <CardHeader className="p-4 pb-2">
             <CardTitle className="text-sm font-semibold flex items-center space-x-2">
               <Terminal className="w-4 h-4 text-primary" />
-              <span>Dispatch Write Command</span>
+              <span>{t('write.dispatch')}</span>
             </CardTitle>
-            <CardDescription className="text-xs">
-              Direct Southbound control command through CoreC API
-            </CardDescription>
+            <CardDescription className="text-xs">{t('write.dispatchDesc')}</CardDescription>
           </CardHeader>
 
           <form onSubmit={handleWriteSubmit}>
@@ -148,7 +263,7 @@ export const WriteControlPage: React.FC = () => {
                     required
                     className="w-full h-9 px-3 rounded-md border border-input bg-transparent text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                   >
-                    <option value="">Select target driver...</option>
+                    <option value="">{t('write.selectDriver')}</option>
                     {drivers.map((d) => (
                       <option key={d.name} value={d.name}>
                         {d.name} ({d.type})
@@ -159,10 +274,10 @@ export const WriteControlPage: React.FC = () => {
 
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-foreground">
-                    Device Identifier (Optional)
+                    {t('write.deviceOptional')}
                   </label>
                   <Input
-                    placeholder="e.g. meter-01"
+                    placeholder={t('write.devicePlaceholder')}
                     value={device}
                     onChange={(e) => setDevice(e.target.value)}
                     className="h-9 text-xs"
@@ -176,7 +291,7 @@ export const WriteControlPage: React.FC = () => {
                     {t('write.tagName')} *
                   </label>
                   <Input
-                    placeholder="e.g. temperature_setpoint or 40001"
+                    placeholder={t('write.tagPlaceholder')}
                     value={tag}
                     onChange={(e) => setTag(e.target.value)}
                     required
@@ -190,7 +305,7 @@ export const WriteControlPage: React.FC = () => {
                   </label>
                   <select
                     value={type}
-                    onChange={(e) => setType(e.target.value)}
+                    onChange={(e) => setType(e.target.value as DataTypeString)}
                     className="w-full h-9 px-3 rounded-md border border-input bg-transparent text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring font-mono"
                   >
                     {DATA_TYPES.map((dt) => (
@@ -207,7 +322,9 @@ export const WriteControlPage: React.FC = () => {
                   {t('write.targetValue')} *
                 </label>
                 <Input
-                  placeholder={type === 'bool' ? 'true / false' : 'Numeric or string value'}
+                  placeholder={
+                    type === 'bool' ? t('write.boolPlaceholder') : t('write.valuePlaceholder')
+                  }
                   value={value}
                   onChange={(e) => setValue(e.target.value)}
                   required
@@ -223,10 +340,10 @@ export const WriteControlPage: React.FC = () => {
             <CardFooter className="p-4 pt-0">
               <Button
                 type="submit"
-                disabled={writeMutation.isPending}
+                disabled={confirmOpen}
                 className="w-full sm:w-auto h-9 font-semibold flex items-center space-x-2 glow-primary"
               >
-                <span>{writeMutation.isPending ? t('common.loading') : t('write.submit')}</span>
+                <span>{t('write.submit')}</span>
                 <Send className="w-3.5 h-3.5" />
               </Button>
             </CardFooter>
@@ -236,27 +353,86 @@ export const WriteControlPage: React.FC = () => {
         {/* Right: Info Card */}
         <Card className="border-border/80 bg-card/60">
           <CardHeader className="p-4">
-            <CardTitle className="text-sm font-semibold">Concurrency & Retries</CardTitle>
-            <CardDescription className="text-xs">CoreC Control Plane Safety Specs</CardDescription>
+            <CardTitle className="text-sm font-semibold">{t('write.concurrencyRetries')}</CardTitle>
+            <CardDescription className="text-xs">
+              {t('write.concurrencyRetriesDesc')}
+            </CardDescription>
           </CardHeader>
           <CardContent className="p-4 pt-0 space-y-3 text-xs text-muted-foreground">
             <div className="p-3 rounded-lg bg-muted/40 border border-border/50 space-y-2">
-              <div className="font-semibold text-foreground">Command Concurrency</div>
-              <p>
-                Controlled via internal counting semaphore (default 16 concurrency), preventing slow
-                or disconnected PLCs from exhausting core goroutines.
-              </p>
+              <div className="font-semibold text-foreground">{t('write.commandConcurrency')}</div>
+              <p>{t('write.commandConcurrencyDesc')}</p>
             </div>
             <div className="p-3 rounded-lg bg-muted/40 border border-border/50 space-y-2">
-              <div className="font-semibold text-foreground">Write-Retry-Count</div>
-              <p>
-                Failed writes automatically retry up to 3 times before failing closed into Dead
-                Letter Queue for operator review.
-              </p>
+              <div className="font-semibold text-foreground">{t('write.writeRetryCount')}</div>
+              <p>{t('write.writeRetryCountDesc')}</p>
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Two-step write confirmation (INDUSTRIAL SAFETY) */}
+      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShieldAlert className="w-4 h-4 text-amber-500" />
+              <span>{t('write.confirmWriteTitle')}</span>
+            </DialogTitle>
+            <DialogDescription>{t('write.confirmWriteDesc')}</DialogDescription>
+          </DialogHeader>
+
+          {pendingCmd && (
+            <div className="rounded-lg border border-border/80 bg-muted/40 p-3">
+              <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 text-xs font-mono">
+                <span className="text-muted-foreground">{t('common.driver')}</span>
+                <span className="text-foreground break-all">{pendingCmd.driver}</span>
+                <span className="text-muted-foreground">{t('common.device')}</span>
+                <span className="text-foreground break-all">
+                  {pendingCmd.device || t('write.none')}
+                </span>
+                <span className="text-muted-foreground">{t('common.tag')}</span>
+                <span className="text-foreground break-all">{pendingCmd.tag}</span>
+                <span className="text-muted-foreground">{t('common.type')}</span>
+                <span className="text-foreground">{String(pendingCmd.type)}</span>
+                <span className="text-muted-foreground">{t('common.value')}</span>
+                <span className="text-foreground break-all">{String(pendingCmd.value)}</span>
+              </div>
+            </div>
+          )}
+
+          <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-500">
+            {t('write.confirmWarning')}
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setConfirmOpen(false)}
+              disabled={writeMutation.isPending}
+            >
+              {t('common.cancel')}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmWrite}
+              disabled={writeMutation.isPending || !pendingCmd}
+            >
+              {writeMutation.isPending ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                  {t('write.writing')}
+                </>
+              ) : (
+                <>
+                  <Send className="w-3.5 h-3.5 mr-1.5" />
+                  {t('write.confirmWrite')}
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Dead Letter Queue Section */}
       <Card className="border-border/80 bg-card/60">
@@ -281,29 +457,61 @@ export const WriteControlPage: React.FC = () => {
         </CardHeader>
 
         <CardContent className="p-4 pt-0">
-          {deadLetters.length === 0 ? (
+          {replayError && (
+            <div className="mb-3 p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-500 text-xs flex items-center space-x-2">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{t('write.replayFailed', { error: replayError })}</span>
+            </div>
+          )}
+
+          {loadingDlq ? (
+            <div className="flex items-center justify-center gap-2 py-8 text-xs text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              {t('common.loading')}
+            </div>
+          ) : errorDlq ? (
+            <div className="space-y-3 py-8 text-center">
+              <AlertCircle className="mx-auto h-8 w-8 text-rose-400" />
+              <div className="text-sm font-semibold">{t('common.error')}</div>
+              {dlqError instanceof Error && dlqError.message && (
+                <div className="mx-auto max-w-md break-all font-mono text-[11px] text-rose-400/80">
+                  {dlqError.message}
+                </div>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => refetchDeadLetters()}
+                disabled={fetchingDlq}
+                className="h-8 text-xs"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${fetchingDlq ? 'animate-spin' : ''}`} />
+                {t('common.retry')}
+              </Button>
+            </div>
+          ) : deadLetters.length === 0 ? (
             <div className="py-8 text-center text-xs text-muted-foreground flex flex-col items-center space-y-1">
               <CheckCircle2 className="w-6 h-6 text-emerald-400 mb-1" />
               <span>{t('write.noDeadLetters')}</span>
             </div>
           ) : (
             <div className="space-y-2">
-              {deadLetters.map((dl, idx) => (
+              {deadLetters.map((dl) => (
                 <div
-                  key={idx}
+                  key={`${dl.command.driver}-${dl.command.tag}-${dl.timestamp}`}
                   className="p-3 rounded-lg border border-rose-500/20 bg-rose-500/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
                 >
                   <div className="space-y-1 font-mono">
                     <div className="text-rose-400 font-semibold">
-                      [{dl.command.driver}] tag: {dl.command.tag} = {String(dl.command.value)} (
-                      {dl.command.type})
+                      [{dl.command.driver}] {t('common.tag')}: {dl.command.tag} ={' '}
+                      {String(dl.command.value)} ({dl.command.type})
                     </div>
                     <div className="text-[11px] text-muted-foreground">{dl.error}</div>
                     <div className="text-[10px] text-muted-foreground flex items-center space-x-2">
                       <Clock className="w-3 h-3" />
                       <span>{new Date(dl.failed_at).toLocaleString()}</span>
                       <span>•</span>
-                      <span>{dl.attempts} attempts exhausted</span>
+                      <span>{t('write.attemptsExhausted', { count: dl.attempts })}</span>
                     </div>
                   </div>
 

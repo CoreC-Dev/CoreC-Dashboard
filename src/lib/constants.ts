@@ -35,14 +35,14 @@ export const Quality = {
   Uncertain: 2,
 } as const
 
-export const QualityLabel: Record<number, { text: string; color: string }> = {
+export const QualityLabel: Record<number, { key: string; color: string }> = {
   [Quality.Good]: {
-    text: 'Good',
+    key: 'common.good',
     color: 'text-emerald-500 bg-emerald-500/10 border-emerald-500/30',
   },
-  [Quality.Bad]: { text: 'Bad', color: 'text-rose-500 bg-rose-500/10 border-rose-500/30' },
+  [Quality.Bad]: { key: 'common.bad', color: 'text-rose-500 bg-rose-500/10 border-rose-500/30' },
   [Quality.Uncertain]: {
-    text: 'Uncertain',
+    key: 'common.uncertain',
     color: 'text-amber-500 bg-amber-500/10 border-amber-500/30',
   },
 }
@@ -54,31 +54,29 @@ export const ConnState = {
   Error: 3,
 } as const
 
-export const ConnStateLabel: Record<
-  number,
-  { text: string; dotColor: string; badgeColor: string }
-> = {
-  [ConnState.Disconnected]: {
-    text: 'Disconnected',
-    dotColor: 'bg-zinc-500',
-    badgeColor: 'text-zinc-400 bg-zinc-500/10 border-zinc-500/20',
-  },
-  [ConnState.Connecting]: {
-    text: 'Connecting',
-    dotColor: 'bg-amber-400 animate-pulse',
-    badgeColor: 'text-amber-400 bg-amber-500/10 border-amber-500/30',
-  },
-  [ConnState.Connected]: {
-    text: 'Connected',
-    dotColor: 'bg-emerald-400 glow-success',
-    badgeColor: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30',
-  },
-  [ConnState.Error]: {
-    text: 'Error',
-    dotColor: 'bg-rose-500 glow-danger',
-    badgeColor: 'text-rose-400 bg-rose-500/10 border-rose-500/30',
-  },
-}
+export const ConnStateLabel: Record<number, { key: string; dotColor: string; badgeColor: string }> =
+  {
+    [ConnState.Disconnected]: {
+      key: 'common.disconnected',
+      dotColor: 'bg-zinc-500',
+      badgeColor: 'text-zinc-400 bg-zinc-500/10 border-zinc-500/20',
+    },
+    [ConnState.Connecting]: {
+      key: 'common.connecting',
+      dotColor: 'bg-amber-400 animate-pulse',
+      badgeColor: 'text-amber-400 bg-amber-500/10 border-amber-500/30',
+    },
+    [ConnState.Connected]: {
+      key: 'common.connected',
+      dotColor: 'bg-emerald-400 glow-success',
+      badgeColor: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30',
+    },
+    [ConnState.Error]: {
+      key: 'common.error',
+      dotColor: 'bg-rose-500 glow-danger',
+      badgeColor: 'text-rose-400 bg-rose-500/10 border-rose-500/30',
+    },
+  }
 
 export const DriverProtocols = [
   { value: 'modbus-tcp', label: 'Modbus TCP' },

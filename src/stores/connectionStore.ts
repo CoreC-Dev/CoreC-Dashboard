@@ -12,7 +12,9 @@ interface ConnectionState {
   setConnection: (url: string, secret: string) => void
   setConnected: (connected: boolean, info?: { name?: string; version?: string }) => void
   setError: (error: string | null) => void
+  clearAuth: () => void
   disconnect: () => void
+  revalidate: () => Promise<void>
 }
 
 const STORAGE_KEY = 'corec_connection'
@@ -38,11 +40,16 @@ const getInitialState = () => {
 
 const initial = getInitialState()
 
-export const useConnectionStore = create<ConnectionState>((set) => ({
+export const useConnectionStore = create<ConnectionState>((set, get) => ({
   baseUrl: initial.baseUrl,
   secret: initial.secret,
+  // If persisted credentials exist, treat the session as "connecting" while we
+  // revalidate against the server on startup. This keeps RequireConnection
+  // happy (baseUrl && secret truthy) AND lets React Query hooks run once the
+  // probe resolves. Without this, a page reload leaves isConnected=false and
+  // every query's `enabled` gate stays closed — the "refresh shows blank" bug.
   isConnected: false,
-  isConnecting: false,
+  isConnecting: !!(initial.baseUrl && initial.secret),
   lastError: null,
   serverVersion: null,
   serverName: null,
@@ -65,6 +72,22 @@ export const useConnectionStore = create<ConnectionState>((set) => ({
 
   setError: (error) => set({ lastError: error, isConnecting: false, isConnected: false }),
 
+  // Called on 401 (auth failure / revoked token). Clears the stored secret so
+  // RequireConnection redirects to /login instead of leaving the operator on a
+  // frozen page with stale data. For an industrial control dashboard, a
+  // silently-frozen view is a safety concern.
+  clearAuth: () => {
+    localStorage.removeItem(STORAGE_KEY)
+    set({
+      secret: '',
+      isConnected: false,
+      isConnecting: false,
+      lastError: 'Authentication failed — please reconnect',
+      serverName: null,
+      serverVersion: null,
+    })
+  },
+
   disconnect: () => {
     localStorage.removeItem(STORAGE_KEY)
     set({
@@ -75,5 +98,51 @@ export const useConnectionStore = create<ConnectionState>((set) => ({
       serverName: null,
       serverVersion: null,
     })
+  },
+
+  // Probe the persisted endpoint on app startup (called from App.tsx mount).
+  // On success, flip isConnected to true so React Query hooks activate.
+  // On failure, clear the connecting flag so the user is sent to /login.
+  // Uses AbortController so a hung host can't leave isConnecting stuck forever.
+  revalidate: async () => {
+    const { baseUrl, secret } = get()
+    if (!baseUrl || !secret) {
+      set({ isConnecting: false })
+      return
+    }
+    set({ isConnecting: true })
+    const ctrl = new AbortController()
+    const timeoutId = setTimeout(() => ctrl.abort(), 10_000)
+    try {
+      const res = await fetch(`${baseUrl}/`, {
+        headers: { Authorization: `Bearer ${secret}` },
+        signal: ctrl.signal,
+      })
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`)
+      }
+      const info = await res.json()
+      set({
+        isConnected: true,
+        isConnecting: false,
+        lastError: null,
+        serverName: info?.name ?? null,
+        serverVersion: info?.version ?? null,
+      })
+    } catch (err: unknown) {
+      const errMsg =
+        err instanceof Error
+          ? err.name === 'AbortError'
+            ? 'Connection timed out'
+            : err.message
+          : 'Revalidation failed'
+      set({
+        isConnected: false,
+        isConnecting: false,
+        lastError: errMsg,
+      })
+    } finally {
+      clearTimeout(timeoutId)
+    }
   },
 }))
