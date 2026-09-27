@@ -14,6 +14,14 @@ export default defineConfig({
   server: {
     port: 3000,
     open: false,
+    proxy: {
+      '/corec-api': {
+        target: 'http://127.0.0.1:9090',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/corec-api/, ''),
+        ws: true,
+      },
+    },
   },
   build: {
     chunkSizeWarningLimit: 1200,
