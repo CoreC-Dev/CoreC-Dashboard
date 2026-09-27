@@ -61,11 +61,13 @@ export const ConnectionPage: React.FC = () => {
       setConnection(cleanUrl, cleanToken)
       setConnected(true, { name: info.name, version: info.version })
       navigate('/monitor/dashboard')
-    } catch (err: any) {
+    } catch (err: unknown) {
       const msg =
-        err?.name === 'AbortError'
+        err instanceof Error && err.name === 'AbortError'
           ? t('connection.connectionFailed', { defaultValue: 'Connection timed out' })
-          : err.message || t('connection.connectionFailed')
+          : err instanceof Error
+            ? err.message
+            : t('connection.connectionFailed')
       setErrorMsg(msg)
       setError(msg)
     } finally {

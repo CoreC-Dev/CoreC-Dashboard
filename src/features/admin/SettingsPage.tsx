@@ -1,4 +1,14 @@
-import { Download, Globe, HardDrive, Moon, RotateCcw, Save, Server, Sun } from 'lucide-react'
+import {
+  Download,
+  Globe,
+  HardDrive,
+  Moon,
+  RotateCcw,
+  Save,
+  Server,
+  Sun,
+  Upload,
+} from 'lucide-react'
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -10,6 +20,7 @@ import { setLocale } from '@/i18n'
 import { useConnectionStore } from '@/stores/connectionStore'
 import { useDashboardStore } from '@/stores/dashboardStore'
 import { type ThemeMode, useThemeStore } from '@/stores/themeStore'
+import type { DashboardLayout } from '@/types/dashboard'
 
 export const SettingsPage: React.FC = () => {
   const { t, i18n } = useTranslation()
@@ -27,12 +38,16 @@ export const SettingsPage: React.FC = () => {
   const [token, setToken] = useState(secret)
   const [savedNotice, setSavedNotice] = useState(false)
   const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [layoutNotice, setLayoutNotice] = useState<'success' | 'failed' | null>(null)
+  const layoutNoticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const layoutFileInputRef = useRef<HTMLInputElement>(null)
 
-  // Clear any pending "Saved!" auto-hide timer when the page unmounts so we
-  // never call setState on an unmounted component.
+  // Clear any pending auto-hide timers when the page unmounts so we never
+  // call setState on an unmounted component.
   useEffect(() => {
     return () => {
       if (savedTimerRef.current) clearTimeout(savedTimerRef.current)
+      if (layoutNoticeTimerRef.current) clearTimeout(layoutNoticeTimerRef.current)
     }
   }, [])
 
@@ -55,6 +70,47 @@ export const SettingsPage: React.FC = () => {
     document.body.appendChild(downloadAnchor)
     downloadAnchor.click()
     downloadAnchor.remove()
+  }
+
+  const showLayoutNotice = (kind: 'success' | 'failed') => {
+    setLayoutNotice(kind)
+    if (layoutNoticeTimerRef.current) clearTimeout(layoutNoticeTimerRef.current)
+    layoutNoticeTimerRef.current = setTimeout(() => setLayoutNotice(null), 2500)
+  }
+
+  const handleLayoutImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      const text = ev.target?.result
+      try {
+        const parsed = JSON.parse(typeof text === 'string' ? text : '')
+        if (!parsed || !Array.isArray(parsed.cards)) {
+          showLayoutNotice('failed')
+          return
+        }
+        const now = Date.now()
+        const newLayout: DashboardLayout = {
+          id: typeof parsed.id === 'string' ? parsed.id : `imported-${now}`,
+          name: typeof parsed.name === 'string' ? parsed.name : 'Imported Layout',
+          description: typeof parsed.description === 'string' ? parsed.description : undefined,
+          cards: parsed.cards,
+          createdAt: typeof parsed.createdAt === 'number' ? parsed.createdAt : now,
+          updatedAt: now,
+        }
+        // Mirror dashboardStore's localStorage persistence so imported
+        // layouts survive reload (the store exposes no setLayout action).
+        localStorage.setItem('corec_dashboard_layout', JSON.stringify(newLayout))
+        useDashboardStore.setState({ currentLayout: newLayout })
+        showLayoutNotice('success')
+      } catch {
+        showLayoutNotice('failed')
+      }
+    }
+    reader.onerror = () => showLayoutNotice('failed')
+    reader.readAsText(file)
+    e.target.value = ''
   }
 
   return (
@@ -214,21 +270,59 @@ export const SettingsPage: React.FC = () => {
           </CardDescription>
         </CardHeader>
 
-        <CardContent className="p-4 flex items-center space-x-3">
-          <Button variant="outline" size="sm" onClick={exportLayoutJson} className="h-8 text-xs">
-            <Download className="w-3.5 h-3.5 mr-1" />
-            <span>{t('settings.exportLayout', { defaultValue: 'Export Layout JSON' })}</span>
-          </Button>
+        <CardContent className="p-4 space-y-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <Button variant="outline" size="sm" onClick={exportLayoutJson} className="h-8 text-xs">
+              <Download className="w-3.5 h-3.5 mr-1" />
+              <span>{t('settings.exportLayout', { defaultValue: 'Export Layout' })}</span>
+            </Button>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={resetToDefault}
-            className="h-8 text-xs text-rose-400 hover:text-rose-500 hover:bg-rose-500/10"
-          >
-            <RotateCcw className="w-3.5 h-3.5 mr-1" />
-            <span>{t('settings.resetFactory', { defaultValue: 'Reset to Factory Default' })}</span>
-          </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => layoutFileInputRef.current?.click()}
+              className="h-8 text-xs"
+            >
+              <Upload className="w-3.5 h-3.5 mr-1" />
+              <span>{t('settings.importLayout', { defaultValue: 'Import Layout' })}</span>
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={resetToDefault}
+              className="h-8 text-xs text-rose-400 hover:text-rose-500 hover:bg-rose-500/10"
+            >
+              <RotateCcw className="w-3.5 h-3.5 mr-1" />
+              <span>
+                {t('settings.resetFactory', { defaultValue: 'Reset to Factory Default' })}
+              </span>
+            </Button>
+
+            <input
+              ref={layoutFileInputRef}
+              type="file"
+              accept=".json"
+              onChange={handleLayoutImport}
+              className="hidden"
+            />
+          </div>
+
+          {layoutNotice && (
+            <div
+              className={`text-xs font-medium ${
+                layoutNotice === 'failed' ? 'text-rose-400' : 'text-emerald-400'
+              }`}
+            >
+              {layoutNotice === 'failed'
+                ? t('dashboardEditor.importFailed', {
+                    defaultValue: 'Failed to import layout: invalid JSON',
+                  })
+                : t('dashboardEditor.importSuccess', {
+                    defaultValue: 'Layout imported successfully',
+                  })}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

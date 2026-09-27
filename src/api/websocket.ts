@@ -2,7 +2,7 @@ import { useConnectionStore } from '@/stores/connectionStore'
 
 export type WSStatus = 'connecting' | 'open' | 'closed' | 'error' | 'rejected'
 
-export class CoreCWebSocket<T = any> {
+export class CoreCWebSocket<T = unknown> {
   private path: string
   private params: Record<string, string>
   private ws: WebSocket | null = null

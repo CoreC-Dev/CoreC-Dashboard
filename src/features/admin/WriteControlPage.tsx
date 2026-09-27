@@ -9,12 +9,23 @@ import {
   Send,
   ShieldAlert,
   Terminal,
+  Trash2,
 } from 'lucide-react'
 import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ApiError } from '@/api/client'
 import { useDeadLetters, useDrivers, useWriteTag } from '@/api/hooks'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -34,7 +45,7 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import type { DataTypeString } from '@/lib/constants'
-import type { WriteCommand } from '@/types/models'
+import type { DeadLetterEntry, WriteCommand } from '@/types/models'
 
 const DATA_TYPES: DataTypeString[] = [
   'bool',
@@ -90,9 +101,19 @@ export const WriteControlPage: React.FC = () => {
   const [replayError, setReplayError] = useState<string | null>(null)
   const [pendingCmd, setPendingCmd] = useState<WriteCommand | null>(null)
   const [confirmOpen, setConfirmOpen] = useState(false)
+  const [clearConfirmOpen, setClearConfirmOpen] = useState(false)
+  const [clearedDlqKeys, setClearedDlqKeys] = useState<Set<string>>(new Set())
+  const [dlqClearedMsg, setDlqClearedMsg] = useState<string | null>(null)
 
   const drivers = driversData?.drivers || []
   const deadLetters = deadLettersData?.failed_writes || []
+
+  // CoreC exposes no DELETE endpoint for dead letters, so "Clear All" is a
+  // client-side hide: cleared entry keys are tracked locally and filtered out
+  // of the rendered list. Newly arriving failures (new failed_at timestamps)
+  // still surface, while refetched-but-already-cleared entries stay hidden.
+  const dlqKeyOf = (dl: DeadLetterEntry) => `${dl.command.driver}-${dl.command.tag}-${dl.failed_at}`
+  const visibleDeadLetters = deadLetters.filter((dl) => !clearedDlqKeys.has(dlqKeyOf(dl)))
 
   const parseValue = (raw: string, dt: DataTypeString): string | number | boolean => {
     if (dt === 'bool') {
@@ -216,6 +237,18 @@ export const WriteControlPage: React.FC = () => {
             : t('write.unknownError')
       setReplayError(msg)
     }
+  }
+
+  // Industrial safety: clearing is a second-confirmed action. The AlertDialog
+  // gates the actual state mutation behind an explicit "Confirm" click.
+  const handleClearDeadLetters = () => {
+    setClearedDlqKeys((prev) => {
+      const next = new Set(prev)
+      for (const dl of deadLetters) next.add(dlqKeyOf(dl))
+      return next
+    })
+    setDlqClearedMsg(t('write.deadLettersCleared'))
+    setClearConfirmOpen(false)
   }
 
   return (
@@ -444,19 +477,40 @@ export const WriteControlPage: React.FC = () => {
             </CardTitle>
             <CardDescription className="text-xs">{t('write.deadLetterDesc')}</CardDescription>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => refetchDeadLetters()}
-            disabled={fetchingDlq}
-            className="h-8 text-xs"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${fetchingDlq ? 'animate-spin' : ''}`} />
-            <span>{t('common.refresh')}</span>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setClearConfirmOpen(true)}
+              disabled={visibleDeadLetters.length === 0 || fetchingDlq}
+              className="h-8 text-xs"
+            >
+              <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+              <span>{t('write.clearAll')}</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setDlqClearedMsg(null)
+                refetchDeadLetters()
+              }}
+              disabled={fetchingDlq}
+              className="h-8 text-xs"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${fetchingDlq ? 'animate-spin' : ''}`} />
+              <span>{t('common.refresh')}</span>
+            </Button>
+          </div>
         </CardHeader>
 
         <CardContent className="p-4 pt-0">
+          {dlqClearedMsg && (
+            <div className="mb-3 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs flex items-center space-x-2">
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+              <span>{dlqClearedMsg}</span>
+            </div>
+          )}
           {replayError && (
             <div className="mb-3 p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-500 text-xs flex items-center space-x-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
@@ -489,14 +543,14 @@ export const WriteControlPage: React.FC = () => {
                 {t('common.retry')}
               </Button>
             </div>
-          ) : deadLetters.length === 0 ? (
+          ) : visibleDeadLetters.length === 0 ? (
             <div className="py-8 text-center text-xs text-muted-foreground flex flex-col items-center space-y-1">
               <CheckCircle2 className="w-6 h-6 text-emerald-400 mb-1" />
               <span>{t('write.noDeadLetters')}</span>
             </div>
           ) : (
             <div className="space-y-2">
-              {deadLetters.map((dl) => (
+              {visibleDeadLetters.map((dl) => (
                 <div
                   key={`${dl.command.driver}-${dl.command.tag}-${dl.timestamp}`}
                   className="p-3 rounded-lg border border-rose-500/20 bg-rose-500/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
@@ -531,6 +585,28 @@ export const WriteControlPage: React.FC = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Dead letter batch clear confirmation (INDUSTRIAL SAFETY — double confirm) */}
+      <AlertDialog open={clearConfirmOpen} onOpenChange={setClearConfirmOpen}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertOctagon className="w-4 h-4 text-rose-400" />
+              <span>{t('write.clearAllConfirm')}</span>
+            </AlertDialogTitle>
+            <AlertDialogDescription>{t('write.clearAllDesc')}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('write.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleClearDeadLetters}
+              className="bg-rose-600 text-white shadow hover:bg-rose-600/90"
+            >
+              {t('write.confirm')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

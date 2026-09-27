@@ -95,7 +95,7 @@ export const TopologyPage: React.FC = () => {
                       </div>
                       <div className="flex items-center gap-2">
                         <Badge variant="outline" className="text-[10px]">
-                          {d.tag_count} Tags
+                          {t('topology.tagsCount', { count: d.tag_count })}
                         </Badge>
                         <Badge variant="outline" className={`text-[10px] ${st.badgeColor}`}>
                           {t(st.key)}
@@ -117,15 +117,18 @@ export const TopologyPage: React.FC = () => {
               {serverInfo?.name || 'corec-node-01'}
             </div>
             <div className="text-xs text-primary font-mono font-medium mt-0.5">
-              Status: {stats?.status || '—'}
+              {t('topology.status')}: {stats?.status || '—'}
             </div>
             <div className="text-[10px] text-muted-foreground mt-1">
-              Uptime: {formatUptime(stats?.uptime || 0)}
+              {t('topology.uptime')}: {formatUptime(stats?.uptime || 0)}
             </div>
             <div className="text-[10px] text-muted-foreground mt-2 border-t border-border/60 pt-2 w-full space-y-1">
-              <div>Throughput: {stats?.points_per_sec?.toFixed(1) || '0.0'} pts/s</div>
               <div>
-                Read: {formatNumber(stats?.total_read || 0)} · Pub:{' '}
+                {t('topology.throughput')}: {stats?.points_per_sec?.toFixed(1) || '0.0'}{' '}
+                {t('topology.throughputUnit')}
+              </div>
+              <div>
+                {t('topology.read')}: {formatNumber(stats?.total_read || 0)} · {t('topology.pub')}:{' '}
                 {formatNumber(stats?.total_publish || 0)}
               </div>
               <div>{t('topology.tagline')}</div>
@@ -147,25 +150,27 @@ export const TopologyPage: React.FC = () => {
                   })}
                 </div>
               ) : (
-                transports.map((t) => {
-                  const st = ConnStateLabel[t.state] || ConnStateLabel[0]
+                transports.map((transport) => {
+                  const st = ConnStateLabel[transport.state] || ConnStateLabel[0]
                   return (
                     <div
-                      key={t.name}
+                      key={transport.name}
                       className="p-3 rounded-lg border border-border/80 bg-card/40 flex items-center justify-between text-xs"
                     >
                       <div className="flex items-center gap-2">
                         <span className={`w-2 h-2 rounded-full ${st.dotColor}`} />
                         <div>
-                          <div className="font-semibold text-foreground">{t.name}</div>
+                          <div className="font-semibold text-foreground">{transport.name}</div>
                           <div className="text-[10px] text-muted-foreground font-mono">
-                            {t.type}
+                            {transport.type}
                           </div>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <Badge variant="outline" className="text-[10px]">
-                          {formatNumber(t.published)} sent
+                          {t('topology.publishedSent', {
+                            count: formatNumber(transport.published),
+                          })}
                         </Badge>
                         <Badge variant="outline" className={`text-[10px] ${st.badgeColor}`}>
                           {t(st.key)}
@@ -186,7 +191,10 @@ export const TopologyPage: React.FC = () => {
           <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center space-x-1.5 mb-3">
             <GitBranch className="w-3.5 h-3.5 text-amber-400" />
             <span>
-              Rule Pipeline ({activeRules.length}/{rules.length} active)
+              {t('topology.rulePipelineActive', {
+                active: activeRules.length,
+                total: rules.length,
+              })}
             </span>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -210,7 +218,7 @@ export const TopologyPage: React.FC = () => {
                   </Badge>
                   {rule.disabled && (
                     <Badge variant="outline" className="text-[9px] text-muted-foreground">
-                      OFF
+                      {t('topology.off')}
                     </Badge>
                   )}
                   {(rule.hit_count > 0 || rule.miss_count > 0) && (

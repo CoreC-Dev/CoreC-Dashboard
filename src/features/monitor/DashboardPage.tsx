@@ -115,7 +115,7 @@ export const DashboardPage: React.FC = () => {
                 {transports.length
                   ? Math.round((connectedTransports / transports.length) * 100)
                   : 100}
-                % Connected
+                % {t('dashboard.connected')}
               </div>
             </div>
             {/* Total Read */}
@@ -180,10 +180,11 @@ export const DashboardPage: React.FC = () => {
                     </div>
                     <div className="flex items-center space-x-3 text-[10px]">
                       <span className="text-muted-foreground">
-                        Tags: <span className="font-mono font-medium">{drv.tag_count}</span>
+                        {t('dashboard.tags')}:{' '}
+                        <span className="font-mono font-medium">{drv.tag_count}</span>
                       </span>
                       <span className="text-muted-foreground">
-                        Reads:{' '}
+                        {t('dashboard.reads')}:{' '}
                         <span className="font-mono font-medium">
                           {formatNumber(drv.read_count)}
                         </span>
@@ -223,11 +224,12 @@ export const DashboardPage: React.FC = () => {
                     </div>
                     <div className="flex items-center space-x-3 text-[10px]">
                       <span className="text-muted-foreground">
-                        Pub:{' '}
+                        {t('dashboard.pub')}:{' '}
                         <span className="font-mono font-medium">{formatNumber(tr.published)}</span>
                       </span>
                       <span className="text-muted-foreground">
-                        Queue: <span className="font-mono font-medium">{tr.queue_size}</span>
+                        {t('dashboard.queue')}:{' '}
+                        <span className="font-mono font-medium">{tr.queue_size}</span>
                       </span>
                       <Badge variant="outline" className={`text-[9px] ${st.badgeColor}`}>
                         {t(st.key)}
@@ -269,7 +271,7 @@ export const DashboardPage: React.FC = () => {
                       variant="outline"
                       className="border-rose-500/30 text-rose-400 text-[9px]"
                     >
-                      {item.attempts} retries
+                      {t('dashboard.retries', { count: item.attempts })}
                     </Badge>
                     <div className="text-[9px] text-muted-foreground mt-0.5">
                       {new Date(item.failed_at).toLocaleTimeString()}

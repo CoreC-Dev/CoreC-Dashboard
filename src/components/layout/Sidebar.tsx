@@ -20,6 +20,7 @@ export const Sidebar: React.FC = () => {
 
   const navGroups = [
     {
+      id: 'southbound',
       title: t('nav.groupSouthbound'),
       items: [
         { path: '/admin/drivers', label: t('nav.drivers'), icon: Cpu },
@@ -28,6 +29,7 @@ export const Sidebar: React.FC = () => {
       ],
     },
     {
+      id: 'control',
       title: t('nav.groupControl'),
       items: [
         { path: '/admin/write', label: t('nav.write'), icon: TerminalSquare },
@@ -36,6 +38,7 @@ export const Sidebar: React.FC = () => {
       ],
     },
     {
+      id: 'system',
       title: t('nav.groupSystem'),
       items: [
         { path: '/admin/topology', label: t('nav.topology'), icon: Network },
@@ -48,8 +51,8 @@ export const Sidebar: React.FC = () => {
   return (
     <aside className="w-56 shrink-0 border-r border-border bg-card/40 backdrop-blur-sm flex flex-col justify-between p-3 select-none">
       <div className="space-y-6">
-        {navGroups.map((group, idx) => (
-          <div key={idx} className="space-y-1">
+        {navGroups.map((group) => (
+          <div key={group.id} className="space-y-1">
             <div className="px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
               {group.title}
             </div>

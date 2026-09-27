@@ -133,7 +133,10 @@
     "readPerSec": "读取 / 秒",
     "publishPerSec": "发布 / 秒",
     "heapAllocMb": "堆分配 (MB)",
-    "sysMemMb": "系统内存 (MB)"
+    "sysMemMb": "系统内存 (MB)",
+    "tags": "测点",
+    "reads": "读取",
+    "connected": "已连接"
   },
   "tags": {
     "title": "实时测点监控",
@@ -210,7 +213,13 @@
     "errBoolInvalid": "布尔值必须为 true、false、0 或 1",
     "errNotNumber": "值 \"{{raw}}\" 不是类型 {{dt}} 的有效数字",
     "errNotFinite": "值必须有限（不允许 Infinity）",
-    "errOutOfRange": "值 {{n}} 超出 {{dt}} 的范围（有效范围：{{min}} 到 {{max}}）"
+    "errOutOfRange": "值 {{n}} 超出 {{dt}} 的范围（有效范围：{{min}} 到 {{max}}）",
+    "clearAll": "全部清除",
+    "clearAllConfirm": "确定要清除所有死信吗？",
+    "clearAllDesc": "这将从列表中移除所有失败的下发指令。",
+    "confirm": "确认",
+    "cancel": "取消",
+    "deadLettersCleared": "死信已清除"
   },
   "diagnostics": {
     "title": "系统可观测性与实时诊断",
@@ -234,7 +243,14 @@
     "busDropped": "总线丢弃",
     "pprofEndpoints": "Go pprof 性能剖析端点",
     "pprofDesc": "堆、协程与 CPU profile 的直接下载链接",
-    "pprofEndpoint": "/debug/pprof/{{name}}"
+    "pprofEndpoint": "/debug/pprof/{{name}}",
+    "latencyDataAge": "延迟与数据年龄",
+    "histogramDesc": "直方图快照 (均值 = Σ/n) 及从 /metrics 解析的指标",
+    "readLatency": "读取延迟",
+    "publishLatency": "发布延迟",
+    "httpRequests": "HTTP 请求",
+    "dataAge": "数据年龄",
+    "currentMaxAge": "当前最大年龄"
   },
   "drivers": {
     "title": "南向驱动",
@@ -260,7 +276,43 @@
     "colType": "类型",
     "colQuality": "质量",
     "colLastPolled": "最近轮询",
-    "detailNotFound": "未找到驱动"
+    "detailNotFound": "未找到驱动",
+    "editConfig": {
+      "title": "编辑配置",
+      "description": "编辑连接参数并通过 PUT /configs 热重载驱动。",
+      "toggle": "切换编辑配置区域",
+      "host": "主机地址",
+      "port": "端口",
+      "slaveId": "从站 ID",
+      "tagsFile": "测点文件",
+      "serialDevice": "串口设备",
+      "baudRate": "波特率",
+      "dataBits": "数据位",
+      "parity": "校验位",
+      "stopBits": "停止位",
+      "rack": "机架",
+      "slot": "插槽",
+      "endpoint": "端点",
+      "securityPolicy": "安全策略",
+      "securityMode": "安全模式",
+      "generateAndReload": "生成 YAML 并重载",
+      "reloading": "重载中...",
+      "reloadSuccess": "配置已生成并热重载成功。",
+      "reloadFailed": "热重载配置失败。",
+      "yamlPreview": "生成的 YAML 预览",
+      "unsupportedProtocol": "该驱动协议未通过表单暴露可编辑的连接参数，请使用配置中心的 YAML 编辑器。"
+    },
+    "driverName": "驱动名称",
+    "protocolType": "协议类型",
+    "connectionState": "连接状态",
+    "tagCount": "测点数量",
+    "readCount": "读取次数",
+    "errorCount": "错误次数",
+    "reconnectCount": "重连次数",
+    "notRegistered": "此 CoreC 实例上未注册名为 \"{{name}}\" 的驱动。",
+    "noNameProvided": "URL 中未提供驱动名称。",
+    "totalErrors": "总错误",
+    "totalReads": "总读取"
   },
   "transports": {
     "title": "北向传输",
@@ -277,7 +329,35 @@
     "commandsReceived": "接收指令",
     "lastPublished": "最近发布",
     "never": "从未",
-    "detailNotFound": "未找到传输"
+    "detailNotFound": "未找到传输",
+    "editConfig": {
+      "title": "编辑配置",
+      "description": "编辑发布参数并通过 PUT /configs 热重载传输。",
+      "toggle": "切换编辑配置区域",
+      "broker": "Broker 地址",
+      "topic": "主题",
+      "clientId": "客户端 ID",
+      "qos": "QoS 等级",
+      "username": "用户名",
+      "password": "密码",
+      "url": "URL",
+      "method": "请求方法",
+      "headers": "请求头",
+      "batchSize": "批量大小",
+      "flushInterval": "刷新间隔",
+      "generateAndReload": "生成 YAML 并重载",
+      "reloading": "重载中...",
+      "reloadSuccess": "配置已生成并热重载成功。",
+      "reloadFailed": "热重载配置失败。",
+      "yamlPreview": "生成的 YAML 预览",
+      "unsupportedProtocol": "该传输协议未通过表单暴露可编辑参数，请使用配置中心的 YAML 编辑器。"
+    },
+    "noNameProvided": "URL 中未提供传输名称。",
+    "transportName": "传输名称",
+    "protocolType": "协议类型",
+    "connectionState": "连接状态",
+    "lastPublish": "上次发布",
+    "notRegistered": "此 CoreC 实例上未注册名为 \"{{name}}\" 的传输。"
   },
   "rules": {
     "title": "规则编排与路由",
@@ -321,7 +401,24 @@
     "phGroup": "例如 zone-1",
     "phTag": "例如 temperature",
     "phValue": "例如 42.5",
-    "toggleFailed": "切换规则失败"
+    "toggleFailed": "切换规则失败",
+    "edit": {
+      "title": "编辑规则",
+      "name": "规则名称",
+      "match": "匹配表达式 (DSL)",
+      "action": "动作",
+      "target": "目标传输",
+      "priority": "优先级",
+      "generateAndReload": "生成 YAML 并重载",
+      "reloadSuccess": "规则 YAML 已生成并成功热重载！",
+      "reloadFailed": "生成 YAML 并重载失败",
+      "matchPlaceholder": "tag == 'temperature' && value > 95",
+      "actionForward": "转发",
+      "actionDrop": "丢弃",
+      "actionAlert": "告警",
+      "actionTransform": "转换",
+      "actionMirror": "镜像"
+    }
   },
   "config": {
     "title": "配置中心",
@@ -365,7 +462,18 @@
     "noRules": "未注册规则",
     "colType": "类型",
     "colMatch": "匹配",
-    "notAvailable": "无"
+    "notAvailable": "无",
+    "history": "变更历史",
+    "historyDesc": "最近的配置快照",
+    "historyEmpty": "暂无保存的快照",
+    "restore": "恢复",
+    "restored": "快照已恢复到编辑器",
+    "diff": "变更预览",
+    "diffDesc": "与上次提交版本的差异",
+    "diffNoChanges": "未检测到变更",
+    "diffAdded": "新增",
+    "diffRemoved": "删除",
+    "snapshotSaved": "快照已保存到历史"
   },
   "topology": {
     "title": "链式核心网格拓扑",
@@ -387,7 +495,15 @@
     "version": "版本",
     "listen": "监听地址",
     "logLevel": "日志级别",
-    "tagline": "零锁数据总线 · 首匹配优先规则"
+    "tagline": "零锁数据总线 · 首匹配优先规则",
+    "status": "状态",
+    "uptime": "运行时间",
+    "throughput": "吞吐量",
+    "throughputUnit": "点/秒",
+    "read": "读取",
+    "pub": "发布",
+    "rulePipelineActive": "规则管道 ({{active}}/{{total}} 活跃)",
+    "off": "关闭"
   },
   "settings": {
     "title": "系统设置",
@@ -412,7 +528,8 @@
     "english": "English",
     "layoutBackup": "大屏布局备份",
     "layoutBackupDesc": "导出或重置自定义大屏网格布局",
-    "exportLayout": "导出布局 JSON",
+    "exportLayout": "导出布局",
+    "importLayout": "导入布局",
     "resetFactory": "恢复出厂默认"
   },
   "alerts": {
@@ -433,7 +550,13 @@
     "attemptsExhausted": "{{count}} 次重试耗尽",
     "realtimeWarning": "实时警告与错误事件",
     "realtimeWarningDesc": "通过 WebSocket /logs 实时推送 (level ≥ 4)",
-    "noEvents": "CoreC 核心近期未产生任何警告或错误事件"
+    "noEvents": "CoreC 核心近期未产生任何警告或错误事件",
+    "soundOn": "声音开启",
+    "soundOff": "声音关闭",
+    "notificationsOn": "通知开启",
+    "notificationsOff": "通知关闭",
+    "notificationTitle": "CoreC 告警",
+    "notificationBody": "检测到新的错误级事件"
   },
   "dashboardEditor": {
     "title": "大屏布局编辑器",
@@ -463,7 +586,21 @@
     "cardTransportMatrixTitle": "北向传输矩阵",
     "cardTransportMatrixDesc": "MQTT、HTTP 推送通道、发布计数与队列大小",
     "cardAlertsTitle": "告警与死信队列",
-    "cardAlertsDesc": "告警触发测点与重试耗尽的写入"
+    "cardAlertsDesc": "告警触发测点与重试耗尽的写入",
+    "export": "导出布局",
+    "import": "导入布局",
+    "importSuccess": "布局导入成功",
+    "importFailed": "布局导入失败：JSON 格式无效",
+    "templates": "预设模板",
+    "templatesDesc": "使用预设布局快速开始",
+    "templateOverview": "总览",
+    "templateProduction": "生产",
+    "templateDebug": "调试",
+    "templateApplied": "模板已应用",
+    "dragHint": "拖动卡片以重新定位 · 拖动右下角以调整大小",
+    "gridPreview": "实时网格预览",
+    "gridPreviewDesc": "拖拽和调整卡片大小 — 更改会自动保存到布局中",
+    "removeCard": "移除卡片"
   },
   "monitor": {
     "realtimeStreamConnected": "实时流已连接"

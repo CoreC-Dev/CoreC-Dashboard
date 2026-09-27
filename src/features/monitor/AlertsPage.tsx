@@ -3,6 +3,8 @@ import {
   AlertOctagon,
   AlertTriangle,
   Bell,
+  BellOff,
+  BellRing,
   CheckCircle2,
   Clock,
   RefreshCw,
@@ -10,7 +12,7 @@ import {
   ShieldAlert,
 } from 'lucide-react'
 import type React from 'react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useDeadLetters, useRules, useWriteTag } from '@/api/hooks'
 import { CoreCWebSocket } from '@/api/websocket'
@@ -18,6 +20,66 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import type { LogEvent, WriteCommand } from '@/types/models'
+
+const SOUND_KEY = 'corec_alert_sound'
+const NOTIF_KEY = 'corec_alert_notification'
+
+function readPref(key: string): boolean {
+  try {
+    return localStorage.getItem(key) === '1'
+  } catch {
+    return false
+  }
+}
+
+function writePref(key: string, value: boolean): void {
+  try {
+    localStorage.setItem(key, value ? '1' : '0')
+  } catch {
+    // localStorage unavailable (private mode / SSR) — preference stays in-memory only
+  }
+}
+
+// Plays a short 800 Hz beep via the Web Audio API. The AudioContext is created
+// lazily and stored in a ref so it can be unlocked by a user gesture (the
+// sound toggle click) and reused for subsequent WebSocket-driven alerts.
+function playBeep(ctxRef: { current: AudioContext | null }): void {
+  try {
+    if (!ctxRef.current) {
+      const Ctor =
+        window.AudioContext ??
+        (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+      if (!Ctor) return
+      ctxRef.current = new Ctor()
+    }
+    const ctx = ctxRef.current
+    if (!ctx) return
+    if (ctx.state === 'suspended') void ctx.resume()
+    const osc = ctx.createOscillator()
+    const gain = ctx.createGain()
+    osc.type = 'sine'
+    osc.frequency.value = 800
+    gain.gain.value = 0.2
+    osc.connect(gain)
+    gain.connect(ctx.destination)
+    const now = ctx.currentTime
+    osc.start(now)
+    osc.stop(now + 0.2)
+  } catch {
+    // AudioContext blocked or unavailable — fail silently
+  }
+}
+
+// Shows a browser notification iff the user has granted permission.
+function notify(title: string, body: string): void {
+  try {
+    if (typeof Notification === 'undefined') return
+    if (Notification.permission !== 'granted') return
+    new Notification(title, { body })
+  } catch {
+    // Notification API blocked — fail silently
+  }
+}
 
 export const AlertsPage: React.FC = () => {
   const { t } = useTranslation()
@@ -27,6 +89,41 @@ export const AlertsPage: React.FC = () => {
 
   const [liveLogs, setLiveLogs] = useState<LogEvent[]>([])
   const [retryError, setRetryError] = useState<string | null>(null)
+  const [soundEnabled, setSoundEnabled] = useState(() => readPref(SOUND_KEY))
+  const [notifEnabled, setNotifEnabled] = useState(() => readPref(NOTIF_KEY))
+
+  // Refs mirror the latest preference/translation values so the WebSocket
+  // callback (created once on mount) always reads current state without
+  // needing to resubscribe on every toggle.
+  const audioCtxRef = useRef<AudioContext | null>(null)
+  const soundRef = useRef(soundEnabled)
+  const notifRef = useRef(notifEnabled)
+  const tRef = useRef(t)
+  soundRef.current = soundEnabled
+  notifRef.current = notifEnabled
+  tRef.current = t
+
+  const toggleSound = () => {
+    const next = !soundEnabled
+    setSoundEnabled(next)
+    writePref(SOUND_KEY, next)
+    // Preview the beep on enable; this also unlocks the AudioContext under the
+    // user-gesture requirement so later WS-driven beeps can play.
+    if (next) playBeep(audioCtxRef)
+  }
+
+  const toggleNotifications = async () => {
+    const next = !notifEnabled
+    setNotifEnabled(next)
+    writePref(NOTIF_KEY, next)
+    if (next && typeof Notification !== 'undefined' && Notification.permission === 'default') {
+      try {
+        await Notification.requestPermission()
+      } catch {
+        // requestPermission rejected — preference stored; notifications skipped if denied
+      }
+    }
+  }
 
   // Subscribe to /logs WebSocket for warn/error
   useEffect(() => {
@@ -34,6 +131,15 @@ export const AlertsPage: React.FC = () => {
       // level >= 4 are warnings and errors
       if (evt.level >= 4) {
         setLiveLogs((prev) => [evt, ...prev.slice(0, 49)])
+      }
+      // level >= 8 are errors — fire audible + visual alerts when enabled
+      if (evt.level >= 8) {
+        if (soundRef.current) {
+          playBeep(audioCtxRef)
+        }
+        if (notifRef.current) {
+          notify(tRef.current('alerts.notificationTitle'), tRef.current('alerts.notificationBody'))
+        }
       }
     })
     return () => ws.destroy()
@@ -179,12 +285,44 @@ export const AlertsPage: React.FC = () => {
 
       {/* Live Warning / Error Feed */}
       <Card className="border-border/80 bg-card/60">
-        <CardHeader className="p-4">
-          <CardTitle className="text-sm font-semibold flex items-center space-x-2">
-            <AlertTriangle className="w-4 h-4 text-amber-400" />
-            <span>{t('alerts.realtimeWarning')}</span>
-          </CardTitle>
-          <CardDescription className="text-xs">{t('alerts.realtimeWarningDesc')}</CardDescription>
+        <CardHeader className="p-4 flex flex-row items-start justify-between gap-2">
+          <div>
+            <CardTitle className="text-sm font-semibold flex items-center space-x-2">
+              <AlertTriangle className="w-4 h-4 text-amber-400" />
+              <span>{t('alerts.realtimeWarning')}</span>
+            </CardTitle>
+            <CardDescription className="text-xs">{t('alerts.realtimeWarningDesc')}</CardDescription>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={toggleSound}
+              aria-pressed={soundEnabled}
+              className="h-8 text-xs"
+            >
+              {soundEnabled ? (
+                <Bell className="w-3.5 h-3.5 mr-1" />
+              ) : (
+                <BellOff className="w-3.5 h-3.5 mr-1" />
+              )}
+              <span>{t(soundEnabled ? 'alerts.soundOn' : 'alerts.soundOff')}</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={toggleNotifications}
+              aria-pressed={notifEnabled}
+              className="h-8 text-xs"
+            >
+              {notifEnabled ? (
+                <BellRing className="w-3.5 h-3.5 mr-1" />
+              ) : (
+                <BellOff className="w-3.5 h-3.5 mr-1" />
+              )}
+              <span>{t(notifEnabled ? 'alerts.notificationsOn' : 'alerts.notificationsOff')}</span>
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="p-4 pt-0">
           {liveLogs.length === 0 ? (

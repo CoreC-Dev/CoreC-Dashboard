@@ -20,6 +20,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { type MetricEntry, parsePrometheusMetrics } from '@/lib/prometheus'
 import { formatNumber } from '@/lib/utils'
 import { useConnectionStore } from '@/stores/connectionStore'
+import type { LogEvent } from '@/types/models'
 
 const PPROF_PROFILES = [
   'heap',
@@ -140,7 +141,7 @@ export const DiagnosticsPage: React.FC = () => {
     }
 
     // Subscribe to /logs WebSocket
-    const ws = new CoreCWebSocket('/logs', {}, (evt: any) => {
+    const ws = new CoreCWebSocket('/logs', {}, (evt: LogEvent) => {
       if (pausedRef.current) return
       const time = evt.timestamp ? new Date(evt.timestamp).toLocaleTimeString() : ''
       let color = '\x1b[37m' // default white
@@ -385,15 +386,13 @@ export const DiagnosticsPage: React.FC = () => {
       {/* Latency & Data Age Histograms */}
       <Card className="border-border/80 bg-card/60">
         <CardHeader className="p-4 pb-2">
-          <CardTitle className="text-sm font-semibold">Latency & Data Age</CardTitle>
-          <CardDescription className="text-xs">
-            Histogram snapshots (avg = Σ/n) and gauges parsed from /metrics
-          </CardDescription>
+          <CardTitle className="text-sm font-semibold">{t('diagnostics.latencyDataAge')}</CardTitle>
+          <CardDescription className="text-xs">{t('diagnostics.histogramDesc')}</CardDescription>
         </CardHeader>
         <CardContent className="p-4 pt-0">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <HistTile
-              label="Read Latency"
+              label={t('diagnostics.readLatency')}
               metric="corec_read_latency_seconds"
               avg={readLatency.avg}
               count={readLatency.count}
@@ -401,7 +400,7 @@ export const DiagnosticsPage: React.FC = () => {
               accent="text-cyan-400"
             />
             <HistTile
-              label="Publish Latency"
+              label={t('diagnostics.publishLatency')}
               metric="corec_publish_latency_seconds"
               avg={publishLatency.avg}
               count={publishLatency.count}
@@ -409,7 +408,7 @@ export const DiagnosticsPage: React.FC = () => {
               accent="text-emerald-400"
             />
             <HistTile
-              label="HTTP Requests"
+              label={t('diagnostics.httpRequests')}
               metric="corec_http_request_duration_seconds"
               avg={httpReq.avg}
               count={httpReq.count}
@@ -418,13 +417,13 @@ export const DiagnosticsPage: React.FC = () => {
             />
             <div className="p-3 rounded-lg bg-muted/40 border border-border/50">
               <div className="text-[10px] text-muted-foreground uppercase font-semibold">
-                Data Age
+                {t('diagnostics.dataAge')}
               </div>
               <div className="text-xl font-bold font-mono text-amber-400 mt-1">
                 {fmtSec(dataAge)}
               </div>
               <div className="text-[10px] text-muted-foreground mt-1 font-mono">
-                current max age
+                {t('diagnostics.currentMaxAge')}
               </div>
               <div className="text-[9px] text-muted-foreground/70 mt-0.5 font-mono truncate">
                 corec_data_age_seconds

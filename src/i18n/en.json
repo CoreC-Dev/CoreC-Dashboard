@@ -133,7 +133,10 @@
     "readPerSec": "Read / s",
     "publishPerSec": "Publish / s",
     "heapAllocMb": "Heap Alloc (MB)",
-    "sysMemMb": "Sys Mem (MB)"
+    "sysMemMb": "Sys Mem (MB)",
+    "tags": "Tags",
+    "reads": "Reads",
+    "connected": "Connected"
   },
   "tags": {
     "title": "Real-time Tag Explorer",
@@ -210,7 +213,13 @@
     "errBoolInvalid": "Boolean value must be true, false, 0, or 1",
     "errNotNumber": "Value \"{{raw}}\" is not a valid number for type {{dt}}",
     "errNotFinite": "Value must be finite (Infinity is not allowed)",
-    "errOutOfRange": "Value {{n}} is out of range for {{dt}} (valid: {{min}} to {{max}})"
+    "errOutOfRange": "Value {{n}} is out of range for {{dt}} (valid: {{min}} to {{max}})",
+    "clearAll": "Clear All",
+    "clearAllConfirm": "Are you sure you want to clear all dead letters?",
+    "clearAllDesc": "This will remove all failed write commands from the list.",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "deadLettersCleared": "Dead letters cleared"
   },
   "diagnostics": {
     "title": "Observability & Diagnostics",
@@ -234,7 +243,14 @@
     "busDropped": "Bus Dropped",
     "pprofEndpoints": "Go pprof Profiling Endpoints",
     "pprofDesc": "Direct heap, goroutine, and CPU profile download URLs",
-    "pprofEndpoint": "/debug/pprof/{{name}}"
+    "pprofEndpoint": "/debug/pprof/{{name}}",
+    "latencyDataAge": "Latency & Data Age",
+    "histogramDesc": "Histogram snapshots (avg = Σ/n) and gauges parsed from /metrics",
+    "readLatency": "Read Latency",
+    "publishLatency": "Publish Latency",
+    "httpRequests": "HTTP Requests",
+    "dataAge": "Data Age",
+    "currentMaxAge": "current max age"
   },
   "drivers": {
     "title": "Southbound Drivers",
@@ -260,7 +276,43 @@
     "colType": "Type",
     "colQuality": "Quality",
     "colLastPolled": "Last Polled",
-    "detailNotFound": "Driver not found"
+    "detailNotFound": "Driver not found",
+    "editConfig": {
+      "title": "Edit Configuration",
+      "description": "Edit connection parameters and hot-reload the driver via PUT /configs.",
+      "toggle": "Toggle edit configuration section",
+      "host": "Host",
+      "port": "Port",
+      "slaveId": "Slave ID",
+      "tagsFile": "Tags File",
+      "serialDevice": "Serial Device",
+      "baudRate": "Baud Rate",
+      "dataBits": "Data Bits",
+      "parity": "Parity",
+      "stopBits": "Stop Bits",
+      "rack": "Rack",
+      "slot": "Slot",
+      "endpoint": "Endpoint",
+      "securityPolicy": "Security Policy",
+      "securityMode": "Security Mode",
+      "generateAndReload": "Generate YAML & Reload",
+      "reloading": "Reloading...",
+      "reloadSuccess": "Configuration generated and hot-reloaded successfully.",
+      "reloadFailed": "Failed to reload configuration.",
+      "yamlPreview": "Generated YAML Preview",
+      "unsupportedProtocol": "This driver protocol does not expose editable connection parameters via the form. Use the YAML editor in the Configuration Center."
+    },
+    "driverName": "Driver Name",
+    "protocolType": "Protocol Type",
+    "connectionState": "Connection State",
+    "tagCount": "Tag Count",
+    "readCount": "Read Count",
+    "errorCount": "Error Count",
+    "reconnectCount": "Reconnect Count",
+    "notRegistered": "No driver named \"{{name}}\" is registered on this CoreC instance.",
+    "noNameProvided": "No driver name was provided in the URL.",
+    "totalErrors": "Total Errors",
+    "totalReads": "Total Reads"
   },
   "transports": {
     "title": "Northbound Transports",
@@ -277,7 +329,35 @@
     "commandsReceived": "Commands Received",
     "lastPublished": "Last Published",
     "never": "Never",
-    "detailNotFound": "Transport not found"
+    "detailNotFound": "Transport not found",
+    "editConfig": {
+      "title": "Edit Configuration",
+      "description": "Edit publishing parameters and hot-reload the transport via PUT /configs.",
+      "toggle": "Toggle edit configuration section",
+      "broker": "Broker",
+      "topic": "Topic",
+      "clientId": "Client ID",
+      "qos": "QoS",
+      "username": "Username",
+      "password": "Password",
+      "url": "URL",
+      "method": "Method",
+      "headers": "Headers",
+      "batchSize": "Batch Size",
+      "flushInterval": "Flush Interval",
+      "generateAndReload": "Generate YAML & Reload",
+      "reloading": "Reloading...",
+      "reloadSuccess": "Configuration generated and hot-reloaded successfully.",
+      "reloadFailed": "Failed to reload configuration.",
+      "yamlPreview": "Generated YAML Preview",
+      "unsupportedProtocol": "This transport protocol does not expose editable parameters via the form. Use the YAML editor in the Configuration Center."
+    },
+    "noNameProvided": "No transport name was provided in the URL.",
+    "transportName": "Transport Name",
+    "protocolType": "Protocol Type",
+    "connectionState": "Connection State",
+    "lastPublish": "Last Publish",
+    "notRegistered": "No transport named \"{{name}}\" is registered on this CoreC instance."
   },
   "rules": {
     "title": "Rule Pipeline & Routing",
@@ -321,7 +401,24 @@
     "phGroup": "e.g. zone-1",
     "phTag": "e.g. temperature",
     "phValue": "e.g. 42.5",
-    "toggleFailed": "Failed to toggle rule"
+    "toggleFailed": "Failed to toggle rule",
+    "edit": {
+      "title": "Edit Rule",
+      "name": "Rule Name",
+      "match": "Match Expression (DSL)",
+      "action": "Action",
+      "target": "Target Transport",
+      "priority": "Priority",
+      "generateAndReload": "Generate YAML & Reload",
+      "reloadSuccess": "Rule YAML generated and hot reloaded successfully!",
+      "reloadFailed": "Failed to generate YAML and reload",
+      "matchPlaceholder": "tag == 'temperature' && value > 95",
+      "actionForward": "Forward",
+      "actionDrop": "Drop",
+      "actionAlert": "Alert",
+      "actionTransform": "Transform",
+      "actionMirror": "Mirror"
+    }
   },
   "config": {
     "title": "Configuration Center",
@@ -365,7 +462,18 @@
     "noRules": "No rules registered",
     "colType": "type",
     "colMatch": "match",
-    "notAvailable": "N/A"
+    "notAvailable": "N/A",
+    "history": "Change History",
+    "historyDesc": "Recent configuration snapshots",
+    "historyEmpty": "No saved snapshots yet",
+    "restore": "Restore",
+    "restored": "Snapshot restored to editor",
+    "diff": "Changes Preview",
+    "diffDesc": "Differences from the last submitted version",
+    "diffNoChanges": "No changes detected",
+    "diffAdded": "Added",
+    "diffRemoved": "Removed",
+    "snapshotSaved": "Snapshot saved to history"
   },
   "topology": {
     "title": "Chained-Core Mesh Topology",
@@ -387,7 +495,15 @@
     "version": "Version",
     "listen": "Listen",
     "logLevel": "Log Level",
-    "tagline": "Zero-Lock DataBus · First-Match-Wins Rules"
+    "tagline": "Zero-Lock DataBus · First-Match-Wins Rules",
+    "status": "Status",
+    "uptime": "Uptime",
+    "throughput": "Throughput",
+    "throughputUnit": "pts/s",
+    "read": "Read",
+    "pub": "Pub",
+    "rulePipelineActive": "Rule Pipeline ({{active}}/{{total}} active)",
+    "off": "OFF"
   },
   "settings": {
     "title": "Settings",
@@ -412,7 +528,8 @@
     "english": "English",
     "layoutBackup": "Dashboard Layout Backup",
     "layoutBackupDesc": "Export or reset your custom large-screen grid layout",
-    "exportLayout": "Export Layout JSON",
+    "exportLayout": "Export Layout",
+    "importLayout": "Import Layout",
     "resetFactory": "Reset to Factory Default"
   },
   "alerts": {
@@ -433,7 +550,13 @@
     "attemptsExhausted": "{{count}} attempts exhausted",
     "realtimeWarning": "Real-time Warning & Error Events",
     "realtimeWarningDesc": "Pushed live over WebSocket /logs filter (level ≥ 4)",
-    "noEvents": "No recent warning or error events emitted by CoreC core"
+    "noEvents": "No recent warning or error events emitted by CoreC core",
+    "soundOn": "Sound On",
+    "soundOff": "Sound Off",
+    "notificationsOn": "Notifications On",
+    "notificationsOff": "Notifications Off",
+    "notificationTitle": "CoreC Alert",
+    "notificationBody": "New error-level event detected"
   },
   "dashboardEditor": {
     "title": "Large-Screen Layout Editor",
@@ -463,7 +586,21 @@
     "cardTransportMatrixTitle": "Northbound Transports Matrix",
     "cardTransportMatrixDesc": "MQTT, HTTP push channels, publication count and queue sizes",
     "cardAlertsTitle": "Alerts & Dead Letter Queue",
-    "cardAlertsDesc": "Alarm triggered points and exhausted write attempts"
+    "cardAlertsDesc": "Alarm triggered points and exhausted write attempts",
+    "export": "Export Layout",
+    "import": "Import Layout",
+    "importSuccess": "Layout imported successfully",
+    "importFailed": "Failed to import layout: invalid JSON",
+    "templates": "Preset Templates",
+    "templatesDesc": "Quick-start with a pre-configured layout",
+    "templateOverview": "Overview",
+    "templateProduction": "Production",
+    "templateDebug": "Debug",
+    "templateApplied": "Template applied",
+    "dragHint": "Drag cards to reposition · Drag bottom-right corner to resize",
+    "gridPreview": "Live Grid Preview",
+    "gridPreviewDesc": "Drag and resize cards — changes save automatically to the layout",
+    "removeCard": "Remove card"
   },
   "monitor": {
     "realtimeStreamConnected": "Real-time Stream Connected"

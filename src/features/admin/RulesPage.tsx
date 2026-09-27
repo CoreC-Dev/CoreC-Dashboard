@@ -1,8 +1,9 @@
-import { AlertCircle, Loader2, Play, RefreshCw } from 'lucide-react'
+import { useQueryClient } from '@tanstack/react-query'
+import { AlertCircle, Check, Loader2, Pencil, Play, RefreshCw } from 'lucide-react'
 import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useRules, useToggleRule } from '@/api/hooks'
+import { useRules, useToggleRule, useUpdateConfig } from '@/api/hooks'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -15,6 +16,13 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { formatNumber } from '@/lib/utils'
 import type { RuleStat } from '@/types/models'
@@ -198,10 +206,49 @@ const LabeledSelect: React.FC<{
   </div>
 )
 
+// Rule editor form state — the editable subset of a RuleStat that the dialog
+// binds to. Pre-filled from the selected rule on open.
+interface EditFormData {
+  name: string
+  match: string
+  action: RuleStat['action']
+  target: string
+  priority: number
+}
+
+// Action options for the editor's Select dropdown. The value is the wire
+// format CoreC expects; the label is resolved via i18n at render time.
+const EDIT_ACTION_OPTIONS: { value: RuleStat['action']; labelKey: string }[] = [
+  { value: 'forward', labelKey: 'rules.edit.actionForward' },
+  { value: 'drop', labelKey: 'rules.edit.actionDrop' },
+  { value: 'alert', labelKey: 'rules.edit.actionAlert' },
+  { value: 'transform', labelKey: 'rules.edit.actionTransform' },
+  { value: 'mirror', labelKey: 'rules.edit.actionMirror' },
+]
+
+// Wrap a string as a YAML single-quoted scalar — internal single quotes are
+// doubled. The match DSL may contain `&&`, `||`, comparisons and embedded
+// quotes, none of which are safe as a bare YAML scalar.
+const yamlScalar = (s: string): string => `'${s.replace(/'/g, "''")}'`
+
+// Build the CoreC config YAML payload for the edited rule, in the format
+// expected by PUT /configs (hot-reload).
+const buildRuleYaml = (data: EditFormData): string =>
+  [
+    'rules:',
+    `  - name: ${yamlScalar(data.name)}`,
+    `    match: ${yamlScalar(data.match)}`,
+    `    action: ${data.action}`,
+    `    target: ${yamlScalar(data.target)}`,
+    `    priority: ${data.priority}`,
+  ].join('\n')
+
 export const RulesPage: React.FC = () => {
   const { t } = useTranslation()
   const { data, refetch, isFetching, isLoading, isError, error } = useRules()
   const toggleMutation = useToggleRule()
+  const updateMutation = useUpdateConfig()
+  const queryClient = useQueryClient()
 
   const rules = data?.rules || []
 
@@ -220,6 +267,11 @@ export const RulesPage: React.FC = () => {
   const [testRule, setTestRule] = useState<RuleStat | null>(null)
   const [testDp, setTestDp] = useState<SimDataPoint>(EMPTY_TEST_DP)
   const [testResult, setTestResult] = useState<boolean | null>(null)
+  const [editRule, setEditRule] = useState<RuleStat | null>(null)
+  const [editForm, setEditForm] = useState<EditFormData | null>(null)
+  const [editStatus, setEditStatus] = useState<{ type: 'success' | 'error'; text: string } | null>(
+    null,
+  )
 
   const handleToggle = async (index: number, currentDisabled: boolean) => {
     setTogglingIndex(index)
@@ -249,6 +301,43 @@ export const RulesPage: React.FC = () => {
   const runTest = () => {
     if (!testRule) return
     setTestResult(evaluateMatch(testRule.match, testDp))
+  }
+
+  const openEdit = (rule: RuleStat) => {
+    setEditRule(rule)
+    // Prefer the multi-target list's first entry when the single `target`
+    // field is empty (CoreC serializes targets as null when empty).
+    setEditForm({
+      name: rule.name,
+      match: rule.match,
+      action: rule.action,
+      target: (rule.target || rule.targets?.[0]) ?? '',
+      priority: rule.priority,
+    })
+    setEditStatus(null)
+  }
+
+  const closeEdit = () => {
+    setEditRule(null)
+    setEditForm(null)
+    setEditStatus(null)
+  }
+
+  const handleGenerateAndReload = async () => {
+    if (!editForm) return
+    setEditStatus(null)
+    try {
+      await updateMutation.mutateAsync({ payload: buildRuleYaml(editForm) })
+      // PUT /configs hot-reloads the config; invalidate the rules list so the
+      // table reflects the edited rule immediately rather than on next poll.
+      queryClient.invalidateQueries({ queryKey: ['rules'] })
+      setEditStatus({ type: 'success', text: t('rules.edit.reloadSuccess') })
+    } catch (err) {
+      setEditStatus({
+        type: 'error',
+        text: err instanceof Error ? err.message : t('rules.edit.reloadFailed'),
+      })
+    }
   }
 
   const getActionBadge = (action: string) => {
@@ -416,15 +505,26 @@ export const RulesPage: React.FC = () => {
                         />
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openTest(rule)}
-                          className="h-7 text-[11px]"
-                        >
-                          <Play className="w-3 h-3 mr-1" />
-                          {t('rules.test')}
-                        </Button>
+                        <div className="flex items-center justify-end gap-1.5">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openTest(rule)}
+                            className="h-7 text-[11px]"
+                          >
+                            <Play className="w-3 h-3 mr-1" />
+                            {t('rules.test')}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openEdit(rule)}
+                            className="h-7 text-[11px]"
+                          >
+                            <Pencil className="w-3 h-3 mr-1" />
+                            {t('common.edit')}
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   )
@@ -534,6 +634,123 @@ export const RulesPage: React.FC = () => {
             <Button onClick={runTest} disabled={!testRule}>
               <Play className="w-3.5 h-3.5 mr-1.5" />
               {t('rules.runTest')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={editRule !== null} onOpenChange={(o) => !o && closeEdit()}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>{t('rules.edit.title')}</DialogTitle>
+            <DialogDescription>{t('rules.subtitle')}</DialogDescription>
+          </DialogHeader>
+
+          {editForm && (
+            <div className="space-y-4">
+              <LabeledInput
+                label={t('rules.edit.name')}
+                value={editForm.name}
+                onChange={(v) => setEditForm({ ...editForm, name: v })}
+              />
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-foreground">
+                  {t('rules.edit.match')}
+                </label>
+                <textarea
+                  value={editForm.match}
+                  onChange={(e) => setEditForm({ ...editForm, match: e.target.value })}
+                  placeholder={t('rules.edit.matchPlaceholder')}
+                  rows={3}
+                  className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-xs font-mono text-foreground shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-foreground">
+                  {t('rules.edit.action')}
+                </label>
+                <Select
+                  value={editForm.action}
+                  onValueChange={(v) =>
+                    setEditForm({ ...editForm, action: v as RuleStat['action'] })
+                  }
+                >
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {EDIT_ACTION_OPTIONS.map((o) => (
+                      <SelectItem key={o.value} value={o.value} className="text-xs">
+                        {t(o.labelKey)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <LabeledInput
+                  label={t('rules.edit.target')}
+                  value={editForm.target}
+                  onChange={(v) => setEditForm({ ...editForm, target: v })}
+                />
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-foreground">
+                    {t('rules.edit.priority')}
+                  </label>
+                  <Input
+                    type="number"
+                    value={editForm.priority}
+                    onChange={(e) => setEditForm({ ...editForm, priority: Number(e.target.value) })}
+                    className="h-9 text-xs"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <div className="text-xs font-semibold text-muted-foreground">
+                  {t('config.yamlCode')}
+                </div>
+                <pre className="max-h-48 overflow-auto rounded-md border border-border/50 bg-muted/60 p-3 text-[11px] font-mono text-primary whitespace-pre-wrap break-all">
+                  {buildRuleYaml(editForm)}
+                </pre>
+              </div>
+
+              {editStatus && (
+                <div
+                  className={`flex items-center gap-2 rounded-md border px-3 py-2 text-xs ${
+                    editStatus.type === 'success'
+                      ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
+                      : 'border-rose-500/30 bg-rose-500/10 text-rose-400'
+                  }`}
+                >
+                  {editStatus.type === 'error' ? (
+                    <AlertCircle className="h-4 w-4 shrink-0" />
+                  ) : (
+                    <Check className="h-4 w-4 shrink-0" />
+                  )}
+                  <span className="break-all">{editStatus.text}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={closeEdit}>
+              {t('common.close')}
+            </Button>
+            <Button
+              onClick={handleGenerateAndReload}
+              disabled={!editForm || updateMutation.isPending}
+            >
+              {updateMutation.isPending ? (
+                <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+              ) : (
+                <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
+              )}
+              {t('rules.edit.generateAndReload')}
             </Button>
           </DialogFooter>
         </DialogContent>
