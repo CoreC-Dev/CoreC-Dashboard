@@ -47,7 +47,7 @@ export const DashboardPage: React.FC = () => {
   const deadLetters = deadLettersData?.failed_writes || []
 
   const connectedDrivers = drivers.filter((d) => d.state === 2).length
-  const connectedTransports = transports.filter((t) => t.state === 2).length
+  const connectedTransports = transports.filter((tr) => tr.state === 2).length
 
   const renderCardContent = (card: DashboardCard): React.ReactNode => {
     switch (card.type) {
@@ -62,7 +62,9 @@ export const DashboardPage: React.FC = () => {
               </div>
               <div className="flex items-center space-x-1.5">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 glow-success" />
-                <span className="text-sm font-bold capitalize">{stats?.status || 'Running'}</span>
+                <span className="text-sm font-bold capitalize">
+                  {stats?.status || t('common.running')}
+                </span>
               </div>
               <div className="text-[9px] text-muted-foreground mt-0.5 flex items-center space-x-1">
                 <Clock className="w-2.5 h-2.5" />
@@ -257,7 +259,7 @@ export const DashboardPage: React.FC = () => {
             ) : (
               deadLetters.slice(0, 5).map((item) => (
                 <div
-                  key={`${item.command.driver}-${item.command.tag}-${item.timestamp}`}
+                  key={`${item.command.driver}-${item.command.tag}-${item.failed_at}-${item.attempts}`}
                   className="p-2.5 rounded-lg border border-rose-500/20 bg-rose-500/5 flex items-center justify-between text-xs"
                 >
                   <div className="space-y-0.5 min-w-0">

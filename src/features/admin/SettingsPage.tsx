@@ -93,7 +93,7 @@ export const SettingsPage: React.FC = () => {
         const now = Date.now()
         const newLayout: DashboardLayout = {
           id: typeof parsed.id === 'string' ? parsed.id : `imported-${now}`,
-          name: typeof parsed.name === 'string' ? parsed.name : 'Imported Layout',
+          name: typeof parsed.name === 'string' ? parsed.name : t('settings.importedLayoutName'),
           description: typeof parsed.description === 'string' ? parsed.description : undefined,
           cards: parsed.cards,
           createdAt: typeof parsed.createdAt === 'number' ? parsed.createdAt : now,
@@ -216,7 +216,7 @@ export const SettingsPage: React.FC = () => {
                   ) : m === 'light' ? (
                     <Sun className="w-3 h-3 mr-1" />
                   ) : null}
-                  <span>{m}</span>
+                  <span>{t(`settings.${m}`)}</span>
                 </Button>
               ))}
             </div>

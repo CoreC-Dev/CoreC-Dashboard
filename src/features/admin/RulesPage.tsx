@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { AlertCircle, Check, Loader2, Pencil, Play, RefreshCw } from 'lucide-react'
 import type React from 'react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useRules, useToggleRule, useUpdateConfig } from '@/api/hooks'
 import { Badge } from '@/components/ui/badge'
@@ -24,12 +24,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
-import { formatNumber } from '@/lib/utils'
+import { formatNumber, isZeroTime } from '@/lib/utils'
 import type { RuleStat } from '@/types/models'
-
-// Go's time.Time zero value serializes as "0001-01-01T00:00:00Z", which is
-// truthy in JS — so a plain `ts ? ... : 'Never'` never reaches 'Never'.
-const isZeroTime = (ts: string | undefined | null): boolean => !ts || ts.startsWith('0001-01-01')
 
 // Targets serialize as `null` (not `[]`) when empty; prefer the multi-target
 // list when present, otherwise fall back to the single `target` field.
@@ -254,11 +250,15 @@ export const RulesPage: React.FC = () => {
 
   // Quality option labels are translated, so this is built inside the
   // component (where `t` is in scope) rather than at module load.
-  const QUALITY_OPTIONS: { value: string; label: string }[] = [
-    { value: '0', label: `0 — ${t('common.good')}` },
-    { value: '1', label: `1 — ${t('common.bad')}` },
-    { value: '2', label: `2 — ${t('common.uncertain')}` },
-  ]
+  const QUALITY_OPTIONS = useMemo(
+    () =>
+      [
+        { value: '0', label: `0 — ${t('common.good')}` },
+        { value: '1', label: `1 — ${t('common.bad')}` },
+        { value: '2', label: `2 — ${t('common.uncertain')}` },
+      ] as { value: string; label: string }[],
+    [t],
+  )
 
   // Track the specific rule being toggled so only that row's switch is
   // disabled while the mutation is in flight (not every switch on the page).
@@ -702,8 +702,12 @@ export const RulesPage: React.FC = () => {
                   </label>
                   <Input
                     type="number"
+                    min={0}
                     value={editForm.priority}
-                    onChange={(e) => setEditForm({ ...editForm, priority: Number(e.target.value) })}
+                    onChange={(e) => {
+                      const n = Number(e.target.value)
+                      if (!Number.isNaN(n)) setEditForm({ ...editForm, priority: n })
+                    }}
                     className="h-9 text-xs"
                   />
                 </div>

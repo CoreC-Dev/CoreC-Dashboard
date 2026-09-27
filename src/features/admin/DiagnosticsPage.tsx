@@ -1,7 +1,7 @@
 import { FitAddon } from '@xterm/addon-fit'
 import { Terminal } from '@xterm/xterm'
 import type React from 'react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import '@xterm/xterm/css/xterm.css'
 import {
@@ -31,10 +31,11 @@ const PPROF_PROFILES = [
   'mutex',
 ] as const
 
-const fmtNum = (v: number | null): string => (v === null ? 'N/A' : formatNumber(v))
+const fmtNum = (v: number | null, fallback: string = '—'): string =>
+  v === null ? fallback : formatNumber(v)
 
-const fmtSec = (v: number | null): string => {
-  if (v === null) return 'N/A'
+const fmtSec = (v: number | null, fallback: string = '—'): string => {
+  if (v === null) return fallback
   if (v < 1) return `${(v * 1000).toFixed(2)}ms`
   return `${v.toFixed(3)}s`
 }
@@ -46,19 +47,27 @@ const HistTile: React.FC<{
   count: number | null
   sum: number | null
   accent: string
-}> = ({ label, metric, avg, count, sum, accent }) => (
-  <div className="p-3 rounded-lg bg-muted/40 border border-border/50">
-    <div className="text-[10px] text-muted-foreground uppercase font-semibold">{label}</div>
-    <div className={`text-xl font-bold font-mono mt-1 ${accent}`}>{fmtSec(avg)}</div>
-    <div className="text-[10px] text-muted-foreground mt-1 font-mono">
-      n={fmtNum(count)} · Σ={fmtSec(sum)}
+}> = ({ label, metric, avg, count, sum, accent }) => {
+  const { t } = useTranslation()
+  const na = t('diagnostics.notAvailable')
+  return (
+    <div className="p-3 rounded-lg bg-muted/40 border border-border/50">
+      <div className="text-[10px] text-muted-foreground uppercase font-semibold">{label}</div>
+      <div className={`text-xl font-bold font-mono mt-1 ${accent}`}>{fmtSec(avg, na)}</div>
+      <div className="text-[10px] text-muted-foreground mt-1 font-mono">
+        n={fmtNum(count, na)} · Σ={fmtSec(sum, na)}
+      </div>
+      <div className="text-[9px] text-muted-foreground/70 mt-0.5 font-mono truncate">{metric}</div>
     </div>
-    <div className="text-[9px] text-muted-foreground/70 mt-0.5 font-mono truncate">{metric}</div>
-  </div>
-)
+  )
+}
 
 export const DiagnosticsPage: React.FC = () => {
   const { t } = useTranslation()
+  // Keep a ref to the latest `t` so the terminal init effect (which must run
+  // once) can render localized strings without re-subscribing on language change.
+  const tRef = useRef(t)
+  tRef.current = t
 
   // Terminal state
   const terminalRef = useRef<HTMLDivElement>(null)
@@ -108,7 +117,9 @@ export const DiagnosticsPage: React.FC = () => {
 
     // convertEol is true, so rely on writeln's appended line break instead of
     // an explicit "\r\n" (which would render a blank line after the banner).
-    term.writeln('\x1b[38;5;39m[CoreC Stream]\x1b[0m Connected to event logging bus...')
+    term.writeln(
+      `\x1b[38;5;39m[CoreC Stream]\x1b[0m ${tRef.current('diagnostics.streamConnected')}`,
+    )
 
     // Log-rate limiting: buffer incoming log lines and flush to xterm via a
     // 16ms timer (≈1 frame). This coalesces log floods (error storms can
@@ -128,7 +139,7 @@ export const DiagnosticsPage: React.FC = () => {
       }
       if (droppedSinceFlush > 0) {
         term.writeln(
-          `\x1b[33m[CoreC Stream]\x1b[0m ${droppedSinceFlush} log lines dropped (rate limit)\x1b[0m`,
+          `\x1b[33m[CoreC Stream]\x1b[0m ${tRef.current('diagnostics.logLinesDropped', { count: droppedSinceFlush })}\x1b[0m`,
         )
         droppedSinceFlush = 0
       }
@@ -225,7 +236,9 @@ export const DiagnosticsPage: React.FC = () => {
         headers: { Authorization: `Bearer ${secret}` },
       })
       if (!res.ok) {
-        throw new Error(`HTTP ${res.status} ${res.statusText}`)
+        throw new Error(
+          t('diagnostics.httpError', { status: res.status, statusText: res.statusText }),
+        )
       }
       const blob = await res.blob()
       const objectUrl = URL.createObjectURL(blob)
@@ -241,31 +254,38 @@ export const DiagnosticsPage: React.FC = () => {
       const msg = e instanceof Error ? e.message : String(e)
       console.error('pprof download failed', e)
       xtermInstance.current?.writeln(
-        `\x1b[31m[pprof]\x1b[0m failed to fetch /debug/pprof/${profile}: ${msg}`,
+        `\x1b[31m[pprof]\x1b[0m ${t('diagnostics.pprofFetchFailed', { profile, error: msg })}`,
       )
     } finally {
       setPprofLoading(null)
     }
   }
 
-  // Filter key metrics
-  const goroutines = metrics.find((m) => m.name === 'corec_goroutines')?.value ?? 0
-  const heapAllocBytes = metrics.find((m) => m.name === 'corec_mem_heap_alloc_bytes')?.value ?? 0
-  const gcCount = metrics.find((m) => m.name === 'corec_gc_count')?.value ?? 0
-  const totalDropped = metrics.find((m) => m.name === 'corec_dropped_total')?.value ?? 0
-  const offlinePending = metrics.find((m) => m.name === 'corec_offline_buffer_pending')?.value ?? 0
+  // Filter key metrics — memoize the lookup map to avoid O(n) finds per render.
+  const metricsMap = useMemo(() => new Map(metrics.map((m) => [m.name, m.value])), [metrics])
+  const goroutines = metricsMap.get('corec_goroutines') ?? 0
+  const heapAllocBytes = metricsMap.get('corec_mem_heap_alloc_bytes') ?? 0
+  const gcCount = metricsMap.get('corec_gc_count') ?? 0
+  const totalDropped = metricsMap.get('corec_dropped_total') ?? 0
+  const offlinePending = metricsMap.get('corec_offline_buffer_pending') ?? 0
 
   // Additional metrics (graceful "N/A" when absent from /metrics).
-  const findMetric = (name: string): number | null => {
-    const m = metrics.find((mt) => mt.name === name)
-    return m ? m.value : null
-  }
-  const histogram = (base: string) => {
-    const count = findMetric(`${base}_count`)
-    const sum = findMetric(`${base}_sum`)
-    const avg = count !== null && sum !== null && count > 0 ? sum / count : null
-    return { count, sum, avg }
-  }
+  const findMetric = useCallback(
+    (name: string): number | null => {
+      const m = metricsMap.get(name)
+      return m !== undefined ? m : null
+    },
+    [metricsMap],
+  )
+  const histogram = useCallback(
+    (base: string) => {
+      const count = findMetric(`${base}_count`)
+      const sum = findMetric(`${base}_sum`)
+      const avg = count !== null && sum !== null && count > 0 ? sum / count : null
+      return { count, sum, avg }
+    },
+    [findMetric],
+  )
 
   const readLatency = histogram('corec_read_latency_seconds')
   const publishLatency = histogram('corec_publish_latency_seconds')
@@ -278,9 +298,7 @@ export const DiagnosticsPage: React.FC = () => {
     <div className="space-y-6 max-w-5xl">
       <div>
         <h1 className="text-xl font-bold tracking-tight">{t('diagnostics.title')}</h1>
-        <p className="text-xs text-muted-foreground">
-          Real-time terminal log streaming, Prometheus scrape metrics & pprof debugging
-        </p>
+        <p className="text-xs text-muted-foreground">{t('diagnostics.subtitle')}</p>
       </div>
 
       {/* Real-time xterm.js Terminal */}
@@ -347,13 +365,13 @@ export const DiagnosticsPage: React.FC = () => {
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
             <div className="p-3 rounded-lg bg-muted/40 border border-border/50 text-center">
               <div className="text-[10px] text-muted-foreground uppercase font-semibold">
-                Goroutines
+                {t('diagnostics.goroutines')}
               </div>
               <div className="text-xl font-bold font-mono text-primary mt-1">{goroutines}</div>
             </div>
             <div className="p-3 rounded-lg bg-muted/40 border border-border/50 text-center">
               <div className="text-[10px] text-muted-foreground uppercase font-semibold">
-                Heap Allocated
+                {t('diagnostics.heapAllocated')}
               </div>
               <div className="text-xl font-bold font-mono text-purple-400 mt-1">
                 {(heapAllocBytes / (1024 * 1024)).toFixed(1)} MB
@@ -361,21 +379,21 @@ export const DiagnosticsPage: React.FC = () => {
             </div>
             <div className="p-3 rounded-lg bg-muted/40 border border-border/50 text-center">
               <div className="text-[10px] text-muted-foreground uppercase font-semibold">
-                GC Cycles
+                {t('diagnostics.gcCycles')}
               </div>
               <div className="text-xl font-bold font-mono text-cyan-400 mt-1">{gcCount}</div>
             </div>
             <div className="p-3 rounded-lg bg-muted/40 border border-border/50 text-center">
               <div className="text-[10px] text-muted-foreground uppercase font-semibold">
-                Offline Buffer
+                {t('diagnostics.offlineBuffer')}
               </div>
               <div className="text-xl font-bold font-mono text-emerald-400 mt-1">
-                {offlinePending} batches
+                {offlinePending} {t('diagnostics.batches')}
               </div>
             </div>
             <div className="p-3 rounded-lg bg-muted/40 border border-border/50 text-center">
               <div className="text-[10px] text-muted-foreground uppercase font-semibold">
-                Bus Dropped
+                {t('diagnostics.busDropped')}
               </div>
               <div className="text-xl font-bold font-mono text-rose-400 mt-1">{totalDropped}</div>
             </div>
@@ -420,7 +438,7 @@ export const DiagnosticsPage: React.FC = () => {
                 {t('diagnostics.dataAge')}
               </div>
               <div className="text-xl font-bold font-mono text-amber-400 mt-1">
-                {fmtSec(dataAge)}
+                {fmtSec(dataAge, t('diagnostics.notAvailable'))}
               </div>
               <div className="text-[10px] text-muted-foreground mt-1 font-mono">
                 {t('diagnostics.currentMaxAge')}
@@ -436,9 +454,11 @@ export const DiagnosticsPage: React.FC = () => {
       {/* Per-Driver Read Counts */}
       <Card className="border-border/80 bg-card/60 overflow-hidden">
         <CardHeader className="p-4 pb-2">
-          <CardTitle className="text-sm font-semibold">Per-Driver Read Counts</CardTitle>
+          <CardTitle className="text-sm font-semibold">
+            {t('diagnostics.perDriverReadCounts')}
+          </CardTitle>
           <CardDescription className="text-xs">
-            corec_driver_read_total{'{driver,type}'} counters
+            {t('diagnostics.perDriverReadCountsDesc')}
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
@@ -446,16 +466,16 @@ export const DiagnosticsPage: React.FC = () => {
             <table className="w-full text-xs text-left">
               <thead className="bg-muted/50 border-b border-border/80 uppercase font-semibold text-[10px] text-muted-foreground tracking-wider">
                 <tr>
-                  <th className="px-4 py-2">Driver</th>
-                  <th className="px-4 py-2">Type</th>
-                  <th className="px-4 py-2 text-right">Reads</th>
+                  <th className="px-4 py-2">{t('common.driver')}</th>
+                  <th className="px-4 py-2">{t('common.type')}</th>
+                  <th className="px-4 py-2 text-right">{t('drivers.reads')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60">
                 {driverReads.length === 0 ? (
                   <tr>
                     <td colSpan={3} className="py-6 text-center text-muted-foreground">
-                      N/A — no driver read counters exposed
+                      {t('diagnostics.noDriverReadCounters')}
                     </td>
                   </tr>
                 ) : (
@@ -485,9 +505,11 @@ export const DiagnosticsPage: React.FC = () => {
       {/* Per-Transport Publish Counts */}
       <Card className="border-border/80 bg-card/60 overflow-hidden">
         <CardHeader className="p-4 pb-2">
-          <CardTitle className="text-sm font-semibold">Per-Transport Publish Counts</CardTitle>
+          <CardTitle className="text-sm font-semibold">
+            {t('diagnostics.perTransportPublishCounts')}
+          </CardTitle>
           <CardDescription className="text-xs">
-            corec_transport_published_total{'{transport,type}'} counters
+            {t('diagnostics.perTransportPublishCountsDesc')}
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
@@ -495,16 +517,16 @@ export const DiagnosticsPage: React.FC = () => {
             <table className="w-full text-xs text-left">
               <thead className="bg-muted/50 border-b border-border/80 uppercase font-semibold text-[10px] text-muted-foreground tracking-wider">
                 <tr>
-                  <th className="px-4 py-2">Transport</th>
-                  <th className="px-4 py-2">Type</th>
-                  <th className="px-4 py-2 text-right">Published</th>
+                  <th className="px-4 py-2">{t('transports.colTransport')}</th>
+                  <th className="px-4 py-2">{t('common.type')}</th>
+                  <th className="px-4 py-2 text-right">{t('transports.published')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60">
                 {transportPublishes.length === 0 ? (
                   <tr>
                     <td colSpan={3} className="py-6 text-center text-muted-foreground">
-                      N/A — no transport publish counters exposed
+                      {t('diagnostics.noTransportPublishCounters')}
                     </td>
                   </tr>
                 ) : (
@@ -534,10 +556,8 @@ export const DiagnosticsPage: React.FC = () => {
       {/* pprof Debugging Downloads */}
       <Card className="border-border/80 bg-card/60">
         <CardHeader className="p-4">
-          <CardTitle className="text-sm font-semibold">Go pprof Profiling Endpoints</CardTitle>
-          <CardDescription className="text-xs">
-            Authenticated heap, goroutine, and CPU profile downloads (Bearer token attached)
-          </CardDescription>
+          <CardTitle className="text-sm font-semibold">{t('diagnostics.pprofEndpoints')}</CardTitle>
+          <CardDescription className="text-xs">{t('diagnostics.pprofDesc')}</CardDescription>
         </CardHeader>
         <CardContent className="p-4 pt-0">
           <div className="flex flex-wrap gap-2 text-xs">
@@ -563,8 +583,7 @@ export const DiagnosticsPage: React.FC = () => {
             })}
           </div>
           <p className="text-[10px] text-muted-foreground mt-3">
-            Profiles are fetched with the Authorization header and downloaded locally — direct links
-            would receive a 401 because pprof is mounted inside CoreC's authed route group.
+            {t('diagnostics.pprofFetchNote')}
           </p>
         </CardContent>
       </Card>

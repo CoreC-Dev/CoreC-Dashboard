@@ -55,8 +55,17 @@ export const DriversPage: React.FC = () => {
             return (
               <Card
                 key={drv.name}
-                className="border-border/80 bg-card/60 hover:border-primary/40 transition-all cursor-pointer group"
+                tabIndex={0}
+                role="button"
+                aria-label={`${drv.name} — ${st}`}
+                className="border-border/80 bg-card/60 hover:border-primary/40 transition-all cursor-pointer group focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 onClick={() => setSelectedDriver(drv)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    setSelectedDriver(drv)
+                  }
+                }}
               >
                 <CardHeader className="p-4 pb-2">
                   <div className="flex items-start justify-between">
@@ -159,9 +168,7 @@ const DriverDetailDialog: React.FC<{
                   {driver.type}
                 </Badge>
               </DialogTitle>
-              <DialogDescription className="text-xs">
-                Southbound registered tags and polled register values
-              </DialogDescription>
+              <DialogDescription className="text-xs">{t('drivers.detailTitle')}</DialogDescription>
             </div>
           </div>
         </DialogHeader>
@@ -169,23 +176,23 @@ const DriverDetailDialog: React.FC<{
         <div className="flex-1 overflow-y-auto pt-2">
           {isLoading ? (
             <div className="py-12 text-center text-xs text-muted-foreground">
-              Loading driver tags...
+              {t('drivers.loadingTags')}
             </div>
           ) : tags.length === 0 ? (
             <div className="py-12 text-center text-xs text-muted-foreground">
-              No active polled tags registered under {driver.name}
+              {t('drivers.noTags', { driver: driver.name })}
             </div>
           ) : (
             <div className="border border-border rounded-lg overflow-hidden">
               <table className="w-full text-xs text-left">
                 <thead className="bg-muted/60 border-b border-border text-[10px] uppercase font-semibold text-muted-foreground">
                   <tr>
-                    <th className="px-3 py-2">Tag</th>
-                    <th className="px-3 py-2">Group</th>
-                    <th className="px-3 py-2">Value</th>
-                    <th className="px-3 py-2">Type</th>
-                    <th className="px-3 py-2">Quality</th>
-                    <th className="px-3 py-2">Last Polled</th>
+                    <th className="px-3 py-2">{t('drivers.colTag')}</th>
+                    <th className="px-3 py-2">{t('drivers.colGroup')}</th>
+                    <th className="px-3 py-2">{t('drivers.colValue')}</th>
+                    <th className="px-3 py-2">{t('drivers.colType')}</th>
+                    <th className="px-3 py-2">{t('drivers.colQuality')}</th>
+                    <th className="px-3 py-2">{t('drivers.colLastPolled')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/60">

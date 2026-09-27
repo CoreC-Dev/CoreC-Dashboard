@@ -29,12 +29,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { ConnStateLabel, QualityLabel } from '@/lib/constants'
-import { formatNumber, isZeroTime as isZeroTimeUtil } from '@/lib/utils'
+import { formatNumber, isZeroTime } from '@/lib/utils'
 import type { DriverStatus } from '@/types/models'
-
-// CoreC emits Go's zero time (0001-01-01T00:00:00Z) for unset timestamps.
-// Use the shared isZeroTime from utils which also catches Unix epoch variants.
-const isZeroTime = isZeroTimeUtil
 
 const formatTimestamp = (ts: string, fallback = '—'): string => {
   if (isZeroTime(ts)) return fallback
@@ -486,11 +482,9 @@ export const DriverDetailPage: React.FC = () => {
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-sm font-semibold">
             <Cpu className="h-4 w-4 text-primary" />
-            Connection &amp; Runtime Parameters
+            {t('drivers.connectionRuntimeParams')}
           </CardTitle>
-          <CardDescription>
-            Live southbound driver state, polled-tag counters and the most recent error.
-          </CardDescription>
+          <CardDescription>{t('drivers.connectionRuntimeDesc')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-x-4 gap-y-3 md:grid-cols-3">
@@ -533,12 +527,12 @@ export const DriverDetailPage: React.FC = () => {
             <div className="flex items-start gap-2 rounded-lg border border-rose-500/20 bg-rose-500/10 p-3 text-rose-400">
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
               <div className="min-w-0">
-                <div className="mb-0.5 text-xs font-semibold">Last Error</div>
+                <div className="mb-0.5 text-xs font-semibold">{t('drivers.lastError')}</div>
                 <div className="break-all font-mono text-[11px]">{driver.last_error}</div>
               </div>
             </div>
           ) : (
-            <div className="text-[11px] text-muted-foreground">No recent errors recorded.</div>
+            <div className="text-[11px] text-muted-foreground">{t('drivers.noRecentErrors')}</div>
           )}
         </CardContent>
       </Card>
@@ -551,21 +545,18 @@ export const DriverDetailPage: React.FC = () => {
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-sm font-semibold">
             <Database className="h-4 w-4 text-primary" />
-            Tag Values
+            {t('drivers.tagValuesTitle')}
           </CardTitle>
-          <CardDescription>
-            Latest cached values polled for tags registered under this driver.
-          </CardDescription>
+          <CardDescription>{t('drivers.tagValuesDesc')}</CardDescription>
         </CardHeader>
         <CardContent>
           {tagsLoading ? (
             <div className="py-10 text-center text-xs text-muted-foreground">
-              Loading tag values...
+              {t('drivers.loadingTagValues')}
             </div>
           ) : tags.length === 0 ? (
             <div className="py-10 text-center text-xs text-muted-foreground">
-              No active tag values cached for{' '}
-              <span className="font-mono text-foreground">{driver.name}</span>.
+              {t('drivers.noTagValues', { driver: driver.name })}
             </div>
           ) : (
             <div className="overflow-hidden rounded-lg border border-border">
@@ -627,8 +618,7 @@ export const DriverDetailPage: React.FC = () => {
               </table>
               {tags.length > 200 && (
                 <div className="border-t border-border bg-muted/40 px-3 py-2 text-center text-[11px] text-muted-foreground">
-                  Showing first 200 of {tags.length} tags. Use Tag Explorer for full virtualized
-                  browsing.
+                  {t('drivers.showingFirstTags', { count: tags.length })}
                 </div>
               )}
             </div>

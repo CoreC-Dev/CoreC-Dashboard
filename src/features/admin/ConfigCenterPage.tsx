@@ -205,9 +205,9 @@ const ComponentList: React.FC<{
       {entries.length === 0 ? (
         <div className="px-3 py-4 text-[11px] text-muted-foreground">{emptyText}</div>
       ) : (
-        entries.map((e, i) => (
+        entries.map((e) => (
           <div
-            key={`${title}-${e.name}-${i}`}
+            key={`${title}-${e.name}`}
             className="px-3 py-2 flex items-center justify-between gap-2"
           >
             <div className="min-w-0">
@@ -242,6 +242,10 @@ export const ConfigCenterPage: React.FC = () => {
 
   const [mode, setMode] = useState<'form' | 'yaml'>('form')
   const [yamlContent, setYamlContent] = useState(DEFAULT_SAMPLE_YAML)
+  // Debounced copy of the editor content used only for the diff preview, so
+  // the O(m×n) LCS in computeDiff runs at most ~3×/sec while typing instead
+  // of on every keystroke. The editor itself stays un-debounced.
+  const [debouncedYaml, setDebouncedYaml] = useState(yamlContent)
   const [currentLogLevel, setCurrentLogLevel] = useState<string>('info')
   const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(
     null,
@@ -269,6 +273,14 @@ export const ConfigCenterPage: React.FC = () => {
       }
     }
   }, [statusMsg])
+
+  // Debounce the YAML editor content feeding the diff preview. Each keystroke
+  // resets the timer; debouncedYaml only advances after 300ms of quiet,
+  // bounding how often the O(m×n) LCS recomputes while typing.
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedYaml(yamlContent), 300)
+    return () => clearTimeout(timer)
+  }, [yamlContent])
 
   // Sync the displayed log level from the server-side config overview once it
   // loads (or whenever it changes after a PATCH/PUT).
@@ -328,12 +340,18 @@ export const ConfigCenterPage: React.FC = () => {
   }
 
   // Line-by-line diff between the editor content and the last submitted YAML.
+  // Uses the debounced value so the O(m×n) LCS isn't recomputed on every
+  // keystroke. hasDiffChanges is folded in here too, so the O(n) scan only
+  // runs when the diff inputs actually change rather than on every render.
   // Empty when no prior submission exists, in which case the preview is skipped.
-  const diffLines = useMemo<DiffLine[]>(() => {
-    if (lastSubmittedYaml === null) return []
-    return computeDiff(lastSubmittedYaml, yamlContent)
-  }, [lastSubmittedYaml, yamlContent])
-  const hasDiffChanges = diffLines.some((line) => line.type !== 'equal')
+  const { diffLines, hasDiffChanges } = useMemo<{
+    diffLines: DiffLine[]
+    hasDiffChanges: boolean
+  }>(() => {
+    if (lastSubmittedYaml === null) return { diffLines: [], hasDiffChanges: false }
+    const lines = computeDiff(lastSubmittedYaml, debouncedYaml)
+    return { diffLines: lines, hasDiffChanges: lines.some((line) => line.type !== 'equal') }
+  }, [lastSubmittedYaml, debouncedYaml])
 
   // Derived overview values (graceful when the server omits a field).
   const apiListen = configData?.global?.api?.listen
@@ -563,6 +581,7 @@ export const ConfigCenterPage: React.FC = () => {
                   size="icon"
                   onClick={() => setDiffOpen((open) => !open)}
                   aria-expanded={diffOpen}
+                  aria-label={t('config.diffToggle')}
                   className="h-7 w-7"
                 >
                   {diffOpen ? (

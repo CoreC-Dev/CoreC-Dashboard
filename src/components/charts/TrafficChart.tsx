@@ -1,5 +1,5 @@
-import type React from 'react'
-import { useEffect, useRef, useState } from 'react'
+import { memo, useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   Area,
   AreaChart,
@@ -25,7 +25,12 @@ import type { TrafficFrame } from '@/types/models'
  * (server restart → counters drop back to 0) are handled: when current
  * < previous we treat the whole current value as the delta.
  */
-export const TrafficChart: React.FC = () => {
+// memo'd so a parent re-render (e.g. DashboardPage polling useStats) doesn't
+// re-render this chart unless its (empty) props change. The chart drives its
+// own updates via the /traffic WebSocket, so it has nothing to gain from a
+// parent re-render.
+export const TrafficChart = memo(function TrafficChart() {
+  const { t } = useTranslation()
   const [data, setData] = useState<
     { time: string; read: number; publish: number; dropped: number }[]
   >([])
@@ -91,7 +96,7 @@ export const TrafficChart: React.FC = () => {
           <Area
             type="monotone"
             dataKey="read"
-            name="Read / s"
+            name={t('dashboard.readPerSec')}
             stroke="#3b82f6"
             fillOpacity={1}
             fill="url(#readGrad)"
@@ -101,7 +106,7 @@ export const TrafficChart: React.FC = () => {
           <Area
             type="monotone"
             dataKey="publish"
-            name="Publish / s"
+            name={t('dashboard.publishPerSec')}
             stroke="#10b981"
             fillOpacity={1}
             fill="url(#pubGrad)"
@@ -112,4 +117,4 @@ export const TrafficChart: React.FC = () => {
       </ResponsiveContainer>
     </div>
   )
-}
+})

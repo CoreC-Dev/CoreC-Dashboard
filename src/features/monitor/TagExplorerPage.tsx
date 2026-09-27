@@ -8,7 +8,7 @@ import {
 } from 'lightweight-charts'
 import { Activity, AlertCircle, Loader2, RefreshCw, Search, Send, X } from 'lucide-react'
 import type React from 'react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useDrivers, useTags, useWriteTag } from '@/api/hooks'
 import { CoreCWebSocket } from '@/api/websocket'
@@ -26,6 +26,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { QualityLabel } from '@/lib/constants'
 import { cn } from '@/lib/utils'
+import { validateValue } from '@/lib/writeValidation'
 import type { DataPoint } from '@/types/models'
 
 const ROW_HEIGHT = 44
@@ -77,7 +78,11 @@ interface TagRowProps {
   onWrite: (point: DataPoint) => void
 }
 
-const TagRow: React.FC<TagRowProps> = ({ point, start, flashTick, onOpen, onWrite }) => {
+// memo'd so a WS update to one tag re-renders only that row. The callbacks
+// below (openTrend / handleWriteClick) are stabilized with useCallback, and
+// unchanged rows keep the same `point` reference (setTagMap spreads the map
+// without touching other keys), so unaffected rows bail out of re-rendering.
+const TagRow = memo(function TagRow({ point, start, flashTick, onOpen, onWrite }: TagRowProps) {
   const { t } = useTranslation()
   const overlayRef = useRef<HTMLDivElement>(null)
 
@@ -108,8 +113,16 @@ const TagRow: React.FC<TagRowProps> = ({ point, start, flashTick, onOpen, onWrit
         height: ROW_HEIGHT,
         transform: `translateY(${start}px)`,
       }}
-      className="flex items-center cursor-pointer border-b border-border/60 hover:bg-muted/30 transition-colors"
+      tabIndex={0}
+      aria-label={`${point.driver}:${point.tag} — ${point.value}`}
+      className="flex items-center cursor-pointer border-b border-border/60 hover:bg-muted/30 transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
       onClick={() => onOpen(point)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          onOpen(point)
+        }
+      }}
     >
       <td
         className="px-4 py-2.5 shrink-0 min-w-0 truncate font-mono font-semibold text-foreground"
@@ -182,7 +195,7 @@ const TagRow: React.FC<TagRowProps> = ({ point, start, flashTick, onOpen, onWrit
       )}
     </tr>
   )
-}
+})
 
 export const TagExplorerPage: React.FC = () => {
   const { t } = useTranslation()
@@ -213,14 +226,23 @@ export const TagExplorerPage: React.FC = () => {
   // currently-selected trend tag so it can read the latest value live.
   const trendTagRef = useRef<DataPoint | null>(null)
   const hasSeeded = useRef(false)
+  // Drawer panel ref — focused on open so Escape-to-close works without
+  // requiring a prior click inside the panel.
+  const drawerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     trendTagRef.current = trendTag
   }, [trendTag])
 
+  // Move focus into the drawer panel when it opens so the keyboard handler
+  // below receives Escape without the user first clicking inside the panel.
+  useEffect(() => {
+    if (trendTag) drawerRef.current?.focus()
+  }, [trendTag])
+
   // Seed the tag map from the REST snapshot ONCE on first load.
   //
-  // useTags polls every 2s (refetchInterval: 2000) and returns a fresh object
+  // useTags polls every 5s (refetchInterval: 5000) and returns a fresh object
   // each poll. Re-running setTagMap(initialTagsData.tags) on every poll — as
   // the original [initialTagsData] effect did — overwrites the live WS-merged
   // map and clobbers newer WS updates (the race condition). We seed once, then
@@ -243,6 +265,44 @@ export const TagExplorerPage: React.FC = () => {
     })
   }, [initialTagsData])
 
+  // rAF batching for the high-frequency /tags/stream. The WS cap is ~500
+  // msg/s, and the per-message handler used to call setTagMap + setFlashTick
+  // directly — up to 1000 setState/sec, each triggering a React render pass.
+  // Instead, stage incoming points in refs and flush once per animation frame
+  // (<=60x/sec) so a burst of messages collapses into a single render. The
+  // pending maps are component-level so they survive the WS effect
+  // re-subscribing on a driver switch; the snapshot+clear happens OUTSIDE the
+  // setState updater to keep that updater pure (React StrictMode double-invokes
+  // updaters in dev, so mutating a ref inside one would drop the update).
+  const pendingTagsRef = useRef<Map<string, DataPoint>>(new Map())
+  const pendingFlashRef = useRef<Map<string, number>>(new Map())
+  const flushRef = useRef<number | null>(null)
+  const scheduleFlush = useCallback(() => {
+    if (flushRef.current !== null) return // a frame is already scheduled
+    flushRef.current = requestAnimationFrame(() => {
+      flushRef.current = null
+      // Snapshot then clear outside the updater so the updater stays pure.
+      if (pendingTagsRef.current.size > 0) {
+        const entries = Array.from(pendingTagsRef.current)
+        pendingTagsRef.current.clear()
+        setTagMap((prev) => {
+          const next = { ...prev }
+          for (const [k, v] of entries) next[k] = v
+          return next
+        })
+      }
+      if (pendingFlashRef.current.size > 0) {
+        const entries = Array.from(pendingFlashRef.current)
+        pendingFlashRef.current.clear()
+        setFlashTick((prev) => {
+          const next = { ...prev }
+          for (const [k, v] of entries) next[k] = (prev[k] ?? 0) + v
+          return next
+        })
+      }
+    })
+  }, [])
+
   // Subscribe to real-time /tags/stream. The stream pushes ONE DataPoint per
   // message; merge by composite key so same-name tags across drivers/devices
   // don't collide. Also bump the row's flash tick and buffer trend samples for
@@ -253,8 +313,11 @@ export const TagExplorerPage: React.FC = () => {
       selectedDriver !== 'all' ? { driver: selectedDriver } : {},
       (point) => {
         const key = tagKey(point)
-        setTagMap((prev) => ({ ...prev, [key]: point }))
-        setFlashTick((prev) => ({ ...prev, [key]: (prev[key] ?? 0) + 1 }))
+        // Stage the update for the next animation frame instead of setState
+        // per message (see scheduleFlush above).
+        pendingTagsRef.current.set(key, point)
+        pendingFlashRef.current.set(key, (pendingFlashRef.current.get(key) ?? 0) + 1)
+        scheduleFlush()
 
         const sel = trendTagRef.current
         if (sel && tagKey(sel) === key && isNumericType(point.type)) {
@@ -273,8 +336,15 @@ export const TagExplorerPage: React.FC = () => {
         }
       },
     )
-    return () => ws.destroy()
-  }, [selectedDriver])
+    return () => {
+      ws.destroy()
+      // Cancel any pending frame so we never setState after unmount/re-sub.
+      if (flushRef.current !== null) {
+        cancelAnimationFrame(flushRef.current)
+        flushRef.current = null
+      }
+    }
+  }, [selectedDriver, scheduleFlush])
 
   // Create the trend chart once per tag selection. Data is pushed in by the
   // separate [trendSamples] effect below so the chart isn't rebuilt on every
@@ -371,7 +441,7 @@ export const TagExplorerPage: React.FC = () => {
     overscan: 8,
   })
 
-  const openTrend = (point: DataPoint) => {
+  const openTrend = useCallback((point: DataPoint) => {
     setTrendTag(point)
     if (isNumericType(point.type)) {
       const num = Number(point.value)
@@ -379,7 +449,16 @@ export const TagExplorerPage: React.FC = () => {
     } else {
       setTrendSamples([])
     }
-  }
+  }, [])
+
+  // Stable row-action handlers so memoized TagRow rows whose `point`/`start`/
+  // `flashTick` haven't changed can skip re-rendering. Passing an inline arrow
+  // as `onWrite` would hand every row a new function reference on each render
+  // and defeat the memo above.
+  const handleWriteClick = useCallback((point: DataPoint) => {
+    setSelectedTagForWrite(point)
+    setWriteValue(String(point.value))
+  }, [])
 
   const closeTrend = () => {
     setTrendTag(null)
@@ -396,6 +475,17 @@ export const TagExplorerPage: React.FC = () => {
     e.preventDefault()
     if (!selectedTagForWrite) return
     setWriteError(null)
+
+    // Industrial safety: validate the raw input against the tag's data type
+    // BEFORE parsing or writing. This catches empty input (Number("") => 0),
+    // non-numeric strings (NaN serializes to null in JSON), out-of-range
+    // values, and ambiguous bool input — all of which previously wrote a
+    // silently-coerced value to a physical actuator.
+    const validationError = validateValue(writeValue, selectedTagForWrite.type)
+    if (validationError) {
+      setWriteError(validationError)
+      return
+    }
 
     let parsedVal: string | number | boolean = writeValue
     if (selectedTagForWrite.type === 'bool') {
@@ -582,10 +672,7 @@ export const TagExplorerPage: React.FC = () => {
                         start={virtualRow.start}
                         flashTick={flashTick[key] ?? 0}
                         onOpen={openTrend}
-                        onWrite={(p) => {
-                          setSelectedTagForWrite(p)
-                          setWriteValue(String(p.value))
-                        }}
+                        onWrite={handleWriteClick}
                       />
                     )
                   })
@@ -614,7 +701,17 @@ export const TagExplorerPage: React.FC = () => {
             aria-hidden
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
           />
-          <div className="relative h-full w-full max-w-md border-l border-border bg-card shadow-2xl flex flex-col">
+          <div
+            ref={drawerRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label={t('tags.trendTitle', { tag: trendTag.tag })}
+            tabIndex={-1}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') closeTrend()
+            }}
+            className="relative h-full w-full max-w-md border-l border-border bg-card shadow-2xl flex flex-col focus:outline-none"
+          >
             <div className="flex items-center justify-between border-b border-border px-4 py-3">
               <div className="flex items-center space-x-2 min-w-0">
                 <Activity className="w-4 h-4 text-primary shrink-0" />

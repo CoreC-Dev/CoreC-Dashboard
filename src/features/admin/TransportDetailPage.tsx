@@ -431,7 +431,7 @@ export const TransportDetailPage: React.FC = () => {
   }
 
   const st = ConnStateLabel[transport.state] ?? ConnStateLabel[0]
-  const queuePct = Math.min(100, transport.queue_size)
+  const queuePct = Math.max(0, Math.min(100, transport.queue_size))
   const queueActive = transport.queue_size > 0
 
   return (
@@ -505,32 +505,30 @@ export const TransportDetailPage: React.FC = () => {
           <CardTitle className="flex items-center justify-between text-sm font-semibold">
             <span className="flex items-center gap-2">
               <Layers className="h-4 w-4 text-primary" />
-              Queue Depth
+              {t('transports.queueDepth')}
             </span>
             {queueActive ? (
               <Badge
                 variant="outline"
                 className="text-[10px] border-amber-500/30 bg-amber-500/10 text-amber-400"
               >
-                Backpressure
+                {t('transports.backpressure')}
               </Badge>
             ) : (
               <Badge
                 variant="outline"
                 className="text-[10px] border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
               >
-                Drained
+                {t('transports.drained')}
               </Badge>
             )}
           </CardTitle>
-          <CardDescription>
-            Pending commands buffered in the northbound publish queue.
-          </CardDescription>
+          <CardDescription>{t('transports.queueDepthDesc')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex items-baseline justify-between">
             <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
-              Queue Size
+              {t('transports.queueSize')}
             </span>
             <span
               className={`font-mono text-xl font-bold ${queueActive ? 'text-amber-400' : 'text-foreground'}`}
@@ -550,7 +548,7 @@ export const TransportDetailPage: React.FC = () => {
             <div className="flex items-start gap-2 rounded-lg border border-amber-500/20 bg-amber-500/10 p-2.5 text-amber-400">
               <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               <span className="text-[11px]">
-                {formatNumber(transport.queue_size)} command(s) are queued and awaiting publish.
+                {t('transports.commandsQueued', { count: formatNumber(transport.queue_size) })}
               </span>
             </div>
           )}
@@ -562,11 +560,9 @@ export const TransportDetailPage: React.FC = () => {
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-sm font-semibold">
             <Send className="h-4 w-4 text-primary" />
-            Connection &amp; Publishing Parameters
+            {t('transports.connectionPublishingParams')}
           </CardTitle>
-          <CardDescription>
-            Live northbound transport state and publish/command counters.
-          </CardDescription>
+          <CardDescription>{t('transports.connectionPublishingDesc')}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 gap-x-4 gap-y-3 md:grid-cols-3">

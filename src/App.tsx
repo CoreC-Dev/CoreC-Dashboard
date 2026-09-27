@@ -62,6 +62,10 @@ const queryClient = new QueryClient({
     queries: {
       retry: 1,
       refetchOnWindowFocus: false,
+      // Most hooks poll every 2–5s. A 3s staleTime prevents redundant
+      // refetches on remount/route navigation when the cached data is still
+      // fresh, without noticeably delaying user-driven refreshes.
+      staleTime: 3000,
     },
   },
 })

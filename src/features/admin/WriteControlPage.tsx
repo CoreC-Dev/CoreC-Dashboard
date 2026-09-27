@@ -45,6 +45,7 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import type { DataTypeString } from '@/lib/constants'
+import { validateValue } from '@/lib/writeValidation'
 import type { DeadLetterEntry, WriteCommand } from '@/types/models'
 
 const DATA_TYPES: DataTypeString[] = [
@@ -77,6 +78,10 @@ function extractApiError(body: string, fallback: string): string {
   }
   return body.slice(0, 200) || fallback
 }
+
+/** Stable key for a dead-letter entry (driver + tag + failed_at). */
+const dlqKeyOf = (dl: DeadLetterEntry): string =>
+  `${dl.command.driver}-${dl.command.tag}-${dl.failed_at}`
 
 export const WriteControlPage: React.FC = () => {
   const { t } = useTranslation()
@@ -112,7 +117,6 @@ export const WriteControlPage: React.FC = () => {
   // client-side hide: cleared entry keys are tracked locally and filtered out
   // of the rendered list. Newly arriving failures (new failed_at timestamps)
   // still surface, while refetched-but-already-cleared entries stay hidden.
-  const dlqKeyOf = (dl: DeadLetterEntry) => `${dl.command.driver}-${dl.command.tag}-${dl.failed_at}`
   const visibleDeadLetters = deadLetters.filter((dl) => !clearedDlqKeys.has(dlqKeyOf(dl)))
 
   const parseValue = (raw: string, dt: DataTypeString): string | number | boolean => {
@@ -123,50 +127,6 @@ export const WriteControlPage: React.FC = () => {
       return Number(raw)
     }
     return raw
-  }
-
-  // Numeric range bounds per CoreC data type. Prevents a malformed write
-  // command from silently sending null (NaN serializes to null in JSON) or
-  // an out-of-range value to a physical actuator.
-  const NUMERIC_RANGES: Record<string, [number, number]> = {
-    int8: [-128, 127],
-    int16: [-32768, 32767],
-    int32: [-2147483648, 2147483647],
-    int64: [Number.MIN_SAFE_INTEGER, Number.MAX_SAFE_INTEGER],
-    uint8: [0, 255],
-    uint16: [0, 65535],
-    uint32: [0, 4294967295],
-    uint64: [0, Number.MAX_SAFE_INTEGER],
-    float32: [-3.4e38, 3.4e38],
-    float64: [Number.MIN_SAFE_INTEGER, Number.MAX_SAFE_INTEGER],
-  }
-
-  // Validates the raw input for the chosen data type. Returns an error
-  // message string if invalid, or null if valid.
-  const validateValue = (raw: string, dt: DataTypeString): string | null => {
-    if (dt === 'bool') {
-      const v = raw.trim().toLowerCase()
-      if (v !== 'true' && v !== 'false' && v !== '0' && v !== '1') {
-        return t('write.errBoolInvalid')
-      }
-      return null
-    }
-    if (dt.startsWith('int') || dt.startsWith('uint') || dt.startsWith('float')) {
-      const n = Number(raw)
-      if (raw.trim() === '' || Number.isNaN(n)) {
-        return t('write.errNotNumber', { raw, dt })
-      }
-      if (!Number.isFinite(n)) {
-        return t('write.errNotFinite')
-      }
-      const range = NUMERIC_RANGES[dt]
-      if (range && (n < range[0] || n > range[1])) {
-        return t('write.errOutOfRange', { n, dt, min: range[0], max: range[1] })
-      }
-      return null
-    }
-    // string / bytes — any non-empty input is accepted (required attr guards empty)
-    return null
   }
 
   // Industrial safety: the form only stages the command and opens a
@@ -227,7 +187,8 @@ export const WriteControlPage: React.FC = () => {
     setReplayError(null)
     try {
       await writeMutation.mutateAsync(cmd)
-      refetchDeadLetters()
+      // No manual refetch needed — useWriteTag's onSuccess invalidates
+      // ['deadLetters'], triggering an automatic refetch.
     } catch (err) {
       const msg =
         err instanceof ApiError && err.body
@@ -552,7 +513,7 @@ export const WriteControlPage: React.FC = () => {
             <div className="space-y-2">
               {visibleDeadLetters.map((dl) => (
                 <div
-                  key={`${dl.command.driver}-${dl.command.tag}-${dl.timestamp}`}
+                  key={`${dl.command.driver}-${dl.command.tag}-${dl.failed_at}-${dl.attempts}`}
                   className="p-3 rounded-lg border border-rose-500/20 bg-rose-500/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
                 >
                   <div className="space-y-1 font-mono">

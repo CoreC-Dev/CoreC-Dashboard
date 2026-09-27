@@ -25,6 +25,8 @@ export class CoreCWebSocket<T = unknown> {
   private maxMsgPerSec = 500
   /** Sliding window of recent message timestamps (ms). */
   private msgTimestamps: number[] = []
+  /** Index of the first unexpired timestamp — avoids O(n) Array.shift(). */
+  private msgTimestampsHead = 0
   /** Number of messages dropped due to backpressure (for diagnostics). */
   droppedCount = 0
 
@@ -85,17 +87,28 @@ export class CoreCWebSocket<T = unknown> {
         // (e.g. /tags/stream on a large plant). The dropped counter is
         // surfaced in the Diagnostics UI.
         const now = Date.now()
-        // Prune timestamps older than 1 second.
-        while (this.msgTimestamps.length > 0 && now - this.msgTimestamps[0] > 1000) {
-          this.msgTimestamps.shift()
+        // Prune timestamps older than 1 second. Use a head index instead of
+        // Array.shift() (which is O(n) per call → O(n²) at 500 msg/s).
+        while (
+          this.msgTimestampsHead < this.msgTimestamps.length &&
+          now - this.msgTimestamps[this.msgTimestampsHead] > 1000
+        ) {
+          this.msgTimestampsHead++
         }
-        if (this.msgTimestamps.length >= this.maxMsgPerSec) {
+        // Compact the array when the head advances far enough.
+        if (this.msgTimestampsHead > 256) {
+          this.msgTimestamps = this.msgTimestamps.slice(this.msgTimestampsHead)
+          this.msgTimestampsHead = 0
+        }
+        const activeCount = this.msgTimestamps.length - this.msgTimestampsHead
+        if (activeCount >= this.maxMsgPerSec) {
           this.droppedCount++
           return // drop this message
         }
         this.msgTimestamps.push(now)
         try {
-          const parsed = JSON.parse(event.data)
+          const data = typeof event.data === 'string' ? event.data : String(event.data)
+          const parsed = JSON.parse(data)
           this.onMessageCallback(parsed)
         } catch {
           this.onMessageCallback(event.data as unknown as T)
@@ -165,14 +178,18 @@ export class CoreCWebSocket<T = unknown> {
       this.ws.close()
       this.ws = null
     }
-    clearTimeout(this.reconnectTimeout)
+    if (this.reconnectTimeout) clearTimeout(this.reconnectTimeout)
     this.connect()
   }
 
   public destroy() {
     this.isDestroyed = true
-    clearTimeout(this.reconnectTimeout)
+    if (this.reconnectTimeout) clearTimeout(this.reconnectTimeout)
     if (this.ws) {
+      // Null all handlers so queued events can't fire after destroy.
+      this.ws.onopen = null
+      this.ws.onmessage = null
+      this.ws.onerror = null
       this.ws.onclose = null
       this.ws.close()
       this.ws = null

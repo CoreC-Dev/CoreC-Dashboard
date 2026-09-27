@@ -19,6 +19,24 @@ interface ConnectionState {
 
 const STORAGE_KEY = 'corec_connection'
 
+/** Best-effort localStorage write — never throws on quota/privacy errors. */
+const safePersist = (key: string, value: string): void => {
+  try {
+    localStorage.setItem(key, value)
+  } catch {
+    /* QuotaExceededError, private mode, disabled storage — best-effort */
+  }
+}
+
+/** Best-effort localStorage remove — never throws. */
+const safeRemove = (key: string): void => {
+  try {
+    localStorage.removeItem(key)
+  } catch {
+    /* best-effort */
+  }
+}
+
 const getInitialState = () => {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
@@ -56,7 +74,7 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
 
   setConnection: (url: string, secret: string) => {
     const cleanedUrl = url.trim().replace(/\/+$/, '')
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ baseUrl: cleanedUrl, secret }))
+    safePersist(STORAGE_KEY, JSON.stringify({ baseUrl: cleanedUrl, secret }))
     set({ baseUrl: cleanedUrl, secret, lastError: null })
   },
 
@@ -77,7 +95,7 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
   // frozen page with stale data. For an industrial control dashboard, a
   // silently-frozen view is a safety concern.
   clearAuth: () => {
-    localStorage.removeItem(STORAGE_KEY)
+    safeRemove(STORAGE_KEY)
     set({
       secret: '',
       isConnected: false,
@@ -89,7 +107,7 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
   },
 
   disconnect: () => {
-    localStorage.removeItem(STORAGE_KEY)
+    safeRemove(STORAGE_KEY)
     set({
       secret: '',
       isConnected: false,

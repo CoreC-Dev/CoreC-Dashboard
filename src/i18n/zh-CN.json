@@ -94,9 +94,11 @@
     "disconnect": "断开连接",
     "connectedTo": "已连接至",
     "invalidSecret": "密钥至少需要 8 个字符 (CoreC 安全要求)",
+    "invalidUrl": "请输入有效的 http:// 或 https:// 地址",
     "connectionFailed": "连接失败，请检查服务状态与网络",
     "secretHint": "* CoreC 要求 secret 长度 ≥ 8 字符",
-    "urlPlaceholder": "http://127.0.0.1:9090"
+    "urlPlaceholder": "http://127.0.0.1:9090",
+    "httpError": "HTTP {{status}}: {{statusText}}"
   },
   "dashboard": {
     "title": "工业物联网监控大屏",
@@ -170,7 +172,8 @@
     "tagsLabel": "测点",
     "clickToOpenTrend": "点击任意行查看实时趋势",
     "liveTrend": "实时趋势 · 最近 {{count}} / {{max}} 个采样",
-    "noTrendData": "非数值测点无趋势数据"
+    "noTrendData": "非数值测点无趋势数据",
+    "trendTitle": "{{tag}} 趋势"
   },
   "write": {
     "title": "控制指令下发与死信审计",
@@ -242,7 +245,7 @@
     "batches": "批次",
     "busDropped": "总线丢弃",
     "pprofEndpoints": "Go pprof 性能剖析端点",
-    "pprofDesc": "堆、协程与 CPU profile 的直接下载链接",
+    "pprofDesc": "经身份验证的堆、协程与 CPU profile 下载（附带 Bearer 令牌）",
     "pprofEndpoint": "/debug/pprof/{{name}}",
     "latencyDataAge": "延迟与数据年龄",
     "histogramDesc": "直方图快照 (均值 = Σ/n) 及从 /metrics 解析的指标",
@@ -250,7 +253,19 @@
     "publishLatency": "发布延迟",
     "httpRequests": "HTTP 请求",
     "dataAge": "数据年龄",
-    "currentMaxAge": "当前最大年龄"
+    "currentMaxAge": "当前最大年龄",
+    "notAvailable": "不可用",
+    "streamConnected": "已连接到事件日志总线...",
+    "logLinesDropped": "{{count}} 条日志行被丢弃（速率限制）",
+    "httpError": "HTTP {{status}} {{statusText}}",
+    "pprofFetchFailed": "获取 /debug/pprof/{{profile}} 失败: {{error}}",
+    "perDriverReadCounts": "各驱动读取计数",
+    "perDriverReadCountsDesc": "corec_driver_read_total{driver,type} 计数器",
+    "noDriverReadCounters": "不可用 — 未暴露驱动读取计数器",
+    "perTransportPublishCounts": "各传输发布计数",
+    "perTransportPublishCountsDesc": "corec_transport_published_total{transport,type} 计数器",
+    "noTransportPublishCounters": "不可用 — 未暴露传输发布计数器",
+    "pprofFetchNote": "配置文件通过 Authorization 头获取并在本地下载 — 直接链接会收到 401，因为 pprof 挂载在 CoreC 的认证路由组内。"
   },
   "drivers": {
     "title": "南向驱动",
@@ -312,7 +327,15 @@
     "notRegistered": "此 CoreC 实例上未注册名为 \"{{name}}\" 的驱动。",
     "noNameProvided": "URL 中未提供驱动名称。",
     "totalErrors": "总错误",
-    "totalReads": "总读取"
+    "totalReads": "总读取",
+    "connectionRuntimeParams": "连接与运行时参数",
+    "connectionRuntimeDesc": "实时南向驱动状态、轮询测点计数器及最近错误。",
+    "noRecentErrors": "无近期错误记录。",
+    "tagValuesTitle": "测点值",
+    "tagValuesDesc": "此驱动下注册测点的最新缓存值。",
+    "loadingTagValues": "正在加载测点值...",
+    "noTagValues": "{{driver}} 没有缓存的活跃测点值",
+    "showingFirstTags": "显示前 200 个测点，共 {{count}} 个。使用测点浏览器查看完整虚拟化列表。"
   },
   "transports": {
     "title": "北向传输",
@@ -357,7 +380,15 @@
     "protocolType": "协议类型",
     "connectionState": "连接状态",
     "lastPublish": "上次发布",
-    "notRegistered": "此 CoreC 实例上未注册名为 \"{{name}}\" 的传输。"
+    "notRegistered": "此 CoreC 实例上未注册名为 \"{{name}}\" 的传输。",
+    "queueDepth": "队列深度",
+    "backpressure": "背压",
+    "drained": "已排空",
+    "queueDepthDesc": "北向发布队列中缓冲的待处理命令。",
+    "commandsQueued": "{{count}} 条命令已排队等待发布。",
+    "connectionPublishingParams": "连接与发布参数",
+    "connectionPublishingDesc": "实时北向传输状态及发布/命令计数器。",
+    "colTransport": "传输"
   },
   "rules": {
     "title": "规则编排与路由",
@@ -430,6 +461,7 @@
     "rules": "规则",
     "save": "保存",
     "reload": "重载",
+    "diffToggle": "切换差异视图",
     "formView": "表单视图",
     "yamlCode": "YAML 代码",
     "reloading": "重载中...",
@@ -530,7 +562,8 @@
     "layoutBackupDesc": "导出或重置自定义大屏网格布局",
     "exportLayout": "导出布局",
     "importLayout": "导入布局",
-    "resetFactory": "恢复出厂默认"
+    "resetFactory": "恢复出厂默认",
+    "importedLayoutName": "导入的布局"
   },
   "alerts": {
     "title": "告警事件",
@@ -556,7 +589,10 @@
     "notificationsOn": "通知开启",
     "notificationsOff": "通知关闭",
     "notificationTitle": "CoreC 告警",
-    "notificationBody": "检测到新的错误级事件"
+    "notificationBody": "检测到新的错误级事件",
+    "retryFailed": "重试死信命令失败",
+    "logLevelError": "错误",
+    "logLevelWarn": "警告"
   },
   "dashboardEditor": {
     "title": "大屏布局编辑器",
@@ -612,5 +648,8 @@
       "reset": "重置视图",
       "reload": "重新加载页面"
     }
+  },
+  "topbar": {
+    "themeTooltip": "主题: {{theme}}"
   }
 }

@@ -54,7 +54,7 @@ function playBeep(ctxRef: { current: AudioContext | null }): void {
     }
     const ctx = ctxRef.current
     if (!ctx) return
-    if (ctx.state === 'suspended') void ctx.resume()
+    if (ctx.state === 'suspended') void ctx.resume().catch(() => {})
     const osc = ctx.createOscillator()
     const gain = ctx.createGain()
     osc.type = 'sine'
@@ -99,9 +99,12 @@ export const AlertsPage: React.FC = () => {
   const soundRef = useRef(soundEnabled)
   const notifRef = useRef(notifEnabled)
   const tRef = useRef(t)
-  soundRef.current = soundEnabled
-  notifRef.current = notifEnabled
-  tRef.current = t
+  // Sync refs in an effect, not during render (StrictMode double-invokes render).
+  useEffect(() => {
+    soundRef.current = soundEnabled
+    notifRef.current = notifEnabled
+    tRef.current = t
+  }, [soundEnabled, notifEnabled, t])
 
   const toggleSound = () => {
     const next = !soundEnabled
@@ -154,7 +157,7 @@ export const AlertsPage: React.FC = () => {
       await writeMutation.mutateAsync(cmd)
       await refetch()
     } catch (err: unknown) {
-      setRetryError(err instanceof Error ? err.message : 'Failed to retry dead letter command')
+      setRetryError(err instanceof Error ? err.message : t('alerts.retryFailed'))
     }
   }
 
@@ -249,12 +252,12 @@ export const AlertsPage: React.FC = () => {
             <div className="space-y-2">
               {deadLetters.map((entry) => (
                 <div
-                  key={`${entry.command.driver}-${entry.command.tag}-${entry.timestamp}`}
+                  key={`${entry.command.driver}-${entry.command.tag}-${entry.failed_at}-${entry.attempts}`}
                   className="p-3 rounded-lg border border-rose-500/20 bg-rose-500/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
                 >
                   <div className="space-y-1">
                     <div className="font-mono font-semibold text-rose-400">
-                      [{entry.command.driver}] tag: {entry.command.tag} ={' '}
+                      [{entry.command.driver}] {t('common.tag')}: {entry.command.tag} ={' '}
                       {String(entry.command.value)}
                     </div>
                     <div className="text-muted-foreground font-mono text-[11px]">{entry.error}</div>
@@ -335,7 +338,7 @@ export const AlertsPage: React.FC = () => {
             <div className="space-y-1.5 max-h-96 overflow-y-auto font-mono text-xs">
               {liveLogs.map((log) => (
                 <div
-                  key={`${log.timestamp}-${log.level}-${log.message?.slice(0, 20)}`}
+                  key={`${log.timestamp}-${log.level}-${log.type}-${log.payload.slice(0, 20)}`}
                   className={`p-2 rounded border flex items-start space-x-2 ${
                     log.level >= 8
                       ? 'border-rose-500/30 bg-rose-500/10 text-rose-400'
@@ -346,7 +349,8 @@ export const AlertsPage: React.FC = () => {
                     {new Date(log.timestamp).toLocaleTimeString()}
                   </span>
                   <Badge variant="outline" className="text-[9px] py-0 h-4 uppercase">
-                    {log.type || (log.level >= 8 ? 'ERROR' : 'WARN')}
+                    {log.type ||
+                      (log.level >= 8 ? t('alerts.logLevelError') : t('alerts.logLevelWarn'))}
                   </Badge>
                   <span className="break-all">{log.payload}</span>
                 </div>

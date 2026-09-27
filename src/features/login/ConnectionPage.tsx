@@ -32,6 +32,18 @@ export const ConnectionPage: React.FC = () => {
     const cleanUrl = url.trim().replace(/\/+$/, '')
     const cleanToken = token.trim()
 
+    // Validate URL scheme — reject non-http(s) protocols (S3).
+    try {
+      const parsed = new URL(cleanUrl)
+      if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+        setErrorMsg(t('connection.invalidUrl'))
+        return
+      }
+    } catch {
+      setErrorMsg(t('connection.invalidUrl'))
+      return
+    }
+
     if (cleanToken.length < 8) {
       setErrorMsg(t('connection.invalidSecret'))
       return
@@ -52,7 +64,9 @@ export const ConnectionPage: React.FC = () => {
       })
 
       if (!res.ok) {
-        throw new Error(`HTTP ${res.status}: ${res.statusText}`)
+        throw new Error(
+          t('connection.httpError', { status: res.status, statusText: res.statusText }),
+        )
       }
 
       const info = await res.json()
@@ -108,7 +122,8 @@ export const ConnectionPage: React.FC = () => {
                 <span>{t('connection.serverUrl')}</span>
               </label>
               <Input
-                type="text"
+                type="url"
+                inputMode="url"
                 placeholder={t('connection.urlPlaceholder', {
                   defaultValue: 'http://127.0.0.1:9090',
                 })}

@@ -162,7 +162,7 @@ export function usePatchConfig() {
 export function useUpdateConfig() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (data: { path?: string; payload?: string }) => api.updateConfigs(data),
+    mutationFn: (data: { path?: string; payload: string }) => api.updateConfigs(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['configs'] })
     },

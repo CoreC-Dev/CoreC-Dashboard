@@ -148,7 +148,7 @@ export const TopBar: React.FC = () => {
           variant="ghost"
           size="icon"
           onClick={cycleTheme}
-          title={`Theme: ${theme}`}
+          title={t('topbar.themeTooltip', { theme: t(`settings.${theme}`) })}
           className="h-8 w-8 text-muted-foreground hover:text-foreground"
         >
           {resolvedTheme === 'dark' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}

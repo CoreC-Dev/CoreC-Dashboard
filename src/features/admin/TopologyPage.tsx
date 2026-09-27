@@ -1,5 +1,6 @@
-import { Cpu, GitBranch, Radio, Send } from 'lucide-react'
+import { AlertCircle, Cpu, GitBranch, Radio, Send } from 'lucide-react'
 import type React from 'react'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   useConfigs,
@@ -16,17 +17,20 @@ import { formatNumber, formatUptime } from '@/lib/utils'
 
 export const TopologyPage: React.FC = () => {
   const { t } = useTranslation()
-  const { data: serverInfo } = useServerInfo()
-  const { data: driversData } = useDrivers()
-  const { data: transportsData } = useTransports()
-  const { data: stats } = useStats()
-  const { data: rulesData } = useRules()
+  const { data: serverInfo, isError: serverInfoError } = useServerInfo()
+  const { data: driversData, isError: driversError } = useDrivers()
+  const { data: transportsData, isError: transportsError } = useTransports()
+  const { data: stats, isError: statsError } = useStats()
+  const { data: rulesData, isError: rulesError } = useRules()
   const { data: configsData } = useConfigs()
 
   const drivers = driversData?.drivers || []
   const transports = transportsData?.transports || []
   const rules = rulesData?.rules || []
   const activeRules = rules.filter((r) => !r.disabled)
+  const sortedRules = useMemo(() => [...rules].sort((a, b) => a.priority - b.priority), [rules])
+
+  const hasError = serverInfoError || driversError || transportsError || statsError || rulesError
 
   return (
     <div className="space-y-6 max-w-5xl">
@@ -34,6 +38,15 @@ export const TopologyPage: React.FC = () => {
         <h1 className="text-xl font-bold tracking-tight">{t('topology.title')}</h1>
         <p className="text-xs text-muted-foreground">{t('topology.subtitle')}</p>
       </div>
+
+      {hasError && (
+        <Card className="border-destructive/40 bg-destructive/5 p-4">
+          <div className="flex items-center gap-2 text-xs text-destructive">
+            <AlertCircle className="w-4 h-4" />
+            <span>{t('common.error')}</span>
+          </div>
+        </Card>
+      )}
 
       {/* Node Identity */}
       {configsData?.global && (
@@ -198,36 +211,34 @@ export const TopologyPage: React.FC = () => {
             </span>
           </div>
           <div className="flex flex-wrap gap-2">
-            {rules
-              .sort((a, b) => a.priority - b.priority)
-              .map((rule) => (
-                <div
-                  key={rule.index}
-                  className={`px-3 py-1.5 rounded-lg border text-xs flex items-center gap-2 ${
-                    rule.disabled
-                      ? 'border-border/40 bg-muted/20 opacity-50'
-                      : 'border-amber-500/30 bg-amber-500/5'
-                  }`}
-                >
-                  <span className="font-mono text-[10px] text-muted-foreground">
-                    #{rule.priority}
-                  </span>
-                  <span className="font-semibold text-foreground">{rule.name}</span>
-                  <Badge variant="outline" className="text-[9px]">
-                    {rule.action}
+            {sortedRules.map((rule) => (
+              <div
+                key={rule.index}
+                className={`px-3 py-1.5 rounded-lg border text-xs flex items-center gap-2 ${
+                  rule.disabled
+                    ? 'border-border/40 bg-muted/20 opacity-50'
+                    : 'border-amber-500/30 bg-amber-500/5'
+                }`}
+              >
+                <span className="font-mono text-[10px] text-muted-foreground">
+                  #{rule.priority}
+                </span>
+                <span className="font-semibold text-foreground">{rule.name}</span>
+                <Badge variant="outline" className="text-[9px]">
+                  {rule.action}
+                </Badge>
+                {rule.disabled && (
+                  <Badge variant="outline" className="text-[9px] text-muted-foreground">
+                    {t('topology.off')}
                   </Badge>
-                  {rule.disabled && (
-                    <Badge variant="outline" className="text-[9px] text-muted-foreground">
-                      {t('topology.off')}
-                    </Badge>
-                  )}
-                  {(rule.hit_count > 0 || rule.miss_count > 0) && (
-                    <span className="text-[9px] text-muted-foreground font-mono">
-                      {rule.hit_count}↑/{rule.miss_count}↓
-                    </span>
-                  )}
-                </div>
-              ))}
+                )}
+                {(rule.hit_count > 0 || rule.miss_count > 0) && (
+                  <span className="text-[9px] text-muted-foreground font-mono">
+                    {rule.hit_count}↑/{rule.miss_count}↓
+                  </span>
+                )}
+              </div>
+            ))}
           </div>
         </Card>
       )}

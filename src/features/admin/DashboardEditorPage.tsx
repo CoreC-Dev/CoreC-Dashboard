@@ -162,12 +162,15 @@ export const DashboardEditorPage: React.FC = () => {
   }
 
   const handleAdd = (item: (typeof CARD_TYPES)[0]) => {
+    // Compute bottom-y from existing cards instead of Infinity —
+    // JSON.stringify(Infinity) → null, which corrupts the persisted layout.
+    const maxY = currentLayout.cards.reduce((max, c) => Math.max(max, c.layout.y + c.layout.h), 0)
     addCard({
       type: item.type,
       title: t(item.titleKey),
       layout: {
         x: 0,
-        y: Infinity, // place at bottom
+        y: maxY,
         w: item.defaultW,
         h: item.defaultH,
       },
@@ -179,7 +182,8 @@ export const DashboardEditorPage: React.FC = () => {
   }
 
   // Sync react-grid-layout drag/resize changes back to the dashboard store.
-  const handleLayoutChange = (newLayout: Layout[]) => {
+  // `Layout` is `readonly LayoutItem[]`; map returns a fresh mutable array.
+  const handleLayoutChange = (newLayout: Layout) => {
     updateCardLayout(
       newLayout.map((item) => ({
         i: item.i,

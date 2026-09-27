@@ -1,5 +1,5 @@
-import type React from 'react'
-import { useEffect, useState } from 'react'
+import { memo, useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   CartesianGrid,
   Line,
@@ -12,7 +12,12 @@ import {
 import { CoreCWebSocket } from '@/api/websocket'
 import type { MemoryFrame } from '@/types/models'
 
-export const MemoryChart: React.FC = () => {
+// memo'd so a parent re-render (e.g. DashboardPage polling useStats) doesn't
+// re-render this chart unless its (empty) props change. The chart drives its
+// own updates via the /memory WebSocket, so it has nothing to gain from a
+// parent re-render.
+export const MemoryChart = memo(function MemoryChart() {
+  const { t } = useTranslation()
   const [data, setData] = useState<
     { time: string; allocMb: number; sysMb: number; goroutines: number }[]
   >([])
@@ -55,7 +60,7 @@ export const MemoryChart: React.FC = () => {
           <Line
             type="monotone"
             dataKey="allocMb"
-            name="Heap Alloc (MB)"
+            name={t('dashboard.heapAllocMb')}
             stroke="#8b5cf6"
             strokeWidth={2}
             dot={false}
@@ -64,7 +69,7 @@ export const MemoryChart: React.FC = () => {
           <Line
             type="monotone"
             dataKey="sysMb"
-            name="Sys Mem (MB)"
+            name={t('dashboard.sysMemMb')}
             stroke="#06b6d4"
             strokeWidth={1.5}
             strokeDasharray="4 4"
@@ -75,4 +80,4 @@ export const MemoryChart: React.FC = () => {
       </ResponsiveContainer>
     </div>
   )
-}
+})

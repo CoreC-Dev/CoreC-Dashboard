@@ -51,6 +51,22 @@ const DEFAULT_LAYOUT: DashboardLayout = {
 
 const STORAGE_KEY = 'corec_dashboard_layout'
 
+/** Best-effort localStorage write — never throws on quota/privacy errors. */
+const safePersist = (key: string, value: string): void => {
+  try {
+    localStorage.setItem(key, value)
+  } catch {
+    /* QuotaExceededError, private mode, disabled storage — best-effort */
+  }
+}
+
+/** Debounced persistence — avoids writing on every drag pixel (M5). */
+let persistTimer: ReturnType<typeof setTimeout> | null = null
+const debouncedPersist = (key: string, value: string): void => {
+  if (persistTimer) clearTimeout(persistTimer)
+  persistTimer = setTimeout(() => safePersist(key, value), 300)
+}
+
 interface DashboardState {
   currentLayout: DashboardLayout
   isEditing: boolean
@@ -109,7 +125,8 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       cards: updatedCards,
       updatedAt: Date.now(),
     }
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newLayout))
+    // Debounce — react-grid-layout fires onLayoutChange on every drag pixel.
+    debouncedPersist(STORAGE_KEY, JSON.stringify(newLayout))
     set({ currentLayout: newLayout })
   },
 
@@ -124,7 +141,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       cards: [...layout.cards, newCard],
       updatedAt: Date.now(),
     }
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newLayout))
+    safePersist(STORAGE_KEY, JSON.stringify(newLayout))
     set({ currentLayout: newLayout })
   },
 
@@ -135,7 +152,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       cards: layout.cards.filter((c) => c.id !== id),
       updatedAt: Date.now(),
     }
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newLayout))
+    safePersist(STORAGE_KEY, JSON.stringify(newLayout))
     set({ currentLayout: newLayout })
   },
 
@@ -146,12 +163,16 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       cards: layout.cards.map((c) => (c.id === id ? { ...c, ...partial } : c)),
       updatedAt: Date.now(),
     }
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newLayout))
+    safePersist(STORAGE_KEY, JSON.stringify(newLayout))
     set({ currentLayout: newLayout })
   },
 
   resetToDefault: () => {
-    localStorage.removeItem(STORAGE_KEY)
+    try {
+      localStorage.removeItem(STORAGE_KEY)
+    } catch {
+      /* best-effort */
+    }
     set({ currentLayout: DEFAULT_LAYOUT })
   },
 }))

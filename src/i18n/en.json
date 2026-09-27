@@ -94,9 +94,11 @@
     "disconnect": "Disconnect",
     "connectedTo": "Connected to",
     "invalidSecret": "Secret must be at least 8 characters long",
+    "invalidUrl": "Please enter a valid http:// or https:// URL",
     "connectionFailed": "Failed to connect to CoreC instance",
     "secretHint": "* CoreC requires secret length ≥ 8 characters",
-    "urlPlaceholder": "http://127.0.0.1:9090"
+    "urlPlaceholder": "http://127.0.0.1:9090",
+    "httpError": "HTTP {{status}}: {{statusText}}"
   },
   "dashboard": {
     "title": "IIoT Gateway Operational Dashboard",
@@ -170,7 +172,8 @@
     "tagsLabel": "Tags",
     "clickToOpenTrend": "Click any row to open the live trend",
     "liveTrend": "Live trend · last {{count}} / {{max}} samples",
-    "noTrendData": "No trend data available for non-numeric tags"
+    "noTrendData": "No trend data available for non-numeric tags",
+    "trendTitle": "Trend for {{tag}}"
   },
   "write": {
     "title": "Field Control & Dead Letter Queue",
@@ -242,7 +245,7 @@
     "batches": "batches",
     "busDropped": "Bus Dropped",
     "pprofEndpoints": "Go pprof Profiling Endpoints",
-    "pprofDesc": "Direct heap, goroutine, and CPU profile download URLs",
+    "pprofDesc": "Authenticated heap, goroutine, and CPU profile downloads (Bearer token attached)",
     "pprofEndpoint": "/debug/pprof/{{name}}",
     "latencyDataAge": "Latency & Data Age",
     "histogramDesc": "Histogram snapshots (avg = Σ/n) and gauges parsed from /metrics",
@@ -250,7 +253,19 @@
     "publishLatency": "Publish Latency",
     "httpRequests": "HTTP Requests",
     "dataAge": "Data Age",
-    "currentMaxAge": "current max age"
+    "currentMaxAge": "current max age",
+    "notAvailable": "N/A",
+    "streamConnected": "Connected to event logging bus...",
+    "logLinesDropped": "{{count}} log lines dropped (rate limit)",
+    "httpError": "HTTP {{status}} {{statusText}}",
+    "pprofFetchFailed": "failed to fetch /debug/pprof/{{profile}}: {{error}}",
+    "perDriverReadCounts": "Per-Driver Read Counts",
+    "perDriverReadCountsDesc": "corec_driver_read_total{driver,type} counters",
+    "noDriverReadCounters": "N/A — no driver read counters exposed",
+    "perTransportPublishCounts": "Per-Transport Publish Counts",
+    "perTransportPublishCountsDesc": "corec_transport_published_total{transport,type} counters",
+    "noTransportPublishCounters": "N/A — no transport publish counters exposed",
+    "pprofFetchNote": "Profiles are fetched with the Authorization header and downloaded locally — direct links would receive a 401 because pprof is mounted inside CoreC's authed route group."
   },
   "drivers": {
     "title": "Southbound Drivers",
@@ -312,7 +327,15 @@
     "notRegistered": "No driver named \"{{name}}\" is registered on this CoreC instance.",
     "noNameProvided": "No driver name was provided in the URL.",
     "totalErrors": "Total Errors",
-    "totalReads": "Total Reads"
+    "totalReads": "Total Reads",
+    "connectionRuntimeParams": "Connection & Runtime Parameters",
+    "connectionRuntimeDesc": "Live southbound driver state, polled-tag counters and the most recent error.",
+    "noRecentErrors": "No recent errors recorded.",
+    "tagValuesTitle": "Tag Values",
+    "tagValuesDesc": "Latest cached values polled for tags registered under this driver.",
+    "loadingTagValues": "Loading tag values...",
+    "noTagValues": "No active tag values cached for {{driver}}",
+    "showingFirstTags": "Showing first 200 of {{count}} tags. Use Tag Explorer for full virtualized browsing."
   },
   "transports": {
     "title": "Northbound Transports",
@@ -357,7 +380,15 @@
     "protocolType": "Protocol Type",
     "connectionState": "Connection State",
     "lastPublish": "Last Publish",
-    "notRegistered": "No transport named \"{{name}}\" is registered on this CoreC instance."
+    "notRegistered": "No transport named \"{{name}}\" is registered on this CoreC instance.",
+    "queueDepth": "Queue Depth",
+    "backpressure": "Backpressure",
+    "drained": "Drained",
+    "queueDepthDesc": "Pending commands buffered in the northbound publish queue.",
+    "commandsQueued": "{{count}} command(s) are queued and awaiting publish.",
+    "connectionPublishingParams": "Connection & Publishing Parameters",
+    "connectionPublishingDesc": "Live northbound transport state and publish/command counters.",
+    "colTransport": "Transport"
   },
   "rules": {
     "title": "Rule Pipeline & Routing",
@@ -430,6 +461,7 @@
     "rules": "Rules",
     "save": "Save",
     "reload": "Reload",
+    "diffToggle": "Toggle diff view",
     "formView": "Form View",
     "yamlCode": "YAML Code",
     "reloading": "Reloading...",
@@ -530,7 +562,8 @@
     "layoutBackupDesc": "Export or reset your custom large-screen grid layout",
     "exportLayout": "Export Layout",
     "importLayout": "Import Layout",
-    "resetFactory": "Reset to Factory Default"
+    "resetFactory": "Reset to Factory Default",
+    "importedLayoutName": "Imported Layout"
   },
   "alerts": {
     "title": "Alerts & Events",
@@ -556,7 +589,10 @@
     "notificationsOn": "Notifications On",
     "notificationsOff": "Notifications Off",
     "notificationTitle": "CoreC Alert",
-    "notificationBody": "New error-level event detected"
+    "notificationBody": "New error-level event detected",
+    "retryFailed": "Failed to retry dead letter command",
+    "logLevelError": "ERROR",
+    "logLevelWarn": "WARN"
   },
   "dashboardEditor": {
     "title": "Large-Screen Layout Editor",
@@ -612,5 +648,8 @@
       "reset": "Reset View",
       "reload": "Reload Page"
     }
+  },
+  "topbar": {
+    "themeTooltip": "Theme: {{theme}}"
   }
 }
