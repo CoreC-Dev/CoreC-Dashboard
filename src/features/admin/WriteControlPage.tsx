@@ -12,7 +12,7 @@ import {
   Trash2,
 } from 'lucide-react'
 import type React from 'react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ApiError } from '@/api/client'
 import { useDeadLetters, useDrivers, useWriteTag } from '@/api/hooks'
@@ -83,6 +83,12 @@ function extractApiError(body: string, fallback: string): string {
 const dlqKeyOf = (dl: DeadLetterEntry): string =>
   `${dl.command.driver}-${dl.command.tag}-${dl.failed_at}`
 
+/** sessionStorage key for the set of dead-letter keys the operator has
+ *  cleared. CoreC exposes no DELETE endpoint for dead letters, so "Clear All"
+ *  is a client-side hide. Without persistence the cleared set was lost on
+ *  unmount/refresh, so cleared entries reappeared. [L-5] */
+const DLQ_CLEARED_KEY = 'corec_dlq_cleared'
+
 export const WriteControlPage: React.FC = () => {
   const { t } = useTranslation()
   const { data: driversData } = useDrivers()
@@ -107,8 +113,27 @@ export const WriteControlPage: React.FC = () => {
   const [pendingCmd, setPendingCmd] = useState<WriteCommand | null>(null)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [clearConfirmOpen, setClearConfirmOpen] = useState(false)
-  const [clearedDlqKeys, setClearedDlqKeys] = useState<Set<string>>(new Set())
+  const [clearedDlqKeys, setClearedDlqKeys] = useState<Set<string>>(() => {
+    // Restore cleared keys from sessionStorage so cleared entries stay hidden
+    // across remounts and page refreshes. [L-5]
+    try {
+      const stored = sessionStorage.getItem(DLQ_CLEARED_KEY)
+      if (stored) return new Set(JSON.parse(stored) as string[])
+    } catch {
+      // Ignore parse errors — start with an empty set.
+    }
+    return new Set()
+  })
   const [dlqClearedMsg, setDlqClearedMsg] = useState<string | null>(null)
+
+  // Persist cleared keys to sessionStorage whenever they change. [L-5]
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(DLQ_CLEARED_KEY, JSON.stringify([...clearedDlqKeys]))
+    } catch {
+      // sessionStorage may be unavailable (private mode) — silently ignore.
+    }
+  }, [clearedDlqKeys])
 
   const drivers = driversData?.drivers || []
   const deadLetters = deadLettersData?.failed_writes || []

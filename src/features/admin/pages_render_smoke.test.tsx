@@ -5,8 +5,8 @@ import { act } from 'react'
 import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
 import '@/i18n'
-import { TransportsPage } from './TransportsPage'
 import { RulesPage } from './RulesPage'
+import { TransportsPage } from './TransportsPage'
 
 // Mock only the API layer (no real network). Stores are REAL — the test
 // validates that useConfigStore selectors don't create new references on

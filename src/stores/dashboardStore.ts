@@ -60,11 +60,14 @@ const safePersist = (key: string, value: string): void => {
   }
 }
 
-/** Debounced persistence — avoids writing on every drag pixel (M5). */
+/** Debounced persistence — avoids writing on every drag pixel (M5).
+ *  Takes a value *getter* and reads it at fire time, so an interleaved
+ *  immediate safePersist (addCard/removeCard/updateCardConfig) is not
+ *  clobbered by a stale snapshot captured when the debounce was scheduled. */
 let persistTimer: ReturnType<typeof setTimeout> | null = null
-const debouncedPersist = (key: string, value: string): void => {
+const debouncedPersist = (key: string, getValue: () => string): void => {
   if (persistTimer) clearTimeout(persistTimer)
-  persistTimer = setTimeout(() => safePersist(key, value), 300)
+  persistTimer = setTimeout(() => safePersist(key, getValue()), 300)
 }
 
 interface DashboardState {
@@ -126,7 +129,9 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       updatedAt: Date.now(),
     }
     // Debounce — react-grid-layout fires onLayoutChange on every drag pixel.
-    debouncedPersist(STORAGE_KEY, JSON.stringify(newLayout))
+    // Pass a getter so the timer persists the freshest currentLayout at fire
+    // time, not this (possibly stale) snapshot — see H-2.
+    debouncedPersist(STORAGE_KEY, () => JSON.stringify(get().currentLayout))
     set({ currentLayout: newLayout })
   },
 

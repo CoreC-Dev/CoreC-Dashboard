@@ -16,7 +16,10 @@ export const NUMERIC_RANGES: Record<string, [number, number]> = {
   uint32: [0, 4294967295],
   uint64: [0, Number.MAX_SAFE_INTEGER],
   float32: [-3.4e38, 3.4e38],
-  float64: [Number.MIN_SAFE_INTEGER, Number.MAX_SAFE_INTEGER],
+  // float64 can represent values up to ±1.79e308. Using the JS safe-integer
+  // range (±9.007e15) here would wrongly reject legitimate large/small float
+  // write values — e.g. scientific notation or large counter writes.
+  float64: [-Number.MAX_VALUE, Number.MAX_VALUE],
 }
 
 /**

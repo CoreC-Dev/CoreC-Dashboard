@@ -16,10 +16,10 @@ import {
   XCircle,
 } from 'lucide-react'
 import type React from 'react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router-dom'
-import { useTransport, useUpdateConfig } from '@/api/hooks'
+import { useConfigRaw, useTransport, useUpdateConfig } from '@/api/hooks'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -31,6 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { parseConfigYaml } from '@/lib/configYaml'
 import { ConnStateLabel } from '@/lib/constants'
 import { formatNumber, isZeroTime } from '@/lib/utils'
 import type { TransportStatus } from '@/types/models'
@@ -202,6 +203,19 @@ function parseHeaders(raw: string): Record<string, string> {
   return out
 }
 
+/** Serialize an existing config value into the string form the edit form uses.
+ *  Handles objects (e.g. headers) and numbers. [C-2] */
+function configValueToString(f: TransportEditField, src: unknown): string {
+  if (src === undefined || src === null) return ''
+  if (f.key === 'headers' && typeof src === 'object' && !Array.isArray(src)) {
+    return Object.entries(src as Record<string, unknown>)
+      .map(([k, v]) => `${k}:${String(v)}`)
+      .join(',')
+  }
+  if (typeof src === 'object') return JSON.stringify(src)
+  return String(src)
+}
+
 function buildTransportYaml(
   transport: TransportStatus,
   fields: readonly TransportEditField[],
@@ -236,6 +250,7 @@ function buildTransportYaml(
 const TransportEditConfigSection: React.FC<{ transport: TransportStatus }> = ({ transport }) => {
   const { t } = useTranslation()
   const updateConfig = useUpdateConfig()
+  const { data: rawYaml } = useConfigRaw()
   const [open, setOpen] = useState(false)
   const fields = useMemo(() => getTransportFields(transport.type), [transport.type])
   const [values, setValues] = useState<Record<string, string>>(() => {
@@ -246,6 +261,27 @@ const TransportEditConfigSection: React.FC<{ transport: TransportStatus }> = ({ 
   const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(
     null,
   )
+
+  // Pre-fill form from the existing server config so the operator can see and
+  // preserve current settings instead of starting from empty inputs. [C-2]
+  // Secrets come back redacted as "***" and must be re-entered — that is an
+  // inherent limitation of the redacted raw view.
+  useEffect(() => {
+    if (!rawYaml) return
+    try {
+      const cfg = parseConfigYaml(rawYaml)
+      const me = cfg.transports?.find((tp) => tp.name === transport.name)
+      if (!me) return
+      const init: Record<string, string> = {}
+      for (const f of fields) {
+        const src = f.group === 'settings' ? me.settings?.[f.key] : me[f.key as keyof typeof me]
+        init[f.key] = configValueToString(f, src)
+      }
+      setValues(init)
+    } catch {
+      // If YAML parse fails, leave the form empty — don't crash the page.
+    }
+  }, [rawYaml, transport.name, fields])
 
   const generatedYaml = useMemo(
     () => buildTransportYaml(transport, fields, values),

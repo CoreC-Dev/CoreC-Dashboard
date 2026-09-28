@@ -122,6 +122,89 @@ describe('validateRuleExpression', () => {
     const r = validateRuleExpression("tag == 'temp' && value > 50")
     expect(r.warnings.some((w) => w.includes('unknown field'))).toBe(false)
   })
+
+  // ─── H-5 regression: string literal contents should be ignored ───
+  it('does not false-positive on parens inside string literals', () => {
+    expect(validateRuleExpression("tag == ')('").valid).toBe(true)
+    expect(validateRuleExpression("tag == '(test'").valid).toBe(true)
+    expect(validateRuleExpression("tag == 'test)'").valid).toBe(true)
+  })
+
+  it('does not warn about field-like words inside string literals', () => {
+    const r = validateRuleExpression("tag == 'foobar in limit'")
+    expect(r.warnings.some((w) => w.includes('unknown field'))).toBe(false)
+  })
+
+  it('still detects unbalanced parens outside string literals', () => {
+    expect(validateRuleExpression('(tag == "temp"').valid).toBe(false)
+  })
+
+  // ─── H-5 regression: typo/range checks must use stripped expression ──
+  it('does not false-positive on "matchs" inside string literals', () => {
+    const r = validateRuleExpression("tag == 'matchs'")
+    expect(r.valid).toBe(true)
+    expect(r.errors.some((e) => e.includes('matchs'))).toBe(false)
+  })
+
+  it('does not false-positive on "contain" inside string literals', () => {
+    const r = validateRuleExpression("tag == 'contain'")
+    expect(r.warnings.some((w) => w.includes('contain'))).toBe(false)
+  })
+
+  it('does not false-positive on range-like text inside string literals', () => {
+    const r = validateRuleExpression("tag =~ 'value in 50..'")
+    expect(r.valid).toBe(true)
+    expect(r.errors.some((e) => e.includes('range'))).toBe(false)
+  })
+
+  it('still detects real "matchs" typo outside string literals', () => {
+    const r = validateRuleExpression('tag matchs "temp"')
+    expect(r.valid).toBe(false)
+    expect(r.errors.some((e) => e.includes('matchs'))).toBe(true)
+  })
+
+  it('still detects real incomplete range outside string literals', () => {
+    const r = validateRuleExpression('value in 50..')
+    expect(r.valid).toBe(false)
+    expect(r.errors.some((e) => e.includes('range'))).toBe(true)
+  })
+
+  // ─── H-5 re-audit: dangling-logical-operator check must use stripped ──
+  it('does not false-positive on dangling && inside string literal', () => {
+    const r = validateRuleExpression("tag == ' &&)'")
+    expect(r.errors.some((e) => e.includes('dangling logical operator'))).toBe(false)
+  })
+
+  it('does not false-positive on dangling || inside string literal', () => {
+    const r = validateRuleExpression("tag == 'foo ||)'")
+    expect(r.errors.some((e) => e.includes('dangling logical operator'))).toBe(false)
+  })
+
+  it('does not false-positive on && inside =~ string literal', () => {
+    const r = validateRuleExpression("tag =~ 'x && )'")
+    expect(r.errors.some((e) => e.includes('dangling logical operator'))).toBe(false)
+  })
+
+  it('still detects real dangling && at end of expression', () => {
+    const r = validateRuleExpression('value > 5 &&')
+    expect(r.errors.some((e) => e.includes('dangling logical operator'))).toBe(true)
+  })
+
+  it('still detects real starting && at beginning', () => {
+    const r = validateRuleExpression('&& value > 5')
+    expect(r.errors.some((e) => e.includes('starts with logical operator'))).toBe(true)
+  })
+
+  // ─── H-5 re-audit: double-quote check must use stripped ─────────
+  it('does not warn about double-quotes inside single-quoted literal', () => {
+    const r = validateRuleExpression('tag == \'say "hi"\'')
+    expect(r.warnings.some((w) => w.includes('double-quoted'))).toBe(false)
+  })
+
+  it('still warns about real double-quoted string literals', () => {
+    const r = validateRuleExpression('tag == "hello"')
+    expect(r.warnings.some((w) => w.includes('double-quoted'))).toBe(true)
+  })
 })
 
 describe('VALID_FIELDS', () => {

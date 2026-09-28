@@ -13,7 +13,7 @@
 import { createServer } from 'node:http'
 import { request as httpRequest } from 'node:http'
 import { readFile, stat } from 'node:fs/promises'
-import { extname, resolve, join } from 'node:path'
+import { extname, resolve, join, sep } from 'node:path'
 
 const PORT = parseInt(process.argv[2] || '8080', 10)
 const DIST = resolve(process.argv[3] || './dist')
@@ -46,10 +46,20 @@ const MIME = {
 }
 
 // Guard against path traversal: ensure resolved path stays inside DIST.
+// Uses a path-separator boundary check (not a bare string prefix match) so
+// sibling directories whose name merely *starts* with DIST's basename (e.g.
+// /usr/app/dist-secrets) cannot slip through. clean === DIST covers the root.
+// Malformed %-sequences (e.g. /%E0%A4%A) make decodeURIComponent throw —
+// catching that prevents a single crafted request from crashing the server.
 function safeStaticPath(urlPath) {
-  const decoded = decodeURIComponent(urlPath.split('?')[0])
+  let decoded
+  try {
+    decoded = decodeURIComponent(urlPath.split('?')[0])
+  } catch {
+    return null
+  }
   const clean = resolve(DIST, '.' + (decoded === '/' ? '' : decoded)).replace(/\0/g, '')
-  if (!clean.startsWith(DIST)) return null
+  if (clean !== DIST && !clean.startsWith(DIST + sep)) return null
   return clean
 }
 
@@ -174,15 +184,33 @@ function proxyUpgradeToCoreC(req, socket, head) {
 
   // If CoreC rejects the upgrade (e.g. bad token → 4xx), relay the response
   // so the browser sees the real status instead of a silent socket close.
+  // Node auto-dechunks Transfer-Encoding: chunked on IncomingMessage but
+  // leaves the header in place — forwarding it verbatim would make the
+  // browser expect chunk framing that the piped (de-chunked) body lacks.
+  // Buffer the small rejection body and re-emit with a correct length.
+  // Content-Encoding is intentionally preserved: http.request does NOT
+  // auto-decompress, so the body is still encoded and the header is truthful.
   proxyReq.on('response', (proxyRes) => {
-    const headLines = [
-      `HTTP/1.1 ${proxyRes.statusCode} ${proxyRes.statusMessage}`,
-      ...Object.entries(proxyRes.headers).map(([k, v]) => `${k}: ${v}`),
-      '',
-      '',
-    ]
-    socket.write(headLines.join('\r\n'))
-    proxyRes.pipe(socket)
+    const chunks = []
+    proxyRes.on('data', (c) => chunks.push(c))
+    proxyRes.on('end', () => {
+      const body = Buffer.concat(chunks)
+      const headers = { ...proxyRes.headers }
+      delete headers['transfer-encoding']
+      headers['content-length'] = String(body.length)
+      const headLines = [
+        `HTTP/1.1 ${proxyRes.statusCode} ${proxyRes.statusMessage}`,
+        ...Object.entries(headers).map(([k, v]) => `${k}: ${v}`),
+        '',
+        '',
+      ]
+      socket.write(headLines.join('\r\n'))
+      socket.write(body)
+      socket.end()
+    })
+    proxyRes.on('error', () => {
+      if (!socket.destroyed) socket.destroy()
+    })
   })
 
   proxyReq.on('error', () => {

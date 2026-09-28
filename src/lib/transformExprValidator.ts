@@ -48,9 +48,12 @@ export function validateTransformExpression(expr: string): ArithValidationResult
   }
 
   // Check for invalid characters: after removing valid tokens, nothing should remain.
-  // Valid: digits, + - * / ( ) . whitespace, and the word "value"
+  // Valid: digits, + - * / ( ) . whitespace, the word "value", and scientific
+  // notation exponents (e/E) — e.g. "value * 1e3" must not leave 'e' behind.
+  // Remove float literals (including exponent) first, then digits/operators.
   const withoutValue = trimmed.replace(/\bvalue\b/g, '')
-  const remaining = withoutValue.replace(/[0-9+\-*/().\s]/g, '')
+  const withoutFloats = withoutValue.replace(/(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?/g, '')
+  const remaining = withoutFloats.replace(/[+\-*/().\s]/g, '')
   if (remaining.length > 0) {
     errors.push(
       `invalid characters: ${[...new Set(remaining.split(''))].join(', ')} — only digits, + - * / ( ) . and "value" are allowed`,
@@ -93,23 +96,36 @@ export function validateTransformExpression(expr: string): ArithValidationResult
     warnings.push('division by zero detected — this will produce an error at runtime')
   }
 
-  // Try to evaluate as a basic sanity check (if it's a pure literal expression)
-  // We substitute 'value' with a test value and see if JavaScript can evaluate it
-  try {
-    const testExpr = trimmed.replace(/\bvalue\b/g, '1.0')
-    // Only attempt eval if the expression is simple enough (no unknown identifiers)
-    if (!/[a-zA-Z]/.test(testExpr.replace(/\b(?:true|false|null|undefined|NaN|Infinity)\b/g, ''))) {
-      // eslint-disable-next-line no-new-func
-      const fn = new Function(`"use strict"; return (${testExpr});`)
-      const result = fn()
-      if (typeof result !== 'number' || Number.isNaN(result)) {
-        errors.push('expression does not evaluate to a number')
+  // Structural sanity check for pure-literal expressions (no `value`).
+  // We substitute 'value' with a numeric literal; if the result contains only
+  // digits/operators, a pure-literal expression should reduce to a number.
+  // This replaces an earlier `new Function(...)` eval which — although gated
+  // by an alphabetic-char pre-check — could be bypassed via JSFuck-style
+  // symbol combinations (self-XSS anti-pattern). [L-6]
+  const testExprRaw = trimmed.replace(/\bvalue\b/g, '1')
+  // Strip float-with-exponent literals (e.g. 1e3, 1.5e-10) to '1' BEFORE the
+  // letter check, so scientific notation does not trip the /[a-zA-Z]/ guard
+  // and silently disable the detector. [H-6/L-6 interaction]
+  const testExpr = testExprRaw.replace(/(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?/g, '1')
+  if (!/[a-zA-Z]/.test(testExpr)) {
+    // Detect two adjacent operands with no operator between them. After
+    // substituting value→1 and stripping float literals, this manifests as
+    // two number-like tokens separated only by whitespace OR by a paren
+    // boundary (e.g. "(1) 2", "2 (1)", "1 (2)"). The old
+    // `new Function(\`return (1 2)\`)` caught these via JS SyntaxError;
+    // the structural replacement must restore that coverage.
+    if (/\d\)?\s+\(?\d/.test(testExpr)) {
+      if (errors.length === 0) {
+        errors.push('expression has a syntax error — two operands with no operator between them')
       }
     }
-  } catch {
-    // If JS can't parse it, expr-lang likely can't either
-    if (errors.length === 0) {
-      errors.push('expression has a syntax error — check operators and parentheses')
+    // Also catch a dangling operator or empty parens as a final gate (these
+    // are already checked above, but this ensures the expression is complete
+    // before accepting it as a constant).
+    else if (/[+\-*/]\s*$/.test(testExpr) || /\(\s*\)/.test(testExpr)) {
+      if (errors.length === 0) {
+        errors.push('expression has a syntax error — check operators and parentheses')
+      }
     }
   }
 

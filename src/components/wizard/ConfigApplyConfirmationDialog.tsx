@@ -39,6 +39,30 @@ import { cn } from '@/lib/utils'
 
 // ─── Diff computation ────────────────────────────────────────────────
 
+/** Order-insensitive deep equality check via canonical JSON serialization.
+ *  `JSON.stringify` iterates keys in insertion order, so two logically-
+ *  identical config objects built with different key orders (e.g. the wizard
+ *  rebuilding a driver as `{ name, type, settings }` vs. server YAML parsed
+ *  as `{ type, settings, name }`) would compare as different and produce
+ *  false "modified"/"restart needed" flags. This helper sorts object keys
+ *  recursively so the comparison reflects logical content, not key order. [L-4] */
+function stableStringify(v: unknown): string {
+  if (v === undefined) return 'undefined'
+  if (v && typeof v === 'object' && !Array.isArray(v)) {
+    const obj = v as Record<string, unknown>
+    return (
+      `{` +
+      Object.keys(obj)
+        .sort()
+        .map((k) => `${JSON.stringify(k)}:${stableStringify(obj[k])}`)
+        .join(',') +
+      `}`
+    )
+  }
+  if (Array.isArray(v)) return `[${v.map(stableStringify).join(',')}]`
+  return JSON.stringify(v)
+}
+
 export interface ConfigDiffEntry {
   entity: string
   name: string
@@ -105,10 +129,11 @@ export function computeConfigDiff(
     for (const name of aNames) {
       if (!bMap.has(name)) removed++
     }
-    // Modified: in both but content differs (compare by JSON for deep equality)
+    // Modified: in both but content differs — compare via order-insensitive
+    // stable stringify so key-order divergence doesn't produce false counts.
     for (const [name, aEntity] of aMap) {
       const bEntity = bMap.get(name)
-      if (bEntity && JSON.stringify(aEntity) !== JSON.stringify(bEntity)) {
+      if (bEntity && stableStringify(aEntity) !== stableStringify(bEntity)) {
         modified++
       }
     }
@@ -119,12 +144,12 @@ export function computeConfigDiff(
   const drivers = diffArrays(before?.drivers, after?.drivers)
   const transports = diffArrays(before?.transports, after?.transports)
   const rules = diffArrays(before?.rules, after?.rules)
-  const global = JSON.stringify(before?.global) !== JSON.stringify(after?.global)
-  const node = JSON.stringify(before?.node) !== JSON.stringify(after?.node)
+  const global = stableStringify(before?.global) !== stableStringify(after?.global)
+  const node = stableStringify(before?.node) !== stableStringify(after?.node)
   const ruleProviders =
-    JSON.stringify(before?.['rule-providers']) !== JSON.stringify(after?.['rule-providers'])
+    stableStringify(before?.['rule-providers']) !== stableStringify(after?.['rule-providers'])
   const ruleGroups =
-    JSON.stringify(before?.['rule-groups']) !== JSON.stringify(after?.['rule-groups'])
+    stableStringify(before?.['rule-groups']) !== stableStringify(after?.['rule-groups'])
 
   const totalChanges =
     drivers.added +

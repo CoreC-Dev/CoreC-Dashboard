@@ -276,7 +276,21 @@ export const TagExplorerPage: React.FC = () => {
   // updaters in dev, so mutating a ref inside one would drop the update).
   const pendingTagsRef = useRef<Map<string, DataPoint>>(new Map())
   const pendingFlashRef = useRef<Map<string, number>>(new Map())
+  // Stage trend samples in a ref and flush them inside the same RAF as the
+  // tag/flash updates. Previously setTrendSamples ran synchronously per WS
+  // message (line ~326), bypassing the batching and causing a separate
+  // render per message — the lightweight-charts series.update() then spiked
+  // under burst traffic. [H-8]
+  const pendingTrendRef = useRef<TrendSample[]>([])
   const flushRef = useRef<number | null>(null)
+  // Discard any staged trend samples so they cannot leak into a different
+  // trend session (openTrend/closeTrend/re-sub). We do NOT cancel the shared
+  // RAF here because it also flushes pending tag/flash updates — those remain
+  // valid. Clearing the trend buffer is enough: the RAF fires, finds an empty
+  // trend buffer, and skips the trend flush. [H-8]
+  const discardPendingTrend = useCallback(() => {
+    pendingTrendRef.current = []
+  }, [])
   const scheduleFlush = useCallback(() => {
     if (flushRef.current !== null) return // a frame is already scheduled
     flushRef.current = requestAnimationFrame(() => {
@@ -297,6 +311,22 @@ export const TagExplorerPage: React.FC = () => {
         setFlashTick((prev) => {
           const next = { ...prev }
           for (const [k, v] of entries) next[k] = (prev[k] ?? 0) + v
+          return next
+        })
+      }
+      if (pendingTrendRef.current.length > 0) {
+        const staged = pendingTrendRef.current
+        pendingTrendRef.current = []
+        setTrendSamples((prev) => {
+          let next = [...prev]
+          for (const s of staged) {
+            // lightweight-charts requires strictly-increasing, unique times.
+            const last = next[next.length - 1]
+            let time = s.time
+            if (last && time <= last.time) time = last.time + 1
+            next.push({ time, value: s.value })
+          }
+          if (next.length > MAX_TREND_SAMPLES) next = next.slice(next.length - MAX_TREND_SAMPLES)
           return next
         })
       }
@@ -323,16 +353,10 @@ export const TagExplorerPage: React.FC = () => {
         if (sel && tagKey(sel) === key && isNumericType(point.type)) {
           const num = Number(point.value)
           if (Number.isNaN(num)) return
-          setTrendSamples((prev) => {
-            let time = toSeconds(point.timestamp)
-            const last = prev[prev.length - 1]
-            // lightweight-charts requires strictly-increasing, unique times.
-            if (last && time <= last.time) time = last.time + 1
-            const next = [...prev, { time, value: num }]
-            return next.length > MAX_TREND_SAMPLES
-              ? next.slice(next.length - MAX_TREND_SAMPLES)
-              : next
-          })
+          // Stage the trend sample for the next animation frame instead of
+          // calling setTrendSamples per message (bypasses batching). [H-8]
+          pendingTrendRef.current.push({ time: toSeconds(point.timestamp), value: num })
+          scheduleFlush()
         }
       },
     )
@@ -343,8 +367,11 @@ export const TagExplorerPage: React.FC = () => {
         cancelAnimationFrame(flushRef.current)
         flushRef.current = null
       }
+      // Discard trend samples staged for the previous stream so they cannot
+      // leak into the new driver's trend session. [H-8]
+      discardPendingTrend()
     }
-  }, [selectedDriver, scheduleFlush])
+  }, [selectedDriver, scheduleFlush, discardPendingTrend])
 
   // Create the trend chart once per tag selection. Data is pushed in by the
   // separate [trendSamples] effect below so the chart isn't rebuilt on every
@@ -441,15 +468,27 @@ export const TagExplorerPage: React.FC = () => {
     overscan: 8,
   })
 
-  const openTrend = useCallback((point: DataPoint) => {
-    setTrendTag(point)
-    if (isNumericType(point.type)) {
-      const num = Number(point.value)
-      setTrendSamples(Number.isNaN(num) ? [] : [{ time: toSeconds(point.timestamp), value: num }])
-    } else {
-      setTrendSamples([])
-    }
-  }, [])
+  const openTrend = useCallback(
+    (point: DataPoint) => {
+      // Discard any samples staged for the previous tag so a pending RAF does
+      // not flush them into the new tag's chart (stale-sample leak). [H-8]
+      discardPendingTrend()
+      // Update the ref synchronously so the WS onmessage callback sees the
+      // new tag on the very next message — without this, the ref lags the
+      // state by one async tick (passive effect), and a stale-tag sample
+      // arriving in that window would be staged and flushed into the new
+      // tag's chart. [H-8 residual race]
+      trendTagRef.current = point
+      setTrendTag(point)
+      if (isNumericType(point.type)) {
+        const num = Number(point.value)
+        setTrendSamples(Number.isNaN(num) ? [] : [{ time: toSeconds(point.timestamp), value: num }])
+      } else {
+        setTrendSamples([])
+      }
+    },
+    [discardPendingTrend],
+  )
 
   // Stable row-action handlers so memoized TagRow rows whose `point`/`start`/
   // `flashTick` haven't changed can skip re-rendering. Passing an inline arrow
@@ -461,6 +500,12 @@ export const TagExplorerPage: React.FC = () => {
   }, [])
 
   const closeTrend = () => {
+    // Discard staged samples so a pending RAF doesn't flush them into a chart
+    // that's about to unmount / already cleared. [H-8]
+    discardPendingTrend()
+    // Clear the ref synchronously so the WS callback stops staging samples
+    // immediately (the passive effect lags by one tick). [H-8 residual race]
+    trendTagRef.current = null
     setTrendTag(null)
     setTrendSamples([])
   }

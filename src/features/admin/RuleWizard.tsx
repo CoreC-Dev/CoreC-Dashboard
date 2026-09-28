@@ -40,13 +40,13 @@ import {
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { WizardDialog, type WizardStep } from '@/components/wizard/Wizard'
+import { useTransportNames } from '@/hooks/useConfigValidation'
 import { dumpConfigYaml } from '@/lib/configYaml'
 import { validateRuleInContext } from '@/lib/entityValidation'
 import { validateRuleExpression } from '@/lib/ruleExprValidator'
 import { validateTransformExpression } from '@/lib/transformExprValidator'
 import { cn } from '@/lib/utils'
 import { useConfigStore } from '@/stores/configStore'
-import { useTransportNames } from '@/hooks/useConfigValidation'
 import type { RuleAction, RuleConfig } from '@/types/config'
 
 // ─── Action metadata ──────────────────────────────────────────────────

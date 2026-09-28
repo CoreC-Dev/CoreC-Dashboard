@@ -24,7 +24,13 @@ import {
 import type React from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useConfigRaw, useConfigs, usePatchConfig, useUpdateConfig, useValidateConfig } from '@/api/hooks'
+import {
+  useConfigRaw,
+  useConfigs,
+  usePatchConfig,
+  useUpdateConfig,
+  useValidateConfig,
+} from '@/api/hooks'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -432,6 +438,17 @@ export const ConfigCenterPage: React.FC = () => {
     try {
       // The server only supports `log-level` for PATCH /configs.
       await patchMutation.mutateAsync({ 'log-level': lvl })
+      // After a successful PATCH, the active config changed. The M-1 cache
+      // fix invalidates ['configsRaw'], but the Monaco editor binds to
+      // yamlContent state (not the cache directly), so we must also re-sync
+      // yamlContent from the refetched raw config — otherwise a subsequent
+      // "Hot Reload" would PUT the stale yamlContent and overwrite the patch.
+      void rawConfigQuery.refetch().then((res) => {
+        if (res.data?.trim()) {
+          setYamlContent(res.data)
+          loadFromYaml(res.data)
+        }
+      })
       setStatusMsg({ type: 'success', text: t('config.logLevelUpdated', { level: lvl }) })
     } catch (err: unknown) {
       setCurrentLogLevel(prev)
@@ -477,25 +494,28 @@ export const ConfigCenterPage: React.FC = () => {
     setStatusMsg(null)
     // Trigger a fresh fetch (refetch ignores stale cache so the editor shows
     // the current state, not a cached copy from before a PUT).
-    void rawConfigQuery.refetch().then((res) => {
-      const yamlText = res.data
-      if (!yamlText?.trim()) {
-        setStatusMsg({ type: 'error', text: t('config.loadFromServerEmpty') })
-        return
-      }
-      setYamlContent(yamlText)
-      loadFromYaml(yamlText)
-      const err = useConfigStore.getState().error
-      if (err) {
-        setStatusMsg({ type: 'error', text: t('config.importYamlFailed', { error: err }) })
-      } else {
-        setStatusMsg({ type: 'success', text: t('config.loadFromServerSuccess') })
-        setMode('yaml')
-      }
-    }).catch((err: unknown) => {
-      const msg = err instanceof Error ? err.message : String(err)
-      setStatusMsg({ type: 'error', text: t('config.loadFromServerFailed', { error: msg }) })
-    })
+    void rawConfigQuery
+      .refetch()
+      .then((res) => {
+        const yamlText = res.data
+        if (!yamlText?.trim()) {
+          setStatusMsg({ type: 'error', text: t('config.loadFromServerEmpty') })
+          return
+        }
+        setYamlContent(yamlText)
+        loadFromYaml(yamlText)
+        const err = useConfigStore.getState().error
+        if (err) {
+          setStatusMsg({ type: 'error', text: t('config.importYamlFailed', { error: err }) })
+        } else {
+          setStatusMsg({ type: 'success', text: t('config.loadFromServerSuccess') })
+          setMode('yaml')
+        }
+      })
+      .catch((err: unknown) => {
+        const msg = err instanceof Error ? err.message : String(err)
+        setStatusMsg({ type: 'error', text: t('config.loadFromServerFailed', { error: msg }) })
+      })
   }
 
   // Path A — "Validate": dry-run the current editor config on the server via
@@ -716,7 +736,9 @@ export const ConfigCenterPage: React.FC = () => {
             >
               <FlaskConical className="w-3.5 h-3.5 mr-1" />
               <span>
-                {validateMutation.isPending ? t('config.dryRunValidating') : t('config.dryRunValidate')}
+                {validateMutation.isPending
+                  ? t('config.dryRunValidating')
+                  : t('config.dryRunValidate')}
               </span>
             </Button>
           )}

@@ -588,13 +588,15 @@ export function validateConfig(config: unknown): ConfigValidationResult {
       inStack.add(name)
 
       const groupRules = ruleGroups[name] ?? []
+      let foundCycle = false
       for (const r of groupRules) {
         const matchUpper = (r.match ?? '').toUpperCase()
         if (matchUpper.startsWith(SUB_RULE_PREFIX)) {
           const refName = (r.match ?? '').slice(SUB_RULE_PREFIX.length).trim()
           if (ruleGroups[refName] !== undefined) {
             if (detectCycle(refName, [...chain, name])) {
-              return true
+              foundCycle = true
+              break
             }
           } else {
             // Reference to non-existent group
@@ -606,8 +608,11 @@ export function validateConfig(config: unknown): ConfigValidationResult {
         }
       }
 
+      // Always unwind inStack — even when a cycle was found in a child — so
+      // stale entries don't trigger false cycle reports for later top-level
+      // iterations that reference this node. [M-6]
       inStack.delete(name)
-      return false
+      return foundCycle
     }
 
     for (const name of groupNames) {

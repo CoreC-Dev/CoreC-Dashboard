@@ -36,16 +36,49 @@ export const TopBar: React.FC = () => {
   )
   const [isFullscreen, setIsFullscreen] = React.useState(false)
 
+  // Use the browser's fullscreenchange event as the single source of truth for
+  // the isFullscreen state. The previous optimistic setIsFullscreen calls in
+  // toggleFullscreen could desync from reality if requestFullscreen/exitFullscreen
+  // failed silently (e.g. user pressed Esc, or the promise rejected). [L-2]
+  React.useEffect(() => {
+    const handler = () => setIsFullscreen(Boolean(document.fullscreenElement))
+    document.addEventListener('fullscreenchange', handler)
+    return () => document.removeEventListener('fullscreenchange', handler)
+  }, [])
+
   const isMonitor = location.pathname.startsWith('/monitor')
 
   const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(() => {})
-      setIsFullscreen(true)
-    } else {
-      document.exitFullscreen().catch(() => {})
-      setIsFullscreen(false)
+    // Guard against browsers where the Fullscreen API is absent or prefixed —
+    // calling an undefined method throws synchronously before .catch() attaches.
+    const el = document.documentElement
+    const elAny = el as HTMLElement & {
+      webkitRequestFullscreen?: () => Promise<void> | void
     }
+    const docAny = document as Document & {
+      webkitExitFullscreen?: () => Promise<void> | void
+    }
+    const enter = elAny.requestFullscreen ?? elAny.webkitRequestFullscreen
+    const exit = docAny.exitFullscreen ?? docAny.webkitExitFullscreen
+    if (!document.fullscreenElement) {
+      if (enter) {
+        try {
+          const ret = enter.call(el)
+          if (ret && typeof ret.catch === 'function') ret.catch(() => {})
+        } catch {
+          /* Fullscreen not available — state stays false via the listener */
+        }
+      }
+    } else if (exit) {
+      try {
+        const ret = exit.call(document)
+        if (ret && typeof ret.catch === 'function') ret.catch(() => {})
+      } catch {
+        /* exitFullscreen rejected — state corrected by fullscreenchange */
+      }
+    }
+    // State is updated by the fullscreenchange listener above — no optimistic
+    // update here, so we never desync from the browser's actual fullscreen state.
   }
 
   const cycleTheme = () => {

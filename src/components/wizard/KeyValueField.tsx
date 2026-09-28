@@ -7,10 +7,12 @@
  * to YAML via js-yaml, it serializes as a YAML mapping, matching CoreC's
  * `map[string]any` expectation.
  *
- * Empty keys are filtered out on blur/change so the user doesn't accidentally
- * create `{ "": "value" }` entries.
+ * Empty keys are kept visible locally during editing but filtered out of the
+ * propagated record so the user doesn't accidentally create `{ "": "value" }`
+ * entries.
  */
 import { Plus, Trash2 } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -43,42 +45,64 @@ export const KeyValueField: React.FC<KeyValueFieldProps> = ({
   valuePlaceholder,
 }) => {
   const { t } = useTranslation()
-  const entries = Object.entries(toRecord(value))
+  // Local editing state keeps rows alive even when a key is transiently
+  // empty. Previously `entries` was derived from `value` on every render, so
+  // clearing a key (select-all → Delete, or backspacing to empty) rebuilt the
+  // object with the entry filtered out — the row vanished mid-edit and the
+  // value was silently lost. [H-4]
+  //
+  // We keep a local list and sync from the parent ONLY when the incoming
+  // `value` differs from what we last emitted (i.e. an external reset / form
+  // load), not when it's our own onChange echoing back. This removes the need
+  // for a blur-based `editing` flag, which caused rows with empty keys to
+  // vanish when focus moved between the key and value inputs of a row.
+  const [entries, setEntries] = useState<[string, string][]>(() => Object.entries(toRecord(value)))
+  const lastEmittedRef = useRef<Record<string, string> | null>(null)
+
+  useEffect(() => {
+    // Skip our own echo: if the parent value matches what we just propagated,
+    // don't rebuild entries (would drop empty-key rows still being edited).
+    if (lastEmittedRef.current !== null) {
+      const incoming = toRecord(value)
+      const emitted = lastEmittedRef.current
+      const incomingKeys = Object.keys(incoming)
+      const emittedKeys = Object.keys(emitted)
+      if (
+        incomingKeys.length === emittedKeys.length &&
+        incomingKeys.every((k) => incoming[k] === emitted[k])
+      ) {
+        return
+      }
+    }
+    setEntries(Object.entries(toRecord(value)))
+  }, [value])
+
+  const propagate = (next: [string, string][]) => {
+    const result: Record<string, string> = {}
+    for (const [k, v] of next) if (k) result[k] = v
+    lastEmittedRef.current = result
+    onChange(result)
+  }
 
   const updateEntry = (index: number, field: 'key' | 'value', newValue: string) => {
-    const updated = [...entries]
-    if (field === 'key') {
-      updated[index] = [newValue, updated[index][1]]
-    } else {
-      updated[index] = [updated[index][0], newValue]
-    }
-    // Rebuild the object, filtering out empty keys
-    const result: Record<string, string> = {}
-    for (const [k, v] of updated) {
-      if (k) result[k] = v
-    }
-    onChange(result)
+    const next = [...entries]
+    next[index] = field === 'key' ? [newValue, next[index][1]] : [next[index][0], newValue]
+    setEntries(next)
+    propagate(next)
   }
 
   const removeEntry = (index: number) => {
-    const updated = entries.filter((_, i) => i !== index)
-    const result: Record<string, string> = {}
-    for (const [k, v] of updated) {
-      if (k) result[k] = v
-    }
-    onChange(result)
+    const next: [string, string][] = entries.filter((_, i) => i !== index)
+    setEntries(next)
+    propagate(next)
   }
 
   const addEntry = () => {
-    // Add an empty entry — the user fills in the key
-    const result = toRecord(value)
-    // Use a temporary unique key that the user will replace
-    let tempKey = ''
-    let i = 0
-    while (result[`key${i}`] !== undefined) i++
-    tempKey = `key${i}`
-    result[tempKey] = ''
-    onChange(result)
+    // Add an empty-key row; the user fills in the key. The empty key is
+    // kept locally (visible) but filtered out of the propagated record.
+    const next: [string, string][] = [...entries, ['', '']]
+    setEntries(next)
+    propagate(next)
   }
 
   return (
@@ -92,7 +116,7 @@ export const KeyValueField: React.FC<KeyValueFieldProps> = ({
         <div key={`entry-${index}`} className="flex items-center gap-2">
           <Input
             type="text"
-            value={key.startsWith('key') && val === '' ? '' : key}
+            value={key}
             onChange={(e) => updateEntry(index, 'key', e.target.value)}
             placeholder={keyPlaceholder || t('settings.key') || 'Key'}
             className="h-8 text-xs flex-1"

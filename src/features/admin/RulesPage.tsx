@@ -321,9 +321,11 @@ export const RulesPage: React.FC = () => {
     [t],
   )
 
-  // Track the specific rule being toggled so only that row's switch is
-  // disabled while the mutation is in flight (not every switch on the page).
-  const [togglingIndex, setTogglingIndex] = useState<number | null>(null)
+  // Track the specific rules being toggled so only those rows' switches are
+  // disabled while mutations are in flight (not every switch on the page).
+  // Uses a Set so multiple rules can toggle concurrently without one's
+  // completion clearing another's in-flight state. [M-5]
+  const [togglingIndices, setTogglingIndices] = useState<Set<number>>(new Set())
   const [toggleError, setToggleError] = useState<string | null>(null)
   const [testRule, setTestRule] = useState<RuleStat | null>(null)
   const [testDp, setTestDp] = useState<SimDataPoint>(EMPTY_TEST_DP)
@@ -335,7 +337,7 @@ export const RulesPage: React.FC = () => {
   )
 
   const handleToggle = async (index: number, currentDisabled: boolean) => {
-    setTogglingIndex(index)
+    setTogglingIndices((prev) => new Set(prev).add(index))
     setToggleError(null)
     try {
       await toggleMutation.mutateAsync({ index, disabled: !currentDisabled })
@@ -344,7 +346,11 @@ export const RulesPage: React.FC = () => {
       // poll. Surface the error so the operator knows why.
       setToggleError(err instanceof Error ? err.message : t('rules.toggleFailed'))
     } finally {
-      setTogglingIndex(null)
+      setTogglingIndices((prev) => {
+        const next = new Set(prev)
+        next.delete(index)
+        return next
+      })
     }
   }
 
@@ -696,7 +702,7 @@ export const RulesPage: React.FC = () => {
                           <Switch
                             checked={!rule.disabled}
                             onCheckedChange={() => handleToggle(rule.index, rule.disabled)}
-                            disabled={togglingIndex === rule.index}
+                            disabled={togglingIndices.has(rule.index)}
                           />
                         </td>
                         <td className="px-4 py-3 text-right">

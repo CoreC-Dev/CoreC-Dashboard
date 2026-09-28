@@ -614,4 +614,23 @@ describe('validateConfig: rule-groups SUB-RULE validation', () => {
     expect(res.valid).toBe(false)
     expect(res.errors.some((e) => e.message.includes('circular'))).toBe(true)
   })
+
+  // ─── M-6 regression: no duplicate cycle errors with inbound node ──
+  it('reports exactly one circular error when an inbound node references a cycle', () => {
+    const res = validateConfig({
+      ...validConfig,
+      'rule-groups': {
+        'group-a': [
+          { name: 'a1', match: 'SUB-RULE:group-b', action: 'forward', target: 'cloud-mqtt' },
+        ],
+        'group-b': [{ name: 'b1', match: 'SUB-RULE:group-c', action: 'drop' }],
+        'group-c': [{ name: 'c1', match: 'SUB-RULE:group-a', action: 'alert' }],
+        'group-x': [
+          { name: 'x1', match: 'SUB-RULE:group-a', action: 'forward', target: 'cloud-mqtt' },
+        ],
+      },
+    })
+    const circularErrors = res.errors.filter((e) => e.message.includes('circular'))
+    expect(circularErrors.length).toBe(1)
+  })
 })

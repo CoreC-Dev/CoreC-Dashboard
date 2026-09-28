@@ -13,10 +13,10 @@ import {
   Sliders,
 } from 'lucide-react'
 import type React from 'react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router-dom'
-import { useDriver, useDriverTags, useUpdateConfig } from '@/api/hooks'
+import { useConfigRaw, useDriver, useDriverTags, useUpdateConfig } from '@/api/hooks'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -28,6 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { parseConfigYaml } from '@/lib/configYaml'
 import { ConnStateLabel, QualityLabel } from '@/lib/constants'
 import { formatNumber, isZeroTime } from '@/lib/utils'
 import type { DriverStatus } from '@/types/models'
@@ -188,6 +189,15 @@ function getDriverFields(type: string): readonly DriverEditField[] {
   return []
 }
 
+/** Serialize an existing config value into the string form the edit form uses.
+ *  Objects are JSON-stringified (not `[object Object]`) so they round-trip
+ *  correctly if a future driver field is a nested map. [C-2] */
+function driverConfigValueToString(src: unknown): string {
+  if (src === undefined || src === null) return ''
+  if (typeof src === 'object') return JSON.stringify(src)
+  return String(src)
+}
+
 function buildDriverSettings(
   fields: readonly DriverEditField[],
   values: Record<string, string>,
@@ -221,6 +231,7 @@ function buildDriverYaml(
 const DriverEditConfigSection: React.FC<{ driver: DriverStatus }> = ({ driver }) => {
   const { t } = useTranslation()
   const updateConfig = useUpdateConfig()
+  const { data: rawYaml } = useConfigRaw()
   const [open, setOpen] = useState(false)
   const fields = useMemo(() => getDriverFields(driver.type), [driver.type])
   const [values, setValues] = useState<Record<string, string>>(() => {
@@ -231,6 +242,29 @@ const DriverEditConfigSection: React.FC<{ driver: DriverStatus }> = ({ driver })
   const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(
     null,
   )
+
+  // Pre-fill form from the existing server config so the operator can see and
+  // preserve current settings instead of starting from empty inputs. [C-2]
+  // Secrets come back redacted as "***" and must be re-entered — that is an
+  // inherent limitation of the redacted raw view.
+  useEffect(() => {
+    if (!rawYaml) return
+    try {
+      const cfg = parseConfigYaml(rawYaml)
+      const me = cfg.drivers?.find((d) => d.name === driver.name)
+      if (!me?.settings) return
+      setValues((prev) => {
+        const init = { ...prev }
+        for (const f of fields) {
+          const src = me.settings?.[f.key]
+          init[f.key] = driverConfigValueToString(src)
+        }
+        return init
+      })
+    } catch {
+      // If YAML parse fails, leave the form empty — don't crash the page.
+    }
+  }, [rawYaml, driver.name, fields])
 
   const generatedYaml = useMemo(
     () => buildDriverYaml(driver, fields, values),

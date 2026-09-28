@@ -30,6 +30,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { WizardDialog, type WizardStep } from '@/components/wizard/Wizard'
+import { useTransportNames } from '@/hooks/useConfigValidation'
 import { dumpConfigYaml } from '@/lib/configYaml'
 import { validateTransportInContext } from '@/lib/entityValidation'
 import type { SettingsField } from '@/lib/settingsRegistry'
@@ -40,7 +41,6 @@ import {
 } from '@/lib/settingsRegistry'
 import { cn } from '@/lib/utils'
 import { useConfigStore } from '@/stores/configStore'
-import { useTransportNames } from '@/hooks/useConfigValidation'
 import type { TransportConfig, TransportType } from '@/types/config'
 
 // ─── Transport type metadata ──────────────────────────────────────────

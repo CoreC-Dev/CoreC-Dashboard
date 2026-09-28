@@ -28,15 +28,6 @@ const safePersist = (key: string, value: string): void => {
   }
 }
 
-/** Best-effort localStorage remove — never throws. */
-const safeRemove = (key: string): void => {
-  try {
-    localStorage.removeItem(key)
-  } catch {
-    /* best-effort */
-  }
-}
-
 const getInitialState = () => {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
@@ -95,7 +86,11 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
   // frozen page with stale data. For an industrial control dashboard, a
   // silently-frozen view is a safety concern.
   clearAuth: () => {
-    safeRemove(STORAGE_KEY)
+    // Keep baseUrl in storage so the login form can pre-fill the last
+    // endpoint; only the secret is invalid. Avoids the memory/storage
+    // divergence where baseUrl survived in memory but vanished from storage
+    // (resetting to DEFAULT_COREC_URL on refresh). [L-3]
+    safePersist(STORAGE_KEY, JSON.stringify({ baseUrl: get().baseUrl, secret: '' }))
     set({
       secret: '',
       isConnected: false,
@@ -107,7 +102,9 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
   },
 
   disconnect: () => {
-    safeRemove(STORAGE_KEY)
+    // Keep baseUrl in storage so the login form can pre-fill the last
+    // endpoint after a manual disconnect — mirrors clearAuth. [L-3]
+    safePersist(STORAGE_KEY, JSON.stringify({ baseUrl: get().baseUrl, secret: '' }))
     set({
       secret: '',
       isConnected: false,
@@ -140,6 +137,13 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
         throw new Error(`HTTP ${res.status}`)
       }
       const info = await res.json()
+      // Guard against disconnect/clearAuth racing during the await. The
+      // AbortController above only covers the 10s timeout — disconnect has
+      // no reference to it — so without this re-check a successful probe can
+      // flip isConnected back to true after the operator already cleared the
+      // secret, leaving the store "connected but unauthenticated" and letting
+      // gated React Query hooks fire credential-less 401s. [H-1]
+      if (get().baseUrl !== baseUrl || get().secret !== secret) return
       set({
         isConnected: true,
         isConnecting: false,

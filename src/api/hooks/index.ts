@@ -173,7 +173,11 @@ export function usePatchConfig() {
   return useMutation({
     mutationFn: (data: { 'log-level'?: string }) => api.patchConfigs(data),
     onSuccess: () => {
+      // PATCH mutates the active config (log-level is a global field), so the
+      // raw-redacted view goes stale too — invalidate both caches for parity
+      // with useUpdateConfig. [M-1]
       queryClient.invalidateQueries({ queryKey: ['configs'] })
+      queryClient.invalidateQueries({ queryKey: ['configsRaw'] })
     },
   })
 }

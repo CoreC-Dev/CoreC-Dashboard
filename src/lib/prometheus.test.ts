@@ -96,4 +96,27 @@ corec_goroutines 5
     const parsed = parsePrometheusMetrics(raw)
     expect(parsed[0].value).toBe(1.5e9)
   })
+
+  // ─── M-4 regression: `}` inside quoted label values ──────────────
+  it('parses labels with } inside quoted values', () => {
+    const raw = `my_metric{label="value_}"} 1\n`
+    const parsed = parsePrometheusMetrics(raw)
+    expect(parsed).toHaveLength(1)
+    expect(parsed[0].name).toBe('my_metric')
+    expect(parsed[0].labels).toEqual({ label: 'value_}' })
+    expect(parsed[0].value).toBe(1)
+  })
+
+  it('parses labels with escaped quotes inside values', () => {
+    const raw = `m{k="a\\"b"} 5\n`
+    const parsed = parsePrometheusMetrics(raw)
+    expect(parsed).toHaveLength(1)
+    expect(parsed[0].labels).toEqual({ k: 'a"b' })
+  })
+
+  it('parses multiple labels with special chars', () => {
+    const raw = `m{a="x}1",b="y}2"} 10\n`
+    const parsed = parsePrometheusMetrics(raw)
+    expect(parsed[0].labels).toEqual({ a: 'x}1', b: 'y}2' })
+  })
 })

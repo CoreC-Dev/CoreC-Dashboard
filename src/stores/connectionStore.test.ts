@@ -98,11 +98,16 @@ describe('useConnectionStore', () => {
     expect(state.lastError).toBe('Something went wrong')
   })
 
-  it('clearAuth removes localStorage and resets auth state', () => {
+  it('clearAuth keeps baseUrl in localStorage but clears secret', () => {
     useConnectionStore.getState().setConnection('http://example.com:9090', 'secret')
     useConnectionStore.getState().clearAuth()
     const state = useConnectionStore.getState()
-    expect(localStorageMock.removeItem).toHaveBeenCalledWith('corec_connection')
+    // L-3: baseUrl is retained in storage so the login form can pre-fill the
+    // last endpoint; only the secret is invalidated.
+    expect(localStorageMock.setItem).toHaveBeenCalledWith(
+      'corec_connection',
+      JSON.stringify({ baseUrl: 'http://example.com:9090', secret: '' }),
+    )
     expect(state.secret).toBe('')
     expect(state.isConnected).toBe(false)
     expect(state.isConnecting).toBe(false)
@@ -111,12 +116,16 @@ describe('useConnectionStore', () => {
     expect(state.lastError).toContain('Authentication failed')
   })
 
-  it('disconnect removes localStorage and clears all state', () => {
+  it('disconnect keeps baseUrl in localStorage but clears secret', () => {
     useConnectionStore.getState().setConnection('http://example.com:9090', 'secret')
     useConnectionStore.getState().setConnected(true, { name: 'node', version: '1.0' })
     useConnectionStore.getState().disconnect()
     const state = useConnectionStore.getState()
-    expect(localStorageMock.removeItem).toHaveBeenCalledWith('corec_connection')
+    // L-3: baseUrl retained in storage; only secret cleared.
+    expect(localStorageMock.setItem).toHaveBeenCalledWith(
+      'corec_connection',
+      JSON.stringify({ baseUrl: 'http://example.com:9090', secret: '' }),
+    )
     expect(state.secret).toBe('')
     expect(state.isConnected).toBe(false)
     expect(state.isConnecting).toBe(false)

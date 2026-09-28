@@ -221,7 +221,13 @@ const TagAdvancedFields: React.FC<{ index: number }> = ({ index }) => {
       <div className="space-y-1">
         <label className="text-[10px] text-muted-foreground uppercase">{t('wizard.scale')}</label>
         <Input
-          {...register(`tags.${index}.scale`)}
+          {...register(`tags.${index}.scale`, {
+            setValueAs: (v) => {
+              if (v === '' || v == null) return undefined
+              const n = Number(v)
+              return Number.isNaN(n) ? undefined : n
+            },
+          })}
           type="number"
           step="any"
           placeholder="1.0"
@@ -231,7 +237,13 @@ const TagAdvancedFields: React.FC<{ index: number }> = ({ index }) => {
       <div className="space-y-1">
         <label className="text-[10px] text-muted-foreground uppercase">{t('wizard.offset')}</label>
         <Input
-          {...register(`tags.${index}.offset`)}
+          {...register(`tags.${index}.offset`, {
+            setValueAs: (v) => {
+              if (v === '' || v == null) return undefined
+              const n = Number(v)
+              return Number.isNaN(n) ? undefined : n
+            },
+          })}
           type="number"
           step="any"
           placeholder="0"
@@ -243,7 +255,13 @@ const TagAdvancedFields: React.FC<{ index: number }> = ({ index }) => {
           {t('wizard.deadband')}
         </label>
         <Input
-          {...register(`tags.${index}.deadband`)}
+          {...register(`tags.${index}.deadband`, {
+            setValueAs: (v) => {
+              if (v === '' || v == null) return undefined
+              const n = Number(v)
+              return Number.isNaN(n) ? undefined : n
+            },
+          })}
           type="number"
           step="any"
           placeholder="0"
