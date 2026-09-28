@@ -373,6 +373,29 @@ describe('coreCConfigSchema — global validation', () => {
     expect(res.success).toBe(false)
     expect(failIssues(res)).toContain('must be set together')
   })
+  it('accepts log-format: "" (CoreC returns empty string when unset)', () => {
+    const res = coreCConfigSchema.safeParse({
+      ...validConfig,
+      global: { ...validConfig.global, 'log-format': '' },
+    })
+    expect(res.success).toBe(true)
+  })
+  it('accepts log-format: "text" and "json"', () => {
+    for (const fmt of ['text', 'json'] as const) {
+      const res = coreCConfigSchema.safeParse({
+        ...validConfig,
+        global: { ...validConfig.global, 'log-format': fmt },
+      })
+      expect(res.success).toBe(true)
+    }
+  })
+  it('rejects log-format: "xml" (invalid value)', () => {
+    const res = coreCConfigSchema.safeParse({
+      ...validConfig,
+      global: { ...validConfig.global, 'log-format': 'xml' },
+    })
+    expect(res.success).toBe(false)
+  })
 })
 
 describe('validateConfig — cross-entity rules', () => {

@@ -375,7 +375,9 @@ export const bufferConfigSchema = z
 export const globalConfigSchema = z
   .object({
     'log-level': z.enum(LOG_LEVELS).optional(),
-    'log-format': z.enum(LOG_FORMATS).optional(),
+    // CoreC returns "" when log-format is unset (defaults to text at runtime).
+    // z.enum rejects "" — treat it as equivalent to "unset" (optional). [C-2 follow-up]
+    'log-format': z.enum(LOG_FORMATS).or(z.literal('')).optional(),
     api: apiConfigSchema.optional(),
     engine: engineConfigSchema.optional(),
     buffer: bufferConfigSchema.optional(),

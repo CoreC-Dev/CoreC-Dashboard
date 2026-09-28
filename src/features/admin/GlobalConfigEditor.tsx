@@ -192,7 +192,7 @@ export const GlobalConfigEditor: React.FC = () => {
                 restartRequired
               >
                 <Select
-                  value={(global['log-format'] as string) ?? 'text'}
+                  value={(global['log-format'] as string) || 'text'}
                   onValueChange={(v) => updateGlobalField('log-format', v)}
                 >
                   <SelectTrigger className="h-8 text-xs">
