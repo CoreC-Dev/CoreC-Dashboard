@@ -625,7 +625,7 @@
     "templatesHint": "Load a pre-built configuration template",
     "templateLoaded": "Template loaded: {{name}}",
     "loadFromServer": "Load from Server",
-    "loadFromServerHint": "Fetch the live server config (secrets masked as ***) into the editor",
+    "loadFromServerHint": "Re-fetch the live server config (secrets masked as ***) into the editor; auto-loaded on page open",
     "loadFromServerSuccess": "Live config loaded from server (secrets masked as ***)",
     "loadFromServerFailed": "Failed to load server config: {{error}}",
     "loadFromServerEmpty": "No active configuration on the server",

@@ -625,7 +625,7 @@
     "templatesHint": "加载预置配置模板",
     "templateLoaded": "模板已加载: {{name}}",
     "loadFromServer": "从服务器加载",
-    "loadFromServerHint": "拉取服务器实时配置(密钥已脱敏为 ***)到编辑器",
+    "loadFromServerHint": "重新拉取服务器实时配置(密钥已脱敏为 ***)到编辑器;页面打开时已自动加载",
     "loadFromServerSuccess": "已从服务器加载实时配置(密钥脱敏为 ***)",
     "loadFromServerFailed": "加载服务器配置失败: {{error}}",
     "loadFromServerEmpty": "服务器上没有活动配置",

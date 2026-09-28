@@ -297,6 +297,10 @@ export const ConfigCenterPage: React.FC = () => {
   const [lastSubmittedYaml, setLastSubmittedYaml] = useState<string | null>(null)
   const [diffOpen, setDiffOpen] = useState(true)
   const [templatePickerOpen, setTemplatePickerOpen] = useState(false)
+  // Guards one-time auto-load of the live server config into the editor on
+  // first successful fetch, so operators see the actual running config
+  // instead of DEFAULT_SAMPLE_YAML without a manual "Load from Server" click.
+  const autoLoadedRef = useRef(false)
 
   // Auto-dismiss the status notice and clear the pending timer on unmount so we
   // never call setState on a disposed component.
@@ -323,6 +327,22 @@ export const ConfigCenterPage: React.FC = () => {
     const timer = setTimeout(() => setDebouncedYaml(yamlContent), 300)
     return () => clearTimeout(timer)
   }, [yamlContent])
+
+  // Auto-load the live server config into the editor on first successful
+  // fetch. Without this the editor shows DEFAULT_SAMPLE_YAML and the operator
+  // must manually click "Load from Server" to see the actual running config —
+  // a confusing UX, especially when they then "Hot Reload" and would push the
+  // stale sample YAML back to the server. The autoLoadedRef guard ensures we
+  // only auto-populate once (on mount), not on every refetch, so subsequent
+  // manual edits are not clobbered by background revalidations.
+  useEffect(() => {
+    if (autoLoadedRef.current) return
+    const yamlText = rawConfigQuery.data
+    if (!yamlText?.trim()) return
+    autoLoadedRef.current = true
+    setYamlContent(yamlText)
+    loadFromYaml(yamlText)
+  }, [rawConfigQuery.data, loadFromYaml])
 
   // ── YAML ↔ Form bridge ─────────────────────────────────────────────
   // "Import YAML → Form": parse the current Monaco editor content into the
