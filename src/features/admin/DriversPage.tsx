@@ -1,8 +1,18 @@
-import { AlertCircle, Cpu, ExternalLink, RefreshCw } from 'lucide-react'
+import { AlertCircle, Cpu, ExternalLink, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react'
 import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useDrivers, useDriverTags } from '@/api/hooks'
+import { useDrivers, useDriverTags, useUpdateConfig } from '@/api/hooks'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -13,8 +23,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { ConfigApplyConfirmationDialog } from '@/components/wizard/ConfigApplyConfirmationDialog'
+import { EntitySearchBar, filterEntities } from '@/components/wizard/EntitySearchBar'
+import { ValidationBanner } from '@/components/wizard/ValidationBanner'
+import { DriverWizard } from '@/features/admin/DriverWizard'
+import { useConfigValidation } from '@/hooks/useConfigValidation'
 import { ConnStateLabel, QualityLabel } from '@/lib/constants'
 import { formatNumber, isZeroTime } from '@/lib/utils'
+import { useConfigStore } from '@/stores/configStore'
+import type { DriverConfig } from '@/types/config'
 import type { DriverStatus } from '@/types/models'
 
 export const DriversPage: React.FC = () => {
@@ -22,7 +39,60 @@ export const DriversPage: React.FC = () => {
   const { data, refetch, isFetching } = useDrivers()
   const [selectedDriver, setSelectedDriver] = useState<DriverStatus | null>(null)
 
+  // Config editing state
+  const workingConfig = useConfigStore((s) => s.workingConfig)
+  const dirty = useConfigStore((s) => s.dirty)
+  const resetToEmpty = useConfigStore((s) => s.resetToEmpty)
+  const removeDriver = useConfigStore((s) => s.removeDriver)
+  const findDriver = useConfigStore((s) => s.findDriver)
+  const getWorkingYaml = useConfigStore((s) => s.getWorkingYaml)
+  const getSavedYaml = useConfigStore((s) => s.getSavedYaml)
+  const markSaved = useConfigStore((s) => s.markSaved)
+  const validation = useConfigValidation()
+  const validationErrors =
+    validation.hasConfig && !validation.valid
+      ? validation.errors.map((e) => `${e.path}: ${e.message}`)
+      : undefined
+
+  const updateConfig = useUpdateConfig()
+
+  const [wizardOpen, setWizardOpen] = useState(false)
+  const [editingDriver, setEditingDriver] = useState<DriverConfig | undefined>(undefined)
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
+  const [applyDialogOpen, setApplyDialogOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+
   const drivers = data?.drivers || []
+
+  // Config drivers (from working config, may differ from runtime)
+  const configDrivers = workingConfig?.drivers ?? []
+  const filteredConfigDrivers = filterEntities(configDrivers, searchQuery)
+
+  const handleCreate = () => {
+    if (!workingConfig) {
+      resetToEmpty()
+    }
+    setEditingDriver(undefined)
+    setWizardOpen(true)
+  }
+
+  const handleEdit = (name: string) => {
+    const drv = findDriver(name)
+    if (!drv) return
+    setEditingDriver(drv)
+    setWizardOpen(true)
+  }
+
+  const handleDelete = (name: string) => {
+    setDeleteTarget(name)
+  }
+
+  const confirmDelete = () => {
+    if (deleteTarget) {
+      removeDriver(deleteTarget)
+      setDeleteTarget(null)
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -31,46 +101,95 @@ export const DriversPage: React.FC = () => {
           <h1 className="text-xl font-bold tracking-tight">{t('drivers.title')}</h1>
           <p className="text-xs text-muted-foreground">{t('drivers.subtitle')}</p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => refetch()}
-          disabled={isFetching}
-          className="h-8 text-xs shrink-0"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${isFetching ? 'animate-spin' : ''}`} />
-          <span>{t('common.refresh')}</span>
-        </Button>
+        <div className="flex items-center gap-2">
+          {dirty && (
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => setApplyDialogOpen(true)}
+              disabled={!!validationErrors}
+              className="h-8 text-xs shrink-0"
+            >
+              {t('drivers.applyChanges')}
+            </Button>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => refetch()}
+            disabled={isFetching}
+            className="h-8 text-xs shrink-0"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${isFetching ? 'animate-spin' : ''}`} />
+            <span>{t('common.refresh')}</span>
+          </Button>
+          <Button
+            variant="default"
+            size="sm"
+            onClick={handleCreate}
+            className="h-8 text-xs shrink-0"
+          >
+            <Plus className="w-3.5 h-3.5 mr-1.5" />
+            <span>{t('drivers.createDriver')}</span>
+          </Button>
+        </div>
       </div>
 
-      {/* Driver Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {drivers.length === 0 ? (
-          <Card className="col-span-full p-8 text-center text-xs text-muted-foreground border-dashed">
-            {t('drivers.empty')}
-          </Card>
-        ) : (
-          drivers.map((drv) => {
-            const st = ConnStateLabel[drv.state] || ConnStateLabel[0]
-            return (
-              <Card
-                key={drv.name}
-                tabIndex={0}
-                role="button"
-                aria-label={`${drv.name} — ${st}`}
-                className="border-border/80 bg-card/60 hover:border-primary/40 transition-all cursor-pointer group focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                onClick={() => setSelectedDriver(drv)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault()
-                    setSelectedDriver(drv)
-                  }
-                }}
-              >
+      {/* Config editing banner — shows when there are unsaved config changes */}
+      {dirty && (
+        <div className="rounded-md border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-700 dark:text-amber-400 flex items-center justify-between">
+          <span>{t('drivers.unsavedChanges')}</span>
+          <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 text-xs"
+              onClick={() => useConfigStore.getState().revert()}
+            >
+              {t('common.cancel')}
+            </Button>
+            <Button
+              variant="default"
+              size="sm"
+              className="h-7 text-xs"
+              disabled={!!validationErrors}
+              onClick={() => setApplyDialogOpen(true)}
+            >
+              {t('drivers.applyChanges')}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Live validation errors */}
+      <ValidationBanner />
+
+      {/* Config-managed drivers section (from working config) */}
+      {configDrivers.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+              {t('drivers.configSection')}
+            </h2>
+            <Badge variant="outline" className="text-[10px]">
+              {configDrivers.length}
+            </Badge>
+            {configDrivers.length > 6 && (
+              <EntitySearchBar value={searchQuery} onChange={setSearchQuery} />
+            )}
+          </div>
+          {searchQuery && filteredConfigDrivers.length === 0 && (
+            <p className="text-xs text-muted-foreground italic">
+              {t('common.noResults', { query: searchQuery }) || `No results for "${searchQuery}"`}
+            </p>
+          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredConfigDrivers.map((drv) => (
+              <Card key={drv.name} className="border-border/80 bg-card/60">
                 <CardHeader className="p-4 pb-2">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center space-x-2.5">
-                      <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary group-hover:scale-105 transition-transform">
+                      <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
                         <Cpu className="w-4 h-4" />
                       </div>
                       <div>
@@ -80,70 +199,209 @@ export const DriversPage: React.FC = () => {
                         </CardDescription>
                       </div>
                     </div>
-                    <Badge variant="outline" className={`text-[10px] ${st.badgeColor}`}>
-                      <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${st.dotColor}`} />
-                      {t(st.key)}
-                    </Badge>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => handleEdit(drv.name)}
+                        className="p-1.5 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground"
+                        title={t('common.edit')}
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(drv.name)}
+                        className="p-1.5 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
+                        title={t('common.delete')}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 </CardHeader>
-
-                <CardContent className="p-4 pt-2 space-y-3">
-                  <div className="grid grid-cols-3 gap-2 text-center p-2 rounded-lg bg-muted/40 border border-border/50 text-[11px]">
-                    <div>
-                      <div className="text-muted-foreground text-[10px]">{t('drivers.tags')}</div>
-                      <div className="font-mono font-bold">{drv.tag_count}</div>
+                <CardContent className="p-4 pt-2 space-y-2">
+                  <div className="grid grid-cols-2 gap-2 text-[11px]">
+                    <div className="flex items-center justify-between p-1.5 rounded bg-muted/30">
+                      <span className="text-muted-foreground">{t('drivers.tags')}</span>
+                      <span className="font-mono font-bold">{drv.tags?.length ?? 0}</span>
                     </div>
-                    <div>
-                      <div className="text-muted-foreground text-[10px]">{t('drivers.reads')}</div>
-                      <div className="font-mono font-bold text-emerald-400">
-                        {formatNumber(drv.read_count)}
+                    {drv['tags-file'] && (
+                      <div className="flex items-center justify-between p-1.5 rounded bg-muted/30">
+                        <span className="text-muted-foreground">{t('driverWizard.tagsFile')}</span>
+                        <span className="font-mono truncate max-w-[100px]">{drv['tags-file']}</span>
                       </div>
-                    </div>
-                    <div>
-                      <div className="text-muted-foreground text-[10px]">{t('drivers.errors')}</div>
-                      <div className="font-mono font-bold text-rose-400">{drv.error_count}</div>
-                    </div>
-                  </div>
-
-                  <div className="text-[11px] space-y-1 text-muted-foreground">
-                    <div className="flex items-center justify-between">
-                      <span>{t('drivers.reconnectFailures')}</span>
-                      <span className="font-mono font-medium text-foreground">
-                        {drv.reconnect_count}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span>{t('drivers.lastRead')}</span>
-                      <span className="font-mono text-foreground truncate max-w-[140px]">
-                        {isZeroTime(drv.last_read)
-                          ? t('drivers.never')
-                          : new Date(drv.last_read).toLocaleTimeString()}
-                      </span>
-                    </div>
-                  </div>
-
-                  {drv.last_error && (
-                    <div className="p-2 rounded bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[11px] truncate flex items-center space-x-1.5">
-                      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                      <span className="truncate">{drv.last_error}</span>
-                    </div>
-                  )}
-
-                  <div className="pt-1 flex items-center justify-end text-[11px] text-primary group-hover:underline">
-                    <span>{t('drivers.viewDetails')}</span>
-                    <ExternalLink className="w-3 h-3 ml-1" />
+                    )}
                   </div>
                 </CardContent>
               </Card>
-            )
-          })
-        )}
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Runtime status section */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+            {t('drivers.runtimeSection')}
+          </h2>
+          <Badge variant="outline" className="text-[10px]">
+            {drivers.length}
+          </Badge>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {drivers.length === 0 ? (
+            <Card className="col-span-full p-8 text-center text-xs text-muted-foreground border-dashed">
+              {t('drivers.empty')}
+            </Card>
+          ) : (
+            drivers.map((drv) => {
+              const st = ConnStateLabel[drv.state] || ConnStateLabel[0]
+              return (
+                <Card
+                  key={drv.name}
+                  tabIndex={0}
+                  role="button"
+                  aria-label={`${drv.name} — ${st}`}
+                  className="border-border/80 bg-card/60 hover:border-primary/40 transition-all cursor-pointer group focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  onClick={() => setSelectedDriver(drv)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      setSelectedDriver(drv)
+                    }
+                  }}
+                >
+                  <CardHeader className="p-4 pb-2">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center space-x-2.5">
+                        <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary group-hover:scale-105 transition-transform">
+                          <Cpu className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-sm font-semibold">{drv.name}</CardTitle>
+                          <CardDescription className="text-[11px] font-mono">
+                            {drv.type}
+                          </CardDescription>
+                        </div>
+                      </div>
+                      <Badge variant="outline" className={`text-[10px] ${st.badgeColor}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${st.dotColor}`} />
+                        {t(st.key)}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+
+                  <CardContent className="p-4 pt-2 space-y-3">
+                    <div className="grid grid-cols-3 gap-2 text-center p-2 rounded-lg bg-muted/40 border border-border/50 text-[11px]">
+                      <div>
+                        <div className="text-muted-foreground text-[10px]">{t('drivers.tags')}</div>
+                        <div className="font-mono font-bold">{drv.tag_count}</div>
+                      </div>
+                      <div>
+                        <div className="text-muted-foreground text-[10px]">
+                          {t('drivers.reads')}
+                        </div>
+                        <div className="font-mono font-bold text-emerald-400">
+                          {formatNumber(drv.read_count)}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-muted-foreground text-[10px]">
+                          {t('drivers.errors')}
+                        </div>
+                        <div className="font-mono font-bold text-rose-400">{drv.error_count}</div>
+                      </div>
+                    </div>
+
+                    <div className="text-[11px] space-y-1 text-muted-foreground">
+                      <div className="flex items-center justify-between">
+                        <span>{t('drivers.reconnectFailures')}</span>
+                        <span className="font-mono font-medium text-foreground">
+                          {drv.reconnect_count}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span>{t('drivers.lastRead')}</span>
+                        <span className="font-mono text-foreground truncate max-w-[140px]">
+                          {isZeroTime(drv.last_read)
+                            ? t('drivers.never')
+                            : new Date(drv.last_read).toLocaleTimeString()}
+                        </span>
+                      </div>
+                    </div>
+
+                    {drv.last_error && (
+                      <div className="p-2 rounded bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[11px] truncate flex items-center space-x-1.5">
+                        <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                        <span className="truncate">{drv.last_error}</span>
+                      </div>
+                    )}
+
+                    <div className="pt-1 flex items-center justify-end text-[11px] text-primary group-hover:underline">
+                      <span>{t('drivers.viewDetails')}</span>
+                      <ExternalLink className="w-3 h-3 ml-1" />
+                    </div>
+                  </CardContent>
+                </Card>
+              )
+            })
+          )}
+        </div>
       </div>
 
       {/* Driver Detail Drawer / Dialog */}
       {selectedDriver && (
         <DriverDetailDialog driver={selectedDriver} onClose={() => setSelectedDriver(null)} />
       )}
+
+      {/* Create/Edit Driver Wizard */}
+      <DriverWizard open={wizardOpen} onOpenChange={setWizardOpen} existingDriver={editingDriver} />
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('drivers.deleteTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('drivers.deleteConfirm', { name: deleteTarget ?? '' })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="h-8 text-xs">{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="h-8 text-xs bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {t('common.delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Apply Config Confirmation */}
+      <ConfigApplyConfirmationDialog
+        open={applyDialogOpen}
+        onOpenChange={setApplyDialogOpen}
+        beforeYaml={getSavedYaml()}
+        afterYaml={getWorkingYaml() ?? ''}
+        applying={updateConfig.isPending}
+        validationErrors={validationErrors}
+        onConfirm={() => {
+          if (validationErrors) return
+          const yaml = getWorkingYaml()
+          if (!yaml) return
+          updateConfig.mutate(
+            { payload: yaml },
+            {
+              onSuccess: () => {
+                markSaved()
+                setApplyDialogOpen(false)
+              },
+            },
+          )
+        }}
+      />
     </div>
   )
 }

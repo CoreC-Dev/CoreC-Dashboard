@@ -1,9 +1,19 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { AlertCircle, Check, Loader2, Pencil, Play, RefreshCw } from 'lucide-react'
+import { AlertCircle, Check, Loader2, Pencil, Play, Plus, RefreshCw, Trash2 } from 'lucide-react'
 import type React from 'react'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useRules, useToggleRule, useUpdateConfig } from '@/api/hooks'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -24,7 +34,14 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
+import { ConfigApplyConfirmationDialog } from '@/components/wizard/ConfigApplyConfirmationDialog'
+import { EntitySearchBar, filterEntities } from '@/components/wizard/EntitySearchBar'
+import { ValidationBanner } from '@/components/wizard/ValidationBanner'
+import { RuleWizard } from '@/features/admin/RuleWizard'
+import { useConfigValidation } from '@/hooks/useConfigValidation'
 import { formatNumber, isZeroTime } from '@/lib/utils'
+import { useConfigStore } from '@/stores/configStore'
+import type { RuleConfig } from '@/types/config'
 import type { RuleStat } from '@/types/models'
 
 // Targets serialize as `null` (not `[]`) when empty; prefer the multi-target
@@ -248,6 +265,50 @@ export const RulesPage: React.FC = () => {
 
   const rules = data?.rules || []
 
+  // Config editing state (configStore)
+  const workingConfig = useConfigStore((s) => s.workingConfig)
+  const dirty = useConfigStore((s) => s.dirty)
+  const resetToEmpty = useConfigStore((s) => s.resetToEmpty)
+  const removeRule = useConfigStore((s) => s.removeRule)
+  const findRule = useConfigStore((s) => s.findRule)
+  const getWorkingYaml = useConfigStore((s) => s.getWorkingYaml)
+  const getSavedYaml = useConfigStore((s) => s.getSavedYaml)
+  const markSaved = useConfigStore((s) => s.markSaved)
+  const validation = useConfigValidation()
+  const validationErrors =
+    validation.hasConfig && !validation.valid
+      ? validation.errors.map((e) => `${e.path}: ${e.message}`)
+      : undefined
+
+  const [wizardOpen, setWizardOpen] = useState(false)
+  const [editingRule, setEditingRule] = useState<RuleConfig | undefined>(undefined)
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
+  const [applyDialogOpen, setApplyDialogOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+
+  const configRules = workingConfig?.rules ?? []
+  const filteredConfigRules = filterEntities(configRules, searchQuery)
+
+  const handleCreateRule = () => {
+    if (!workingConfig) resetToEmpty()
+    setEditingRule(undefined)
+    setWizardOpen(true)
+  }
+
+  const handleEditRule = (name: string) => {
+    const rl = findRule(name)
+    if (!rl) return
+    setEditingRule(rl)
+    setWizardOpen(true)
+  }
+
+  const confirmDeleteRule = () => {
+    if (deleteTarget) {
+      removeRule(deleteTarget)
+      setDeleteTarget(null)
+    }
+  }
+
   // Quality option labels are translated, so this is built inside the
   // component (where `t` is in scope) rather than at module load.
   const QUALITY_OPTIONS = useMemo(
@@ -398,142 +459,277 @@ export const RulesPage: React.FC = () => {
           <h1 className="text-xl font-bold tracking-tight">{t('rules.title')}</h1>
           <p className="text-xs text-muted-foreground">{t('rules.subtitle')}</p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => refetch()}
-          disabled={isFetching}
-          className="h-8 text-xs shrink-0"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${isFetching ? 'animate-spin' : ''}`} />
-          <span>{t('common.refresh')}</span>
-        </Button>
+        <div className="flex items-center gap-2">
+          {dirty && (
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => setApplyDialogOpen(true)}
+              disabled={!!validationErrors}
+              className="h-8 text-xs shrink-0"
+            >
+              {t('rules.applyChanges')}
+            </Button>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => refetch()}
+            disabled={isFetching}
+            className="h-8 text-xs shrink-0"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${isFetching ? 'animate-spin' : ''}`} />
+            <span>{t('common.refresh')}</span>
+          </Button>
+          <Button
+            variant="default"
+            size="sm"
+            onClick={handleCreateRule}
+            className="h-8 text-xs shrink-0"
+          >
+            <Plus className="w-3.5 h-3.5 mr-1.5" />
+            <span>{t('rules.createRule')}</span>
+          </Button>
+        </div>
       </div>
 
-      <Card className="border-border/80 bg-card/60 overflow-hidden">
-        {isLoading ? (
-          <div className="flex items-center justify-center gap-2 py-16 text-xs text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            {t('common.loading')}
-          </div>
-        ) : isError ? (
-          <div className="space-y-3 py-10 text-center">
-            <AlertCircle className="mx-auto h-8 w-8 text-rose-400" />
-            <div className="text-sm font-semibold">{t('common.error')}</div>
-            {error instanceof Error && error.message && (
-              <div className="mx-auto max-w-md break-all font-mono text-[11px] text-rose-400/80">
-                {error.message}
-              </div>
-            )}
+      {/* Unsaved changes banner */}
+      {dirty && (
+        <div className="rounded-md border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-700 dark:text-amber-400 flex items-center justify-between">
+          <span>{t('rules.unsavedChanges')}</span>
+          <div className="flex gap-2">
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
-              onClick={() => refetch()}
-              disabled={isFetching}
-              className="h-8 text-xs"
+              className="h-7 text-xs"
+              onClick={() => useConfigStore.getState().revert()}
             >
-              <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${isFetching ? 'animate-spin' : ''}`} />
-              {t('common.retry')}
+              {t('common.cancel')}
+            </Button>
+            <Button
+              variant="default"
+              size="sm"
+              className="h-7 text-xs"
+              disabled={!!validationErrors}
+              onClick={() => setApplyDialogOpen(true)}
+            >
+              {t('rules.applyChanges')}
             </Button>
           </div>
-        ) : rules.length === 0 ? (
-          <div className="py-10 text-center text-xs text-muted-foreground">{t('rules.empty')}</div>
-        ) : (
-          <div className="overflow-x-auto">
+        </div>
+      )}
+
+      {/* Live validation errors */}
+      <ValidationBanner />
+
+      {/* Config-managed rules section */}
+      {configRules.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+              {t('rules.configSection')}
+            </h2>
+            <Badge variant="outline" className="text-[10px]">
+              {configRules.length}
+            </Badge>
+            {configRules.length > 6 && (
+              <EntitySearchBar value={searchQuery} onChange={setSearchQuery} />
+            )}
+          </div>
+          {searchQuery && filteredConfigRules.length === 0 && (
+            <p className="text-xs text-muted-foreground italic">
+              {t('common.noResults', { query: searchQuery }) || `No results for "${searchQuery}"`}
+            </p>
+          )}
+          <div className="overflow-x-auto rounded-md border border-border/80">
             <table className="w-full text-xs text-left">
-              <thead className="bg-muted/50 border-b border-border/80 uppercase font-semibold text-[10px] text-muted-foreground tracking-wider">
+              <thead className="bg-muted/40 border-b border-border/80 uppercase font-semibold text-[10px] text-muted-foreground tracking-wider">
                 <tr>
-                  <th className="px-4 py-3 w-16">{t('rules.colPriority')}</th>
-                  <th className="px-4 py-3">{t('rules.colName')}</th>
-                  <th className="px-4 py-3">{t('rules.colMatch')}</th>
-                  <th className="px-4 py-3">{t('rules.colAction')}</th>
-                  <th className="px-4 py-3">{t('rules.colTarget')}</th>
-                  <th className="px-4 py-3">{t('rules.colHitStats')}</th>
-                  <th className="px-4 py-3 text-right">{t('rules.colEnabled')}</th>
-                  <th className="px-4 py-3 text-right">{t('common.actions')}</th>
+                  <th className="px-3 py-2 w-12">{t('rules.colPriority')}</th>
+                  <th className="px-3 py-2">{t('rules.colName')}</th>
+                  <th className="px-3 py-2">{t('rules.colMatch')}</th>
+                  <th className="px-3 py-2">{t('rules.colAction')}</th>
+                  <th className="px-3 py-2">{t('rules.colTarget')}</th>
+                  <th className="px-3 py-2 w-20 text-right">{t('common.actions')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60">
-                {rules.map((rule) => {
-                  return (
-                    <tr
-                      key={rule.index}
-                      className={`hover:bg-muted/30 transition-colors ${
-                        rule.disabled ? 'opacity-50' : ''
-                      }`}
-                    >
-                      <td className="px-4 py-3 font-mono font-bold text-muted-foreground">
-                        #{rule.priority}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="font-semibold text-foreground">{rule.name}</div>
-                        <div className="text-[10px] text-muted-foreground font-mono">
-                          {rule.type}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <code className="px-2 py-1 rounded bg-muted/60 text-[11px] font-mono text-primary border border-border/50">
-                          {rule.match}
-                        </code>
-                      </td>
-                      <td className="px-4 py-3">{getActionBadge(rule.action)}</td>
-                      <td className="px-4 py-3 font-mono text-muted-foreground">
-                        {getTargetDisplay(rule)}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center space-x-2 text-[11px]">
-                          <span className="text-emerald-400 font-mono font-bold">
-                            {formatNumber(rule.hit_count)} {t('common.hits')}
-                          </span>
-                          <span className="text-muted-foreground">/</span>
-                          <span className="text-muted-foreground font-mono">
-                            {formatNumber(rule.miss_count)}
-                          </span>
-                        </div>
-                        <div className="text-[10px] text-muted-foreground">
-                          {t('rules.last')}:{' '}
-                          {isZeroTime(rule.hit_at)
-                            ? t('common.never')
-                            : new Date(rule.hit_at).toLocaleTimeString()}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <Switch
-                          checked={!rule.disabled}
-                          onCheckedChange={() => handleToggle(rule.index, rule.disabled)}
-                          disabled={togglingIndex === rule.index}
-                        />
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => openTest(rule)}
-                            className="h-7 text-[11px]"
-                          >
-                            <Play className="w-3 h-3 mr-1" />
-                            {t('rules.test')}
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => openEdit(rule)}
-                            className="h-7 text-[11px]"
-                          >
-                            <Pencil className="w-3 h-3 mr-1" />
-                            {t('common.edit')}
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
+                {filteredConfigRules.map((rl) => (
+                  <tr key={rl.name} className="hover:bg-muted/20">
+                    <td className="px-3 py-2 font-mono">{rl.priority ?? 100}</td>
+                    <td className="px-3 py-2 font-semibold">{rl.name}</td>
+                    <td className="px-3 py-2 font-mono text-[10px] text-muted-foreground max-w-[200px] truncate">
+                      {rl.match}
+                    </td>
+                    <td className="px-3 py-2">{getActionBadge(rl.action)}</td>
+                    <td className="px-3 py-2 font-mono text-[10px] text-muted-foreground">
+                      {rl.targets?.join(', ') || rl.target || '-'}
+                    </td>
+                    <td className="px-3 py-2 text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleEditRule(rl.name)}
+                          className="p-1.5 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground"
+                          title={t('common.edit')}
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDeleteTarget(rl.name)}
+                          className="p-1.5 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
+                          title={t('common.delete')}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
-        )}
-      </Card>
+        </div>
+      )}
+
+      {/* Runtime rules section */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+            {t('rules.runtimeSection')}
+          </h2>
+          <Badge variant="outline" className="text-[10px]">
+            {rules.length}
+          </Badge>
+        </div>
+        <Card className="border-border/80 bg-card/60 overflow-hidden">
+          {isLoading ? (
+            <div className="flex items-center justify-center gap-2 py-16 text-xs text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              {t('common.loading')}
+            </div>
+          ) : isError ? (
+            <div className="space-y-3 py-10 text-center">
+              <AlertCircle className="mx-auto h-8 w-8 text-rose-400" />
+              <div className="text-sm font-semibold">{t('common.error')}</div>
+              {error instanceof Error && error.message && (
+                <div className="mx-auto max-w-md break-all font-mono text-[11px] text-rose-400/80">
+                  {error.message}
+                </div>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => refetch()}
+                disabled={isFetching}
+                className="h-8 text-xs"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${isFetching ? 'animate-spin' : ''}`} />
+                {t('common.retry')}
+              </Button>
+            </div>
+          ) : rules.length === 0 ? (
+            <div className="py-10 text-center text-xs text-muted-foreground">
+              {t('rules.empty')}
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs text-left">
+                <thead className="bg-muted/50 border-b border-border/80 uppercase font-semibold text-[10px] text-muted-foreground tracking-wider">
+                  <tr>
+                    <th className="px-4 py-3 w-16">{t('rules.colPriority')}</th>
+                    <th className="px-4 py-3">{t('rules.colName')}</th>
+                    <th className="px-4 py-3">{t('rules.colMatch')}</th>
+                    <th className="px-4 py-3">{t('rules.colAction')}</th>
+                    <th className="px-4 py-3">{t('rules.colTarget')}</th>
+                    <th className="px-4 py-3">{t('rules.colHitStats')}</th>
+                    <th className="px-4 py-3 text-right">{t('rules.colEnabled')}</th>
+                    <th className="px-4 py-3 text-right">{t('common.actions')}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/60">
+                  {rules.map((rule) => {
+                    return (
+                      <tr
+                        key={rule.index}
+                        className={`hover:bg-muted/30 transition-colors ${
+                          rule.disabled ? 'opacity-50' : ''
+                        }`}
+                      >
+                        <td className="px-4 py-3 font-mono font-bold text-muted-foreground">
+                          #{rule.priority}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="font-semibold text-foreground">{rule.name}</div>
+                          <div className="text-[10px] text-muted-foreground font-mono">
+                            {rule.type}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <code className="px-2 py-1 rounded bg-muted/60 text-[11px] font-mono text-primary border border-border/50">
+                            {rule.match}
+                          </code>
+                        </td>
+                        <td className="px-4 py-3">{getActionBadge(rule.action)}</td>
+                        <td className="px-4 py-3 font-mono text-muted-foreground">
+                          {getTargetDisplay(rule)}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center space-x-2 text-[11px]">
+                            <span className="text-emerald-400 font-mono font-bold">
+                              {formatNumber(rule.hit_count)} {t('common.hits')}
+                            </span>
+                            <span className="text-muted-foreground">/</span>
+                            <span className="text-muted-foreground font-mono">
+                              {formatNumber(rule.miss_count)}
+                            </span>
+                          </div>
+                          <div className="text-[10px] text-muted-foreground">
+                            {t('rules.last')}:{' '}
+                            {isZeroTime(rule.hit_at)
+                              ? t('common.never')
+                              : new Date(rule.hit_at).toLocaleTimeString()}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <Switch
+                            checked={!rule.disabled}
+                            onCheckedChange={() => handleToggle(rule.index, rule.disabled)}
+                            disabled={togglingIndex === rule.index}
+                          />
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openTest(rule)}
+                              className="h-7 text-[11px]"
+                            >
+                              <Play className="w-3 h-3 mr-1" />
+                              {t('rules.test')}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openEdit(rule)}
+                              className="h-7 text-[11px]"
+                            >
+                              <Pencil className="w-3 h-3 mr-1" />
+                              {t('common.edit')}
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+      </div>
 
       <Dialog open={testRule !== null} onOpenChange={(o) => !o && closeTest()}>
         <DialogContent className="max-w-2xl">
@@ -759,6 +955,54 @@ export const RulesPage: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Rule create/edit wizard */}
+      <RuleWizard open={wizardOpen} onOpenChange={setWizardOpen} existingRule={editingRule} />
+
+      {/* Delete confirmation */}
+      <AlertDialog open={deleteTarget !== null} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('rules.deleteTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('rules.deleteConfirm', { name: deleteTarget ?? '' })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteRule}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {t('common.delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Apply changes confirmation */}
+      <ConfigApplyConfirmationDialog
+        open={applyDialogOpen}
+        onOpenChange={setApplyDialogOpen}
+        beforeYaml={getSavedYaml() ?? ''}
+        afterYaml={getWorkingYaml() ?? ''}
+        applying={updateMutation.isPending}
+        validationErrors={validationErrors}
+        onConfirm={() => {
+          if (validationErrors) return
+          const yaml = getWorkingYaml() ?? ''
+          updateMutation.mutate(
+            { payload: yaml },
+            {
+              onSuccess: () => {
+                markSaved()
+                setApplyDialogOpen(false)
+                queryClient.invalidateQueries({ queryKey: ['rules'] })
+              },
+            },
+          )
+        }}
+      />
     </div>
   )
 }

@@ -6,15 +6,18 @@ import {
   ChevronRight,
   Code2,
   Cpu,
+  Download,
   FileText,
   Flame,
   GitCompare,
   History,
   KeyRound,
+  LayoutTemplate,
   ListChecks,
   Network,
   RotateCcw,
   Sliders,
+  Upload,
 } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -24,6 +27,15 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { ConfigApplyConfirmationDialog } from '@/components/wizard/ConfigApplyConfirmationDialog'
+import { ValidationBanner } from '@/components/wizard/ValidationBanner'
+import { GlobalConfigEditor } from '@/features/admin/GlobalConfigEditor'
+import { NodeConfigEditor } from '@/features/admin/NodeConfigEditor'
+import { RuleGroupEditor } from '@/features/admin/RuleGroupEditor'
+import { RuleProviderEditor } from '@/features/admin/RuleProviderEditor'
+import { useConfigValidation } from '@/hooks/useConfigValidation'
+import { CONFIG_TEMPLATES, type ConfigTemplate } from '@/lib/configTemplates'
+import { useConfigStore } from '@/stores/configStore'
 import { useThemeStore } from '@/stores/themeStore'
 
 const DEFAULT_SAMPLE_YAML = `# CoreC Gateway Configuration
@@ -240,6 +252,24 @@ export const ConfigCenterPage: React.FC = () => {
   const patchMutation = usePatchConfig()
   const updateMutation = useUpdateConfig()
 
+  // configStore integration for structured global config editing
+  const configDirty = useConfigStore((s) => s.dirty)
+  const getWorkingYaml = useConfigStore((s) => s.getWorkingYaml)
+  const getSavedYaml = useConfigStore((s) => s.getSavedYaml)
+  const markSaved = useConfigStore((s) => s.markSaved)
+  const loadFromYaml = useConfigStore((s) => s.loadFromYaml)
+  const configWorkingExists = useConfigStore((s) => !!s.workingConfig)
+  // Pre-apply validation: run zod schema + cross-entity checks on the
+  // working config. Errors are surfaced in the apply confirmation dialog
+  // and block the apply button until resolved.
+  const validation = useConfigValidation()
+  const validationErrorStrings = useMemo(
+    () => validation.errors.map((e) => `${e.path}: ${e.message}`),
+    [validation.errors],
+  )
+  const hasValidationErrors = validation.hasConfig && !validation.valid
+  const [globalApplyOpen, setGlobalApplyOpen] = useState(false)
+
   const [mode, setMode] = useState<'form' | 'yaml'>('form')
   const [yamlContent, setYamlContent] = useState(DEFAULT_SAMPLE_YAML)
   // Debounced copy of the editor content used only for the diff preview, so
@@ -255,6 +285,7 @@ export const ConfigCenterPage: React.FC = () => {
   const [history, setHistory] = useState<ConfigSnapshot[]>(() => loadHistory())
   const [lastSubmittedYaml, setLastSubmittedYaml] = useState<string | null>(null)
   const [diffOpen, setDiffOpen] = useState(true)
+  const [templatePickerOpen, setTemplatePickerOpen] = useState(false)
 
   // Auto-dismiss the status notice and clear the pending timer on unmount so we
   // never call setState on a disposed component.
@@ -281,6 +312,105 @@ export const ConfigCenterPage: React.FC = () => {
     const timer = setTimeout(() => setDebouncedYaml(yamlContent), 300)
     return () => clearTimeout(timer)
   }, [yamlContent])
+
+  // ── YAML ↔ Form bridge ─────────────────────────────────────────────
+  // "Import YAML → Form": parse the current Monaco editor content into the
+  // configStore so the structured editors (Global/Node/Drivers/etc.) reflect
+  // the YAML the user has been editing in code view.
+  const handleImportYamlToForm = () => {
+    loadFromYaml(yamlContent)
+    // Read error directly from the store — the configError from the render
+    // closure is stale because loadFromYaml just mutated the store.
+    const err = useConfigStore.getState().error
+    if (err) {
+      setStatusMsg({ type: 'error', text: t('config.importYamlFailed', { error: err }) })
+    } else {
+      setStatusMsg({ type: 'success', text: t('config.importYamlSuccess') })
+      setMode('form')
+    }
+  }
+
+  // "Sync Form → YAML": dump the configStore working config back into the
+  // Monaco editor so the user can review or further edit the structured
+  // changes as raw YAML.
+  const handleSyncFormToYaml = () => {
+    const yaml = getWorkingYaml()
+    if (yaml) {
+      setYamlContent(yaml)
+      setStatusMsg({ type: 'success', text: t('config.syncFormSuccess') })
+      setMode('yaml')
+    } else {
+      setStatusMsg({ type: 'error', text: t('config.syncFormEmpty') })
+    }
+  }
+
+  // "Upload YAML file": read a user-selected .yaml/.yml file into both the
+  // Monaco editor and the configStore.
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      const text = String(reader.result)
+      setYamlContent(text)
+      loadFromYaml(text)
+      const err = useConfigStore.getState().error
+      if (err) {
+        setStatusMsg({
+          type: 'error',
+          text: t('config.importYamlFailed', { error: err }),
+        })
+      } else {
+        setStatusMsg({
+          type: 'success',
+          text: t('config.fileLoaded', { name: file.name }),
+        })
+      }
+    }
+    reader.onerror = () => setStatusMsg({ type: 'error', text: t('config.fileLoadFailed') })
+    reader.readAsText(file)
+    // Reset input so the same file can be re-selected
+    e.target.value = ''
+  }
+
+  // "Download YAML file": export the current working config as a .yaml file.
+  // Exports the working (unsaved) YAML so the user can back up their in-progress
+  // edits. If working YAML is empty, falls back to saved YAML.
+  const handleFileDownload = () => {
+    const yaml = getWorkingYaml() ?? getSavedYaml() ?? ''
+    if (!yaml.trim()) {
+      setStatusMsg({ type: 'error', text: t('config.exportEmpty') })
+      return
+    }
+    const blob = new Blob([yaml], { type: 'text/yaml;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    const ts = new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-')
+    a.download = `corec-config-${ts}.yaml`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+    setStatusMsg({ type: 'success', text: t('config.exported') })
+  }
+
+  // Load a pre-built configuration template into the working config.
+  const handleLoadTemplate = (template: ConfigTemplate) => {
+    setYamlContent(template.yaml)
+    loadFromYaml(template.yaml)
+    const err = useConfigStore.getState().error
+    if (err) {
+      setStatusMsg({ type: 'error', text: t('config.importYamlFailed', { error: err }) })
+    } else {
+      setStatusMsg({
+        type: 'success',
+        text: t('config.templateLoaded', { name: template.name }),
+      })
+    }
+    setTemplatePickerOpen(false)
+  }
 
   // Sync the displayed log level from the server-side config overview once it
   // loads (or whenever it changes after a PATCH/PUT).
@@ -395,6 +525,112 @@ export const ConfigCenterPage: React.FC = () => {
               <Code2 className="w-3.5 h-3.5" />
               <span>{t('config.yamlCode')}</span>
             </button>
+          </div>
+
+          {/* YAML ↔ Form bridge buttons */}
+          {mode === 'yaml' && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleImportYamlToForm}
+              className="h-8 text-xs"
+              title={t('config.importYamlHint')}
+            >
+              <Sliders className="w-3.5 h-3.5 mr-1" />
+              <span>{t('config.importYamlToForm')}</span>
+            </Button>
+          )}
+          {mode === 'form' && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSyncFormToYaml}
+              disabled={!configWorkingExists}
+              className="h-8 text-xs"
+              title={t('config.syncFormHint')}
+            >
+              <Code2 className="w-3.5 h-3.5 mr-1" />
+              <span>{t('config.syncFormToYaml')}</span>
+            </Button>
+          )}
+          {/* File upload — available in both modes */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".yaml,.yml,.txt"
+            onChange={handleFileUpload}
+            className="hidden"
+          />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => fileInputRef.current?.click()}
+            className="h-8 text-xs"
+            title={t('config.uploadFileHint')}
+          >
+            <Upload className="w-3.5 h-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleFileDownload}
+            className="h-8 text-xs"
+            title={t('config.downloadFileHint')}
+          >
+            <Download className="w-3.5 h-3.5" />
+          </Button>
+          {/* Config templates — pre-built presets */}
+          <div className="relative">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setTemplatePickerOpen((v) => !v)}
+              className="h-8 text-xs"
+              title={t('config.templatesHint')}
+            >
+              <LayoutTemplate className="w-3.5 h-3.5" />
+            </Button>
+            {templatePickerOpen && (
+              <>
+                {/* Click-away overlay */}
+                {/* biome-ignore lint/a11y/useSemanticElements: invisible click-away backdrop, not an interactive control */}
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setTemplatePickerOpen(false)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Escape') setTemplatePickerOpen(false)
+                  }}
+                  role="button"
+                  tabIndex={-1}
+                  aria-label="Close template picker"
+                />
+                <div className="absolute right-0 top-full mt-1 z-50 w-80 max-h-96 overflow-y-auto rounded-lg border border-border bg-popover shadow-lg">
+                  <div className="p-2 space-y-1">
+                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide px-2 py-1">
+                      {t('config.templates')}
+                    </p>
+                    {CONFIG_TEMPLATES.map((tpl) => (
+                      <button
+                        key={tpl.id}
+                        type="button"
+                        onClick={() => handleLoadTemplate(tpl)}
+                        className="w-full text-left px-2 py-1.5 rounded-md hover:bg-accent transition-colors group"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-medium">{tpl.name}</span>
+                          <Badge variant="outline" className="text-[9px] px-1 py-0 shrink-0">
+                            {tpl.category}
+                          </Badge>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                          {tpl.description}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
 
           {mode === 'yaml' && (
@@ -561,6 +797,73 @@ export const ConfigCenterPage: React.FC = () => {
               )}
             </CardContent>
           </Card>
+
+          {/* Dirty banner for configStore-managed edits */}
+          {configDirty && (
+            <div className="rounded-md border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-700 dark:text-amber-400 flex items-center justify-between">
+              <span>{t('config.unsavedChanges')}</span>
+              <div className="flex gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={() => useConfigStore.getState().revert()}
+                >
+                  {t('common.cancel')}
+                </Button>
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="h-7 text-xs"
+                  disabled={hasValidationErrors}
+                  onClick={() => setGlobalApplyOpen(true)}
+                >
+                  {t('config.applyChanges')}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Live validation errors banner */}
+          <ValidationBanner />
+
+          {/* Structured global config editor */}
+          <GlobalConfigEditor />
+
+          {/* Structured node config editor */}
+          <NodeConfigEditor />
+
+          {/* Rule providers editor */}
+          <RuleProviderEditor />
+
+          {/* Rule groups editor */}
+          <RuleGroupEditor />
+
+          {/* Apply confirmation for configStore edits */}
+          <ConfigApplyConfirmationDialog
+            open={globalApplyOpen}
+            onOpenChange={setGlobalApplyOpen}
+            beforeYaml={getSavedYaml() ?? ''}
+            afterYaml={getWorkingYaml() ?? ''}
+            applying={updateMutation.isPending}
+            validationErrors={hasValidationErrors ? validationErrorStrings : undefined}
+            onConfirm={() => {
+              // Guard: never apply if validation failed. The apply button
+              // is also disabled, but this is a belt-and-suspenders check.
+              if (hasValidationErrors) return
+              const yaml = getWorkingYaml() ?? ''
+              updateMutation.mutate(
+                { payload: yaml },
+                {
+                  onSuccess: () => {
+                    markSaved()
+                    setGlobalApplyOpen(false)
+                    refetch()
+                  },
+                },
+              )
+            }}
+          />
         </div>
       ) : (
         <div className="space-y-4">

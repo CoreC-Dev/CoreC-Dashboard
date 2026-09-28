@@ -1,0 +1,474 @@
+/**
+ * Config Working-Copy Store
+ *
+ * The architectural backbone for all configuration editing in the Dashboard.
+ * Holds a local working copy of the full CoreCConfig and provides entity
+ * CRUD actions that delegate to the pure helpers in configYaml.ts.
+ *
+ * This store is decision-independent — it works identically under both
+ * backend paths described in CONFIGURATION_FEATURE_PLAN.md §10.1:
+ *   - Path A (GET /configs/raw): loadFromConfig() receives the server's
+ *     full config; user edits locally; saveConfig() PUTs the YAML back.
+ *   - Path B (pure frontend): loadFromYaml() parses an uploaded YAML or
+ *     the user starts from scratch; edits locally; saveConfig() PUTs.
+ *
+ * Dirty tracking: `savedConfig` is the last successfully applied snapshot.
+ * `workingConfig` is what the user is editing. `dirty` = they differ.
+ * `revert()` discards working changes back to the last saved state.
+ *
+ * Safety: because PUT /configs is a full hot-reload (non-atomic, suspends
+ * the engine), the UI must never auto-save. All saves are explicit user
+ * actions with a confirmation dialog showing the YAML diff.
+ */
+import { create } from 'zustand'
+import {
+  dumpConfigYaml,
+  findDriver,
+  findRule,
+  findRuleGroup,
+  findRuleProvider,
+  findTransport,
+  isDriverNameUnique,
+  isRuleGroupNameUnique,
+  isRuleNameUnique,
+  isRuleProviderNameUnique,
+  isTransportNameUnique,
+  parseConfigYaml,
+  removeDriver,
+  removeRule,
+  removeRuleGroup,
+  removeRuleProvider,
+  removeTransport,
+  upsertDriver,
+  upsertRule,
+  upsertRuleGroup,
+  upsertRuleProvider,
+  upsertTransport,
+} from '@/lib/configYaml'
+import type {
+  CoreCConfig,
+  DriverConfig,
+  GlobalConfig,
+  NodeConfig,
+  RuleConfig,
+  RuleProviderConfig,
+  TransportConfig,
+} from '@/types/config'
+
+/**
+ * Set a value at a dotted path inside a plain object (shallow clone per level).
+ * Example: setNestedPath(obj, 'api.listen', '0.0.0.0:9090')
+ *          → obj.api = { ...obj.api, listen: '0.0.0.0:9090' }
+ * When value is undefined, the key is deleted from its parent.
+ */
+function setNestedPath(root: Record<string, unknown>, path: string, value: unknown): void {
+  const parts = path.split('.')
+  if (parts.length === 0) return
+  let current = root
+  for (let i = 0; i < parts.length - 1; i++) {
+    const key = parts[i]!
+    const child = current[key]
+    if (typeof child !== 'object' || child === null || Array.isArray(child)) {
+      current[key] = {}
+    } else {
+      current[key] = { ...child }
+    }
+    current = current[key] as Record<string, unknown>
+  }
+  const lastKey = parts[parts.length - 1]!
+  if (value === undefined) {
+    delete current[lastKey]
+  } else {
+    current[lastKey] = value
+  }
+}
+
+export interface ConfigStoreState {
+  /** The config the user is currently editing (may have unsaved changes). */
+  workingConfig: CoreCConfig | null
+  /** The last successfully applied config (for diff/revert). null = never saved. */
+  savedConfig: CoreCConfig | null
+  /** True when workingConfig differs from savedConfig (has unsaved changes). */
+  dirty: boolean
+  /** Error message from the last failed operation (parse error, etc.). */
+  error: string | null
+
+  // ─── Loading ──────────────────────────────────────────────────────
+
+  /** Load config from a YAML string (path B: uploaded file or pasted YAML). */
+  loadFromYaml: (yaml: string) => void
+  /** Load config from a typed object (path A: fetched from GET /configs/raw). */
+  loadFromConfig: (config: CoreCConfig) => void
+  /** Start a new empty config (blank-slate creation). */
+  resetToEmpty: () => void
+
+  // ─── Entity CRUD (delegate to configYaml.ts pure helpers) ─────────
+
+  upsertDriver: (driver: DriverConfig) => boolean
+  removeDriver: (name: string) => void
+  upsertTransport: (transport: TransportConfig) => boolean
+  removeTransport: (name: string) => void
+  upsertRule: (rule: RuleConfig) => boolean
+  removeRule: (name: string) => void
+  upsertRuleProvider: (provider: RuleProviderConfig) => boolean
+  removeRuleProvider: (name: string) => void
+  upsertRuleGroup: (name: string, rules: RuleConfig[]) => boolean
+  removeRuleGroup: (name: string) => void
+
+  // ─── Section updates ──────────────────────────────────────────────
+
+  updateGlobal: (global: GlobalConfig) => void
+  updateNode: (node: NodeConfig) => void
+  /** Update a single field inside the global section (shallow path: 'log-level', 'api.listen', etc.). */
+  updateGlobalField: (path: string, value: unknown) => void
+  /** Update a single field inside the node section. */
+  updateNodeField: (path: string, value: unknown) => void
+
+  // ─── Save / revert ────────────────────────────────────────────────
+
+  /** Mark the current workingConfig as saved (call after successful PUT). */
+  markSaved: () => void
+  /** Discard working changes, revert to the last saved config. */
+  revert: () => void
+  /** Clear the error state. */
+  clearError: () => void
+
+  // ─── Derived getters (not reactive; call on demand) ───────────────
+
+  /** Dump the working config to a YAML string for PUT /configs. */
+  getWorkingYaml: () => string | null
+  /** Dump the saved config to YAML (for diff baseline). */
+  getSavedYaml: () => string | null
+  /** Find a driver/transport/rule by name in the working config. */
+  findDriver: (name: string) => DriverConfig | undefined
+  findTransport: (name: string) => TransportConfig | undefined
+  findRule: (name: string) => RuleConfig | undefined
+  findRuleProvider: (name: string) => RuleProviderConfig | undefined
+  findRuleGroup: (name: string) => RuleConfig[] | undefined
+  /** Check name uniqueness in the working config. */
+  isDriverNameUnique: (name: string) => boolean
+  isTransportNameUnique: (name: string) => boolean
+  isRuleNameUnique: (name: string) => boolean
+  isRuleProviderNameUnique: (name: string) => boolean
+  isRuleGroupNameUnique: (name: string) => boolean
+}
+
+/** Deep equality check for config objects (structural, not reference). */
+function configEqual(a: CoreCConfig | null, b: CoreCConfig | null): boolean {
+  if (a === b) return true
+  if (!a || !b) return false
+  try {
+    return JSON.stringify(a) === JSON.stringify(b)
+  } catch {
+    return false
+  }
+}
+
+export const useConfigStore = create<ConfigStoreState>((set, get) => ({
+  workingConfig: null,
+  savedConfig: null,
+  dirty: false,
+  error: null,
+
+  // ─── Loading ──────────────────────────────────────────────────────
+
+  loadFromYaml: (yaml: string) => {
+    try {
+      const config = parseConfigYaml(yaml)
+      set({
+        workingConfig: config,
+        savedConfig: config,
+        dirty: false,
+        error: null,
+      })
+    } catch (err: unknown) {
+      set({
+        error: err instanceof Error ? err.message : String(err),
+      })
+    }
+  },
+
+  loadFromConfig: (config: CoreCConfig) => {
+    set({
+      workingConfig: config,
+      savedConfig: config,
+      dirty: false,
+      error: null,
+    })
+  },
+
+  resetToEmpty: () => {
+    set({
+      workingConfig: {},
+      savedConfig: null,
+      dirty: true,
+      error: null,
+    })
+  },
+
+  // ─── Entity CRUD ──────────────────────────────────────────────────
+
+  upsertDriver: (driver: DriverConfig) => {
+    const { workingConfig } = get()
+    if (!workingConfig) {
+      set({ error: 'No working config loaded' })
+      return false
+    }
+    // Name uniqueness is enforced by configSchema.validateConfig, but we
+    // also check here for immediate UI feedback before the wizard closes.
+    if (!isDriverNameUnique(workingConfig, driver.name)) {
+      const existing = findDriver(workingConfig, driver.name)
+      if (!existing) {
+        // Name collides but findDriver didn't find it — shouldn't happen,
+        // but guard anyway.
+        set({ error: `Driver name "${driver.name}" already exists` })
+        return false
+      }
+      // If found, it's an update (same name) — allowed.
+    }
+    const next = upsertDriver(workingConfig, driver)
+    set({ workingConfig: next, dirty: !configEqual(next, get().savedConfig), error: null })
+    return true
+  },
+
+  removeDriver: (name: string) => {
+    const { workingConfig } = get()
+    if (!workingConfig) return
+    const next = removeDriver(workingConfig, name)
+    set({ workingConfig: next, dirty: !configEqual(next, get().savedConfig), error: null })
+  },
+
+  upsertTransport: (transport: TransportConfig) => {
+    const { workingConfig } = get()
+    if (!workingConfig) {
+      set({ error: 'No working config loaded' })
+      return false
+    }
+    if (!isTransportNameUnique(workingConfig, transport.name)) {
+      const existing = findTransport(workingConfig, transport.name)
+      if (!existing) {
+        set({ error: `Transport name "${transport.name}" already exists` })
+        return false
+      }
+    }
+    const next = upsertTransport(workingConfig, transport)
+    set({ workingConfig: next, dirty: !configEqual(next, get().savedConfig), error: null })
+    return true
+  },
+
+  removeTransport: (name: string) => {
+    const { workingConfig } = get()
+    if (!workingConfig) return
+    const next = removeTransport(workingConfig, name)
+    set({ workingConfig: next, dirty: !configEqual(next, get().savedConfig), error: null })
+  },
+
+  upsertRule: (rule: RuleConfig) => {
+    const { workingConfig } = get()
+    if (!workingConfig) {
+      set({ error: 'No working config loaded' })
+      return false
+    }
+    if (!isRuleNameUnique(workingConfig, rule.name)) {
+      const existing = findRule(workingConfig, rule.name)
+      if (!existing) {
+        set({ error: `Rule name "${rule.name}" already exists` })
+        return false
+      }
+    }
+    const next = upsertRule(workingConfig, rule)
+    set({ workingConfig: next, dirty: !configEqual(next, get().savedConfig), error: null })
+    return true
+  },
+
+  removeRule: (name: string) => {
+    const { workingConfig } = get()
+    if (!workingConfig) return
+    const next = removeRule(workingConfig, name)
+    set({ workingConfig: next, dirty: !configEqual(next, get().savedConfig), error: null })
+  },
+
+  upsertRuleProvider: (provider: RuleProviderConfig) => {
+    const { workingConfig } = get()
+    if (!workingConfig) {
+      set({ error: 'No working config loaded' })
+      return false
+    }
+    if (!isRuleProviderNameUnique(workingConfig, provider.name)) {
+      const existing = findRuleProvider(workingConfig, provider.name)
+      if (!existing) {
+        set({ error: `Rule provider name "${provider.name}" already exists` })
+        return false
+      }
+    }
+    const next = upsertRuleProvider(workingConfig, provider)
+    set({ workingConfig: next, dirty: !configEqual(next, get().savedConfig), error: null })
+    return true
+  },
+
+  removeRuleProvider: (name: string) => {
+    const { workingConfig } = get()
+    if (!workingConfig) return
+    const next = removeRuleProvider(workingConfig, name)
+    set({ workingConfig: next, dirty: !configEqual(next, get().savedConfig), error: null })
+  },
+
+  upsertRuleGroup: (name: string, rules: RuleConfig[]) => {
+    const { workingConfig } = get()
+    if (!workingConfig) {
+      set({ error: 'No working config loaded' })
+      return false
+    }
+    if (!name.trim()) {
+      set({ error: 'Rule group name cannot be empty' })
+      return false
+    }
+    const next = upsertRuleGroup(workingConfig, name.trim(), rules)
+    set({ workingConfig: next, dirty: !configEqual(next, get().savedConfig), error: null })
+    return true
+  },
+
+  removeRuleGroup: (name: string) => {
+    const { workingConfig } = get()
+    if (!workingConfig) return
+    const next = removeRuleGroup(workingConfig, name)
+    set({ workingConfig: next, dirty: !configEqual(next, get().savedConfig), error: null })
+  },
+
+  // ─── Section updates ──────────────────────────────────────────────
+
+  updateGlobal: (global: GlobalConfig) => {
+    const { workingConfig } = get()
+    if (!workingConfig) return
+    const next = { ...workingConfig, global }
+    set({ workingConfig: next, dirty: !configEqual(next, get().savedConfig), error: null })
+  },
+
+  updateNode: (node: NodeConfig) => {
+    const { workingConfig } = get()
+    if (!workingConfig) return
+    const next = { ...workingConfig, node }
+    set({ workingConfig: next, dirty: !configEqual(next, get().savedConfig), error: null })
+  },
+
+  updateGlobalField: (path: string, value: unknown) => {
+    const { workingConfig } = get()
+    if (!workingConfig) return
+    const global = { ...(workingConfig.global ?? {}) } as Record<string, unknown>
+    setNestedPath(global, path, value)
+    const next = { ...workingConfig, global }
+    set({ workingConfig: next, dirty: !configEqual(next, get().savedConfig), error: null })
+  },
+
+  updateNodeField: (path: string, value: unknown) => {
+    const { workingConfig } = get()
+    if (!workingConfig) return
+    const node = { ...(workingConfig.node ?? {}) } as Record<string, unknown>
+    setNestedPath(node, path, value)
+    const next = { ...workingConfig, node }
+    set({ workingConfig: next, dirty: !configEqual(next, get().savedConfig), error: null })
+  },
+
+  // ─── Save / revert ────────────────────────────────────────────────
+
+  markSaved: () => {
+    const { workingConfig } = get()
+    set({ savedConfig: workingConfig ? structuredCloneSafe(workingConfig) : null, dirty: false })
+  },
+
+  revert: () => {
+    const { savedConfig } = get()
+    set({
+      workingConfig: savedConfig ? structuredCloneSafe(savedConfig) : null,
+      dirty: false,
+      error: null,
+    })
+  },
+
+  clearError: () => set({ error: null }),
+
+  // ─── Derived getters ──────────────────────────────────────────────
+
+  getWorkingYaml: () => {
+    const { workingConfig } = get()
+    if (!workingConfig) return null
+    return dumpConfigYaml(workingConfig)
+  },
+
+  getSavedYaml: () => {
+    const { savedConfig } = get()
+    if (!savedConfig) return null
+    return dumpConfigYaml(savedConfig)
+  },
+
+  findDriver: (name: string) => {
+    const { workingConfig } = get()
+    if (!workingConfig) return undefined
+    return findDriver(workingConfig, name)
+  },
+
+  findTransport: (name: string) => {
+    const { workingConfig } = get()
+    if (!workingConfig) return undefined
+    return findTransport(workingConfig, name)
+  },
+
+  findRule: (name: string) => {
+    const { workingConfig } = get()
+    if (!workingConfig) return undefined
+    return findRule(workingConfig, name)
+  },
+
+  findRuleProvider: (name: string) => {
+    const { workingConfig } = get()
+    if (!workingConfig) return undefined
+    return findRuleProvider(workingConfig, name)
+  },
+
+  findRuleGroup: (name: string) => {
+    const { workingConfig } = get()
+    if (!workingConfig) return undefined
+    return findRuleGroup(workingConfig, name)
+  },
+
+  isDriverNameUnique: (name: string) => {
+    const { workingConfig } = get()
+    if (!workingConfig) return true
+    return isDriverNameUnique(workingConfig, name)
+  },
+
+  isTransportNameUnique: (name: string) => {
+    const { workingConfig } = get()
+    if (!workingConfig) return true
+    return isTransportNameUnique(workingConfig, name)
+  },
+
+  isRuleNameUnique: (name: string) => {
+    const { workingConfig } = get()
+    if (!workingConfig) return true
+    return isRuleNameUnique(workingConfig, name)
+  },
+
+  isRuleProviderNameUnique: (name: string) => {
+    const { workingConfig } = get()
+    if (!workingConfig) return true
+    return isRuleProviderNameUnique(workingConfig, name)
+  },
+
+  isRuleGroupNameUnique: (name: string) => {
+    const { workingConfig } = get()
+    if (!workingConfig) return true
+    return isRuleGroupNameUnique(workingConfig, name)
+  },
+}))
+
+/**
+ * Deep-clone a config object safely. Uses structuredClone when available
+ * (modern browsers/Node 17+), falls back to JSON round-trip.
+ */
+function structuredCloneSafe<T>(obj: T): T {
+  if (typeof structuredClone === 'function') {
+    return structuredClone(obj)
+  }
+  return JSON.parse(JSON.stringify(obj)) as T
+}
