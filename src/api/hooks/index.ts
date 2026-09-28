@@ -13,16 +13,6 @@ export function useServerInfo() {
   })
 }
 
-export function useHealthReady() {
-  const isConnected = useConnectionStore((s) => s.isConnected)
-  return useQuery({
-    queryKey: ['healthReady'],
-    queryFn: api.getHealthReady,
-    enabled: isConnected,
-    refetchInterval: 5000,
-  })
-}
-
 export function useDrivers() {
   const isConnected = useConnectionStore((s) => s.isConnected)
   return useQuery({

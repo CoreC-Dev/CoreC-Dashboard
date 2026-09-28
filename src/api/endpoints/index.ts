@@ -4,12 +4,10 @@ import type {
   DriversListResponse,
   DriverTagsResponse,
   GlobalTagsResponse,
-  HealthCheckResponse,
   RulesListResponse,
   ServerInfoResponse,
   StatsResponse,
   TransportsListResponse,
-  VersionResponse,
   WriteResponse,
 } from '@/types/api'
 import type { DriverStatus, TransportStatus, WriteCommand } from '@/types/models'
@@ -17,28 +15,6 @@ import { ApiError, apiRequest } from '../client'
 
 // Public endpoints
 export const getServerInfo = () => apiRequest<ServerInfoResponse>('/')
-export const getVersion = () => apiRequest<VersionResponse>('/version')
-export const getHealthLive = () => apiRequest<HealthCheckResponse>('/healthz/live')
-
-// /healthz/ready legitimately returns 503 with a usable JSON body
-// ({"status":"not_ready","reason":...,"components":...}) when the engine
-// isn't fully ready (e.g. a driver is still connecting). apiRequest throws
-// on non-2xx, so we tolerate 503 here and parse the body.
-export const getHealthReady = async (): Promise<HealthCheckResponse> => {
-  try {
-    return await apiRequest<HealthCheckResponse>('/healthz/ready')
-  } catch (err: unknown) {
-    // 503 is a valid "not ready" response — re-parse the body if available.
-    if (err instanceof ApiError && err.status === 503 && err.body) {
-      try {
-        return JSON.parse(err.body)
-      } catch {
-        // fall through to re-throw
-      }
-    }
-    throw err
-  }
-}
 
 // Configurations
 export const getConfigs = () => apiRequest<ConfigSummaryResponse>('/configs')

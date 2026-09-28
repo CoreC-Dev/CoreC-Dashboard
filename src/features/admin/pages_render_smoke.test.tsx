@@ -43,7 +43,6 @@ vi.mock('@/api/endpoints', () => ({
   }),
   getConfigs: vi.fn().mockResolvedValue({ redacted: true }),
   getServerInfo: vi.fn().mockResolvedValue({ name: 'test', version: 'dev' }),
-  getHealthReady: vi.fn().mockResolvedValue({ ready: true }),
   getStats: vi.fn().mockResolvedValue({}),
   getDrivers: vi.fn().mockResolvedValue({ drivers: [] }),
   getDeadLetters: vi.fn().mockResolvedValue({ dead_letters: [] }),

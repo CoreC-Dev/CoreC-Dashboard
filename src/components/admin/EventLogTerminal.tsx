@@ -20,14 +20,10 @@ import type { LogEvent } from '@/types/models'
  *
  * Props:
  *  - height: CSS height for the terminal area (default h-80).
- *  - showCard: when true (default), wraps the terminal in a Card with a
- *    header containing the title + pause/clear controls. When false, renders
- *    only the bare terminal container (caller provides chrome).
  */
 export const EventLogTerminal: React.FC<{
   height?: string
-  showCard?: boolean
-}> = ({ height = 'h-80', showCard = true }) => {
+}> = ({ height = 'h-80' }) => {
   const { t } = useTranslation()
   // Keep a ref to the latest `t` so the terminal init effect (which must run
   // once) can render localized strings without re-subscribing on language change.
@@ -194,10 +190,6 @@ export const EventLogTerminal: React.FC<{
 
   const clearTerminal = () => {
     xtermInstance.current?.clear()
-  }
-
-  if (!showCard) {
-    return <div ref={terminalRef} className={`${height} w-full p-2 bg-[#0c0d12]`} />
   }
 
   return (

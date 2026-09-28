@@ -130,8 +130,6 @@ export interface ConfigStoreState {
   markSaved: () => void
   /** Discard working changes, revert to the last saved config. */
   revert: () => void
-  /** Clear the error state. */
-  clearError: () => void
 
   // ─── Derived getters (not reactive; call on demand) ───────────────
 
@@ -384,8 +382,6 @@ export const useConfigStore = create<ConfigStoreState>((set, get) => ({
       error: null,
     })
   },
-
-  clearError: () => set({ error: null }),
 
   // ─── Derived getters ──────────────────────────────────────────────
 

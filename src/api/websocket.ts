@@ -27,8 +27,6 @@ export class CoreCWebSocket<T = unknown> {
   private msgTimestamps: number[] = []
   /** Index of the first unexpired timestamp — avoids O(n) Array.shift(). */
   private msgTimestampsHead = 0
-  /** Number of messages dropped due to backpressure (for diagnostics). */
-  droppedCount = 0
 
   constructor(
     path: string,
@@ -84,8 +82,7 @@ export class CoreCWebSocket<T = unknown> {
         // Real backpressure: sliding-window rate limiter. If the message
         // arrival rate exceeds maxMsgPerSec, drop this message to protect
         // the event loop from render thrashing on high-frequency streams
-        // (e.g. /tags/stream on a large plant). The dropped counter is
-        // surfaced in the Diagnostics UI.
+        // (e.g. /tags/stream on a large plant).
         const now = Date.now()
         // Prune timestamps older than 1 second. Use a head index instead of
         // Array.shift() (which is O(n) per call → O(n²) at 500 msg/s).
@@ -102,7 +99,6 @@ export class CoreCWebSocket<T = unknown> {
         }
         const activeCount = this.msgTimestamps.length - this.msgTimestampsHead
         if (activeCount >= this.maxMsgPerSec) {
-          this.droppedCount++
           return // drop this message
         }
         this.msgTimestamps.push(now)
@@ -165,21 +161,6 @@ export class CoreCWebSocket<T = unknown> {
     this.reconnectTimeout = setTimeout(() => {
       this.connect()
     }, jitter)
-  }
-
-  public updateParams(newParams: Record<string, string>) {
-    this.params = { ...this.params, ...newParams }
-    this.reconnect()
-  }
-
-  public reconnect() {
-    if (this.ws) {
-      this.ws.onclose = null
-      this.ws.close()
-      this.ws = null
-    }
-    if (this.reconnectTimeout) clearTimeout(this.reconnectTimeout)
-    this.connect()
   }
 
   public destroy() {

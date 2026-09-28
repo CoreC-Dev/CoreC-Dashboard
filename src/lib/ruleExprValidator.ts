@@ -44,15 +44,6 @@ export const VALID_FIELDS = [
   'value',
 ] as const
 
-/** Valid operators that take a string operand on the right. */
-const _STRING_OPS = ['==', '!=', '=~', '!~', 'contains', 'suffix', 'prefix'] as const
-
-/** Valid numeric comparison operators. */
-const _NUMERIC_OPS = ['>', '<', '>=', '<='] as const
-
-/** Keywords that are handled specially (not compiled as expressions). */
-const _SPECIAL_KEYWORDS = ['ALL', 'SUB-RULE:'] as const
-
 /**
  * Validates a CoreC rule match expression for basic syntax correctness.
  * Returns {valid, errors, warnings}. Pure function — no side effects.
@@ -115,7 +106,6 @@ export function validateRuleExpression(expr: string): ExprValidationResult {
   // Pattern: word followed by operator
   const fieldOpPattern = /(\w+)\s*(==|!=|=~|!~|>|<|>=|<=|contains|suffix|prefix|in)\s*/g
   let match: RegExpExecArray | null
-  const foundFields = new Set<string>()
   while ((match = fieldOpPattern.exec(stripped)) !== null) {
     const field = match[1]
     // Skip numeric literals (e.g. "50" in "50..100")
@@ -128,7 +118,6 @@ export function validateRuleExpression(expr: string): ExprValidationResult {
       // Could be a false positive from complex expressions; add as warning
       warnings.push(`unknown field "${field}" — valid fields: ${VALID_FIELDS.join(', ')}`)
     }
-    foundFields.add(field)
   }
 
   // Check for double-quoted strings (CoreC DSL uses single quotes)
