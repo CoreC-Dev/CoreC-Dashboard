@@ -100,6 +100,51 @@ const RECONNECT_GROUP = {
   ] satisfies SettingsField[],
 }
 
+// ─── Reusable modbus TCP-family connection fields ───────────────────
+// host/port/slave-id/timeout repeated verbatim across modbus-tcp,
+// modbus-rtuovertcp, modbus-udp, modbus-rtuoverudp, and modbus-tls. Only the
+// host placeholder varies between entries; modbus-tls additionally overrides
+// the port default/help (802 / settings.portTlsHelp). modbus-tcp appends a
+// `retry` field after the connection group; modbus-tls appends an mTLS group.
+const MODBUS_CONNECTION_FIELDS = (
+  hostPlaceholder: string,
+  port: { default?: number; help?: string } = {},
+): SettingsField[] => [
+  {
+    key: 'host',
+    label: 'settings.host',
+    type: 'text',
+    required: true,
+    placeholder: hostPlaceholder,
+    help: 'settings.hostHelp',
+  },
+  {
+    key: 'port',
+    label: 'settings.port',
+    type: 'number',
+    default: port.default ?? 502,
+    min: 1,
+    max: 65535,
+    help: port.help ?? 'settings.portHelp',
+  },
+  {
+    key: 'slave-id',
+    label: 'settings.slaveId',
+    type: 'number',
+    default: 1,
+    min: 0,
+    max: 247,
+    help: 'settings.slaveIdHelp',
+  },
+  {
+    key: 'timeout',
+    label: 'settings.timeout',
+    type: 'duration',
+    default: '3s',
+    help: 'settings.timeoutHelp',
+  },
+]
+
 // ─── Driver settings registries ──────────────────────────────────────
 export const DRIVER_SETTINGS_REGISTRY: Record<string, TypeFieldRegistry> = {
   'modbus-tcp': {
@@ -107,39 +152,7 @@ export const DRIVER_SETTINGS_REGISTRY: Record<string, TypeFieldRegistry> = {
       {
         label: 'settings.connection',
         fields: [
-          {
-            key: 'host',
-            label: 'settings.host',
-            type: 'text',
-            required: true,
-            placeholder: '192.168.1.100',
-            help: 'settings.hostHelp',
-          },
-          {
-            key: 'port',
-            label: 'settings.port',
-            type: 'number',
-            default: 502,
-            min: 1,
-            max: 65535,
-            help: 'settings.portHelp',
-          },
-          {
-            key: 'slave-id',
-            label: 'settings.slaveId',
-            type: 'number',
-            default: 1,
-            min: 0,
-            max: 247,
-            help: 'settings.slaveIdHelp',
-          },
-          {
-            key: 'timeout',
-            label: 'settings.timeout',
-            type: 'duration',
-            default: '3s',
-            help: 'settings.timeoutHelp',
-          },
+          ...MODBUS_CONNECTION_FIELDS('192.168.1.100'),
           {
             key: 'retry',
             label: 'settings.retry',
@@ -232,41 +245,7 @@ export const DRIVER_SETTINGS_REGISTRY: Record<string, TypeFieldRegistry> = {
     groups: [
       {
         label: 'settings.connection',
-        fields: [
-          {
-            key: 'host',
-            label: 'settings.host',
-            type: 'text',
-            required: true,
-            placeholder: '192.168.1.80',
-            help: 'settings.hostHelp',
-          },
-          {
-            key: 'port',
-            label: 'settings.port',
-            type: 'number',
-            default: 502,
-            min: 1,
-            max: 65535,
-            help: 'settings.portHelp',
-          },
-          {
-            key: 'slave-id',
-            label: 'settings.slaveId',
-            type: 'number',
-            default: 1,
-            min: 0,
-            max: 247,
-            help: 'settings.slaveIdHelp',
-          },
-          {
-            key: 'timeout',
-            label: 'settings.timeout',
-            type: 'duration',
-            default: '3s',
-            help: 'settings.timeoutHelp',
-          },
-        ],
+        fields: [...MODBUS_CONNECTION_FIELDS('192.168.1.80')],
       },
       RECONNECT_GROUP,
     ],
@@ -276,41 +255,7 @@ export const DRIVER_SETTINGS_REGISTRY: Record<string, TypeFieldRegistry> = {
     groups: [
       {
         label: 'settings.connection',
-        fields: [
-          {
-            key: 'host',
-            label: 'settings.host',
-            type: 'text',
-            required: true,
-            placeholder: '192.168.1.90',
-            help: 'settings.hostHelp',
-          },
-          {
-            key: 'port',
-            label: 'settings.port',
-            type: 'number',
-            default: 502,
-            min: 1,
-            max: 65535,
-            help: 'settings.portHelp',
-          },
-          {
-            key: 'slave-id',
-            label: 'settings.slaveId',
-            type: 'number',
-            default: 1,
-            min: 0,
-            max: 247,
-            help: 'settings.slaveIdHelp',
-          },
-          {
-            key: 'timeout',
-            label: 'settings.timeout',
-            type: 'duration',
-            default: '3s',
-            help: 'settings.timeoutHelp',
-          },
-        ],
+        fields: [...MODBUS_CONNECTION_FIELDS('192.168.1.90')],
       },
       RECONNECT_GROUP,
     ],
@@ -320,41 +265,7 @@ export const DRIVER_SETTINGS_REGISTRY: Record<string, TypeFieldRegistry> = {
     groups: [
       {
         label: 'settings.connection',
-        fields: [
-          {
-            key: 'host',
-            label: 'settings.host',
-            type: 'text',
-            required: true,
-            placeholder: '192.168.1.91',
-            help: 'settings.hostHelp',
-          },
-          {
-            key: 'port',
-            label: 'settings.port',
-            type: 'number',
-            default: 502,
-            min: 1,
-            max: 65535,
-            help: 'settings.portHelp',
-          },
-          {
-            key: 'slave-id',
-            label: 'settings.slaveId',
-            type: 'number',
-            default: 1,
-            min: 0,
-            max: 247,
-            help: 'settings.slaveIdHelp',
-          },
-          {
-            key: 'timeout',
-            label: 'settings.timeout',
-            type: 'duration',
-            default: '3s',
-            help: 'settings.timeoutHelp',
-          },
-        ],
+        fields: [...MODBUS_CONNECTION_FIELDS('192.168.1.91')],
       },
       RECONNECT_GROUP,
     ],
@@ -365,39 +276,10 @@ export const DRIVER_SETTINGS_REGISTRY: Record<string, TypeFieldRegistry> = {
       {
         label: 'settings.connection',
         fields: [
-          {
-            key: 'host',
-            label: 'settings.host',
-            type: 'text',
-            required: true,
-            placeholder: '192.168.1.100',
-            help: 'settings.hostHelp',
-          },
-          {
-            key: 'port',
-            label: 'settings.port',
-            type: 'number',
+          ...MODBUS_CONNECTION_FIELDS('192.168.1.100', {
             default: 802,
-            min: 1,
-            max: 65535,
             help: 'settings.portTlsHelp',
-          },
-          {
-            key: 'slave-id',
-            label: 'settings.slaveId',
-            type: 'number',
-            default: 1,
-            min: 0,
-            max: 247,
-            help: 'settings.slaveIdHelp',
-          },
-          {
-            key: 'timeout',
-            label: 'settings.timeout',
-            type: 'duration',
-            default: '3s',
-            help: 'settings.timeoutHelp',
-          },
+          }),
         ],
       },
       {

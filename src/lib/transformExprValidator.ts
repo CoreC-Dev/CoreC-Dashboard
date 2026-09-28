@@ -1,3 +1,5 @@
+import { checkBalancedParens, type ValidationResult } from './exprShared'
+
 /**
  * Transform expression syntax validator
  *
@@ -14,11 +16,8 @@
  *
  * This validator catches common syntax errors before applying config.
  */
-export interface ArithValidationResult {
-  valid: boolean
-  errors: string[]
-  warnings: string[]
-}
+// Re-exported alias so existing test imports (`ArithValidationResult`) stay valid.
+export type ArithValidationResult = ValidationResult
 
 /**
  * Validates a CoreC transform arithmetic expression for syntax correctness.
@@ -34,18 +33,7 @@ export function validateTransformExpression(expr: string): ArithValidationResult
   }
 
   // Check for balanced parentheses
-  let parenDepth = 0
-  for (let i = 0; i < trimmed.length; i++) {
-    if (trimmed[i] === '(') parenDepth++
-    if (trimmed[i] === ')') parenDepth--
-    if (parenDepth < 0) {
-      errors.push('unbalanced parentheses: closing ")" before opening "("')
-      break
-    }
-  }
-  if (parenDepth > 0) {
-    errors.push(`unbalanced parentheses: ${parenDepth} unclosed "("`)
-  }
+  errors.push(...checkBalancedParens(trimmed))
 
   // Check for invalid characters: after removing valid tokens, nothing should remain.
   // Valid: digits, + - * / ( ) . whitespace, the word "value", and scientific

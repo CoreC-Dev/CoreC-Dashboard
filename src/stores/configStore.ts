@@ -162,301 +162,276 @@ function configEqual(a: CoreCConfig | null, b: CoreCConfig | null): boolean {
   }
 }
 
-export const useConfigStore = create<ConfigStoreState>((set, get) => ({
-  workingConfig: null,
-  savedConfig: null,
-  dirty: false,
-  error: null,
+export const useConfigStore = create<ConfigStoreState>((set, get) => {
+  // Commit a new working config: swap it in, recompute dirty against the last
+  // saved snapshot, and clear any prior error. Shared by every entity-CRUD and
+  // section-update action below — load/markSaved/revert use different shapes.
+  const commit = (next: CoreCConfig): void =>
+    set({ workingConfig: next, dirty: !configEqual(next, get().savedConfig), error: null })
 
-  // ─── Loading ──────────────────────────────────────────────────────
+  return {
+    workingConfig: null,
+    savedConfig: null,
+    dirty: false,
+    error: null,
 
-  loadFromYaml: (yaml: string) => {
-    try {
-      const config = parseConfigYaml(yaml)
+    // ─── Loading ──────────────────────────────────────────────────────
+
+    loadFromYaml: (yaml: string) => {
+      try {
+        const config = parseConfigYaml(yaml)
+        set({
+          workingConfig: config,
+          savedConfig: config,
+          dirty: false,
+          error: null,
+        })
+      } catch (err: unknown) {
+        set({
+          error: err instanceof Error ? err.message : String(err),
+        })
+      }
+    },
+
+    loadFromConfig: (config: CoreCConfig) => {
       set({
         workingConfig: config,
         savedConfig: config,
         dirty: false,
         error: null,
       })
-    } catch (err: unknown) {
+    },
+
+    resetToEmpty: () => {
       set({
-        error: err instanceof Error ? err.message : String(err),
+        workingConfig: {},
+        savedConfig: null,
+        dirty: true,
+        error: null,
       })
-    }
-  },
+    },
 
-  loadFromConfig: (config: CoreCConfig) => {
-    set({
-      workingConfig: config,
-      savedConfig: config,
-      dirty: false,
-      error: null,
-    })
-  },
+    // ─── Entity CRUD ──────────────────────────────────────────────────
 
-  resetToEmpty: () => {
-    set({
-      workingConfig: {},
-      savedConfig: null,
-      dirty: true,
-      error: null,
-    })
-  },
-
-  // ─── Entity CRUD ──────────────────────────────────────────────────
-
-  upsertDriver: (driver: DriverConfig) => {
-    const { workingConfig } = get()
-    if (!workingConfig) {
-      set({ error: 'No working config loaded' })
-      return false
-    }
-    // Name uniqueness is enforced by configSchema.validateConfig, but we
-    // also check here for immediate UI feedback before the wizard closes.
-    if (!isDriverNameUnique(workingConfig, driver.name)) {
-      const existing = findDriver(workingConfig, driver.name)
-      if (!existing) {
-        // Name collides but findDriver didn't find it — shouldn't happen,
-        // but guard anyway.
-        set({ error: `Driver name "${driver.name}" already exists` })
+    upsertDriver: (driver: DriverConfig) => {
+      const { workingConfig } = get()
+      if (!workingConfig) {
+        set({ error: 'No working config loaded' })
         return false
       }
-      // If found, it's an update (same name) — allowed.
-    }
-    const next = upsertDriver(workingConfig, driver)
-    set({ workingConfig: next, dirty: !configEqual(next, get().savedConfig), error: null })
-    return true
-  },
+      const next = upsertDriver(workingConfig, driver)
+      commit(next)
+      return true
+    },
 
-  removeDriver: (name: string) => {
-    const { workingConfig } = get()
-    if (!workingConfig) return
-    const next = removeDriver(workingConfig, name)
-    set({ workingConfig: next, dirty: !configEqual(next, get().savedConfig), error: null })
-  },
+    removeDriver: (name: string) => {
+      const { workingConfig } = get()
+      if (!workingConfig) return
+      const next = removeDriver(workingConfig, name)
+      commit(next)
+    },
 
-  upsertTransport: (transport: TransportConfig) => {
-    const { workingConfig } = get()
-    if (!workingConfig) {
-      set({ error: 'No working config loaded' })
-      return false
-    }
-    if (!isTransportNameUnique(workingConfig, transport.name)) {
-      const existing = findTransport(workingConfig, transport.name)
-      if (!existing) {
-        set({ error: `Transport name "${transport.name}" already exists` })
+    upsertTransport: (transport: TransportConfig) => {
+      const { workingConfig } = get()
+      if (!workingConfig) {
+        set({ error: 'No working config loaded' })
         return false
       }
-    }
-    const next = upsertTransport(workingConfig, transport)
-    set({ workingConfig: next, dirty: !configEqual(next, get().savedConfig), error: null })
-    return true
-  },
+      const next = upsertTransport(workingConfig, transport)
+      commit(next)
+      return true
+    },
 
-  removeTransport: (name: string) => {
-    const { workingConfig } = get()
-    if (!workingConfig) return
-    const next = removeTransport(workingConfig, name)
-    set({ workingConfig: next, dirty: !configEqual(next, get().savedConfig), error: null })
-  },
+    removeTransport: (name: string) => {
+      const { workingConfig } = get()
+      if (!workingConfig) return
+      const next = removeTransport(workingConfig, name)
+      commit(next)
+    },
 
-  upsertRule: (rule: RuleConfig) => {
-    const { workingConfig } = get()
-    if (!workingConfig) {
-      set({ error: 'No working config loaded' })
-      return false
-    }
-    if (!isRuleNameUnique(workingConfig, rule.name)) {
-      const existing = findRule(workingConfig, rule.name)
-      if (!existing) {
-        set({ error: `Rule name "${rule.name}" already exists` })
+    upsertRule: (rule: RuleConfig) => {
+      const { workingConfig } = get()
+      if (!workingConfig) {
+        set({ error: 'No working config loaded' })
         return false
       }
-    }
-    const next = upsertRule(workingConfig, rule)
-    set({ workingConfig: next, dirty: !configEqual(next, get().savedConfig), error: null })
-    return true
-  },
+      const next = upsertRule(workingConfig, rule)
+      commit(next)
+      return true
+    },
 
-  removeRule: (name: string) => {
-    const { workingConfig } = get()
-    if (!workingConfig) return
-    const next = removeRule(workingConfig, name)
-    set({ workingConfig: next, dirty: !configEqual(next, get().savedConfig), error: null })
-  },
+    removeRule: (name: string) => {
+      const { workingConfig } = get()
+      if (!workingConfig) return
+      const next = removeRule(workingConfig, name)
+      commit(next)
+    },
 
-  upsertRuleProvider: (provider: RuleProviderConfig) => {
-    const { workingConfig } = get()
-    if (!workingConfig) {
-      set({ error: 'No working config loaded' })
-      return false
-    }
-    if (!isRuleProviderNameUnique(workingConfig, provider.name)) {
-      const existing = findRuleProvider(workingConfig, provider.name)
-      if (!existing) {
-        set({ error: `Rule provider name "${provider.name}" already exists` })
+    upsertRuleProvider: (provider: RuleProviderConfig) => {
+      const { workingConfig } = get()
+      if (!workingConfig) {
+        set({ error: 'No working config loaded' })
         return false
       }
-    }
-    const next = upsertRuleProvider(workingConfig, provider)
-    set({ workingConfig: next, dirty: !configEqual(next, get().savedConfig), error: null })
-    return true
-  },
+      const next = upsertRuleProvider(workingConfig, provider)
+      commit(next)
+      return true
+    },
 
-  removeRuleProvider: (name: string) => {
-    const { workingConfig } = get()
-    if (!workingConfig) return
-    const next = removeRuleProvider(workingConfig, name)
-    set({ workingConfig: next, dirty: !configEqual(next, get().savedConfig), error: null })
-  },
+    removeRuleProvider: (name: string) => {
+      const { workingConfig } = get()
+      if (!workingConfig) return
+      const next = removeRuleProvider(workingConfig, name)
+      commit(next)
+    },
 
-  upsertRuleGroup: (name: string, rules: RuleConfig[]) => {
-    const { workingConfig } = get()
-    if (!workingConfig) {
-      set({ error: 'No working config loaded' })
-      return false
-    }
-    if (!name.trim()) {
-      set({ error: 'Rule group name cannot be empty' })
-      return false
-    }
-    const next = upsertRuleGroup(workingConfig, name.trim(), rules)
-    set({ workingConfig: next, dirty: !configEqual(next, get().savedConfig), error: null })
-    return true
-  },
+    upsertRuleGroup: (name: string, rules: RuleConfig[]) => {
+      const { workingConfig } = get()
+      if (!workingConfig) {
+        set({ error: 'No working config loaded' })
+        return false
+      }
+      if (!name.trim()) {
+        set({ error: 'Rule group name cannot be empty' })
+        return false
+      }
+      const next = upsertRuleGroup(workingConfig, name.trim(), rules)
+      commit(next)
+      return true
+    },
 
-  removeRuleGroup: (name: string) => {
-    const { workingConfig } = get()
-    if (!workingConfig) return
-    const next = removeRuleGroup(workingConfig, name)
-    set({ workingConfig: next, dirty: !configEqual(next, get().savedConfig), error: null })
-  },
+    removeRuleGroup: (name: string) => {
+      const { workingConfig } = get()
+      if (!workingConfig) return
+      const next = removeRuleGroup(workingConfig, name)
+      commit(next)
+    },
 
-  // ─── Section updates ──────────────────────────────────────────────
+    // ─── Section updates ──────────────────────────────────────────────
 
-  updateGlobal: (global: GlobalConfig) => {
-    const { workingConfig } = get()
-    if (!workingConfig) return
-    const next = { ...workingConfig, global }
-    set({ workingConfig: next, dirty: !configEqual(next, get().savedConfig), error: null })
-  },
+    updateGlobal: (global: GlobalConfig) => {
+      const { workingConfig } = get()
+      if (!workingConfig) return
+      const next = { ...workingConfig, global }
+      commit(next)
+    },
 
-  updateNode: (node: NodeConfig) => {
-    const { workingConfig } = get()
-    if (!workingConfig) return
-    const next = { ...workingConfig, node }
-    set({ workingConfig: next, dirty: !configEqual(next, get().savedConfig), error: null })
-  },
+    updateNode: (node: NodeConfig) => {
+      const { workingConfig } = get()
+      if (!workingConfig) return
+      const next = { ...workingConfig, node }
+      commit(next)
+    },
 
-  updateGlobalField: (path: string, value: unknown) => {
-    const { workingConfig } = get()
-    if (!workingConfig) return
-    const global = { ...(workingConfig.global ?? {}) } as Record<string, unknown>
-    setNestedPath(global, path, value)
-    const next = { ...workingConfig, global }
-    set({ workingConfig: next, dirty: !configEqual(next, get().savedConfig), error: null })
-  },
+    updateGlobalField: (path: string, value: unknown) => {
+      const { workingConfig } = get()
+      if (!workingConfig) return
+      const global = { ...(workingConfig.global ?? {}) } as Record<string, unknown>
+      setNestedPath(global, path, value)
+      const next = { ...workingConfig, global }
+      commit(next)
+    },
 
-  updateNodeField: (path: string, value: unknown) => {
-    const { workingConfig } = get()
-    if (!workingConfig) return
-    const node = { ...(workingConfig.node ?? {}) } as Record<string, unknown>
-    setNestedPath(node, path, value)
-    const next = { ...workingConfig, node }
-    set({ workingConfig: next, dirty: !configEqual(next, get().savedConfig), error: null })
-  },
+    updateNodeField: (path: string, value: unknown) => {
+      const { workingConfig } = get()
+      if (!workingConfig) return
+      const node = { ...(workingConfig.node ?? {}) } as Record<string, unknown>
+      setNestedPath(node, path, value)
+      const next = { ...workingConfig, node }
+      commit(next)
+    },
 
-  // ─── Save / revert ────────────────────────────────────────────────
+    // ─── Save / revert ────────────────────────────────────────────────
 
-  markSaved: () => {
-    const { workingConfig } = get()
-    set({ savedConfig: workingConfig ? structuredCloneSafe(workingConfig) : null, dirty: false })
-  },
+    markSaved: () => {
+      const { workingConfig } = get()
+      set({ savedConfig: workingConfig ? structuredCloneSafe(workingConfig) : null, dirty: false })
+    },
 
-  revert: () => {
-    const { savedConfig } = get()
-    set({
-      workingConfig: savedConfig ? structuredCloneSafe(savedConfig) : null,
-      dirty: false,
-      error: null,
-    })
-  },
+    revert: () => {
+      const { savedConfig } = get()
+      set({
+        workingConfig: savedConfig ? structuredCloneSafe(savedConfig) : null,
+        dirty: false,
+        error: null,
+      })
+    },
 
-  // ─── Derived getters ──────────────────────────────────────────────
+    // ─── Derived getters ──────────────────────────────────────────────
 
-  getWorkingYaml: () => {
-    const { workingConfig } = get()
-    if (!workingConfig) return null
-    return dumpConfigYaml(workingConfig)
-  },
+    getWorkingYaml: () => {
+      const { workingConfig } = get()
+      if (!workingConfig) return null
+      return dumpConfigYaml(workingConfig)
+    },
 
-  getSavedYaml: () => {
-    const { savedConfig } = get()
-    if (!savedConfig) return null
-    return dumpConfigYaml(savedConfig)
-  },
+    getSavedYaml: () => {
+      const { savedConfig } = get()
+      if (!savedConfig) return null
+      return dumpConfigYaml(savedConfig)
+    },
 
-  findDriver: (name: string) => {
-    const { workingConfig } = get()
-    if (!workingConfig) return undefined
-    return findDriver(workingConfig, name)
-  },
+    findDriver: (name: string) => {
+      const { workingConfig } = get()
+      if (!workingConfig) return undefined
+      return findDriver(workingConfig, name)
+    },
 
-  findTransport: (name: string) => {
-    const { workingConfig } = get()
-    if (!workingConfig) return undefined
-    return findTransport(workingConfig, name)
-  },
+    findTransport: (name: string) => {
+      const { workingConfig } = get()
+      if (!workingConfig) return undefined
+      return findTransport(workingConfig, name)
+    },
 
-  findRule: (name: string) => {
-    const { workingConfig } = get()
-    if (!workingConfig) return undefined
-    return findRule(workingConfig, name)
-  },
+    findRule: (name: string) => {
+      const { workingConfig } = get()
+      if (!workingConfig) return undefined
+      return findRule(workingConfig, name)
+    },
 
-  findRuleProvider: (name: string) => {
-    const { workingConfig } = get()
-    if (!workingConfig) return undefined
-    return findRuleProvider(workingConfig, name)
-  },
+    findRuleProvider: (name: string) => {
+      const { workingConfig } = get()
+      if (!workingConfig) return undefined
+      return findRuleProvider(workingConfig, name)
+    },
 
-  findRuleGroup: (name: string) => {
-    const { workingConfig } = get()
-    if (!workingConfig) return undefined
-    return findRuleGroup(workingConfig, name)
-  },
+    findRuleGroup: (name: string) => {
+      const { workingConfig } = get()
+      if (!workingConfig) return undefined
+      return findRuleGroup(workingConfig, name)
+    },
 
-  isDriverNameUnique: (name: string) => {
-    const { workingConfig } = get()
-    if (!workingConfig) return true
-    return isDriverNameUnique(workingConfig, name)
-  },
+    isDriverNameUnique: (name: string) => {
+      const { workingConfig } = get()
+      if (!workingConfig) return true
+      return isDriverNameUnique(workingConfig, name)
+    },
 
-  isTransportNameUnique: (name: string) => {
-    const { workingConfig } = get()
-    if (!workingConfig) return true
-    return isTransportNameUnique(workingConfig, name)
-  },
+    isTransportNameUnique: (name: string) => {
+      const { workingConfig } = get()
+      if (!workingConfig) return true
+      return isTransportNameUnique(workingConfig, name)
+    },
 
-  isRuleNameUnique: (name: string) => {
-    const { workingConfig } = get()
-    if (!workingConfig) return true
-    return isRuleNameUnique(workingConfig, name)
-  },
+    isRuleNameUnique: (name: string) => {
+      const { workingConfig } = get()
+      if (!workingConfig) return true
+      return isRuleNameUnique(workingConfig, name)
+    },
 
-  isRuleProviderNameUnique: (name: string) => {
-    const { workingConfig } = get()
-    if (!workingConfig) return true
-    return isRuleProviderNameUnique(workingConfig, name)
-  },
+    isRuleProviderNameUnique: (name: string) => {
+      const { workingConfig } = get()
+      if (!workingConfig) return true
+      return isRuleProviderNameUnique(workingConfig, name)
+    },
 
-  isRuleGroupNameUnique: (name: string) => {
-    const { workingConfig } = get()
-    if (!workingConfig) return true
-    return isRuleGroupNameUnique(workingConfig, name)
-  },
-}))
+    isRuleGroupNameUnique: (name: string) => {
+      const { workingConfig } = get()
+      if (!workingConfig) return true
+      return isRuleGroupNameUnique(workingConfig, name)
+    },
+  }
+})
 
 /**
  * Deep-clone a config object safely. Uses structuredClone when available

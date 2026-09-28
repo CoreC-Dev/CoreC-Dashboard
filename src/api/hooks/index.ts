@@ -3,102 +3,105 @@ import { useConnectionStore } from '@/stores/connectionStore'
 import type { WriteCommand } from '@/types/models'
 import * as api from '../endpoints'
 
-export function useServerInfo() {
+function useConnectedQuery<T>({
+  queryKey,
+  queryFn,
+  refetchInterval,
+  enabled,
+}: {
+  queryKey: unknown[]
+  queryFn: () => Promise<T>
+  refetchInterval?: number
+  enabled?: boolean
+}) {
   const isConnected = useConnectionStore((s) => s.isConnected)
   return useQuery({
+    queryKey,
+    queryFn,
+    enabled: isConnected && (enabled ?? true),
+    ...(refetchInterval !== undefined ? { refetchInterval } : {}),
+  })
+}
+
+export function useServerInfo() {
+  return useConnectedQuery({
     queryKey: ['serverInfo'],
     queryFn: api.getServerInfo,
-    enabled: isConnected,
     refetchInterval: 30000,
   })
 }
 
 export function useDrivers() {
-  const isConnected = useConnectionStore((s) => s.isConnected)
-  return useQuery({
+  return useConnectedQuery({
     queryKey: ['drivers'],
     queryFn: api.getDrivers,
-    enabled: isConnected,
     refetchInterval: 5000,
   })
 }
 
 export function useDriver(name: string) {
-  const isConnected = useConnectionStore((s) => s.isConnected)
-  return useQuery({
+  return useConnectedQuery({
     queryKey: ['driver', name],
     queryFn: () => api.getDriver(name),
-    enabled: isConnected && !!name,
+    enabled: !!name,
     refetchInterval: 5000,
   })
 }
 
 export function useDriverTags(name: string) {
-  const isConnected = useConnectionStore((s) => s.isConnected)
-  return useQuery({
+  return useConnectedQuery({
     queryKey: ['driverTags', name],
     queryFn: () => api.getDriverTags(name),
-    enabled: isConnected && !!name,
+    enabled: !!name,
     refetchInterval: 3000,
   })
 }
 
 export function useTransports() {
-  const isConnected = useConnectionStore((s) => s.isConnected)
-  return useQuery({
+  return useConnectedQuery({
     queryKey: ['transports'],
     queryFn: api.getTransports,
-    enabled: isConnected,
     refetchInterval: 5000,
   })
 }
 
 export function useTransport(name: string) {
-  const isConnected = useConnectionStore((s) => s.isConnected)
-  return useQuery({
+  return useConnectedQuery({
     queryKey: ['transport', name],
     queryFn: () => api.getTransport(name),
-    enabled: isConnected && !!name,
+    enabled: !!name,
     refetchInterval: 5000,
   })
 }
 
 export function useTags() {
-  const isConnected = useConnectionStore((s) => s.isConnected)
-  return useQuery({
+  return useConnectedQuery({
     queryKey: ['tags'],
     queryFn: api.getTags,
-    enabled: isConnected,
     refetchInterval: 5000,
   })
 }
 
 export function useRules() {
-  const isConnected = useConnectionStore((s) => s.isConnected)
-  return useQuery({
+  return useConnectedQuery({
     queryKey: ['rules'],
     queryFn: api.getRules,
-    enabled: isConnected,
     refetchInterval: 5000,
   })
 }
 
 export function useStats() {
-  const isConnected = useConnectionStore((s) => s.isConnected)
-  return useQuery({
+  return useConnectedQuery({
     queryKey: ['stats'],
     queryFn: api.getStats,
-    enabled: isConnected,
     refetchInterval: 5000,
   })
 }
 
 export function useConfigs() {
-  const isConnected = useConnectionStore((s) => s.isConnected)
-  return useQuery({
+  return useConnectedQuery({
     queryKey: ['configs'],
     queryFn: api.getConfigs,
-    enabled: isConnected,
   })
 }
 
@@ -113,20 +116,16 @@ export function useConfigs() {
  * /configs, and useUpdateConfig invalidates ['configsRaw'] on success.
  */
 export function useConfigRaw() {
-  const isConnected = useConnectionStore((s) => s.isConnected)
-  return useQuery({
+  return useConnectedQuery({
     queryKey: ['configsRaw'],
     queryFn: api.getConfigsRaw,
-    enabled: isConnected,
   })
 }
 
 export function useDeadLetters() {
-  const isConnected = useConnectionStore((s) => s.isConnected)
-  return useQuery({
+  return useConnectedQuery({
     queryKey: ['deadLetters'],
     queryFn: api.getDeadLetters,
-    enabled: isConnected,
     refetchInterval: 4000,
   })
 }

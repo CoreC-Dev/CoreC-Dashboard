@@ -437,6 +437,38 @@ function hasAutoDiscoveryInbound(node: { id?: string; subscribe?: string[] } | u
 }
 
 /**
+ * Check that each rule's target / targets reference an existing transport.
+ * Returns the produced errors (in iteration order); byte-identical to the
+ * inline loops previously duplicated for top-level `rules` and `rule-groups`.
+ * `pathFor(ruleName)` yields the path prefix (without the trailing
+ * `.target`/`.targets`), e.g. `rules[foo]` or `rule-groups[g].foo`.
+ */
+function checkRuleTargetRefs(
+  rules: { name: string; target?: string; targets?: string[] }[],
+  transportNames: Set<string>,
+  pathFor: (ruleName: string) => string,
+): ConfigValidationError[] {
+  const errors: ConfigValidationError[] = []
+  for (const r of rules) {
+    if (r.target && !transportNames.has(r.target)) {
+      errors.push({
+        path: `${pathFor(r.name)}.target`,
+        message: `target transport "${r.target}" not found`,
+      })
+    }
+    for (const tgt of r.targets ?? []) {
+      if (!transportNames.has(tgt)) {
+        errors.push({
+          path: `${pathFor(r.name)}.targets`,
+          message: `target transport "${tgt}" not found`,
+        })
+      }
+    }
+  }
+  return errors
+}
+
+/**
  * Validate cross-entity consistency rules that zod schemas can't express.
  * Run this AFTER schema.parse() succeeds (shape/intra-entity checks pass).
  * Mirrors config.validate:122-272.
@@ -532,22 +564,7 @@ export function validateConfig(config: unknown): ConfigValidationResult {
   }
 
   // Rule target/targets must reference existing transports (config.validate:249-272)
-  for (const r of rules) {
-    if (r.target && !transportNames.has(r.target)) {
-      errors.push({
-        path: `rules[${r.name}].target`,
-        message: `target transport "${r.target}" not found`,
-      })
-    }
-    for (const tgt of r.targets ?? []) {
-      if (!transportNames.has(tgt)) {
-        errors.push({
-          path: `rules[${r.name}].targets`,
-          message: `target transport "${tgt}" not found`,
-        })
-      }
-    }
-  }
+  errors.push(...checkRuleTargetRefs(rules, transportNames, (name) => `rules[${name}]`))
 
   // ─── Rule groups: SUB-RULE circular reference detection ──────────
   // Mirrors rule/engine.go:98-112 detectCircularSubRules. A rule's
@@ -559,22 +576,13 @@ export function validateConfig(config: unknown): ConfigValidationResult {
   if (groupNames.length > 0) {
     // Also validate target references inside group rules
     for (const [groupName, groupRules] of Object.entries(ruleGroups)) {
-      for (const r of groupRules ?? []) {
-        if (r.target && !transportNames.has(r.target)) {
-          errors.push({
-            path: `rule-groups[${groupName}].${r.name}.target`,
-            message: `target transport "${r.target}" not found`,
-          })
-        }
-        for (const tgt of r.targets ?? []) {
-          if (!transportNames.has(tgt)) {
-            errors.push({
-              path: `rule-groups[${groupName}].${r.name}.targets`,
-              message: `target transport "${tgt}" not found`,
-            })
-          }
-        }
-      }
+      errors.push(
+        ...checkRuleTargetRefs(
+          groupRules ?? [],
+          transportNames,
+          (name) => `rule-groups[${groupName}].${name}`,
+        ),
+      )
     }
 
     // Detect circular SUB-RULE references via DFS

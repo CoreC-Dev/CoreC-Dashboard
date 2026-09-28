@@ -24,7 +24,7 @@
  *              contains, suffix, prefix, in (range), &&, ||, !
  *   Special: "ALL" matches everything
  */
-import { AlertCircle, ArrowRight, CheckCircle2, GitBranch, Plus, Trash2, Zap } from 'lucide-react'
+import { ArrowRight, GitBranch, Plus, Trash2, Zap } from 'lucide-react'
 import type React from 'react'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -39,7 +39,9 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
+import { ExprValidationMessages } from '@/components/wizard/ExprValidationMessages'
 import { WizardDialog, type WizardStep } from '@/components/wizard/Wizard'
+import { WizardContextValidationBanner } from '@/components/wizard/WizardContextValidationBanner'
 import { useTransportNames } from '@/hooks/useConfigValidation'
 import { dumpConfigYaml } from '@/lib/configYaml'
 import { validateRuleInContext } from '@/lib/entityValidation'
@@ -221,8 +223,6 @@ export const RuleWizard: React.FC<RuleWizardProps> = ({
     return true
   }, [ruleName, match, isEdit, isRuleNameUnique])
 
-  const step1Valid = action !== null
-
   const step2Valid = useMemo(() => {
     if (actionMeta.needsTarget === 'single') return !!target.trim()
     if (actionMeta.needsTarget === 'multi') return targets.length > 0
@@ -312,34 +312,7 @@ export const RuleWizard: React.FC<RuleWizardProps> = ({
             </div>
             <p className="text-[10px] text-muted-foreground">{t('ruleWizard.matchHelp')}</p>
             {/* Live expression syntax validation */}
-            {(() => {
-              const exprResult = validateRuleExpression(match)
-              if (exprResult.valid && exprResult.warnings.length === 0) {
-                return null
-              }
-              return (
-                <div className="space-y-0.5">
-                  {exprResult.errors.map((err, i) => (
-                    <p
-                      key={`e-${i}`}
-                      className="text-[10px] text-destructive flex items-start gap-1"
-                    >
-                      <AlertCircle className="w-3 h-3 mt-0.5 shrink-0" />
-                      {err}
-                    </p>
-                  ))}
-                  {exprResult.warnings.map((warn, i) => (
-                    <p
-                      key={`w-${i}`}
-                      className="text-[10px] text-amber-600 dark:text-amber-400 flex items-start gap-1"
-                    >
-                      <AlertCircle className="w-3 h-3 mt-0.5 shrink-0" />
-                      {warn}
-                    </p>
-                  ))}
-                </div>
-              )
-            })()}
+            <ExprValidationMessages result={validateRuleExpression(match)} variant="icon" />
           </div>
 
           <div className="space-y-1.5">
@@ -360,7 +333,7 @@ export const RuleWizard: React.FC<RuleWizardProps> = ({
       id: 'action',
       title: t('ruleWizard.stepAction'),
       subtitle: t('ruleWizard.stepActionDesc'),
-      canProceed: () => step1Valid,
+      canProceed: () => true,
       render: () => (
         <div className="space-y-2">
           {ACTION_META.map((meta) => (
@@ -491,34 +464,10 @@ export const RuleWizard: React.FC<RuleWizardProps> = ({
                   {t('ruleWizard.transformExprHelp')}
                 </p>
                 {/* Live transform expression validation */}
-                {(() => {
-                  const exprResult = validateTransformExpression(transformExpr)
-                  if (exprResult.valid && exprResult.warnings.length === 0) {
-                    return null
-                  }
-                  return (
-                    <div className="space-y-0.5">
-                      {exprResult.errors.map((err, i) => (
-                        <p
-                          key={`te-${i}`}
-                          className="text-[10px] text-destructive flex items-start gap-1"
-                        >
-                          <AlertCircle className="w-3 h-3 mt-0.5 shrink-0" />
-                          {err}
-                        </p>
-                      ))}
-                      {exprResult.warnings.map((warn, i) => (
-                        <p
-                          key={`tw-${i}`}
-                          className="text-[10px] text-amber-600 dark:text-amber-400 flex items-start gap-1"
-                        >
-                          <AlertCircle className="w-3 h-3 mt-0.5 shrink-0" />
-                          {warn}
-                        </p>
-                      ))}
-                    </div>
-                  )
-                })()}
+                <ExprValidationMessages
+                  result={validateTransformExpression(transformExpr)}
+                  variant="icon"
+                />
               </div>
               <div className="space-y-1.5">
                 <Label>{t('ruleWizard.tagRename')}</Label>
@@ -550,43 +499,7 @@ export const RuleWizard: React.FC<RuleWizardProps> = ({
           <pre className="text-xs font-mono p-3 leading-relaxed">{previewYaml}</pre>
         </div>
         {contextValidation && (
-          <div
-            className={`rounded-md border p-2.5 text-xs space-y-1 ${
-              hasContextErrors
-                ? 'border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-400'
-                : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-            }`}
-          >
-            {hasContextErrors ? (
-              <>
-                <div className="font-semibold flex items-center gap-1.5">
-                  <AlertCircle className="w-3.5 h-3.5" />
-                  {t('driverWizard.validationErrors', {
-                    count: contextValidation.errors.length,
-                  })}
-                </div>
-                <ul className="space-y-0.5 ml-5 list-disc">
-                  {contextValidation.errors.slice(0, 6).map((err, i) => (
-                    <li key={i} className="font-mono text-[10px] opacity-90">
-                      {err.path}: {err.message}
-                    </li>
-                  ))}
-                  {contextValidation.errors.length > 6 && (
-                    <li className="text-[9px] opacity-70">
-                      {t('driverWizard.validationMore', {
-                        count: contextValidation.errors.length - 6,
-                      })}
-                    </li>
-                  )}
-                </ul>
-              </>
-            ) : (
-              <div className="flex items-center gap-1.5 font-semibold">
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                {t('driverWizard.validationPassed')}
-              </div>
-            )}
-          </div>
+          <WizardContextValidationBanner contextValidation={contextValidation} />
         )}
       </div>
     ),

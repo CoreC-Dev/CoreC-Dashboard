@@ -1,3 +1,5 @@
+import { checkBalancedParens, type ValidationResult } from './exprShared'
+
 /**
  * Rule expression syntax validator
  *
@@ -27,11 +29,8 @@
  *
  * Valid fields: driver, device, group, tag, quality, type, value
  */
-export interface ExprValidationResult {
-  valid: boolean
-  errors: string[]
-  warnings: string[]
-}
+// Re-exported alias so existing test imports (`ExprValidationResult`) stay valid.
+export type ExprValidationResult = ValidationResult
 
 /** Valid field names in the rule expression DSL. */
 export const VALID_FIELDS = [
@@ -81,18 +80,7 @@ export function validateRuleExpression(expr: string): ExprValidationResult {
   const stripped = trimmed.replace(/'[^']*'/g, "''")
 
   // Check for balanced parentheses (on the stripped expression)
-  let parenDepth = 0
-  for (let i = 0; i < stripped.length; i++) {
-    if (stripped[i] === '(') parenDepth++
-    if (stripped[i] === ')') parenDepth--
-    if (parenDepth < 0) {
-      errors.push('unbalanced parentheses: closing ")" before opening "("')
-      break
-    }
-  }
-  if (parenDepth > 0) {
-    errors.push(`unbalanced parentheses: ${parenDepth} unclosed "("`)
-  }
+  errors.push(...checkBalancedParens(stripped))
 
   // Check for balanced single quotes (on the original expression)
   const singleQuotes = (trimmed.match(/'/g) ?? []).length

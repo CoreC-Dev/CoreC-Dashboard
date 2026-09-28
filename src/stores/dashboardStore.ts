@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { safePersist } from '@/lib/storage'
 import type { DashboardCard, DashboardLayout } from '@/types/dashboard'
 
 const DEFAULT_CARDS: DashboardCard[] = [
@@ -51,15 +52,6 @@ const DEFAULT_LAYOUT: DashboardLayout = {
 
 const STORAGE_KEY = 'corec_dashboard_layout'
 
-/** Best-effort localStorage write — never throws on quota/privacy errors. */
-const safePersist = (key: string, value: string): void => {
-  try {
-    localStorage.setItem(key, value)
-  } catch {
-    /* QuotaExceededError, private mode, disabled storage — best-effort */
-  }
-}
-
 /** Debounced persistence — avoids writing on every drag pixel (M5).
  *  Takes a value *getter* and reads it at fire time, so an interleaved
  *  immediate safePersist (addCard/removeCard/updateCardConfig) is not
@@ -98,86 +90,93 @@ const getInitialLayout = (): DashboardLayout => {
   return DEFAULT_LAYOUT
 }
 
-export const useDashboardStore = create<DashboardState>((set, get) => ({
-  currentLayout: getInitialLayout(),
-  isEditing: false,
+export const useDashboardStore = create<DashboardState>((set, get) => {
+  // Persist a new layout immediately (non-debounced path). addCard /
+  // removeCard / updateCardConfig share this; updateCardLayout deliberately
+  // uses debouncedPersist with a getter instead — see H-2 stale-snapshot guard.
+  const commitLayout = (newLayout: DashboardLayout): void => {
+    safePersist(STORAGE_KEY, JSON.stringify(newLayout))
+    set({ currentLayout: newLayout })
+  }
 
-  setEditing: (editing) => set({ isEditing: editing }),
+  return {
+    currentLayout: getInitialLayout(),
+    isEditing: false,
 
-  updateCardLayout: (newLayouts) => {
-    const layout = get().currentLayout
-    const updatedCards = layout.cards.map((card) => {
-      const match = newLayouts.find((item) => item.i === card.id)
-      if (match) {
-        return {
-          ...card,
-          layout: {
-            ...card.layout,
-            x: match.x,
-            y: match.y,
-            w: match.w,
-            h: match.h,
-          },
+    setEditing: (editing) => set({ isEditing: editing }),
+
+    updateCardLayout: (newLayouts) => {
+      const layout = get().currentLayout
+      const updatedCards = layout.cards.map((card) => {
+        const match = newLayouts.find((item) => item.i === card.id)
+        if (match) {
+          return {
+            ...card,
+            layout: {
+              ...card.layout,
+              x: match.x,
+              y: match.y,
+              w: match.w,
+              h: match.h,
+            },
+          }
         }
+        return card
+      })
+
+      const newLayout: DashboardLayout = {
+        ...layout,
+        cards: updatedCards,
+        updatedAt: Date.now(),
       }
-      return card
-    })
+      // Debounce — react-grid-layout fires onLayoutChange on every drag pixel.
+      // Pass a getter so the timer persists the freshest currentLayout at fire
+      // time, not this (possibly stale) snapshot — see H-2.
+      debouncedPersist(STORAGE_KEY, () => JSON.stringify(get().currentLayout))
+      set({ currentLayout: newLayout })
+    },
 
-    const newLayout: DashboardLayout = {
-      ...layout,
-      cards: updatedCards,
-      updatedAt: Date.now(),
-    }
-    // Debounce — react-grid-layout fires onLayoutChange on every drag pixel.
-    // Pass a getter so the timer persists the freshest currentLayout at fire
-    // time, not this (possibly stale) snapshot — see H-2.
-    debouncedPersist(STORAGE_KEY, () => JSON.stringify(get().currentLayout))
-    set({ currentLayout: newLayout })
-  },
+    addCard: (card) => {
+      const layout = get().currentLayout
+      const newCard: DashboardCard = {
+        ...card,
+        id: `card-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      }
+      const newLayout = {
+        ...layout,
+        cards: [...layout.cards, newCard],
+        updatedAt: Date.now(),
+      }
+      commitLayout(newLayout)
+    },
 
-  addCard: (card) => {
-    const layout = get().currentLayout
-    const newCard: DashboardCard = {
-      ...card,
-      id: `card-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-    }
-    const newLayout = {
-      ...layout,
-      cards: [...layout.cards, newCard],
-      updatedAt: Date.now(),
-    }
-    safePersist(STORAGE_KEY, JSON.stringify(newLayout))
-    set({ currentLayout: newLayout })
-  },
+    removeCard: (id) => {
+      const layout = get().currentLayout
+      const newLayout = {
+        ...layout,
+        cards: layout.cards.filter((c) => c.id !== id),
+        updatedAt: Date.now(),
+      }
+      commitLayout(newLayout)
+    },
 
-  removeCard: (id) => {
-    const layout = get().currentLayout
-    const newLayout = {
-      ...layout,
-      cards: layout.cards.filter((c) => c.id !== id),
-      updatedAt: Date.now(),
-    }
-    safePersist(STORAGE_KEY, JSON.stringify(newLayout))
-    set({ currentLayout: newLayout })
-  },
+    updateCardConfig: (id, partial) => {
+      const layout = get().currentLayout
+      const newLayout = {
+        ...layout,
+        cards: layout.cards.map((c) => (c.id === id ? { ...c, ...partial } : c)),
+        updatedAt: Date.now(),
+      }
+      commitLayout(newLayout)
+    },
 
-  updateCardConfig: (id, partial) => {
-    const layout = get().currentLayout
-    const newLayout = {
-      ...layout,
-      cards: layout.cards.map((c) => (c.id === id ? { ...c, ...partial } : c)),
-      updatedAt: Date.now(),
-    }
-    safePersist(STORAGE_KEY, JSON.stringify(newLayout))
-    set({ currentLayout: newLayout })
-  },
-
-  resetToDefault: () => {
-    try {
-      localStorage.removeItem(STORAGE_KEY)
-    } catch {
-      /* best-effort */
-    }
-    set({ currentLayout: DEFAULT_LAYOUT })
-  },
-}))
+    resetToDefault: () => {
+      try {
+        localStorage.removeItem(STORAGE_KEY)
+      } catch {
+        /* best-effort */
+      }
+      set({ currentLayout: DEFAULT_LAYOUT })
+    },
+  }
+})

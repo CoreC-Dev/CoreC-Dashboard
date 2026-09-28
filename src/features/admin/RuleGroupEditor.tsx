@@ -52,6 +52,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { ExprValidationMessages } from '@/components/wizard/ExprValidationMessages'
 import { validateRuleExpression } from '@/lib/ruleExprValidator'
 import { validateTransformExpression } from '@/lib/transformExprValidator'
 import { useConfigStore } from '@/stores/configStore'
@@ -145,26 +146,7 @@ const InlineRuleEditor: React.FC<InlineRuleEditorProps> = ({
         />
         <p className="text-[9px] text-muted-foreground">{t('ruleGroup.ruleMatchHelp')}</p>
         {/* Live expression syntax validation */}
-        {(() => {
-          const exprResult = validateRuleExpression(draft.match)
-          if (exprResult.valid && exprResult.warnings.length === 0) {
-            return null
-          }
-          return (
-            <div className="space-y-0.5">
-              {exprResult.errors.map((err, i) => (
-                <p key={`e-${i}`} className="text-[9px] text-destructive">
-                  ⚠ {err}
-                </p>
-              ))}
-              {exprResult.warnings.map((warn, i) => (
-                <p key={`w-${i}`} className="text-[9px] text-amber-600 dark:text-amber-400">
-                  ⚠ {warn}
-                </p>
-              ))}
-            </div>
-          )
-        })()}
+        <ExprValidationMessages result={validateRuleExpression(draft.match)} variant="prefix" />
         {/* SUB-RULE quick-fill: insert a reference to another group */}
         {otherGroupNames.length > 0 && (
           <div className="flex flex-wrap gap-1 pt-0.5">
@@ -247,24 +229,10 @@ const InlineRuleEditor: React.FC<InlineRuleEditorProps> = ({
               className="h-7 text-[11px] font-mono"
             />
             <p className="text-[9px] text-muted-foreground">{t('ruleWizard.transformExprHelp')}</p>
-            {(() => {
-              const exprResult = validateTransformExpression(draft.transform?.expression ?? '')
-              if (exprResult.valid && exprResult.warnings.length === 0) return null
-              return (
-                <div className="space-y-0.5">
-                  {exprResult.errors.map((err, i) => (
-                    <p key={`te-${i}`} className="text-[9px] text-destructive">
-                      ⚠ {err}
-                    </p>
-                  ))}
-                  {exprResult.warnings.map((warn, i) => (
-                    <p key={`tw-${i}`} className="text-[9px] text-amber-600 dark:text-amber-400">
-                      ⚠ {warn}
-                    </p>
-                  ))}
-                </div>
-              )
-            })()}
+            <ExprValidationMessages
+              result={validateTransformExpression(draft.transform?.expression ?? '')}
+              variant="prefix"
+            />
           </div>
           <div className="space-y-1">
             <Label className="text-[10px] font-medium">{t('ruleWizard.tagRename')}</Label>

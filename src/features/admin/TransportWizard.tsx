@@ -15,25 +15,19 @@
  * Decision-independent: works under both backend paths because it only
  * interacts with configStore.
  */
-import { AlertCircle, CheckCircle2, Network, Zap } from 'lucide-react'
+import { Network, Zap } from 'lucide-react'
 import type React from 'react'
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { RegistryFieldGrid } from '@/components/wizard/RegistryFieldGrid'
 import { WizardDialog, type WizardStep } from '@/components/wizard/Wizard'
+import { WizardContextValidationBanner } from '@/components/wizard/WizardContextValidationBanner'
 import { useTransportNames } from '@/hooks/useConfigValidation'
 import { dumpConfigYaml } from '@/lib/configYaml'
 import { validateTransportInContext } from '@/lib/entityValidation'
-import type { SettingsField } from '@/lib/settingsRegistry'
 import {
   buildDefaultSettings,
   getTransportFieldRegistry,
@@ -146,12 +140,11 @@ export const TransportWizard: React.FC<TransportWizardProps> = ({
     }
   }
 
-  // ─── Preview YAML ────────────────────────────────────────────────
-  const previewYaml = useMemo(() => {
-    if (!selectedType) return ''
-    const config: TransportConfig = {
-      name: transportName || '<transport-name>',
-      type: selectedType,
+  // ─── Build transport config (shared by preview/validation/save) ──
+  const buildTransportConfig = useCallback(
+    (name: string, type: TransportType): TransportConfig => ({
+      name,
+      type,
       settings,
       ...(toplevel['batch-size'] !== undefined
         ? { 'batch-size': toplevel['batch-size'] as number }
@@ -166,33 +159,23 @@ export const TransportWizard: React.FC<TransportWizardProps> = ({
         ? { 'buffer-size': toplevel['buffer-size'] as number }
         : {}),
       ...(toplevel.fallback ? { fallback: toplevel.fallback as string } : {}),
-    }
+    }),
+    [settings, toplevel],
+  )
+
+  // ─── Preview YAML ────────────────────────────────────────────────
+  const previewYaml = useMemo(() => {
+    if (!selectedType) return ''
+    const config = buildTransportConfig(transportName || '<transport-name>', selectedType)
     return dumpConfigYaml({ transports: [config] })
-  }, [selectedType, transportName, settings, toplevel])
+  }, [selectedType, transportName, buildTransportConfig])
 
   // ─── Context validation ──────────────────────────────────────────
   const contextValidation = useMemo(() => {
     if (!selectedType || !transportName.trim()) return null
-    const config: TransportConfig = {
-      name: transportName.trim(),
-      type: selectedType,
-      settings,
-      ...(toplevel['batch-size'] !== undefined
-        ? { 'batch-size': toplevel['batch-size'] as number }
-        : {}),
-      ...(toplevel['flush-interval'] !== undefined
-        ? { 'flush-interval': toplevel['flush-interval'] as string }
-        : {}),
-      ...(toplevel['retry-count'] !== undefined
-        ? { 'retry-count': toplevel['retry-count'] as number }
-        : {}),
-      ...(toplevel['buffer-size'] !== undefined
-        ? { 'buffer-size': toplevel['buffer-size'] as number }
-        : {}),
-      ...(toplevel.fallback ? { fallback: toplevel.fallback as string } : {}),
-    }
+    const config = buildTransportConfig(transportName.trim(), selectedType)
     return validateTransportInContext(workingConfig, config)
-  }, [selectedType, transportName, settings, toplevel, workingConfig])
+  }, [selectedType, transportName, buildTransportConfig, workingConfig])
 
   const hasContextErrors = contextValidation !== null && !contextValidation.valid
 
@@ -217,24 +200,7 @@ export const TransportWizard: React.FC<TransportWizardProps> = ({
   // ─── Save ────────────────────────────────────────────────────────
   const handleFinish = () => {
     if (!selectedType || !transportName.trim()) return
-    const transport: TransportConfig = {
-      name: transportName.trim(),
-      type: selectedType,
-      settings,
-      ...(toplevel['batch-size'] !== undefined
-        ? { 'batch-size': toplevel['batch-size'] as number }
-        : {}),
-      ...(toplevel['flush-interval'] !== undefined
-        ? { 'flush-interval': toplevel['flush-interval'] as string }
-        : {}),
-      ...(toplevel['retry-count'] !== undefined
-        ? { 'retry-count': toplevel['retry-count'] as number }
-        : {}),
-      ...(toplevel['buffer-size'] !== undefined
-        ? { 'buffer-size': toplevel['buffer-size'] as number }
-        : {}),
-      ...(toplevel.fallback ? { fallback: toplevel.fallback as string } : {}),
-    }
+    const transport = buildTransportConfig(transportName.trim(), selectedType)
     const ok = upsertTransport(transport)
     if (ok) {
       onOpenChange(false)
@@ -367,43 +333,7 @@ export const TransportWizard: React.FC<TransportWizardProps> = ({
             <pre className="text-xs font-mono p-3 leading-relaxed">{previewYaml}</pre>
           </div>
           {contextValidation && (
-            <div
-              className={`rounded-md border p-2.5 text-xs space-y-1 ${
-                hasContextErrors
-                  ? 'border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-400'
-                  : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-              }`}
-            >
-              {hasContextErrors ? (
-                <>
-                  <div className="font-semibold flex items-center gap-1.5">
-                    <AlertCircle className="w-3.5 h-3.5" />
-                    {t('driverWizard.validationErrors', {
-                      count: contextValidation.errors.length,
-                    })}
-                  </div>
-                  <ul className="space-y-0.5 ml-5 list-disc">
-                    {contextValidation.errors.slice(0, 6).map((err, i) => (
-                      <li key={i} className="font-mono text-[10px] opacity-90">
-                        {err.path}: {err.message}
-                      </li>
-                    ))}
-                    {contextValidation.errors.length > 6 && (
-                      <li className="text-[9px] opacity-70">
-                        {t('driverWizard.validationMore', {
-                          count: contextValidation.errors.length - 6,
-                        })}
-                      </li>
-                    )}
-                  </ul>
-                </>
-              ) : (
-                <div className="flex items-center gap-1.5 font-semibold">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  {t('driverWizard.validationPassed')}
-                </div>
-              )}
-            </div>
+            <WizardContextValidationBanner contextValidation={contextValidation} />
           )}
         </div>
       ),
@@ -428,152 +358,5 @@ export const TransportWizard: React.FC<TransportWizardProps> = ({
         </pre>
       }
     />
-  )
-}
-
-// ─── Registry field grid (shared with DriverWizard pattern) ──────────
-
-const RegistryFieldGrid: React.FC<{
-  fields: SettingsField[]
-  settings: Record<string, unknown>
-  onChange: (key: string, value: unknown) => void
-  transportNames?: string[]
-  currentName?: string
-}> = ({ fields, settings, onChange, transportNames, currentName }) => {
-  return (
-    <div className="grid grid-cols-2 gap-x-3 gap-y-2.5">
-      {fields.map((field) => (
-        <RegistryFieldInput
-          key={field.key}
-          field={field}
-          value={settings[field.key]}
-          onChange={(v) => onChange(field.key, v)}
-          transportNames={transportNames}
-          currentName={currentName}
-        />
-      ))}
-    </div>
-  )
-}
-
-const RegistryFieldInput: React.FC<{
-  field: SettingsField
-  value: unknown
-  onChange: (value: unknown) => void
-  transportNames?: string[]
-  currentName?: string
-}> = ({ field, value, onChange, transportNames, currentName }) => {
-  const { t } = useTranslation()
-  const label = t(field.label)
-  const help = field.help ? t(field.help) : undefined
-  const placeholder = field.placeholder ?? ''
-
-  const renderControl = () => {
-    // Dynamic select (e.g. fallback transport list)
-    if (field.type === 'select' && field.optionsSource === 'transports') {
-      const options = (transportNames ?? []).filter((n) => n !== currentName)
-      return (
-        <Select
-          value={value !== undefined && value !== null ? String(value) : undefined}
-          onValueChange={(v) => onChange(v)}
-        >
-          <SelectTrigger className="h-8 text-xs">
-            <SelectValue placeholder={placeholder || t('common.none')} />
-          </SelectTrigger>
-          <SelectContent>
-            {options.map((opt) => (
-              <SelectItem key={opt} value={opt} className="text-xs">
-                {opt}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      )
-    }
-
-    switch (field.type) {
-      case 'text':
-      case 'duration':
-        return (
-          <Input
-            type="text"
-            value={(value as string) ?? ''}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder={placeholder}
-            className="h-8 text-xs"
-          />
-        )
-      case 'number':
-        return (
-          <Input
-            type="number"
-            value={value === undefined || value === null ? '' : String(value)}
-            onChange={(e) => {
-              const v = e.target.value
-              onChange(v === '' ? undefined : Number(v))
-            }}
-            placeholder={placeholder}
-            min={field.min}
-            max={field.max}
-            className="h-8 text-xs"
-          />
-        )
-      case 'password':
-        return (
-          <Input
-            type="password"
-            value={(value as string) ?? ''}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder={placeholder}
-            className="h-8 text-xs"
-          />
-        )
-      case 'boolean':
-        return (
-          <Select value={value ? 'true' : 'false'} onValueChange={(v) => onChange(v === 'true')}>
-            <SelectTrigger className="h-8 text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="true">{t('common.enabled')}</SelectItem>
-              <SelectItem value="false">{t('common.disabled')}</SelectItem>
-            </SelectContent>
-          </Select>
-        )
-      case 'enum':
-        return (
-          <Select
-            value={value !== undefined && value !== null ? String(value) : undefined}
-            onValueChange={(v) => {
-              if (typeof field.default === 'number') onChange(Number(v))
-              else onChange(v)
-            }}
-          >
-            <SelectTrigger className="h-8 text-xs">
-              <SelectValue placeholder={placeholder || t('common.select')} />
-            </SelectTrigger>
-            <SelectContent>
-              {field.options?.map((opt) => (
-                <SelectItem key={opt} value={opt} className="text-xs">
-                  {opt}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )
-      default:
-        return null
-    }
-  }
-
-  return (
-    <div className="space-y-1">
-      <label className="text-[11px] font-medium leading-none flex items-center gap-0.5">
-        {label}
-        {field.required && <span className="text-destructive">*</span>}
-      </label>
-      {renderControl()}
-      {help && <p className="text-[10px] text-muted-foreground leading-tight">{help}</p>}
-    </div>
   )
 }

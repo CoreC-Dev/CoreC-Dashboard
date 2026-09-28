@@ -21,7 +21,7 @@
  * Decision-independent: works under both backend paths because it only
  * interacts with configStore, not the API directly.
  */
-import { AlertCircle, CheckCircle2, FileText, Plus, Settings2, Trash2, Zap } from 'lucide-react'
+import { FileText, Plus, Settings2, Trash2, Zap } from 'lucide-react'
 import type React from 'react'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -36,10 +36,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { RegistryFieldGrid } from '@/components/wizard/RegistryFieldGrid'
 import { WizardDialog, type WizardStep } from '@/components/wizard/Wizard'
+import { WizardContextValidationBanner } from '@/components/wizard/WizardContextValidationBanner'
 import { dumpConfigYaml } from '@/lib/configYaml'
 import { validateDriverInContext } from '@/lib/entityValidation'
-import type { SettingsField } from '@/lib/settingsRegistry'
 import { buildDefaultSettings, getDriverFieldRegistry } from '@/lib/settingsRegistry'
 import { cn } from '@/lib/utils'
 import { useConfigStore } from '@/stores/configStore'
@@ -397,43 +398,7 @@ export const DriverWizard: React.FC<DriverWizardProps> = ({
             <pre className="text-xs font-mono p-3 leading-relaxed">{previewYaml}</pre>
           </div>
           {contextValidation && (
-            <div
-              className={`rounded-md border p-2.5 text-xs space-y-1 ${
-                hasContextErrors
-                  ? 'border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-400'
-                  : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-              }`}
-            >
-              {hasContextErrors ? (
-                <>
-                  <div className="font-semibold flex items-center gap-1.5">
-                    <AlertCircle className="w-3.5 h-3.5" />
-                    {t('driverWizard.validationErrors', {
-                      count: contextValidation.errors.length,
-                    })}
-                  </div>
-                  <ul className="space-y-0.5 ml-5 list-disc">
-                    {contextValidation.errors.slice(0, 6).map((err, i) => (
-                      <li key={i} className="font-mono text-[10px] opacity-90">
-                        {err.path}: {err.message}
-                      </li>
-                    ))}
-                    {contextValidation.errors.length > 6 && (
-                      <li className="text-[9px] opacity-70">
-                        {t('driverWizard.validationMore', {
-                          count: contextValidation.errors.length - 6,
-                        })}
-                      </li>
-                    )}
-                  </ul>
-                </>
-              ) : (
-                <div className="flex items-center gap-1.5 font-semibold">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  {t('driverWizard.validationPassed')}
-                </div>
-              )}
-            </div>
+            <WizardContextValidationBanner contextValidation={contextValidation} />
           )}
         </div>
       ),
@@ -458,137 +423,6 @@ export const DriverWizard: React.FC<DriverWizardProps> = ({
         </pre>
       }
     />
-  )
-}
-
-// ─── Registry field grid (inline, not using Form context) ────────────
-// The wizard manages state with useState (not useForm) because the dynamic
-// per-type field set makes a static zod schema impractical. This grid
-// renders fields directly bound to the settings state.
-
-const RegistryFieldGrid: React.FC<{
-  fields: SettingsField[]
-  settings: Record<string, unknown>
-  onChange: (key: string, value: unknown) => void
-}> = ({ fields, settings, onChange }) => {
-  return (
-    <div className="grid grid-cols-2 gap-x-3 gap-y-2.5">
-      {fields.map((field) => (
-        <RegistryFieldInput
-          key={field.key}
-          field={field}
-          value={settings[field.key]}
-          onChange={(v) => onChange(field.key, v)}
-        />
-      ))}
-    </div>
-  )
-}
-
-const RegistryFieldInput: React.FC<{
-  field: SettingsField
-  value: unknown
-  onChange: (value: unknown) => void
-}> = ({ field, value, onChange }) => {
-  const { t } = useTranslation()
-  const label = t(field.label)
-  const help = field.help ? t(field.help) : undefined
-  const placeholder = field.placeholder ?? ''
-
-  // Handle visibleWhen condition
-  if (field.visibleWhen) {
-    // We can't access sibling field values here without the full settings
-    // context. For now, rely on the parent to filter. This is a no-op fallback.
-  }
-
-  const renderControl = () => {
-    switch (field.type) {
-      case 'text':
-      case 'duration':
-        return (
-          <Input
-            type="text"
-            value={(value as string) ?? ''}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder={placeholder}
-            className="h-8 text-xs"
-          />
-        )
-      case 'number':
-        return (
-          <Input
-            type="number"
-            value={value === undefined || value === null ? '' : String(value)}
-            onChange={(e) => {
-              const v = e.target.value
-              onChange(v === '' ? undefined : Number(v))
-            }}
-            placeholder={placeholder}
-            min={field.min}
-            max={field.max}
-            className="h-8 text-xs"
-          />
-        )
-      case 'password':
-        return (
-          <Input
-            type="password"
-            value={(value as string) ?? ''}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder={placeholder}
-            className="h-8 text-xs"
-          />
-        )
-      case 'boolean':
-        return (
-          <Select value={value ? 'true' : 'false'} onValueChange={(v) => onChange(v === 'true')}>
-            <SelectTrigger className="h-8 text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="true">{t('common.enabled')}</SelectItem>
-              <SelectItem value="false">{t('common.disabled')}</SelectItem>
-            </SelectContent>
-          </Select>
-        )
-      case 'enum':
-        return (
-          <Select
-            value={value !== undefined && value !== null ? String(value) : undefined}
-            onValueChange={(v) => {
-              if (typeof field.default === 'number') {
-                onChange(Number(v))
-              } else {
-                onChange(v)
-              }
-            }}
-          >
-            <SelectTrigger className="h-8 text-xs">
-              <SelectValue placeholder={placeholder || t('common.select')} />
-            </SelectTrigger>
-            <SelectContent>
-              {field.options?.map((opt) => (
-                <SelectItem key={opt} value={opt} className="text-xs">
-                  {opt}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )
-      default:
-        return null
-    }
-  }
-
-  return (
-    <div className="space-y-1">
-      <label className="text-[11px] font-medium leading-none flex items-center gap-0.5">
-        {label}
-        {field.required && <span className="text-destructive">*</span>}
-      </label>
-      {renderControl()}
-      {help && <p className="text-[10px] text-muted-foreground leading-tight">{help}</p>}
-    </div>
   )
 }
 

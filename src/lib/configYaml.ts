@@ -44,11 +44,61 @@ export function dumpConfigYaml(config: CoreCConfig): string {
   return dump(config, DUMP_OPTS)
 }
 
+// ─── Array entity helpers (driver / transport / rule / rule-provider) ─
+// The four array-keyed entities — drivers[], transports[], rules[], and
+// 'rule-providers'[] — each expose the same find/upsert/remove/isNameUnique
+// quadruple, differing only in the config key and element type. This factory
+// captures the shared logic; each named export below is a thin wrapper so the
+// public API (consumed by configStore) stays byte-identical to the previous
+// hand-written implementations. rule-groups uses a Record shape (not an
+// array) and is left as-is below.
+
+/** Minimal shape required of an array-entity element (all four satisfy this). */
+interface NamedEntity {
+  name: string
+}
+
+function makeArrayEntityHelpers<E extends NamedEntity>(opts: {
+  read: (config: CoreCConfig) => E[] | undefined
+  write: (config: CoreCConfig, arr: E[]) => CoreCConfig
+}): {
+  find: (config: CoreCConfig, name: string) => E | undefined
+  upsert: (config: CoreCConfig, entity: E) => CoreCConfig
+  remove: (config: CoreCConfig, name: string) => CoreCConfig
+  isNameUnique: (config: CoreCConfig, name: string) => boolean
+} {
+  const list = (config: CoreCConfig): E[] => opts.read(config) ?? []
+  return {
+    find: (config, name) => list(config).find((e) => e.name === name),
+    upsert: (config, entity) => {
+      const arr = [...list(config)]
+      const idx = arr.findIndex((e) => e.name === entity.name)
+      if (idx >= 0) {
+        arr[idx] = entity
+      } else {
+        arr.push(entity)
+      }
+      return opts.write(config, arr)
+    },
+    remove: (config, name) =>
+      opts.write(
+        config,
+        list(config).filter((e) => e.name !== name),
+      ),
+    isNameUnique: (config, name) => !list(config).some((e) => e.name === name),
+  }
+}
+
 // ─── Driver entity helpers ───────────────────────────────────────────
+
+const driverHelpers = makeArrayEntityHelpers<DriverConfig>({
+  read: (config) => config.drivers,
+  write: (config, drivers) => ({ ...config, drivers }),
+})
 
 /** Find a driver by name. Returns undefined if absent. */
 export function findDriver(config: CoreCConfig, name: string): DriverConfig | undefined {
-  return config.drivers?.find((d) => d.name === name)
+  return driverHelpers.find(config, name)
 }
 
 /**
@@ -56,48 +106,42 @@ export function findDriver(config: CoreCConfig, name: string): DriverConfig | un
  * Returns a new config object; the input is not mutated.
  */
 export function upsertDriver(config: CoreCConfig, driver: DriverConfig): CoreCConfig {
-  const drivers = [...(config.drivers ?? [])]
-  const idx = drivers.findIndex((d) => d.name === driver.name)
-  if (idx >= 0) {
-    drivers[idx] = driver
-  } else {
-    drivers.push(driver)
-  }
-  return { ...config, drivers }
+  return driverHelpers.upsert(config, driver)
 }
 
 /** Remove a driver by name. No-op if absent. Returns a new config object. */
 export function removeDriver(config: CoreCConfig, name: string): CoreCConfig {
-  const drivers = (config.drivers ?? []).filter((d) => d.name !== name)
-  return { ...config, drivers }
+  return driverHelpers.remove(config, name)
 }
 
 // ─── Transport entity helpers ────────────────────────────────────────
 
+const transportHelpers = makeArrayEntityHelpers<TransportConfig>({
+  read: (config) => config.transports,
+  write: (config, transports) => ({ ...config, transports }),
+})
+
 export function findTransport(config: CoreCConfig, name: string): TransportConfig | undefined {
-  return config.transports?.find((t) => t.name === name)
+  return transportHelpers.find(config, name)
 }
 
 export function upsertTransport(config: CoreCConfig, transport: TransportConfig): CoreCConfig {
-  const transports = [...(config.transports ?? [])]
-  const idx = transports.findIndex((t) => t.name === transport.name)
-  if (idx >= 0) {
-    transports[idx] = transport
-  } else {
-    transports.push(transport)
-  }
-  return { ...config, transports }
+  return transportHelpers.upsert(config, transport)
 }
 
 export function removeTransport(config: CoreCConfig, name: string): CoreCConfig {
-  const transports = (config.transports ?? []).filter((t) => t.name !== name)
-  return { ...config, transports }
+  return transportHelpers.remove(config, name)
 }
 
 // ─── Rule entity helpers ─────────────────────────────────────────────
 
+const ruleHelpers = makeArrayEntityHelpers<RuleConfig>({
+  read: (config) => config.rules,
+  write: (config, rules) => ({ ...config, rules }),
+})
+
 export function findRule(config: CoreCConfig, name: string): RuleConfig | undefined {
-  return config.rules?.find((r) => r.name === name)
+  return ruleHelpers.find(config, name)
 }
 
 /**
@@ -106,67 +150,56 @@ export function findRule(config: CoreCConfig, name: string): RuleConfig | undefi
  * priority). Callers may reorder by priority after upsert if needed.
  */
 export function upsertRule(config: CoreCConfig, rule: RuleConfig): CoreCConfig {
-  const rules = [...(config.rules ?? [])]
-  const idx = rules.findIndex((r) => r.name === rule.name)
-  if (idx >= 0) {
-    rules[idx] = rule
-  } else {
-    rules.push(rule)
-  }
-  return { ...config, rules }
+  return ruleHelpers.upsert(config, rule)
 }
 
 export function removeRule(config: CoreCConfig, name: string): CoreCConfig {
-  const rules = (config.rules ?? []).filter((r) => r.name !== name)
-  return { ...config, rules }
+  return ruleHelpers.remove(config, name)
 }
 
 // ─── Name-uniqueness validation (mirrors config.validate) ────────────
 
 /** Returns true if `name` is unique among existing drivers (case-sensitive). */
 export function isDriverNameUnique(config: CoreCConfig, name: string): boolean {
-  return !(config.drivers ?? []).some((d) => d.name === name)
+  return driverHelpers.isNameUnique(config, name)
 }
 
 export function isTransportNameUnique(config: CoreCConfig, name: string): boolean {
-  return !(config.transports ?? []).some((t) => t.name === name)
+  return transportHelpers.isNameUnique(config, name)
 }
 
 export function isRuleNameUnique(config: CoreCConfig, name: string): boolean {
-  return !(config.rules ?? []).some((r) => r.name === name)
+  return ruleHelpers.isNameUnique(config, name)
 }
 
 // ─── Rule Providers (rule-providers[]) ────────────────────────────────
+
+const ruleProviderHelpers = makeArrayEntityHelpers<RuleProviderConfig>({
+  read: (config) => config['rule-providers'],
+  write: (config, providers) => ({ ...config, 'rule-providers': providers }),
+})
 
 /** Find a rule provider by name. */
 export function findRuleProvider(
   config: CoreCConfig,
   name: string,
 ): RuleProviderConfig | undefined {
-  return config['rule-providers']?.find((p) => p.name === name)
+  return ruleProviderHelpers.find(config, name)
 }
 
 /** Add or replace a rule provider (keyed by name). */
 export function upsertRuleProvider(config: CoreCConfig, provider: RuleProviderConfig): CoreCConfig {
-  const providers = [...(config['rule-providers'] ?? [])]
-  const idx = providers.findIndex((p) => p.name === provider.name)
-  if (idx >= 0) {
-    providers[idx] = provider
-  } else {
-    providers.push(provider)
-  }
-  return { ...config, 'rule-providers': providers }
+  return ruleProviderHelpers.upsert(config, provider)
 }
 
 /** Remove a rule provider by name. */
 export function removeRuleProvider(config: CoreCConfig, name: string): CoreCConfig {
-  const providers = (config['rule-providers'] ?? []).filter((p) => p.name !== name)
-  return { ...config, 'rule-providers': providers }
+  return ruleProviderHelpers.remove(config, name)
 }
 
 /** Check rule-provider name uniqueness. */
 export function isRuleProviderNameUnique(config: CoreCConfig, name: string): boolean {
-  return !(config['rule-providers'] ?? []).some((p) => p.name === name)
+  return ruleProviderHelpers.isNameUnique(config, name)
 }
 
 // ─── Rule Groups (rule-groups: Record<string, RuleConfig[]>) ──────────
