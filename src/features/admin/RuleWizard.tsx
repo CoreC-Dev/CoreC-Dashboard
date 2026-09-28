@@ -46,6 +46,7 @@ import { validateRuleExpression } from '@/lib/ruleExprValidator'
 import { validateTransformExpression } from '@/lib/transformExprValidator'
 import { cn } from '@/lib/utils'
 import { useConfigStore } from '@/stores/configStore'
+import { useTransportNames } from '@/hooks/useConfigValidation'
 import type { RuleAction, RuleConfig } from '@/types/config'
 
 // ─── Action metadata ──────────────────────────────────────────────────
@@ -126,9 +127,7 @@ export const RuleWizard: React.FC<RuleWizardProps> = ({
   const upsertRule = useConfigStore((s) => s.upsertRule)
   const isRuleNameUnique = useConfigStore((s) => s.isRuleNameUnique)
   const workingConfig = useConfigStore((s) => s.workingConfig)
-  const transportNames = useConfigStore((s) =>
-    (s.workingConfig?.transports ?? []).map((tp) => tp.name),
-  )
+  const transportNames = useTransportNames()
   const isEdit = !!existingRule
 
   // ─── Form state ──────────────────────────────────────────────────

@@ -40,6 +40,7 @@ import {
 } from '@/lib/settingsRegistry'
 import { cn } from '@/lib/utils'
 import { useConfigStore } from '@/stores/configStore'
+import { useTransportNames } from '@/hooks/useConfigValidation'
 import type { TransportConfig, TransportType } from '@/types/config'
 
 // ─── Transport type metadata ──────────────────────────────────────────
@@ -85,9 +86,7 @@ export const TransportWizard: React.FC<TransportWizardProps> = ({
   const upsertTransport = useConfigStore((s) => s.upsertTransport)
   const isTransportNameUnique = useConfigStore((s) => s.isTransportNameUnique)
   const workingConfig = useConfigStore((s) => s.workingConfig)
-  const transportNames = useConfigStore((s) =>
-    (s.workingConfig?.transports ?? []).map((tp) => tp.name),
-  )
+  const transportNames = useTransportNames()
   const isEdit = !!existingTransport
 
   // ─── Form state ──────────────────────────────────────────────────
