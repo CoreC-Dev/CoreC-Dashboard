@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type React from 'react'
 import { lazy, Suspense, useEffect } from 'react'
-import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { HashRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { AdminLayout } from '@/components/layout/AdminLayout'
 import { MonitorLayout } from '@/components/layout/MonitorLayout'
@@ -133,7 +133,7 @@ export const App: React.FC = () => {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
+        <HashRouter>
           <Routes>
             {/* Public Connection Setup */}
             <Route path="/login" element={<ConnectionPage />} />
@@ -278,7 +278,7 @@ export const App: React.FC = () => {
             <Route path="/" element={<Navigate to="/monitor/dashboard" replace />} />
             <Route path="*" element={<Navigate to="/monitor/dashboard" replace />} />
           </Routes>
-        </BrowserRouter>
+        </HashRouter>
       </QueryClientProvider>
     </ErrorBoundary>
   )

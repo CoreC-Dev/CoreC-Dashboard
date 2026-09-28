@@ -1,0 +1,72 @@
+# Build and deploy CoreC-Dashboard to GitHub Pages on every push to main.
+#
+# Architecture: the Dashboard is a pure static SPA. It connects DIRECTLY to
+# the remote CoreC backend from the browser (fetch + WebSocket). This workflow
+# only builds the static assets and publishes them — it does NOT proxy or
+# touch CoreC in any way.
+#
+# Custom domain (HTTP):
+#   1. Add your domain to repo Settings → Pages → Custom domain.
+#   2. UNCHECK "Enforce HTTPS" so the page is served over plain HTTP.
+#      (Required because the Dashboard fetches a remote CoreC over HTTP;
+#      an HTTPS page would trigger Mixed Content blocking.)
+#   3. A CNAME file (public/CNAME) must contain your domain — Vite copies
+#      it into dist/ so GitHub Pages picks it up.
+#   4. Configure DNS: CNAME record → <user>.github.io (or A records for apex).
+
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one deployment at a time; cancel in-flight runs.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build static assets
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
