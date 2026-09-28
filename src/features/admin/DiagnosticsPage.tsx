@@ -117,8 +117,12 @@ export const DiagnosticsPage: React.FC = () => {
 
     // convertEol is true, so rely on writeln's appended line break instead of
     // an explicit "\r\n" (which would render a blank line after the banner).
+    // Initial banner says "connecting" — the onStatus callback below updates
+    // it to "connected" (or error/reconnecting) once the WebSocket settles.
+    // This avoids the misleading "已连接" (connected) banner that previously
+    // appeared even when the proxy silently dropped the WS upgrade.
     term.writeln(
-      `\x1b[38;5;39m[CoreC Stream]\x1b[0m ${tRef.current('diagnostics.streamConnected')}`,
+      `\x1b[33m[CoreC Stream]\x1b[0m ${tRef.current('diagnostics.streamConnecting')}`,
     )
 
     // Log-rate limiting: buffer incoming log lines and flush to xterm via a
@@ -183,6 +187,33 @@ export const DiagnosticsPage: React.FC = () => {
         logBuffer.push(line)
       }
       scheduleFlush()
+    }, (status) => {
+      // Real connection status — write to terminal so the user sees the
+      // actual state instead of a stale static banner.
+      switch (status) {
+        case 'open':
+          term.writeln(
+            `\x1b[38;5;39m[CoreC Stream]\x1b[0m ${tRef.current('diagnostics.streamConnected')}`,
+          )
+          break
+        case 'error':
+          term.writeln(
+            `\x1b[31m[CoreC Stream]\x1b[0m ${tRef.current('diagnostics.streamError')}\x1b[0m`,
+          )
+          break
+        case 'closed':
+          term.writeln(
+            `\x1b[33m[CoreC Stream]\x1b[0m ${tRef.current('diagnostics.streamReconnecting')}\x1b[0m`,
+          )
+          break
+        case 'rejected':
+          term.writeln(
+            `\x1b[31m[CoreC Stream]\x1b[0m ${tRef.current('diagnostics.streamRejected')}\x1b[0m`,
+          )
+          break
+        default:
+          break
+      }
     })
 
     const handleResize = () => fitAddon.fit()
