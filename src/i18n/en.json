@@ -618,7 +618,19 @@
     "exported": "Configuration exported as YAML file",
     "templates": "Templates",
     "templatesHint": "Load a pre-built configuration template",
-    "templateLoaded": "Template loaded: {{name}}"
+    "templateLoaded": "Template loaded: {{name}}",
+    "loadFromServer": "Load from Server",
+    "loadFromServerHint": "Fetch the live server config (secrets masked as ***) into the editor",
+    "loadFromServerSuccess": "Live config loaded from server (secrets masked as ***)",
+    "loadFromServerFailed": "Failed to load server config: {{error}}",
+    "loadFromServerEmpty": "No active configuration on the server",
+    "dryRunValidate": "Validate",
+    "dryRunValidateHint": "Dry-run validate the current config on the server without applying",
+    "dryRunValidating": "Validating...",
+    "dryRunValid": "Server validation passed — config is acceptable",
+    "dryRunInvalid": "Server validation failed: {{error}}",
+    "dryRunFailed": "Validation request failed: {{error}}",
+    "secretsRedactedNote": "Secrets are masked as *** on the server; submit unchanged and they are restored automatically."
   },
   "topology": {
     "title": "Chained-Core Mesh Topology",

@@ -618,7 +618,19 @@
     "exported": "配置已导出为 YAML 文件",
     "templates": "配置模板",
     "templatesHint": "加载预置配置模板",
-    "templateLoaded": "模板已加载: {{name}}"
+    "templateLoaded": "模板已加载: {{name}}",
+    "loadFromServer": "从服务器加载",
+    "loadFromServerHint": "拉取服务器实时配置(密钥已脱敏为 ***)到编辑器",
+    "loadFromServerSuccess": "已从服务器加载实时配置(密钥脱敏为 ***)",
+    "loadFromServerFailed": "加载服务器配置失败: {{error}}",
+    "loadFromServerEmpty": "服务器上没有活动配置",
+    "dryRunValidate": "校验",
+    "dryRunValidateHint": "在服务器端试运行校验当前配置(不应用)",
+    "dryRunValidating": "校验中...",
+    "dryRunValid": "服务器校验通过 — 配置可用",
+    "dryRunInvalid": "服务器校验失败: {{error}}",
+    "dryRunFailed": "校验请求失败: {{error}}",
+    "secretsRedactedNote": "密钥在服务器端已脱敏为 ***;原样提交后会自动回填真实值。"
   },
   "topology": {
     "title": "链式核心网格拓扑",

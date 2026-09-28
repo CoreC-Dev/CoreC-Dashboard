@@ -112,6 +112,25 @@ export function useConfigs() {
   })
 }
 
+/**
+ * Path A — fetches the full active config as redacted YAML text from
+ * GET /configs/raw. Secrets are masked as "***" on the server; this string is
+ * fed directly into the Config Center YAML editor (js-yaml load/dump) and, on
+ * submit, round-tripped back via PUT /configs where the executor's
+ * sentinel-merge restores the real secret values.
+ *
+ * Not polled (no refetchInterval): the raw config only changes via PUT
+ * /configs, and useUpdateConfig invalidates ['configsRaw'] on success.
+ */
+export function useConfigRaw() {
+  const isConnected = useConnectionStore((s) => s.isConnected)
+  return useQuery({
+    queryKey: ['configsRaw'],
+    queryFn: api.getConfigsRaw,
+    enabled: isConnected,
+  })
+}
+
 export function useDeadLetters() {
   const isConnected = useConnectionStore((s) => s.isConnected)
   return useQuery({
@@ -164,7 +183,27 @@ export function useUpdateConfig() {
   return useMutation({
     mutationFn: (data: { path?: string; payload: string }) => api.updateConfigs(data),
     onSuccess: () => {
+      // After a successful reload, the active config changed — invalidate both
+      // the summary and the raw-redacted view so the editor reflects the new
+      // state on next read.
       queryClient.invalidateQueries({ queryKey: ['configs'] })
+      queryClient.invalidateQueries({ queryKey: ['configsRaw'] })
     },
+  })
+}
+
+/**
+ * Path A — server-side dry-run validation of a config payload via
+ * POST /configs/validate. Runs parse + config validation WITHOUT applying,
+ * so the operator can catch errors before committing a PUT /configs.
+ *
+ * Returns { valid: true } on success or { valid: false, error: string } on
+ * validation failure (the endpoint wrapper normalizes a 400 into this shape,
+ * so the mutation resolves rather than throwing for ordinary validation
+ * errors; genuine transport/500 errors still throw).
+ */
+export function useValidateConfig() {
+  return useMutation({
+    mutationFn: (payload: string) => api.validateConfigs(payload),
   })
 }

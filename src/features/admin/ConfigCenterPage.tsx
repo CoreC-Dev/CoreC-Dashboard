@@ -4,11 +4,13 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronRight,
+  CloudDownload,
   Code2,
   Cpu,
   Download,
   FileText,
   Flame,
+  FlaskConical,
   GitCompare,
   History,
   KeyRound,
@@ -22,7 +24,7 @@ import {
 import type React from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useConfigs, usePatchConfig, useUpdateConfig } from '@/api/hooks'
+import { useConfigRaw, useConfigs, usePatchConfig, useUpdateConfig, useValidateConfig } from '@/api/hooks'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -251,6 +253,9 @@ export const ConfigCenterPage: React.FC = () => {
   const { data: configData, refetch, isLoading: isLoadingConfigs } = useConfigs()
   const patchMutation = usePatchConfig()
   const updateMutation = useUpdateConfig()
+  // Path A — full redacted config from GET /configs/raw + server-side dry-run.
+  const rawConfigQuery = useConfigRaw()
+  const validateMutation = useValidateConfig()
 
   // configStore integration for structured global config editing
   const configDirty = useConfigStore((s) => s.dirty)
@@ -462,6 +467,58 @@ export const ConfigCenterPage: React.FC = () => {
     }
   }
 
+  // Path A — "Load from Server": fetch the live server config (GET /configs/raw,
+  // secrets redacted to ***) into both the YAML editor and the configStore so
+  // the operator edits the server's REAL configuration rather than the sample.
+  // The redacted "***" placeholders are restored to real values by the
+  // executor's sentinel-merge on the next PUT /configs, so the operator never
+  // needs to type a secret.
+  const handleLoadFromServer = () => {
+    setStatusMsg(null)
+    // Trigger a fresh fetch (refetch ignores stale cache so the editor shows
+    // the current state, not a cached copy from before a PUT).
+    void rawConfigQuery.refetch().then((res) => {
+      const yamlText = res.data
+      if (!yamlText?.trim()) {
+        setStatusMsg({ type: 'error', text: t('config.loadFromServerEmpty') })
+        return
+      }
+      setYamlContent(yamlText)
+      loadFromYaml(yamlText)
+      const err = useConfigStore.getState().error
+      if (err) {
+        setStatusMsg({ type: 'error', text: t('config.importYamlFailed', { error: err }) })
+      } else {
+        setStatusMsg({ type: 'success', text: t('config.loadFromServerSuccess') })
+        setMode('yaml')
+      }
+    }).catch((err: unknown) => {
+      const msg = err instanceof Error ? err.message : String(err)
+      setStatusMsg({ type: 'error', text: t('config.loadFromServerFailed', { error: msg }) })
+    })
+  }
+
+  // Path A — "Validate": dry-run the current editor config on the server via
+  // POST /configs/validate (parse + config validation, NO apply). Surfaces
+  // whether the config would be accepted before the operator commits a PUT.
+  const handleDryRunValidate = async () => {
+    setStatusMsg(null)
+    try {
+      const result = await validateMutation.mutateAsync(yamlContent)
+      if (result.valid) {
+        setStatusMsg({ type: 'success', text: t('config.dryRunValid') })
+      } else {
+        setStatusMsg({
+          type: 'error',
+          text: t('config.dryRunInvalid', { error: result.error ?? '' }),
+        })
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err)
+      setStatusMsg({ type: 'error', text: t('config.dryRunFailed', { error: msg }) })
+    }
+  }
+
   // Restore a history snapshot into the YAML editor and switch to code view.
   const handleRestore = (snap: ConfigSnapshot) => {
     setYamlContent(snap.yaml)
@@ -633,6 +690,36 @@ export const ConfigCenterPage: React.FC = () => {
             )}
           </div>
 
+          {/* Path A — Load from Server: fetch the live redacted config (secrets
+              masked as ***) into the editor. Available in both modes so the
+              operator can backfill the server's real config before editing. */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleLoadFromServer}
+            disabled={rawConfigQuery.isFetching}
+            className="h-8 text-xs"
+            title={t('config.loadFromServerHint')}
+          >
+            <CloudDownload className="w-3.5 h-3.5" />
+          </Button>
+          {/* Path A — Dry-run Validate (YAML mode only, since the payload is
+              the editor's YAML text). Validates on the server WITHOUT applying. */}
+          {mode === 'yaml' && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDryRunValidate}
+              disabled={validateMutation.isPending}
+              className="h-8 text-xs"
+              title={t('config.dryRunValidateHint')}
+            >
+              <FlaskConical className="w-3.5 h-3.5 mr-1" />
+              <span>
+                {validateMutation.isPending ? t('config.dryRunValidating') : t('config.dryRunValidate')}
+              </span>
+            </Button>
+          )}
           {mode === 'yaml' && (
             <Button
               size="sm"
