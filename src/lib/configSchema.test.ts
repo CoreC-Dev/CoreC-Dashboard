@@ -396,6 +396,27 @@ describe('coreCConfigSchema — global validation', () => {
     })
     expect(res.success).toBe(false)
   })
+  it('accepts api.secret: "***" (redacted sentinel from GET /configs/raw)', () => {
+    const res = coreCConfigSchema.safeParse({
+      ...validConfig,
+      global: {
+        ...validConfig.global,
+        api: { listen: '0.0.0.0:9090', secret: '***' },
+      },
+    })
+    expect(res.success).toBe(true)
+  })
+  it('still rejects a genuinely short api.secret (not the sentinel)', () => {
+    const res = coreCConfigSchema.safeParse({
+      ...validConfig,
+      global: {
+        ...validConfig.global,
+        api: { listen: '0.0.0.0:9090', secret: 'short' },
+      },
+    })
+    expect(res.success).toBe(false)
+    expect(failIssues(res)).toContain('at least 8 characters')
+  })
 })
 
 describe('validateConfig — cross-entity rules', () => {
