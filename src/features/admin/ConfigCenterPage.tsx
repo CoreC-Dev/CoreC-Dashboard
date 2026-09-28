@@ -31,6 +31,7 @@ import {
   useUpdateConfig,
   useValidateConfig,
 } from '@/api/hooks'
+import { EventLogTerminal } from '@/components/admin/EventLogTerminal'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -834,6 +835,11 @@ export const ConfigCenterPage: React.FC = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Real-time CoreC event log stream — placed directly below the
+              runtime log-level patch card so the operator sees the effect of
+              switching levels (e.g. debug) flow into the terminal instantly. */}
+          <EventLogTerminal height="h-64" />
 
           {/* Current Configuration (synced from GET /configs overview) */}
           <Card className="border-border/80 bg-card/60">
