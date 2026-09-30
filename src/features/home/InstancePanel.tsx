@@ -187,6 +187,7 @@ export const InstancePanel: React.FC = () => {
 
               {/* Add new card */}
               <button
+                type="button"
                 onClick={handleAdd}
                 className="rounded-xl border-2 border-dashed border-border hover:border-primary/40 hover:bg-muted/30 transition-all flex flex-col items-center justify-center min-h-[180px] gap-2 text-muted-foreground hover:text-foreground"
               >

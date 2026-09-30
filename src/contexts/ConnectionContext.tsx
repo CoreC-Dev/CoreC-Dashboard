@@ -100,9 +100,10 @@ export const ConnectionProvider: React.FC<{
     return () => {
       setActiveConnection(null)
     }
-  }, [instance?.id, instance?.baseUrl, instance?.secret])
+  }, [instance])
 
   // Probe the connection.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: probeNonce is an intentional re-probe trigger; instance is the full dependency
   useEffect(() => {
     if (!instance) {
       setIsConnecting(false)
@@ -150,7 +151,7 @@ export const ConnectionProvider: React.FC<{
       ctrl.abort()
       clearTimeout(timeoutId)
     }
-  }, [instance?.id, instance?.baseUrl, instance?.secret, probeNonce, setProbeResult, setProbing])
+  }, [instance, probeNonce, setProbeResult, setProbing])
 
   const reconnect = () => setProbeNonce((n) => n + 1)
 

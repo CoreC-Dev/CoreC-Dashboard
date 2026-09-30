@@ -24,7 +24,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useConnection } from '@/contexts/ConnectionContext'
-import i18n, { setLocale } from '@/i18n'
+import { setLocale } from '@/i18n'
 import { useInstanceStore } from '@/stores/instanceStore'
 import { useThemeStore } from '@/stores/themeStore'
 
@@ -34,7 +34,7 @@ export const TopBar: React.FC = () => {
   const location = useLocation()
   const navigate = useNavigate()
   const { id: instanceId } = useParams<{ id: string }>()
-  const { instance, isConnected, isConnecting, serverInfo, reconnect } = useConnection()
+  const { instance, isConnected, isConnecting, serverInfo } = useConnection()
   const instances = useInstanceStore((s) => s.instances)
 
   const { theme, resolvedTheme, setTheme } = useThemeStore()
@@ -120,7 +120,10 @@ export const TopBar: React.FC = () => {
         {instance && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="flex items-center space-x-2 px-2 py-1 rounded-md hover:bg-muted/60 transition-colors min-w-0">
+              <button
+                type="button"
+                className="flex items-center space-x-2 px-2 py-1 rounded-md hover:bg-muted/60 transition-colors min-w-0"
+              >
                 <span className={`w-2 h-2 rounded-full shrink-0 ${statusDot}`} />
                 <span className="font-medium text-sm truncate max-w-[160px]">{instance.name}</span>
                 <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />

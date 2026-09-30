@@ -1,4 +1,4 @@
-import { ArrowLeft, Download, Globe, Moon, Palette, Sun, Trash2, Upload } from 'lucide-react'
+import { ArrowLeft, Download, Globe, Palette, Trash2, Upload } from 'lucide-react'
 import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'

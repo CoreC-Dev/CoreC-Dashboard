@@ -107,6 +107,7 @@ const ConnectionGate: React.FC<{ children: React.ReactNode }> = ({ children }) =
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
         <div className="text-rose-500 text-lg font-semibold">{error}</div>
         <button
+          type="button"
           onClick={reconnect}
           className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm hover:bg-primary/90 transition-colors"
         >
