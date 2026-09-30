@@ -1,17 +1,20 @@
 import { Bell, LayoutDashboard, Tag } from 'lucide-react'
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useParams } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { TopBar } from './TopBar'
 
 export const MonitorLayout: React.FC = () => {
   const { t } = useTranslation()
+  const { id } = useParams<{ id: string }>()
+
+  const base = id ? `/corec/${id}/monitor` : '/monitor'
 
   const tabs = [
-    { path: '/monitor/dashboard', label: t('nav.dashboard'), icon: LayoutDashboard },
-    { path: '/monitor/tags', label: t('nav.tags'), icon: Tag },
-    { path: '/monitor/alerts', label: t('nav.alerts'), icon: Bell },
+    { path: `${base}/dashboard`, label: t('nav.dashboard'), icon: LayoutDashboard },
+    { path: `${base}/tags`, label: t('nav.tags'), icon: Tag },
+    { path: `${base}/alerts`, label: t('nav.alerts'), icon: Bell },
   ]
 
   return (

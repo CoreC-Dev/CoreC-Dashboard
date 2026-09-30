@@ -1,49 +1,39 @@
-import {
-  Cpu,
-  FileCode2,
-  Gauge,
-  LayoutGrid,
-  Network,
-  Radio,
-  Send,
-  Sliders,
-  TerminalSquare,
-  Wrench,
-} from 'lucide-react'
+import { Cpu, FileCode2, Gauge, Network, Send, Sliders, TerminalSquare } from 'lucide-react'
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
-import { NavLink } from 'react-router-dom'
+import { NavLink, useParams } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 
 export const Sidebar: React.FC = () => {
   const { t } = useTranslation()
+  const { id } = useParams<{ id: string }>()
+
+  const base = id ? `/corec/${id}/admin` : '/admin'
 
   const navGroups = [
     {
       id: 'southbound',
       title: t('nav.groupSouthbound'),
       items: [
-        { path: '/admin/drivers', label: t('nav.drivers'), icon: Cpu },
-        { path: '/admin/transports', label: t('nav.transports'), icon: Send },
-        { path: '/admin/rules', label: t('nav.rules'), icon: Sliders },
+        { path: `${base}/drivers`, label: t('nav.drivers'), icon: Cpu },
+        { path: `${base}/transports`, label: t('nav.transports'), icon: Send },
+        { path: `${base}/rules`, label: t('nav.rules'), icon: Sliders },
       ],
     },
     {
       id: 'control',
       title: t('nav.groupControl'),
       items: [
-        { path: '/admin/write', label: t('nav.write'), icon: TerminalSquare },
-        { path: '/admin/dashboard-editor', label: t('nav.dashboardEditor'), icon: LayoutGrid },
-        { path: '/admin/config', label: t('nav.config'), icon: FileCode2 },
+        { path: `${base}/write`, label: t('nav.write'), icon: TerminalSquare },
+        { path: `${base}/config`, label: t('nav.config'), icon: FileCode2 },
       ],
     },
     {
       id: 'system',
       title: t('nav.groupSystem'),
       items: [
-        { path: '/admin/topology', label: t('nav.topology'), icon: Network },
-        { path: '/admin/diagnostics', label: t('nav.diagnostics'), icon: Gauge },
-        { path: '/admin/settings', label: t('nav.settings'), icon: Wrench },
+        { path: `${base}/topology`, label: t('nav.topology'), icon: Network },
+        { path: `${base}/diagnostics`, label: t('nav.diagnostics'), icon: Gauge },
       ],
     },
   ]
@@ -80,15 +70,6 @@ export const Sidebar: React.FC = () => {
             </div>
           </div>
         ))}
-      </div>
-
-      {/* Edge Core Brand Footer */}
-      <div className="p-2.5 rounded-lg bg-muted/40 border border-border/50 text-[11px] text-muted-foreground flex items-center space-x-2">
-        <Radio className="w-3.5 h-3.5 text-primary shrink-0 animate-pulse" />
-        <div className="truncate">
-          <div className="font-medium text-foreground">CoreC Engine</div>
-          <div className="text-[10px] text-muted-foreground/80">{t('nav.brandTagline')}</div>
-        </div>
       </div>
     </aside>
   )

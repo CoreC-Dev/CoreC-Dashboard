@@ -145,9 +145,7 @@ body {
 
 /*
  * Dashboard layout grid.
- * 12-column responsive grid matching the react-grid-layout coordinate
- * schema used by dashboardStore. Each card is positioned via inline
- * grid-column/grid-row styles derived from its stored x/y/w/h.
+ * 12-column responsive grid for the fixed overview dashboard.
  */
 .dashboard-grid {
   display: grid;

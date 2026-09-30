@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useConnectionStore } from '@/stores/connectionStore'
+import { useConnection } from '@/contexts/ConnectionContext'
 import type { WriteCommand } from '@/types/models'
 import * as api from '../endpoints'
 
@@ -14,7 +14,7 @@ function useConnectedQuery<T>({
   refetchInterval?: number
   enabled?: boolean
 }) {
-  const isConnected = useConnectionStore((s) => s.isConnected)
+  const { isConnected } = useConnection()
   return useQuery({
     queryKey,
     queryFn,

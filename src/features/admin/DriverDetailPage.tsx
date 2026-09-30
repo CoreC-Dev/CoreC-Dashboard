@@ -252,14 +252,15 @@ const DriverEditConfigSection: React.FC<{ driver: DriverStatus }> = ({ driver })
 
 export const DriverDetailPage: React.FC = () => {
   const { t } = useTranslation()
-  const { name } = useParams<{ name: string }>()
+  const { name, id } = useParams<{ name: string; id: string }>()
+  const adminBase = id ? `/corec/${id}/admin` : '/admin'
   const { data: driver, isLoading, error, refetch, isFetching } = useDriver(name ?? '')
   const { data: tagsData, isLoading: tagsLoading } = useDriverTags(name ?? '')
 
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <BackLink to="/admin/drivers">
+        <BackLink to={`${adminBase}/drivers`}>
           {t('drivers.driverList', { defaultValue: 'Back to Drivers' })}
         </BackLink>
         <div className="py-16 text-center text-xs text-muted-foreground">
@@ -272,7 +273,7 @@ export const DriverDetailPage: React.FC = () => {
   if (error || !driver) {
     return (
       <div className="space-y-6">
-        <BackLink to="/admin/drivers">
+        <BackLink to={`${adminBase}/drivers`}>
           {t('drivers.driverList', { defaultValue: 'Back to Drivers' })}
         </BackLink>
         <Card className="border-dashed bg-card/40">
@@ -300,7 +301,7 @@ export const DriverDetailPage: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <BackLink to="/admin/drivers">
+        <BackLink to={`${adminBase}/drivers`}>
           {t('drivers.driverList', { defaultValue: 'Back to Drivers' })}
         </BackLink>
         <Button

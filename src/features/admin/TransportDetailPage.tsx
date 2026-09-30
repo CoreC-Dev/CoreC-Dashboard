@@ -272,13 +272,14 @@ const TransportEditConfigSection: React.FC<{ transport: TransportStatus }> = ({ 
 
 export const TransportDetailPage: React.FC = () => {
   const { t } = useTranslation()
-  const { name } = useParams<{ name: string }>()
+  const { name, id } = useParams<{ name: string; id: string }>()
+  const adminBase = id ? `/corec/${id}/admin` : '/admin'
   const { data: transport, isLoading, error, refetch, isFetching } = useTransport(name ?? '')
 
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <BackLink to="/admin/transports">
+        <BackLink to={`${adminBase}/transports`}>
           {t('transports.transportList', { defaultValue: 'Back to Transports' })}
         </BackLink>
         <div className="py-16 text-center text-xs text-muted-foreground">
@@ -291,7 +292,7 @@ export const TransportDetailPage: React.FC = () => {
   if (error || !transport) {
     return (
       <div className="space-y-6">
-        <BackLink to="/admin/transports">
+        <BackLink to={`${adminBase}/transports`}>
           {t('transports.transportList', { defaultValue: 'Back to Transports' })}
         </BackLink>
         <Card className="border-dashed bg-card/40">
@@ -319,7 +320,7 @@ export const TransportDetailPage: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <BackLink to="/admin/transports">
+        <BackLink to={`${adminBase}/transports`}>
           {t('transports.transportList', { defaultValue: 'Back to Transports' })}
         </BackLink>
         <Button

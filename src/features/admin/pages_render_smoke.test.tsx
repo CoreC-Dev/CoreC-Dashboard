@@ -51,29 +51,37 @@ vi.mock('@/api/endpoints', () => ({
   validateConfigs: vi.fn().mockResolvedValue({ valid: true }),
 }))
 
-// Mock connectionStore as connected (selector-aware, like real Zustand).
-const _connState = {
-  baseUrl: 'http://test',
-  secret: 'test-secret',
+// Mock the active connection module so apiRequest has credentials.
+vi.mock('@/api/activeConnection', () => ({
+  getActiveConnection: () => ({
+    instanceId: 'test-instance',
+    baseUrl: 'http://test',
+    secret: 'test-secret',
+  }),
+  setActiveConnection: vi.fn(),
+  hasActiveConnection: () => true,
+}))
+
+// Mock the ConnectionContext so useConnection() returns a connected state.
+const _connCtx = {
+  instance: {
+    id: 'test-instance',
+    name: 'Test Instance',
+    baseUrl: 'http://test',
+    secret: 'test-secret',
+    createdAt: new Date().toISOString(),
+    sortOrder: 1,
+  },
   isConnected: true,
   isConnecting: false,
-  serverVersion: 'dev',
-  serverName: 'test',
-  lastError: null,
-  setConnection: vi.fn(),
-  setConnected: vi.fn(),
-  setError: vi.fn(),
-  clearAuth: vi.fn(),
-  disconnect: vi.fn(),
-  revalidate: vi.fn().mockResolvedValue(undefined),
+  error: null,
+  serverInfo: { name: 'test', version: 'dev' },
+  reconnect: vi.fn(),
 }
-vi.mock('@/stores/connectionStore', () => ({
-  useConnectionStore: Object.assign(
-    vi.fn((selector?: (s: typeof _connState) => unknown) =>
-      selector ? selector(_connState) : _connState,
-    ),
-    { getState: () => _connState },
-  ),
+vi.mock('@/contexts/ConnectionContext', () => ({
+  useConnection: () => _connCtx,
+  useConnectionSafe: () => _connCtx,
+  ConnectionProvider: ({ children }: { children: React.ReactNode }) => children,
 }))
 
 function wrap(el: React.ReactElement) {

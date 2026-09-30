@@ -1,18 +1,20 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type React from 'react'
-import { lazy, Suspense, useEffect } from 'react'
-import { HashRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { lazy, Suspense } from 'react'
+import { HashRouter, Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { AdminLayout } from '@/components/layout/AdminLayout'
 import { MonitorLayout } from '@/components/layout/MonitorLayout'
+import { ConnectionProvider, useConnection } from '@/contexts/ConnectionContext'
 import i18n from '@/i18n'
-import { useConnectionStore } from '@/stores/connectionStore'
+import { useInstanceStore } from '@/stores/instanceStore'
 
 // Route-level code splitting: each page is a separate chunk, loaded on
-// demand via React.lazy + Suspense. This fixes the 1.25 MB single-chunk
-// build warning and dramatically reduces initial load.
-const ConnectionPage = lazy(() =>
-  import('@/features/login/ConnectionPage').then((m) => ({ default: m.ConnectionPage })),
+// demand via React.lazy + Suspense.
+const InstancePanel = lazy(() =>
+  import('@/features/home/InstancePanel').then((m) => ({ default: m.InstancePanel })),
+)
+const GlobalSettingsPage = lazy(() =>
+  import('@/features/settings/GlobalSettingsPage').then((m) => ({ default: m.GlobalSettingsPage })),
 )
 const DashboardPage = lazy(() =>
   import('@/features/monitor/DashboardPage').then((m) => ({ default: m.DashboardPage })),
@@ -41,9 +43,6 @@ const RulesPage = lazy(() =>
 const WriteControlPage = lazy(() =>
   import('@/features/admin/WriteControlPage').then((m) => ({ default: m.WriteControlPage })),
 )
-const DashboardEditorPage = lazy(() =>
-  import('@/features/admin/DashboardEditorPage').then((m) => ({ default: m.DashboardEditorPage })),
-)
 const ConfigCenterPage = lazy(() =>
   import('@/features/admin/ConfigCenterPage').then((m) => ({ default: m.ConfigCenterPage })),
 )
@@ -53,26 +52,8 @@ const TopologyPage = lazy(() =>
 const DiagnosticsPage = lazy(() =>
   import('@/features/admin/DiagnosticsPage').then((m) => ({ default: m.DiagnosticsPage })),
 )
-const SettingsPage = lazy(() =>
-  import('@/features/admin/SettingsPage').then((m) => ({ default: m.SettingsPage })),
-)
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
-      // Most hooks poll every 2–5s. A 3s staleTime prevents redundant
-      // refetches on remount/route navigation when the cached data is still
-      // fresh, without noticeably delaying user-driven refreshes.
-      staleTime: 3000,
-    },
-  },
-})
-
-// Minimal Suspense fallback while a lazy chunk loads. Uses the i18n instance
-// directly (not the hook) because this renders outside React render cycle
-// during Suspense transitions.
+// Minimal Suspense fallback while a lazy chunk loads.
 const LoadingFallback: React.FC = () => (
   <div className="flex items-center justify-center h-full min-h-[50vh]">
     <div className="animate-pulse text-sm text-muted-foreground">
@@ -81,35 +62,8 @@ const LoadingFallback: React.FC = () => (
   </div>
 )
 
-// Protected route wrapper.
-//
-// Gate logic (also triggered when a 401 clears the secret at runtime):
-//   - No baseUrl/secret          → redirect to /login
-//   - isConnecting (revalidating) → show loading probe (don't redirect yet)
-//   - !isConnected && !isConnecting → redirect to /login (revalidation failed
-//     or token was just cleared by a 401 — leaves no frozen/stale view)
-//   - isConnected                 → render children
-const RequireConnection: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { baseUrl, secret, isConnected, isConnecting } = useConnectionStore()
-  if (!baseUrl || !secret) {
-    return <Navigate to="/login" replace />
-  }
-  // While the startup revalidate probe is in flight, show a loading state so
-  // a page reload with valid persisted creds doesn't bounce through /login.
-  if (isConnecting && !isConnected) {
-    return <LoadingFallback />
-  }
-  // Credentials present but not connected (e.g. 401 cleared auth, or
-  // revalidation failed) → send to login instead of a frozen stale page.
-  if (!isConnected) {
-    return <Navigate to="/login" replace />
-  }
-  return <>{children}</>
-}
-
 // Per-route error boundary. Keyed on pathname so navigating to a different
-// route resets the boundary state — a broken lazy page won't brick the whole
-// app (nav stays accessible), and "Reset View" re-mounts the current route.
+// route resets the boundary state.
 const RouteErrorBoundary: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { pathname } = useLocation()
   return (
@@ -119,167 +73,205 @@ const RouteErrorBoundary: React.FC<{ children: React.ReactNode }> = ({ children 
   )
 }
 
+/**
+ * InstanceGuard — wraps the instance route tree. Checks that the instance ID
+ * from the route exists in the store. If not, redirects to home. If yes,
+ * wraps children in ConnectionProvider (which sets the active connection and
+ * provides a per-instance QueryClient).
+ */
+const InstanceGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { id } = useParams<{ id: string }>()
+  const instance = useInstanceStore((s) => s.instances.find((i) => i.id === id))
+
+  if (!id || !instance) {
+    return <Navigate to="/" replace />
+  }
+
+  return <ConnectionProvider instanceId={id}>{children}</ConnectionProvider>
+}
+
+/**
+ * ConnectionGate — inside ConnectionProvider, waits for the connection probe
+ * to finish before rendering children. Shows a loading state while connecting,
+ * or an error state if the connection failed.
+ */
+const ConnectionGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isConnecting, isConnected, error, reconnect } = useConnection()
+
+  if (isConnecting && !isConnected) {
+    return <LoadingFallback />
+  }
+
+  if (!isConnected && error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+        <div className="text-rose-500 text-lg font-semibold">{error}</div>
+        <button
+          onClick={reconnect}
+          className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm hover:bg-primary/90 transition-colors"
+        >
+          {i18n.t('common.retry', { defaultValue: 'Retry' })}
+        </button>
+      </div>
+    )
+  }
+
+  return <>{children}</>
+}
+
 export const App: React.FC = () => {
-  const revalidate = useConnectionStore((s) => s.revalidate)
-
-  // On startup, re-validate any persisted credentials against the CoreC
-  // instance. This flips isConnected→true when the saved session is still
-  // valid (so React Query hooks activate after a page refresh) or clears
-  // the connecting flag when it isn't (redirecting to /login).
-  useEffect(() => {
-    void revalidate()
-  }, [revalidate])
-
   return (
     <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <HashRouter>
-          <Routes>
-            {/* Public Connection Setup */}
-            <Route path="/login" element={<ConnectionPage />} />
+      <HashRouter>
+        <Routes>
+          {/* Homepage — instance management panel */}
+          <Route
+            path="/"
+            element={
+              <RouteErrorBoundary>
+                <InstancePanel />
+              </RouteErrorBoundary>
+            }
+          />
 
-            {/* Monitor Space (Public display & plant-floor monitoring) */}
-            <Route
-              path="/monitor"
-              element={
-                <RequireConnection>
+          {/* Global settings */}
+          <Route
+            path="/settings"
+            element={
+              <RouteErrorBoundary>
+                <GlobalSettingsPage />
+              </RouteErrorBoundary>
+            }
+          />
+
+          {/* Instance-scoped Monitor space */}
+          <Route
+            path="/corec/:id/monitor"
+            element={
+              <InstanceGuard>
+                <ConnectionGate>
                   <MonitorLayout />
-                </RequireConnection>
-              }
-            >
-              <Route index element={<Navigate to="/monitor/dashboard" replace />} />
-              <Route
-                path="dashboard"
-                element={
-                  <RouteErrorBoundary>
-                    <DashboardPage />
-                  </RouteErrorBoundary>
-                }
-              />
-              <Route
-                path="tags"
-                element={
-                  <RouteErrorBoundary>
-                    <TagExplorerPage />
-                  </RouteErrorBoundary>
-                }
-              />
-              <Route
-                path="alerts"
-                element={
-                  <RouteErrorBoundary>
-                    <AlertsPage />
-                  </RouteErrorBoundary>
-                }
-              />
-            </Route>
-
-            {/* Admin Space (Southbound, Northbound, Control, Config, etc.) */}
+                </ConnectionGate>
+              </InstanceGuard>
+            }
+          >
+            <Route index element={<Navigate to="dashboard" replace />} />
             <Route
-              path="/admin"
+              path="dashboard"
               element={
-                <RequireConnection>
-                  <AdminLayout />
-                </RequireConnection>
+                <RouteErrorBoundary>
+                  <DashboardPage />
+                </RouteErrorBoundary>
               }
-            >
-              <Route index element={<Navigate to="/admin/drivers" replace />} />
-              <Route
-                path="drivers"
-                element={
-                  <RouteErrorBoundary>
-                    <DriversPage />
-                  </RouteErrorBoundary>
-                }
-              />
-              <Route
-                path="drivers/:name"
-                element={
-                  <RouteErrorBoundary>
-                    <DriverDetailPage />
-                  </RouteErrorBoundary>
-                }
-              />
-              <Route
-                path="transports"
-                element={
-                  <RouteErrorBoundary>
-                    <TransportsPage />
-                  </RouteErrorBoundary>
-                }
-              />
-              <Route
-                path="transports/:name"
-                element={
-                  <RouteErrorBoundary>
-                    <TransportDetailPage />
-                  </RouteErrorBoundary>
-                }
-              />
-              <Route
-                path="rules"
-                element={
-                  <RouteErrorBoundary>
-                    <RulesPage />
-                  </RouteErrorBoundary>
-                }
-              />
-              <Route
-                path="write"
-                element={
-                  <RouteErrorBoundary>
-                    <WriteControlPage />
-                  </RouteErrorBoundary>
-                }
-              />
-              <Route
-                path="dashboard-editor"
-                element={
-                  <RouteErrorBoundary>
-                    <DashboardEditorPage />
-                  </RouteErrorBoundary>
-                }
-              />
-              <Route
-                path="config"
-                element={
-                  <RouteErrorBoundary>
-                    <ConfigCenterPage />
-                  </RouteErrorBoundary>
-                }
-              />
-              <Route
-                path="topology"
-                element={
-                  <RouteErrorBoundary>
-                    <TopologyPage />
-                  </RouteErrorBoundary>
-                }
-              />
-              <Route
-                path="diagnostics"
-                element={
-                  <RouteErrorBoundary>
-                    <DiagnosticsPage />
-                  </RouteErrorBoundary>
-                }
-              />
-              <Route
-                path="settings"
-                element={
-                  <RouteErrorBoundary>
-                    <SettingsPage />
-                  </RouteErrorBoundary>
-                }
-              />
-            </Route>
+            />
+            <Route
+              path="tags"
+              element={
+                <RouteErrorBoundary>
+                  <TagExplorerPage />
+                </RouteErrorBoundary>
+              }
+            />
+            <Route
+              path="alerts"
+              element={
+                <RouteErrorBoundary>
+                  <AlertsPage />
+                </RouteErrorBoundary>
+              }
+            />
+          </Route>
 
-            {/* Fallback */}
-            <Route path="/" element={<Navigate to="/monitor/dashboard" replace />} />
-            <Route path="*" element={<Navigate to="/monitor/dashboard" replace />} />
-          </Routes>
-        </HashRouter>
-      </QueryClientProvider>
+          {/* Instance-scoped Admin space */}
+          <Route
+            path="/corec/:id/admin"
+            element={
+              <InstanceGuard>
+                <ConnectionGate>
+                  <AdminLayout />
+                </ConnectionGate>
+              </InstanceGuard>
+            }
+          >
+            <Route index element={<Navigate to="drivers" replace />} />
+            <Route
+              path="drivers"
+              element={
+                <RouteErrorBoundary>
+                  <DriversPage />
+                </RouteErrorBoundary>
+              }
+            />
+            <Route
+              path="drivers/:name"
+              element={
+                <RouteErrorBoundary>
+                  <DriverDetailPage />
+                </RouteErrorBoundary>
+              }
+            />
+            <Route
+              path="transports"
+              element={
+                <RouteErrorBoundary>
+                  <TransportsPage />
+                </RouteErrorBoundary>
+              }
+            />
+            <Route
+              path="transports/:name"
+              element={
+                <RouteErrorBoundary>
+                  <TransportDetailPage />
+                </RouteErrorBoundary>
+              }
+            />
+            <Route
+              path="rules"
+              element={
+                <RouteErrorBoundary>
+                  <RulesPage />
+                </RouteErrorBoundary>
+              }
+            />
+            <Route
+              path="write"
+              element={
+                <RouteErrorBoundary>
+                  <WriteControlPage />
+                </RouteErrorBoundary>
+              }
+            />
+            <Route
+              path="config"
+              element={
+                <RouteErrorBoundary>
+                  <ConfigCenterPage />
+                </RouteErrorBoundary>
+              }
+            />
+            <Route
+              path="topology"
+              element={
+                <RouteErrorBoundary>
+                  <TopologyPage />
+                </RouteErrorBoundary>
+              }
+            />
+            <Route
+              path="diagnostics"
+              element={
+                <RouteErrorBoundary>
+                  <DiagnosticsPage />
+                </RouteErrorBoundary>
+              }
+            />
+          </Route>
+
+          {/* Fallback */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </HashRouter>
     </ErrorBoundary>
   )
 }

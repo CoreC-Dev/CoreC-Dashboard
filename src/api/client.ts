@@ -1,4 +1,4 @@
-import { useConnectionStore } from '@/stores/connectionStore'
+import { getActiveConnection } from './activeConnection'
 
 export class ApiError extends Error {
   status: number
@@ -24,29 +24,36 @@ export interface ApiRequestOptions extends RequestInit {
 /**
  * CoreC REST API request wrapper.
  *
+ * Reads connection parameters (baseUrl + secret) from the active connection
+ * singleton, which is set by the ConnectionProvider when the user enters a
+ * `/corec/:id/*` route.
+ *
  * Adds:
- * - Bearer token auth from the connection store.
+ * - Bearer token auth from the active connection.
  * - AbortController-based timeout (default 15s; overridable per-call via
  *   `options.signal` — caller-managed signals are respected and NOT
  *   auto-aborted).
- * - 401 handling: on unauthorized, clears the stored secret via `clearAuth()`
- *   so the RequireConnection gate redirects to /login instead of leaving the
- *   operator on a frozen page with stale data (a safety concern for a
- *   control dashboard).
+ * - 401 handling: throws ApiError with status 401 so the ConnectionProvider
+ *   can react (show reconnect prompt) instead of leaving the operator on a
+ *   frozen page with stale data.
  * - 204 No Content → returns undefined.
  */
 export async function apiRequest<T = any>(
   path: string,
   options: ApiRequestOptions = {},
 ): Promise<T> {
-  const { baseUrl, secret } = useConnectionStore.getState()
-  const cleanBase = baseUrl.trim().replace(/\/+$/, '')
+  const conn = getActiveConnection()
+  if (!conn) {
+    throw new ApiError(0, 'No active CoreC instance — navigate to /corec/:id/* first')
+  }
+
+  const cleanBase = conn.baseUrl.trim().replace(/\/+$/, '')
   const cleanPath = path.startsWith('/') ? path : `/${path}`
   const url = `${cleanBase}${cleanPath}`
 
   const headers = new Headers(options.headers || {})
-  if (secret) {
-    headers.set('Authorization', `Bearer ${secret}`)
+  if (conn.secret) {
+    headers.set('Authorization', `Bearer ${conn.secret}`)
   }
   if (!headers.has('Content-Type') && options.body && typeof options.body === 'string') {
     headers.set('Content-Type', 'application/json')
@@ -72,12 +79,6 @@ export async function apiRequest<T = any>(
     })
 
     if (!res.ok) {
-      // 401 → credentials are invalid/expired/revoked. Clear the stored
-      // secret so RequireConnection redirects to /login rather than leaving
-      // the operator on a frozen page with stale data.
-      if (res.status === 401) {
-        useConnectionStore.getState().clearAuth()
-      }
       const errorText = await res.text().catch(() => '')
       throw new ApiError(
         res.status,

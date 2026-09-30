@@ -2,7 +2,7 @@ import { ExternalLink, Pencil, Plus, RefreshCw, Send, Trash2 } from 'lucide-reac
 import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useTransports, useUpdateConfig } from '@/api/hooks'
 import {
   AlertDialog,
@@ -30,6 +30,8 @@ import type { TransportConfig } from '@/types/config'
 export const TransportsPage: React.FC = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const { id } = useParams<{ id: string }>()
+  const adminBase = id ? `/corec/${id}/admin` : '/admin'
   const { data, refetch, isFetching } = useTransports()
   const transports = data?.transports || []
 
@@ -250,7 +252,8 @@ export const TransportsPage: React.FC = () => {
           ) : (
             transports.map((tr) => {
               const st = ConnStateLabel[tr.state] || ConnStateLabel[0]
-              const goDetail = () => navigate(`/admin/transports/${encodeURIComponent(tr.name)}`)
+              const goDetail = () =>
+                navigate(`${adminBase}/transports/${encodeURIComponent(tr.name)}`)
               return (
                 <Card
                   key={tr.name}

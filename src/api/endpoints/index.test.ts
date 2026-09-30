@@ -1,25 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { useConnectionStore } from '@/stores/connectionStore'
+import { setActiveConnection } from '@/api/activeConnection'
 import { ApiError } from '../client'
 import { getConfigsRaw, validateConfigs } from './index'
-
-// Mock localStorage (connectionStore persists to it on setState).
-const localStorageMock = (() => {
-  let store: Record<string, string> = {}
-  return {
-    getItem: vi.fn((key: string) => store[key] ?? null),
-    setItem: vi.fn((key: string, value: string) => {
-      store[key] = value
-    }),
-    removeItem: vi.fn((key: string) => {
-      delete store[key]
-    }),
-    clear: vi.fn(() => {
-      store = {}
-    }),
-  }
-})()
-Object.defineProperty(globalThis, 'localStorage', { value: localStorageMock, writable: true })
 
 // Mock fetch — each test configures the response it expects.
 const mockFetch = vi.fn()
@@ -60,15 +42,11 @@ const VALID_YAML = [
 
 beforeEach(() => {
   mockFetch.mockReset()
-  localStorageMock.clear()
-  // Seed the connection store with auth so apiRequest builds a valid URL.
-  useConnectionStore.setState({
+  // Seed the active connection so apiRequest builds a valid URL.
+  setActiveConnection({
+    instanceId: 'test-instance',
     baseUrl: 'http://127.0.0.1:9090',
     secret: 'test-secret-token',
-    isConnected: true,
-    isConnecting: false,
-    lastError: null,
-    serverVersion: null,
   })
 })
 
@@ -185,7 +163,7 @@ describe('validateConfigs (POST /configs/validate)', () => {
     await expect(validateConfigs(VALID_YAML)).rejects.toThrow()
   })
 
-  it('clears auth on 401 (delegated to apiRequest)', async () => {
+  it('throws ApiError(401) on unauthorized', async () => {
     mockFetch.mockResolvedValueOnce(
       new Response('{"error":"unauthorized"}', {
         status: 401,
@@ -193,8 +171,6 @@ describe('validateConfigs (POST /configs/validate)', () => {
       }),
     )
 
-    await expect(validateConfigs(VALID_YAML)).rejects.toThrow()
-    // apiRequest clears the stored secret on 401 so the UI redirects to login.
-    expect(useConnectionStore.getState().secret).toBe('')
+    await expect(validateConfigs(VALID_YAML)).rejects.toThrow(ApiError)
   })
 })

@@ -1,56 +1,55 @@
 import {
   Activity,
+  ArrowLeft,
+  ChevronDown,
   Globe,
   Maximize2,
   Minimize2,
   Moon,
-  Radio,
   Settings,
   Sun,
   Unplug,
 } from 'lucide-react'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link, useLocation } from 'react-router-dom'
-import { useShallow } from 'zustand/react/shallow'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { setLocale } from '@/i18n'
-import { useConnectionStore } from '@/stores/connectionStore'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { useConnection } from '@/contexts/ConnectionContext'
+import i18n, { setLocale } from '@/i18n'
+import { useInstanceStore } from '@/stores/instanceStore'
 import { useThemeStore } from '@/stores/themeStore'
 
 export const TopBar: React.FC = () => {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
+  const { i18n: i18nInst } = useTranslation()
   const location = useLocation()
-  const { isConnected, baseUrl, serverName, serverVersion, disconnect } = useConnectionStore(
-    useShallow((s) => ({
-      isConnected: s.isConnected,
-      baseUrl: s.baseUrl,
-      serverName: s.serverName,
-      serverVersion: s.serverVersion,
-      disconnect: s.disconnect,
-    })),
-  )
-  const { theme, resolvedTheme, setTheme } = useThemeStore(
-    useShallow((s) => ({ theme: s.theme, resolvedTheme: s.resolvedTheme, setTheme: s.setTheme })),
-  )
+  const navigate = useNavigate()
+  const { id: instanceId } = useParams<{ id: string }>()
+  const { instance, isConnected, isConnecting, serverInfo, reconnect } = useConnection()
+  const instances = useInstanceStore((s) => s.instances)
+
+  const { theme, resolvedTheme, setTheme } = useThemeStore()
   const [isFullscreen, setIsFullscreen] = React.useState(false)
 
-  // Use the browser's fullscreenchange event as the single source of truth for
-  // the isFullscreen state. The previous optimistic setIsFullscreen calls in
-  // toggleFullscreen could desync from reality if requestFullscreen/exitFullscreen
-  // failed silently (e.g. user pressed Esc, or the promise rejected). [L-2]
   React.useEffect(() => {
     const handler = () => setIsFullscreen(Boolean(document.fullscreenElement))
     document.addEventListener('fullscreenchange', handler)
     return () => document.removeEventListener('fullscreenchange', handler)
   }, [])
 
-  const isMonitor = location.pathname.startsWith('/monitor')
+  const isMonitor = location.pathname.includes('/monitor')
+  const isAdmin = location.pathname.includes('/admin')
 
   const toggleFullscreen = () => {
-    // Guard against browsers where the Fullscreen API is absent or prefixed —
-    // calling an undefined method throws synchronously before .catch() attaches.
     const el = document.documentElement
     const elAny = el as HTMLElement & {
       webkitRequestFullscreen?: () => Promise<void> | void
@@ -66,7 +65,7 @@ export const TopBar: React.FC = () => {
           const ret = enter.call(el)
           if (ret && typeof ret.catch === 'function') ret.catch(() => {})
         } catch {
-          /* Fullscreen not available — state stays false via the listener */
+          /* Fullscreen not available */
         }
       }
     } else if (exit) {
@@ -74,11 +73,9 @@ export const TopBar: React.FC = () => {
         const ret = exit.call(document)
         if (ret && typeof ret.catch === 'function') ret.catch(() => {})
       } catch {
-        /* exitFullscreen rejected — state corrected by fullscreenchange */
+        /* exitFullscreen rejected */
       }
     }
-    // State is updated by the fullscreenchange listener above — no optimistic
-    // update here, so we never desync from the browser's actual fullscreen state.
   }
 
   const cycleTheme = () => {
@@ -88,48 +85,90 @@ export const TopBar: React.FC = () => {
   }
 
   const toggleLanguage = () => {
-    const nextLang = i18n.language.startsWith('zh') ? 'en' : 'zh-CN'
+    const nextLang = i18nInst.language.startsWith('zh') ? 'en' : 'zh-CN'
     setLocale(nextLang)
   }
 
+  const handleDisconnect = () => {
+    navigate('/')
+  }
+
+  const statusDot = isConnecting
+    ? 'bg-amber-400 animate-pulse'
+    : isConnected
+      ? 'bg-emerald-400'
+      : 'bg-rose-500'
+
+  // Build the Monitor/Admin switch links based on current instance
+  const monitorLink = instanceId ? `/corec/${instanceId}/monitor/dashboard` : '/'
+  const adminLink = instanceId ? `/corec/${instanceId}/admin/drivers` : '/'
+
   return (
     <header className="h-14 border-b border-border bg-card/60 backdrop-blur-md px-4 flex items-center justify-between z-30 sticky top-0">
-      {/* Brand & Connection Badge */}
-      <div className="flex items-center space-x-3">
-        <Link to="/" className="flex items-center space-x-2 font-bold text-lg tracking-tight">
-          <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center text-primary-foreground shadow-sm glow-primary">
-            <Radio className="w-4 h-4" />
-          </div>
-          <span className="font-extrabold bg-gradient-to-r from-primary to-blue-400 bg-clip-text text-transparent">
-            CoreC
-          </span>
-          <span className="text-xs px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono font-normal">
-            Dashboard
-          </span>
-        </Link>
+      {/* Left: back + instance name + switcher */}
+      <div className="flex items-center space-x-3 min-w-0">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate('/')}
+          className="h-8 w-8 text-muted-foreground hover:text-foreground shrink-0"
+          title={t('instances.backHome')}
+        >
+          <ArrowLeft className="w-4 h-4" />
+        </Button>
 
-        {/* Server Connection status */}
-        <div className="hidden sm:flex items-center pl-3 border-l border-border space-x-2 text-xs">
-          <span
-            className={`w-2 h-2 rounded-full ${
-              isConnected ? 'bg-emerald-400 glow-success' : 'bg-rose-500'
-            }`}
-          />
-          <span className="font-mono text-muted-foreground max-w-[160px] truncate" title={baseUrl}>
-            {serverName || baseUrl.replace(/^https?:\/\//, '')}
-          </span>
-          {serverVersion && (
-            <Badge variant="outline" className="text-[10px] font-mono py-0 h-4">
-              v{serverVersion}
-            </Badge>
-          )}
-        </div>
+        {instance && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex items-center space-x-2 px-2 py-1 rounded-md hover:bg-muted/60 transition-colors min-w-0">
+                <span className={`w-2 h-2 rounded-full shrink-0 ${statusDot}`} />
+                <span className="font-medium text-sm truncate max-w-[160px]">{instance.name}</span>
+                <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-56">
+              <DropdownMenuLabel>{t('instances.switchInstance')}</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {instances.map((inst) => (
+                <DropdownMenuItem
+                  key={inst.id}
+                  onClick={() => {
+                    // Navigate to the same space (monitor/admin) on the new instance
+                    const space = isMonitor
+                      ? 'monitor/dashboard'
+                      : isAdmin
+                        ? 'admin/drivers'
+                        : 'monitor/dashboard'
+                    navigate(`/corec/${inst.id}/${space}`)
+                  }}
+                  className={inst.id === instance.id ? 'bg-accent' : ''}
+                >
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full mr-2 shrink-0 ${
+                      inst.lastConnectedAt ? 'bg-emerald-400' : 'bg-zinc-400'
+                    }`}
+                  />
+                  <span className="truncate">{inst.name}</span>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+
+        {serverInfo?.version && (
+          <Badge
+            variant="outline"
+            className="text-[10px] font-mono py-0 h-4 shrink-0 hidden sm:flex"
+          >
+            v{serverInfo.version}
+          </Badge>
+        )}
       </div>
 
-      {/* Center Nav Switcher: Monitor vs Admin */}
-      <div className="flex items-center bg-muted/70 p-1 rounded-lg border border-border/50 text-xs">
+      {/* Center: Monitor / Admin switcher */}
+      <div className="flex items-center bg-muted/70 p-1 rounded-lg border border-border/50 text-xs shrink-0">
         <Link
-          to="/monitor/dashboard"
+          to={monitorLink}
           className={`flex items-center space-x-1.5 px-3 py-1 rounded-md transition-all ${
             isMonitor
               ? 'bg-background text-foreground shadow-sm font-medium'
@@ -140,9 +179,9 @@ export const TopBar: React.FC = () => {
           <span>{t('nav.monitor')}</span>
         </Link>
         <Link
-          to="/admin/drivers"
+          to={adminLink}
           className={`flex items-center space-x-1.5 px-3 py-1 rounded-md transition-all ${
-            !isMonitor
+            isAdmin
               ? 'bg-background text-foreground shadow-sm font-medium'
               : 'text-muted-foreground hover:text-foreground'
           }`}
@@ -152,9 +191,8 @@ export const TopBar: React.FC = () => {
         </Link>
       </div>
 
-      {/* Right Action Icons */}
-      <div className="flex items-center space-x-1 sm:space-x-2">
-        {/* Fullscreen Toggle */}
+      {/* Right: fullscreen, theme, language, disconnect */}
+      <div className="flex items-center space-x-1 sm:space-x-2 shrink-0">
         <Button
           variant="ghost"
           size="icon"
@@ -165,18 +203,6 @@ export const TopBar: React.FC = () => {
           {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
         </Button>
 
-        {/* Language Switcher */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={toggleLanguage}
-          className="h-8 px-2 text-xs font-mono text-muted-foreground hover:text-foreground flex items-center space-x-1"
-        >
-          <Globe className="w-3.5 h-3.5" />
-          <span>{i18n.language.startsWith('zh') ? '中' : 'EN'}</span>
-        </Button>
-
-        {/* Theme Switcher */}
         <Button
           variant="ghost"
           size="icon"
@@ -187,11 +213,20 @@ export const TopBar: React.FC = () => {
           {resolvedTheme === 'dark' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
         </Button>
 
-        {/* Disconnect / Setup */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={toggleLanguage}
+          className="h-8 px-2 text-xs font-mono text-muted-foreground hover:text-foreground flex items-center space-x-1"
+        >
+          <Globe className="w-3.5 h-3.5" />
+          <span>{i18nInst.language.startsWith('zh') ? '中' : 'EN'}</span>
+        </Button>
+
         <Button
           variant="ghost"
           size="icon"
-          onClick={disconnect}
+          onClick={handleDisconnect}
           title={t('connection.disconnect')}
           className="h-8 w-8 text-rose-400 hover:text-rose-500 hover:bg-rose-500/10"
         >

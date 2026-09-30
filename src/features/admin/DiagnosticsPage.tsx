@@ -2,13 +2,13 @@ import { Download, Gauge, RefreshCw } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { getActiveConnection } from '@/api/activeConnection'
 import { getMetricsText } from '@/api/endpoints'
 import { EventLogTerminal } from '@/components/admin/EventLogTerminal'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { type MetricEntry, parsePrometheusMetrics } from '@/lib/prometheus'
 import { formatNumber } from '@/lib/utils'
-import { useConnectionStore } from '@/stores/connectionStore'
 
 const PPROF_PROFILES = [
   'heap',
@@ -81,7 +81,9 @@ export const DiagnosticsPage: React.FC = () => {
   // download. Direct <a href> links would receive a 401 because pprof is
   // mounted inside CoreC's authed route group.
   const downloadPprof = async (profile: string) => {
-    const { baseUrl, secret } = useConnectionStore.getState()
+    const conn = getActiveConnection()
+    const baseUrl = conn?.baseUrl ?? ''
+    const secret = conn?.secret ?? ''
     const cleanBase = baseUrl.trim().replace(/\/+$/, '')
     const url = `${cleanBase}/debug/pprof/${profile}`
     setPprofLoading(profile)

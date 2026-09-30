@@ -1,4 +1,4 @@
-import { useConnectionStore } from '@/stores/connectionStore'
+import { getActiveConnection } from './activeConnection'
 
 export type WSStatus = 'connecting' | 'open' | 'closed' | 'error' | 'rejected'
 
@@ -44,7 +44,9 @@ export class CoreCWebSocket<T = unknown> {
   private connect() {
     if (this.isDestroyed) return
 
-    const { baseUrl, secret } = useConnectionStore.getState()
+    const conn = getActiveConnection()
+    const baseUrl = conn?.baseUrl ?? ''
+    const secret = conn?.secret ?? ''
 
     // If baseUrl isn't available yet (e.g., during startup revalidation),
     // schedule a short retry instead of silently no-oping forever.
@@ -138,10 +140,10 @@ export class CoreCWebSocket<T = unknown> {
   private scheduleReconnect() {
     if (this.isDestroyed) return
 
-    // Stop reconnecting if auth is gone (e.g. 401 cleared the secret) —
+    // Stop reconnecting if auth is gone (e.g. left the instance route) —
     // prevents livelock-reconnect with an invalid token.
-    const { secret } = useConnectionStore.getState()
-    if (!secret) {
+    const conn = getActiveConnection()
+    if (!conn?.secret) {
       this.onStatusCallback?.('rejected')
       return
     }
