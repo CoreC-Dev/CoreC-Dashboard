@@ -54,3 +54,30 @@ export function isZeroTime(ts: string | null | undefined): boolean {
   if (!Number.isNaN(d.getTime()) && d.getTime() <= 0) return true
   return false
 }
+
+/**
+ * Format a timestamp as a compact Chinese relative-time label
+ * (e.g. "刚刚", "3分钟前", "2小时前", "5天前"). Returns '' for a missing
+ * timestamp. Mirrors the helper used by InstanceCard so rule stat cells and
+ * instance cards share one presentation style.
+ */
+export function formatRelativeTime(ts: string | null | undefined): string {
+  if (!ts) return ''
+  const t = new Date(ts).getTime()
+  if (Number.isNaN(t)) return ''
+  const diff = Date.now() - t
+  if (diff < 60_000) return '刚刚'
+  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}分钟前`
+  if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}小时前`
+  return `${Math.floor(diff / 86_400_000)}天前`
+}
+
+/**
+ * Compact number formatter with k/M suffixes for card metrics.
+ * 0–999 → as-is; 1k–999k → "1.2k"; ≥1M → "3.4M".
+ */
+export function formatCompact(num: number): string {
+  if (num < 1000) return String(num)
+  if (num < 1_000_000) return `${(num / 1000).toFixed(1)}k`
+  return `${(num / 1_000_000).toFixed(1)}M`
+}

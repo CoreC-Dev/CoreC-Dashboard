@@ -9,16 +9,18 @@ import {
   Clock,
   RefreshCw,
   RotateCcw,
+  Search,
   ShieldAlert,
 } from 'lucide-react'
 import type React from 'react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useDeadLetters, useRules, useWriteTag } from '@/api/hooks'
 import { CoreCWebSocket } from '@/api/websocket'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
 import type { LogEvent, WriteCommand } from '@/types/models'
 
 const SOUND_KEY = 'corec_alert_sound'
@@ -92,6 +94,10 @@ export const AlertsPage: React.FC = () => {
   const [soundEnabled, setSoundEnabled] = useState(() => readPref(SOUND_KEY))
   const [notifEnabled, setNotifEnabled] = useState(() => readPref(NOTIF_KEY))
 
+  // Live feed filters
+  const [logFilter, setLogFilter] = useState('')
+  const [logLevel, setLogLevel] = useState<'all' | 'warning' | 'error'>('all')
+
   // Refs mirror the latest preference/translation values so the WebSocket
   // callback (created once on mount) always reads current state without
   // needing to resubscribe on every toggle.
@@ -150,6 +156,19 @@ export const AlertsPage: React.FC = () => {
 
   const deadLetters = deadLettersData?.failed_writes || []
   const alertRules = (rulesData?.rules || []).filter((r) => r.action === 'alert')
+
+  // Filter the live warning/error feed by text content and severity level.
+  // The WS handler already keeps only level >= 4 (warnings + errors); the level
+  // filter here narrows that further to warnings-only (4–7) or errors-only (8+).
+  const filteredLogs = useMemo(() => {
+    const term = logFilter.trim().toLowerCase()
+    return liveLogs.filter((log) => {
+      if (logLevel === 'warning' && log.level >= 8) return false
+      if (logLevel === 'error' && log.level < 8) return false
+      if (term && !log.payload.toLowerCase().includes(term)) return false
+      return true
+    })
+  }, [liveLogs, logFilter, logLevel])
 
   const handleRetryDeadLetter = async (cmd: WriteCommand) => {
     setRetryError(null)
@@ -328,15 +347,47 @@ export const AlertsPage: React.FC = () => {
           </div>
         </CardHeader>
         <CardContent className="p-4 pt-0">
+          {/* Feed filters */}
+          <div className="flex flex-col sm:flex-row items-center gap-2 mb-3">
+            <div className="relative flex-1 w-full">
+              <Search className="w-4 h-4 absolute left-3 top-2.5 text-muted-foreground" />
+              <Input
+                placeholder={t('alerts.filterPlaceholder', {
+                  defaultValue: 'Filter by content…',
+                })}
+                value={logFilter}
+                onChange={(e) => setLogFilter(e.target.value)}
+                className="pl-9 h-9 text-xs"
+              />
+            </div>
+            <select
+              value={logLevel}
+              onChange={(e) => setLogLevel(e.target.value as 'all' | 'warning' | 'error')}
+              className="h-9 px-3 rounded-md border border-input bg-transparent text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring shrink-0"
+            >
+              <option value="all">{t('alerts.levelAll', { defaultValue: 'All levels' })}</option>
+              <option value="warning">
+                {t('alerts.levelWarning', { defaultValue: 'Warning' })}
+              </option>
+              <option value="error">{t('alerts.levelError', { defaultValue: 'Error' })}</option>
+            </select>
+          </div>
+
           {liveLogs.length === 0 ? (
             <div className="py-8 text-center text-xs text-muted-foreground">
               {t('alerts.noEvents', {
                 defaultValue: 'No recent warning or error events emitted by CoreC core',
               })}
             </div>
+          ) : filteredLogs.length === 0 ? (
+            <div className="py-8 text-center text-xs text-muted-foreground">
+              {t('alerts.noMatchingEvents', {
+                defaultValue: 'No events match the current filter',
+              })}
+            </div>
           ) : (
             <div className="space-y-1.5 max-h-96 overflow-y-auto font-mono text-xs">
-              {liveLogs.map((log) => (
+              {filteredLogs.map((log) => (
                 <div
                   key={`${log.timestamp}-${log.level}-${log.type}-${log.payload.slice(0, 20)}`}
                   className={`p-2 rounded border flex items-start space-x-2 ${

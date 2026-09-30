@@ -3,7 +3,7 @@ import { AlertCircle, Check, Loader2, Pencil, Play, Plus, RefreshCw, Trash2 } fr
 import type React from 'react'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useRules, useToggleRule, useUpdateConfig } from '@/api/hooks'
+import { useConfigRaw, useRules, useToggleRule, useUpdateConfig } from '@/api/hooks'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,7 +39,8 @@ import { EntitySearchBar, filterEntities } from '@/components/wizard/EntitySearc
 import { ValidationBanner } from '@/components/wizard/ValidationBanner'
 import { RuleWizard } from '@/features/admin/RuleWizard'
 import { useConfigValidation } from '@/hooks/useConfigValidation'
-import { formatNumber, isZeroTime } from '@/lib/utils'
+import { parseConfigYaml } from '@/lib/configYaml'
+import { formatNumber, formatRelativeTime, isZeroTime } from '@/lib/utils'
 import { useConfigStore } from '@/stores/configStore'
 import type { RuleConfig } from '@/types/config'
 import type { RuleStat } from '@/types/models'
@@ -220,13 +221,21 @@ const LabeledSelect: React.FC<{
 )
 
 // Rule editor form state — the editable subset of a RuleStat that the dialog
-// binds to. Pre-filled from the selected rule on open.
+// binds to. Pre-filled from the selected rule on open. Transform fields are
+// only relevant when action === 'transform'; `targets` (comma-separated) is
+// only relevant when action === 'mirror'.
 interface EditFormData {
   name: string
   match: string
   action: RuleStat['action']
   target: string
+  /** Comma-separated target list for mirror rules. */
+  targets: string
   priority: number
+  /** Transform expression (action === 'transform' only). */
+  transformExpression: string
+  /** Optional tag-rename (action === 'transform' only). */
+  transformTagRename: string
 }
 
 // Action options for the editor's Select dropdown. The value is the wire
@@ -245,16 +254,45 @@ const EDIT_ACTION_OPTIONS: { value: RuleStat['action']; labelKey: string }[] = [
 const yamlScalar = (s: string): string => `'${s.replace(/'/g, "''")}'`
 
 // Build the CoreC config YAML payload for the edited rule, in the format
-// expected by PUT /configs (hot-reload).
-const buildRuleYaml = (data: EditFormData): string =>
-  [
+// expected by PUT /configs (hot-reload). Mirror rules emit a `targets:` array
+// (parsed from the comma-separated form field); transform rules emit a
+// `transform:` block with expression and optional tag-rename. All other
+// actions use the single `target:` field.
+const buildRuleYaml = (data: EditFormData): string => {
+  const lines: string[] = [
     'rules:',
     `  - name: ${yamlScalar(data.name)}`,
     `    match: ${yamlScalar(data.match)}`,
     `    action: ${data.action}`,
-    `    target: ${yamlScalar(data.target)}`,
-    `    priority: ${data.priority}`,
-  ].join('\n')
+  ]
+
+  if (data.action === 'mirror') {
+    const targets = data.targets
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean)
+    if (targets.length > 0) {
+      lines.push('    targets:')
+      for (const t of targets) lines.push(`      - ${yamlScalar(t)}`)
+    } else {
+      lines.push(`    target: ${yamlScalar('')}`)
+    }
+  } else {
+    lines.push(`    target: ${yamlScalar(data.target)}`)
+  }
+
+  lines.push(`    priority: ${data.priority}`)
+
+  if (data.action === 'transform') {
+    lines.push('    transform:')
+    lines.push(`      expression: ${yamlScalar(data.transformExpression)}`)
+    if (data.transformTagRename.trim()) {
+      lines.push(`      tag-rename: ${yamlScalar(data.transformTagRename.trim())}`)
+    }
+  }
+
+  return lines.join('\n')
+}
 
 export const RulesPage: React.FC = () => {
   const { t } = useTranslation()
@@ -262,6 +300,9 @@ export const RulesPage: React.FC = () => {
   const toggleMutation = useToggleRule()
   const updateMutation = useUpdateConfig()
   const queryClient = useQueryClient()
+  // Raw config YAML — used to pre-fill transform config for transform rules,
+  // since the runtime RuleStat does not include transform fields.
+  const { data: rawConfigYaml } = useConfigRaw()
 
   const rules = data?.rules || []
 
@@ -374,12 +415,37 @@ export const RulesPage: React.FC = () => {
     setEditRule(rule)
     // Prefer the multi-target list's first entry when the single `target`
     // field is empty (CoreC serializes targets as null when empty).
+    const singleTarget = (rule.target || rule.targets?.[0]) ?? ''
+    const targetsCsv =
+      rule.targets && rule.targets.length > 0 ? rule.targets.join(', ') : singleTarget
+
+    // Transform config is not part of the runtime RuleStat; look it up in the
+    // raw config YAML so the editor pre-fills the existing expression/tag-rename
+    // instead of blanking them on save.
+    let transformExpression = ''
+    let transformTagRename = ''
+    if (rule.action === 'transform' && rawConfigYaml) {
+      try {
+        const cfg = parseConfigYaml(rawConfigYaml)
+        const rl = cfg.rules?.find((r) => r.name === rule.name)
+        if (rl?.transform) {
+          transformExpression = rl.transform.expression ?? ''
+          transformTagRename = rl.transform['tag-rename'] ?? ''
+        }
+      } catch {
+        // Ignore parse errors — fall back to empty transform fields.
+      }
+    }
+
     setEditForm({
       name: rule.name,
       match: rule.match,
       action: rule.action,
-      target: (rule.target || rule.targets?.[0]) ?? '',
+      target: singleTarget,
+      targets: targetsCsv,
       priority: rule.priority,
+      transformExpression,
+      transformTagRename,
     })
     setEditStatus(null)
   }
@@ -697,6 +763,12 @@ export const RulesPage: React.FC = () => {
                               ? t('common.never')
                               : new Date(rule.hit_at).toLocaleTimeString()}
                           </div>
+                          <div className="text-[10px] text-muted-foreground">
+                            {t('rules.lastMiss')}:{' '}
+                            {isZeroTime(rule.miss_at)
+                              ? t('common.never')
+                              : formatRelativeTime(rule.miss_at)}
+                          </div>
                         </td>
                         <td className="px-4 py-3 text-right">
                           <Switch
@@ -893,11 +965,20 @@ export const RulesPage: React.FC = () => {
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <LabeledInput
-                  label={t('rules.edit.target')}
-                  value={editForm.target}
-                  onChange={(v) => setEditForm({ ...editForm, target: v })}
-                />
+                {editForm.action === 'mirror' ? (
+                  <LabeledInput
+                    label={t('rules.edit.targets')}
+                    value={editForm.targets}
+                    onChange={(v) => setEditForm({ ...editForm, targets: v })}
+                    placeholder={t('rules.edit.targetsPlaceholder')}
+                  />
+                ) : (
+                  <LabeledInput
+                    label={t('rules.edit.target')}
+                    value={editForm.target}
+                    onChange={(v) => setEditForm({ ...editForm, target: v })}
+                  />
+                )}
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-foreground">
                     {t('rules.edit.priority')}
@@ -914,6 +995,23 @@ export const RulesPage: React.FC = () => {
                   />
                 </div>
               </div>
+
+              {editForm.action === 'transform' && (
+                <div className="space-y-3 rounded-md border border-purple-500/20 bg-purple-500/5 p-3">
+                  <LabeledInput
+                    label={t('rules.edit.transformExpression')}
+                    value={editForm.transformExpression}
+                    onChange={(v) => setEditForm({ ...editForm, transformExpression: v })}
+                    placeholder={t('rules.edit.transformExpressionPlaceholder')}
+                  />
+                  <LabeledInput
+                    label={t('rules.edit.transformTagRename')}
+                    value={editForm.transformTagRename}
+                    onChange={(v) => setEditForm({ ...editForm, transformTagRename: v })}
+                    placeholder={t('rules.edit.transformTagRenamePlaceholder')}
+                  />
+                </div>
+              )}
 
               <div className="space-y-1.5">
                 <div className="text-xs font-semibold text-muted-foreground">

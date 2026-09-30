@@ -2,6 +2,7 @@ import { dump } from 'js-yaml'
 import {
   AlertCircle,
   Archive,
+  ChevronDown,
   Inbox,
   Layers,
   RefreshCw,
@@ -25,6 +26,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { parseConfigYaml } from '@/lib/configYaml'
+import { extractTransportYaml, getTransportConnectionFields } from '@/lib/connectionInfo'
 import { ConnStateLabel } from '@/lib/constants'
 import { formatNumber } from '@/lib/utils'
 import type { TransportStatus } from '@/types/models'
@@ -43,6 +45,8 @@ interface TransportEditField {
   group: 'settings' | 'top'
   options?: readonly string[]
   placeholder?: string
+  /** Whether this select field stores a YAML boolean (options are "true"/"false"). */
+  boolean?: boolean
 }
 
 const MQTT_FIELDS: readonly TransportEditField[] = [
@@ -54,7 +58,7 @@ const MQTT_FIELDS: readonly TransportEditField[] = [
     placeholder: 'tcp://broker.emqx.io:1883',
   },
   {
-    key: 'topic',
+    key: 'topic-template',
     labelKey: 'transports.editConfig.topic',
     kind: 'text',
     group: 'settings',
@@ -75,6 +79,63 @@ const MQTT_FIELDS: readonly TransportEditField[] = [
     options: ['0', '1', '2'],
   },
   {
+    key: 'data-topic',
+    labelKey: 'transports.editConfig.dataTopic',
+    kind: 'text',
+    group: 'settings',
+  },
+  {
+    key: 'command-topic',
+    labelKey: 'transports.editConfig.commandTopic',
+    kind: 'text',
+    group: 'settings',
+  },
+  {
+    key: 'retained',
+    labelKey: 'transports.editConfig.retained',
+    kind: 'select',
+    group: 'settings',
+    options: ['true', 'false'],
+    boolean: true,
+  },
+  {
+    key: 'clean-session',
+    labelKey: 'transports.editConfig.cleanSession',
+    kind: 'select',
+    group: 'settings',
+    options: ['true', 'false'],
+    boolean: true,
+  },
+  {
+    key: 'keep-alive',
+    labelKey: 'transports.editConfig.keepAlive',
+    kind: 'text',
+    group: 'settings',
+    placeholder: '30s',
+  },
+  {
+    key: 'connect-timeout',
+    labelKey: 'transports.editConfig.connectTimeout',
+    kind: 'text',
+    group: 'settings',
+    placeholder: '5s',
+  },
+  {
+    key: 'publish-timeout',
+    labelKey: 'transports.editConfig.publishTimeout',
+    kind: 'text',
+    group: 'settings',
+    placeholder: '10s',
+  },
+  {
+    key: 'auto-reconnect',
+    labelKey: 'transports.editConfig.autoReconnect',
+    kind: 'select',
+    group: 'settings',
+    options: ['true', 'false'],
+    boolean: true,
+  },
+  {
     key: 'username',
     labelKey: 'transports.editConfig.username',
     kind: 'text',
@@ -85,6 +146,20 @@ const MQTT_FIELDS: readonly TransportEditField[] = [
     labelKey: 'transports.editConfig.password',
     kind: 'text',
     group: 'settings',
+  },
+  {
+    key: 'retry-count',
+    labelKey: 'transports.editConfig.retryCount',
+    kind: 'number',
+    group: 'top',
+    placeholder: '3',
+  },
+  {
+    key: 'buffer-size',
+    labelKey: 'transports.editConfig.bufferSize',
+    kind: 'number',
+    group: 'top',
+    placeholder: '100',
   },
 ]
 
@@ -111,6 +186,47 @@ const HTTP_FIELDS: readonly TransportEditField[] = [
     placeholder: 'Content-Type:application/json',
   },
   {
+    key: 'webhook-addr',
+    labelKey: 'transports.editConfig.webhookAddr',
+    kind: 'text',
+    group: 'settings',
+    placeholder: '0.0.0.0:8080',
+  },
+  {
+    key: 'webhook-path',
+    labelKey: 'transports.editConfig.webhookPath',
+    kind: 'text',
+    group: 'settings',
+    placeholder: '/webhook',
+  },
+  {
+    key: 'webhook-secret',
+    labelKey: 'transports.editConfig.webhookSecret',
+    kind: 'text',
+    group: 'settings',
+  },
+  {
+    key: 'timeout',
+    labelKey: 'transports.editConfig.timeout',
+    kind: 'text',
+    group: 'settings',
+    placeholder: '10s',
+  },
+  {
+    key: 'max-idle-conns',
+    labelKey: 'transports.editConfig.maxIdleConns',
+    kind: 'number',
+    group: 'settings',
+    placeholder: '100',
+  },
+  {
+    key: 'idle-conn-timeout',
+    labelKey: 'transports.editConfig.idleConnTimeout',
+    kind: 'text',
+    group: 'settings',
+    placeholder: '90s',
+  },
+  {
     key: 'batch-size',
     labelKey: 'transports.editConfig.batchSize',
     kind: 'number',
@@ -123,6 +239,20 @@ const HTTP_FIELDS: readonly TransportEditField[] = [
     kind: 'text',
     group: 'top',
     placeholder: '1s',
+  },
+  {
+    key: 'retry-count',
+    labelKey: 'transports.editConfig.retryCount',
+    kind: 'number',
+    group: 'top',
+    placeholder: '3',
+  },
+  {
+    key: 'buffer-size',
+    labelKey: 'transports.editConfig.bufferSize',
+    kind: 'number',
+    group: 'top',
+    placeholder: '100',
   },
 ]
 
@@ -173,6 +303,8 @@ function buildTransportYaml(
       const headers = parseHeaders(raw)
       if (Object.keys(headers).length === 0) continue
       val = headers
+    } else if (f.boolean) {
+      val = raw === 'true'
     } else if (f.kind === 'number') {
       const n = Number(raw)
       val = Number.isNaN(n) ? raw : n
@@ -184,8 +316,8 @@ function buildTransportYaml(
   }
   const entry: Record<string, unknown> = { name: transport.name, type: transport.type }
   if (Object.keys(settings).length > 0) entry.settings = settings
-  if (top['batch-size'] !== undefined) entry['batch-size'] = top['batch-size']
-  if (top['flush-interval'] !== undefined) entry['flush-interval'] = top['flush-interval']
+  // Top-level transport fields (batch-size, flush-interval, retry-count, buffer-size).
+  for (const [k, v] of Object.entries(top)) entry[k] = v
   return dump({ transports: [entry] }, { skipInvalid: true, noRefs: true, lineWidth: -1 })
 }
 
@@ -275,6 +407,28 @@ export const TransportDetailPage: React.FC = () => {
   const { name, id } = useParams<{ name: string; id: string }>()
   const adminBase = id ? `/corec/${id}/admin` : '/admin'
   const { data: transport, isLoading, error, refetch, isFetching } = useTransport(name ?? '')
+  // Full config YAML (GET /configs/raw). The /transports endpoint returns only
+  // runtime status + counters, so connection params & the YAML snippet are read
+  // from here. React Query dedupes this with the fetch inside TransportEditConfigSection.
+  const { data: rawYaml, isLoading: configLoading } = useConfigRaw()
+  const [yamlOpen, setYamlOpen] = useState(false)
+
+  const config = useMemo(() => {
+    if (!rawYaml) return null
+    try {
+      return parseConfigYaml(rawYaml)
+    } catch {
+      return null
+    }
+  }, [rawYaml])
+  const connFields = useMemo(
+    () => (transport ? getTransportConnectionFields(config, transport.name) : []),
+    [config, transport],
+  )
+  const yamlSnippet = useMemo(
+    () => (rawYaml && transport ? extractTransportYaml(rawYaml, transport.name) : ''),
+    [rawYaml, transport],
+  )
 
   if (isLoading) {
     return (
@@ -493,6 +647,78 @@ export const TransportDetailPage: React.FC = () => {
             </Param>
           </div>
         </CardContent>
+      </Card>
+
+      {/* Connection Info (read-only, from /configs/raw) */}
+      <Card className="bg-card/60">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+            <Send className="h-4 w-4 text-primary" />
+            {t('transports.connectionInfo')}
+          </CardTitle>
+          <CardDescription>{t('transports.connectionInfoDesc')}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {configLoading ? (
+            <div className="text-xs text-muted-foreground">{t('common.loading')}</div>
+          ) : connFields.length === 0 ? (
+            <div className="text-xs text-muted-foreground">
+              {t('transports.connectionInfoEmpty')}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2">
+              {connFields.map((f) => (
+                <div key={f.label} className="min-w-0 space-y-1">
+                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                    {f.label}
+                  </div>
+                  <div
+                    className={`break-all font-mono text-xs ${
+                      f.primary ? 'font-bold text-foreground' : 'font-medium text-foreground/90'
+                    }`}
+                  >
+                    {f.value}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Current YAML config snippet (collapsible, collapsed by default) */}
+      <Card className="bg-card/60">
+        <CardHeader className="flex-row items-center justify-between space-y-0 pb-3">
+          <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+            <Layers className="h-4 w-4 text-primary" />
+            {t('transports.currentYaml')}
+          </CardTitle>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 px-2 text-xs text-muted-foreground"
+            onClick={() => setYamlOpen((o) => !o)}
+            aria-label={t('transports.currentYamlToggle')}
+            aria-expanded={yamlOpen}
+          >
+            <ChevronDown
+              className={`h-4 w-4 transition-transform ${yamlOpen ? 'rotate-180' : ''}`}
+            />
+          </Button>
+        </CardHeader>
+        {yamlOpen && (
+          <CardContent>
+            {yamlSnippet.trim() ? (
+              <pre className="max-h-72 overflow-auto rounded-lg border border-border/60 bg-zinc-950 p-3 font-mono text-[11px] leading-relaxed whitespace-pre-wrap break-all text-zinc-200">
+                {yamlSnippet}
+              </pre>
+            ) : (
+              <div className="text-xs text-muted-foreground">
+                {t('transports.currentYamlEmpty')}
+              </div>
+            )}
+          </CardContent>
+        )}
       </Card>
 
       {/* Edit Configuration (hot-reload via PUT /configs) */}

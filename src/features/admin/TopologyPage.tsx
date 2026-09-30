@@ -3,6 +3,7 @@ import type React from 'react'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
+  useConfigRaw,
   useConfigs,
   useDrivers,
   useRules,
@@ -12,6 +13,8 @@ import {
 } from '@/api/hooks'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
+import { parseConfigYaml } from '@/lib/configYaml'
+import { getDriverConnectionSummary, getTransportConnectionSummary } from '@/lib/connectionInfo'
 import { ConnStateLabel } from '@/lib/constants'
 import { formatNumber, formatUptime } from '@/lib/utils'
 
@@ -23,12 +26,25 @@ export const TopologyPage: React.FC = () => {
   const { data: stats, isError: statsError } = useStats()
   const { data: rulesData, isError: rulesError } = useRules()
   const { data: configsData } = useConfigs()
+  const { data: rawYaml } = useConfigRaw()
 
   const drivers = driversData?.drivers || []
   const transports = transportsData?.transports || []
   const rules = rulesData?.rules || []
   const activeRules = rules.filter((r) => !r.disabled)
   const sortedRules = useMemo(() => [...rules].sort((a, b) => a.priority - b.priority), [rules])
+
+  // Parse the raw config YAML once for connection-summary lookups. The raw
+  // config is not polled (no refetchInterval), so this only re-parses when the
+  // config is edited via PUT /configs.
+  const config = useMemo(() => {
+    if (!rawYaml) return null
+    try {
+      return parseConfigYaml(rawYaml)
+    } catch {
+      return null
+    }
+  }, [rawYaml])
 
   const hasError = serverInfoError || driversError || transportsError || statsError || rulesError
 
@@ -92,21 +108,27 @@ export const TopologyPage: React.FC = () => {
               ) : (
                 drivers.map((d) => {
                   const st = ConnStateLabel[d.state] || ConnStateLabel[0]
+                  const connSummary = getDriverConnectionSummary(config, d.name)
                   return (
                     <div
                       key={d.name}
                       className="p-3 rounded-lg border border-border/80 bg-card/40 flex items-center justify-between text-xs"
                     >
-                      <div className="flex items-center gap-2">
-                        <span className={`w-2 h-2 rounded-full ${st.dotColor}`} />
-                        <div>
-                          <div className="font-semibold text-foreground">{d.name}</div>
-                          <div className="text-[10px] text-muted-foreground font-mono">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className={`w-2 h-2 rounded-full shrink-0 ${st.dotColor}`} />
+                        <div className="min-w-0">
+                          <div className="font-semibold text-foreground truncate">{d.name}</div>
+                          <div className="text-[10px] text-muted-foreground font-mono truncate">
                             {d.type}
                           </div>
+                          {connSummary && (
+                            <div className="text-[10px] text-muted-foreground/70 font-mono truncate">
+                              {connSummary}
+                            </div>
+                          )}
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 shrink-0">
                         <Badge variant="outline" className="text-[10px]">
                           {t('topology.tagsCount', { count: d.tag_count })}
                         </Badge>
@@ -165,30 +187,64 @@ export const TopologyPage: React.FC = () => {
               ) : (
                 transports.map((transport) => {
                   const st = ConnStateLabel[transport.state] || ConnStateLabel[0]
+                  const connSummary = getTransportConnectionSummary(config, transport.name)
                   return (
                     <div
                       key={transport.name}
-                      className="p-3 rounded-lg border border-border/80 bg-card/40 flex items-center justify-between text-xs"
+                      className="p-3 rounded-lg border border-border/80 bg-card/40 text-xs"
                     >
-                      <div className="flex items-center gap-2">
-                        <span className={`w-2 h-2 rounded-full ${st.dotColor}`} />
-                        <div>
-                          <div className="font-semibold text-foreground">{transport.name}</div>
-                          <div className="text-[10px] text-muted-foreground font-mono">
-                            {transport.type}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className={`w-2 h-2 rounded-full shrink-0 ${st.dotColor}`} />
+                          <div className="min-w-0">
+                            <div className="font-semibold text-foreground truncate">
+                              {transport.name}
+                            </div>
+                            <div className="text-[10px] text-muted-foreground font-mono truncate">
+                              {transport.type}
+                            </div>
                           </div>
                         </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <Badge variant="outline" className="text-[10px]">
+                            {t('topology.publishedSent', {
+                              count: formatNumber(transport.published),
+                            })}
+                          </Badge>
+                          <Badge variant="outline" className={`text-[10px] ${st.badgeColor}`}>
+                            {t(st.key)}
+                          </Badge>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-[10px]">
-                          {t('topology.publishedSent', {
-                            count: formatNumber(transport.published),
-                          })}
-                        </Badge>
-                        <Badge variant="outline" className={`text-[10px] ${st.badgeColor}`}>
-                          {t(st.key)}
-                        </Badge>
-                      </div>
+                      {(connSummary ||
+                        transport.failed ||
+                        transport.received ||
+                        transport.queue_size ||
+                        transport.dropped_commands) && (
+                        <div className="mt-1.5 flex items-center justify-between gap-2 pl-4">
+                          <div className="text-[10px] text-muted-foreground/70 font-mono truncate min-w-0">
+                            {connSummary}
+                          </div>
+                          <div className="text-[10px] text-muted-foreground font-mono shrink-0 flex items-center gap-2">
+                            <span>
+                              {t('topology.received', { defaultValue: 'rcv' })}:
+                              {formatNumber(transport.received)}
+                            </span>
+                            <span className="text-rose-400">
+                              {t('topology.failed', { defaultValue: 'fail' })}:
+                              {formatNumber(transport.failed)}
+                            </span>
+                            <span>
+                              {t('topology.queueSize', { defaultValue: 'q' })}:
+                              {transport.queue_size}
+                            </span>
+                            <span className="text-amber-400">
+                              {t('topology.droppedCmds', { defaultValue: 'drop' })}:
+                              {formatNumber(transport.dropped_commands)}
+                            </span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )
                 })

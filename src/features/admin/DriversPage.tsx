@@ -1,8 +1,9 @@
 import { AlertCircle, Cpu, ExternalLink, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react'
 import type React from 'react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useDrivers, useDriverTags, useUpdateConfig } from '@/api/hooks'
+import { useNavigate, useParams } from 'react-router-dom'
+import { useConfigRaw, useDrivers, useDriverTags, useUpdateConfig } from '@/api/hooks'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,6 +29,8 @@ import { EntitySearchBar, filterEntities } from '@/components/wizard/EntitySearc
 import { ValidationBanner } from '@/components/wizard/ValidationBanner'
 import { DriverWizard } from '@/features/admin/DriverWizard'
 import { useConfigValidation } from '@/hooks/useConfigValidation'
+import { parseConfigYaml } from '@/lib/configYaml'
+import { getDriverConnectionSummary } from '@/lib/connectionInfo'
 import { ConnStateLabel, QualityLabel } from '@/lib/constants'
 import { formatNumber, isZeroTime } from '@/lib/utils'
 import { useConfigStore } from '@/stores/configStore'
@@ -36,8 +39,13 @@ import type { DriverStatus } from '@/types/models'
 
 export const DriversPage: React.FC = () => {
   const { t } = useTranslation()
+  const navigate = useNavigate()
+  const { id } = useParams<{ id: string }>()
+  const adminBase = id ? `/corec/${id}/admin` : '/admin'
   const { data, refetch, isFetching } = useDrivers()
   const [selectedDriver, setSelectedDriver] = useState<DriverStatus | null>(null)
+  const { data: rawYaml } = useConfigRaw()
+  const parsedConfig = useMemo(() => (rawYaml ? parseConfigYaml(rawYaml) : null), [rawYaml])
 
   // Config editing state
   const workingConfig = useConfigStore((s) => s.workingConfig)
@@ -197,6 +205,15 @@ export const DriversPage: React.FC = () => {
                         <CardDescription className="text-[11px] font-mono">
                           {drv.type}
                         </CardDescription>
+                        {(() => {
+                          const summary = getDriverConnectionSummary(workingConfig, drv.name)
+                          if (!summary) return null
+                          return (
+                            <div className="text-[10px] text-muted-foreground/80 font-mono mt-0.5 truncate">
+                              {summary}
+                            </div>
+                          )
+                        })()}
                       </div>
                     </div>
                     <div className="flex items-center gap-1">
@@ -264,11 +281,11 @@ export const DriversPage: React.FC = () => {
                   role="button"
                   aria-label={`${drv.name} — ${st}`}
                   className="border-border/80 bg-card/60 hover:border-primary/40 transition-all cursor-pointer group focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                  onClick={() => setSelectedDriver(drv)}
+                  onClick={() => navigate(`${adminBase}/drivers/${encodeURIComponent(drv.name)}`)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault()
-                      setSelectedDriver(drv)
+                      navigate(`${adminBase}/drivers/${encodeURIComponent(drv.name)}`)
                     }
                   }}
                 >
@@ -283,6 +300,15 @@ export const DriversPage: React.FC = () => {
                           <CardDescription className="text-[11px] font-mono">
                             {drv.type}
                           </CardDescription>
+                          {(() => {
+                            const summary = getDriverConnectionSummary(parsedConfig, drv.name)
+                            if (!summary) return null
+                            return (
+                              <div className="text-[10px] text-muted-foreground/80 font-mono mt-0.5 truncate">
+                                {summary}
+                              </div>
+                            )
+                          })()}
                         </div>
                       </div>
                       <Badge variant="outline" className={`text-[10px] ${st.badgeColor}`}>
@@ -338,9 +364,21 @@ export const DriversPage: React.FC = () => {
                       </div>
                     )}
 
-                    <div className="pt-1 flex items-center justify-end text-[11px] text-primary group-hover:underline">
-                      <span>{t('drivers.viewDetails')}</span>
-                      <ExternalLink className="w-3 h-3 ml-1" />
+                    <div className="pt-1 flex items-center justify-between text-[11px]">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setSelectedDriver(drv)
+                        }}
+                        className="text-muted-foreground hover:text-primary hover:underline"
+                      >
+                        {t('drivers.viewTags')}
+                      </button>
+                      <div className="flex items-center text-primary group-hover:underline">
+                        <span>{t('drivers.viewDetails')}</span>
+                        <ExternalLink className="w-3 h-3 ml-1" />
+                      </div>
                     </div>
                   </CardContent>
                 </Card>

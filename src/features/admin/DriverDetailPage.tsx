@@ -1,5 +1,13 @@
 import { dump } from 'js-yaml'
-import { AlertCircle, Cpu, Database, RefreshCw, RotateCcw } from 'lucide-react'
+import {
+  AlertCircle,
+  ChevronDown,
+  Cpu,
+  Database,
+  FileCode2,
+  RefreshCw,
+  RotateCcw,
+} from 'lucide-react'
 import type React from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -16,6 +24,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { parseConfigYaml } from '@/lib/configYaml'
+import { extractDriverYaml, getDriverConnectionFields } from '@/lib/connectionInfo'
 import { ConnStateLabel, QualityLabel } from '@/lib/constants'
 import { formatNumber } from '@/lib/utils'
 import type { DriverStatus } from '@/types/models'
@@ -39,11 +48,74 @@ const MODBUS_TCP_FIELDS: readonly DriverEditField[] = [
   { key: 'host', labelKey: 'drivers.editConfig.host', kind: 'text', placeholder: '192.168.1.100' },
   { key: 'port', labelKey: 'drivers.editConfig.port', kind: 'number', placeholder: '502' },
   { key: 'slave-id', labelKey: 'drivers.editConfig.slaveId', kind: 'number', placeholder: '1' },
+  { key: 'timeout', labelKey: 'drivers.editConfig.timeout', kind: 'text', placeholder: '5s' },
+  { key: 'retry', labelKey: 'drivers.editConfig.retry', kind: 'number', placeholder: '3' },
+  {
+    key: 'reconnect-interval',
+    labelKey: 'drivers.editConfig.reconnectInterval',
+    kind: 'text',
+    placeholder: '1s',
+  },
+  {
+    key: 'reconnect-max-interval',
+    labelKey: 'drivers.editConfig.reconnectMaxInterval',
+    kind: 'text',
+    placeholder: '30s',
+  },
+  {
+    key: 'max-reconnect-failures',
+    labelKey: 'drivers.editConfig.maxReconnectFailures',
+    kind: 'number',
+    placeholder: '10',
+  },
   {
     key: 'tags-file',
     labelKey: 'drivers.editConfig.tagsFile',
     kind: 'text',
     placeholder: 'tags.yaml',
+  },
+  {
+    key: 'tags-interval',
+    labelKey: 'drivers.editConfig.tagsInterval',
+    kind: 'text',
+    placeholder: '1s',
+  },
+]
+
+const MODBUS_TLS_FIELDS: readonly DriverEditField[] = [
+  { key: 'host', labelKey: 'drivers.editConfig.host', kind: 'text', placeholder: '192.168.1.100' },
+  { key: 'port', labelKey: 'drivers.editConfig.port', kind: 'number', placeholder: '502' },
+  { key: 'slave-id', labelKey: 'drivers.editConfig.slaveId', kind: 'number', placeholder: '1' },
+  { key: 'timeout', labelKey: 'drivers.editConfig.timeout', kind: 'text', placeholder: '5s' },
+  {
+    key: 'cert-file',
+    labelKey: 'drivers.editConfig.certFile',
+    kind: 'text',
+    placeholder: '/path/to/cert.pem',
+  },
+  {
+    key: 'key-file',
+    labelKey: 'drivers.editConfig.keyFile',
+    kind: 'text',
+    placeholder: '/path/to/key.pem',
+  },
+  {
+    key: 'ca-file',
+    labelKey: 'drivers.editConfig.caFile',
+    kind: 'text',
+    placeholder: '/path/to/ca.pem',
+  },
+  {
+    key: 'tags-file',
+    labelKey: 'drivers.editConfig.tagsFile',
+    kind: 'text',
+    placeholder: 'tags.yaml',
+  },
+  {
+    key: 'tags-interval',
+    labelKey: 'drivers.editConfig.tagsInterval',
+    kind: 'text',
+    placeholder: '1s',
   },
 ]
 
@@ -79,12 +151,44 @@ const MODBUS_RTU_FIELDS: readonly DriverEditField[] = [
     options: ['1', '2'],
   },
   { key: 'slave-id', labelKey: 'drivers.editConfig.slaveId', kind: 'number', placeholder: '1' },
+  {
+    key: 'tags-file',
+    labelKey: 'drivers.editConfig.tagsFile',
+    kind: 'text',
+    placeholder: 'tags.yaml',
+  },
+  {
+    key: 'tags-interval',
+    labelKey: 'drivers.editConfig.tagsInterval',
+    kind: 'text',
+    placeholder: '1s',
+  },
 ]
 
 const S7_FIELDS: readonly DriverEditField[] = [
   { key: 'host', labelKey: 'drivers.editConfig.host', kind: 'text', placeholder: '192.168.1.10' },
+  { key: 'port', labelKey: 'drivers.editConfig.port', kind: 'number', placeholder: '102' },
   { key: 'rack', labelKey: 'drivers.editConfig.rack', kind: 'number', placeholder: '0' },
   { key: 'slot', labelKey: 'drivers.editConfig.slot', kind: 'number', placeholder: '1' },
+  {
+    key: 'idle-timeout',
+    labelKey: 'drivers.editConfig.idleTimeout',
+    kind: 'text',
+    placeholder: '30s',
+  },
+  { key: 'timeout', labelKey: 'drivers.editConfig.timeout', kind: 'text', placeholder: '5s' },
+  {
+    key: 'tags-file',
+    labelKey: 'drivers.editConfig.tagsFile',
+    kind: 'text',
+    placeholder: 'tags.yaml',
+  },
+  {
+    key: 'tags-interval',
+    labelKey: 'drivers.editConfig.tagsInterval',
+    kind: 'text',
+    placeholder: '1s',
+  },
 ]
 
 const OPCUA_FIELDS: readonly DriverEditField[] = [
@@ -93,6 +197,12 @@ const OPCUA_FIELDS: readonly DriverEditField[] = [
     labelKey: 'drivers.editConfig.endpoint',
     kind: 'text',
     placeholder: 'opc.tcp://192.168.1.20:4840',
+  },
+  {
+    key: 'mode',
+    labelKey: 'drivers.editConfig.mode',
+    kind: 'select',
+    options: ['polling', 'subscription'],
   },
   {
     key: 'security-policy',
@@ -113,13 +223,60 @@ const OPCUA_FIELDS: readonly DriverEditField[] = [
     kind: 'select',
     options: ['None', 'Sign', 'SignAndEncrypt'],
   },
+  { key: 'username', labelKey: 'drivers.editConfig.username', kind: 'text' },
+  { key: 'password', labelKey: 'drivers.editConfig.password', kind: 'text' },
+  {
+    key: 'subscription-interval',
+    labelKey: 'drivers.editConfig.subscriptionInterval',
+    kind: 'text',
+    placeholder: '500ms',
+  },
+  {
+    key: 'subscription-buffer',
+    labelKey: 'drivers.editConfig.subscriptionBuffer',
+    kind: 'number',
+    placeholder: '100',
+  },
+  {
+    key: 'max-batch-size',
+    labelKey: 'drivers.editConfig.maxBatchSize',
+    kind: 'number',
+    placeholder: '1000',
+  },
+  {
+    key: 'cert-file',
+    labelKey: 'drivers.editConfig.certFile',
+    kind: 'text',
+    placeholder: '/path/to/cert.pem',
+  },
+  {
+    key: 'key-file',
+    labelKey: 'drivers.editConfig.keyFile',
+    kind: 'text',
+    placeholder: '/path/to/key.pem',
+  },
+  { key: 'timeout', labelKey: 'drivers.editConfig.timeout', kind: 'text', placeholder: '5s' },
+  {
+    key: 'tags-file',
+    labelKey: 'drivers.editConfig.tagsFile',
+    kind: 'text',
+    placeholder: 'tags.yaml',
+  },
+  {
+    key: 'tags-interval',
+    labelKey: 'drivers.editConfig.tagsInterval',
+    kind: 'text',
+    placeholder: '1s',
+  },
 ]
 
 function getDriverFields(type: string): readonly DriverEditField[] {
   const lower = type.toLowerCase()
   if (lower.includes('modbus')) {
-    if (lower.includes('tcp') || lower.includes('tls')) return MODBUS_TCP_FIELDS
-    if (lower.includes('rtu') || lower.includes('udp')) return MODBUS_RTU_FIELDS
+    if (lower.includes('tls')) return MODBUS_TLS_FIELDS
+    // Pure serial RTU (not RTU-over-TCP/UDP) uses serial fields.
+    if (lower.includes('rtu') && !lower.includes('over')) return MODBUS_RTU_FIELDS
+    // tcp, udp, rtuovertcp, rtuoverudp → TCP-style host/port fields.
     return MODBUS_TCP_FIELDS
   }
   if (lower.includes('s7')) return S7_FIELDS
@@ -256,6 +413,17 @@ export const DriverDetailPage: React.FC = () => {
   const adminBase = id ? `/corec/${id}/admin` : '/admin'
   const { data: driver, isLoading, error, refetch, isFetching } = useDriver(name ?? '')
   const { data: tagsData, isLoading: tagsLoading } = useDriverTags(name ?? '')
+  const { data: rawYaml } = useConfigRaw()
+  const config = useMemo(() => (rawYaml ? parseConfigYaml(rawYaml) : null), [rawYaml])
+  const connFields = useMemo(
+    () => (driver ? getDriverConnectionFields(config, driver.name) : []),
+    [config, driver],
+  )
+  const yamlSnippet = useMemo(
+    () => (rawYaml && driver ? extractDriverYaml(rawYaml, driver.name) : ''),
+    [rawYaml, driver],
+  )
+  const [yamlOpen, setYamlOpen] = useState(false)
 
   if (isLoading) {
     return (
@@ -415,6 +583,73 @@ export const DriverDetailPage: React.FC = () => {
             <div className="text-[11px] text-muted-foreground">{t('drivers.noRecentErrors')}</div>
           )}
         </CardContent>
+      </Card>
+
+      {/* Connection Info (read-only, from current config) */}
+      <Card className="bg-card/60">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+            <Cpu className="h-4 w-4 text-primary" />
+            {t('drivers.connectionInfo')}
+          </CardTitle>
+          <CardDescription>{t('drivers.connectionInfoDesc')}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {connFields.length === 0 ? (
+            <div className="text-xs text-muted-foreground">{t('drivers.noConnectionInfo')}</div>
+          ) : (
+            <div className="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2">
+              {connFields.map((field) => (
+                <div key={field.label} className="min-w-0 space-y-1">
+                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                    {field.label}
+                  </div>
+                  <div
+                    className={`break-all font-mono text-xs ${field.primary ? 'font-bold text-foreground' : 'font-medium text-foreground/90'}`}
+                  >
+                    {field.value}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Current YAML snippet (read-only, collapsible) */}
+      <Card className="bg-card/60">
+        <CardHeader className="flex-row items-center justify-between space-y-0 pb-3">
+          <div className="flex items-center gap-2">
+            <FileCode2 className="h-4 w-4 text-primary" />
+            <div>
+              <CardTitle className="text-sm font-semibold">{t('drivers.currentYaml')}</CardTitle>
+              <CardDescription>{t('drivers.currentYamlDesc')}</CardDescription>
+            </div>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 px-2 text-xs text-muted-foreground"
+            onClick={() => setYamlOpen((o) => !o)}
+            aria-label={t('drivers.currentYamlToggle')}
+            aria-expanded={yamlOpen}
+          >
+            <ChevronDown
+              className={`h-4 w-4 transition-transform ${yamlOpen ? 'rotate-180' : ''}`}
+            />
+          </Button>
+        </CardHeader>
+        {yamlOpen && (
+          <CardContent>
+            {yamlSnippet.trim() ? (
+              <pre className="max-h-96 overflow-auto rounded-lg border border-border/60 bg-zinc-950 p-3 font-mono text-[11px] leading-relaxed whitespace-pre-wrap break-all text-zinc-100">
+                {yamlSnippet}
+              </pre>
+            ) : (
+              <div className="text-xs text-muted-foreground">{t('drivers.noYaml')}</div>
+            )}
+          </CardContent>
+        )}
       </Card>
 
       {/* Edit Configuration (hot-reload via PUT /configs) */}

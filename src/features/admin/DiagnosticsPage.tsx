@@ -1,4 +1,4 @@
-import { Download, Gauge, RefreshCw } from 'lucide-react'
+import { AlertCircle, Download, Gauge, RefreshCw } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -7,8 +7,11 @@ import { getMetricsText } from '@/api/endpoints'
 import { EventLogTerminal } from '@/components/admin/EventLogTerminal'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Switch } from '@/components/ui/switch'
 import { type MetricEntry, parsePrometheusMetrics } from '@/lib/prometheus'
 import { formatNumber } from '@/lib/utils'
+
+const METRICS_AUTO_REFRESH_MS = 12_000
 
 const PPROF_PROFILES = [
   'heap',
@@ -56,9 +59,11 @@ export const DiagnosticsPage: React.FC = () => {
   // Metrics state
   const [metrics, setMetrics] = useState<MetricEntry[]>([])
   const [loadingMetrics, setLoadingMetrics] = useState(false)
+  const [autoRefresh, setAutoRefresh] = useState(true)
 
   // pprof download state
   const [pprofLoading, setPprofLoading] = useState<string | null>(null)
+  const [pprofError, setPprofError] = useState<string | null>(null)
 
   const fetchMetrics = useCallback(async () => {
     setLoadingMetrics(true)
@@ -77,6 +82,16 @@ export const DiagnosticsPage: React.FC = () => {
     fetchMetrics()
   }, [fetchMetrics])
 
+  // Auto-refresh metrics on a fixed interval. Re-creates the timer whenever the
+  // toggle flips so turning it off immediately stops polling.
+  useEffect(() => {
+    if (!autoRefresh) return
+    const id = setInterval(() => {
+      fetchMetrics()
+    }, METRICS_AUTO_REFRESH_MS)
+    return () => clearInterval(id)
+  }, [autoRefresh, fetchMetrics])
+
   // Fetch a pprof profile with the Bearer auth header and trigger a local
   // download. Direct <a href> links would receive a 401 because pprof is
   // mounted inside CoreC's authed route group.
@@ -87,6 +102,7 @@ export const DiagnosticsPage: React.FC = () => {
     const cleanBase = baseUrl.trim().replace(/\/+$/, '')
     const url = `${cleanBase}/debug/pprof/${profile}`
     setPprofLoading(profile)
+    setPprofError(null)
     try {
       const res = await fetch(url, {
         headers: { Authorization: `Bearer ${secret}` },
@@ -109,7 +125,7 @@ export const DiagnosticsPage: React.FC = () => {
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e)
       console.error('pprof download failed', e)
-      alert(t('diagnostics.pprofFetchFailed', { profile, error: msg }))
+      setPprofError(t('diagnostics.pprofFetchFailed', { profile, error: msg }))
     } finally {
       setPprofLoading(null)
     }
@@ -168,16 +184,26 @@ export const DiagnosticsPage: React.FC = () => {
             </CardTitle>
             <CardDescription className="text-xs">{t('diagnostics.metricsDesc')}</CardDescription>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={fetchMetrics}
-            disabled={loadingMetrics}
-            className="h-8 text-xs"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${loadingMetrics ? 'animate-spin' : ''}`} />
-            <span>{t('common.refresh')}</span>
-          </Button>
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer select-none">
+              <Switch
+                checked={autoRefresh}
+                onCheckedChange={setAutoRefresh}
+                aria-label={t('diagnostics.autoRefresh', { defaultValue: 'Auto-refresh' })}
+              />
+              <span>{t('diagnostics.autoRefresh', { defaultValue: 'Auto-refresh' })}</span>
+            </label>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={fetchMetrics}
+              disabled={loadingMetrics}
+              className="h-8 text-xs"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${loadingMetrics ? 'animate-spin' : ''}`} />
+              <span>{t('common.refresh')}</span>
+            </Button>
+          </div>
         </CardHeader>
 
         <CardContent className="p-4 pt-0">
@@ -379,6 +405,12 @@ export const DiagnosticsPage: React.FC = () => {
           <CardDescription className="text-xs">{t('diagnostics.pprofDesc')}</CardDescription>
         </CardHeader>
         <CardContent className="p-4 pt-0">
+          {pprofError && (
+            <div className="mb-3 p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-start space-x-2">
+              <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+              <span className="break-all">{pprofError}</span>
+            </div>
+          )}
           <div className="flex flex-wrap gap-2 text-xs">
             {PPROF_PROFILES.map((p) => {
               const loading = pprofLoading === p

@@ -6,7 +6,18 @@ import {
   LineSeries,
   type UTCTimestamp,
 } from 'lightweight-charts'
-import { Activity, AlertCircle, Loader2, RefreshCw, Search, Send, X } from 'lucide-react'
+import {
+  Activity,
+  AlertCircle,
+  ArrowDown,
+  ArrowUp,
+  ChevronsUpDown,
+  Loader2,
+  RefreshCw,
+  Search,
+  Send,
+  X,
+} from 'lucide-react'
 import type React from 'react'
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -209,6 +220,9 @@ export const TagExplorerPage: React.FC = () => {
   const [flashTick, setFlashTick] = useState<Record<string, number>>({})
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedDriver, setSelectedDriver] = useState<string>('all')
+  const [selectedGroup, setSelectedGroup] = useState<string>('all')
+  const [sortKey, setSortKey] = useState<'tag' | 'timestamp' | null>(null)
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
   const [selectedTagForWrite, setSelectedTagForWrite] = useState<DataPoint | null>(null)
   const [writeValue, setWriteValue] = useState('')
   const [writeError, setWriteError] = useState<string | null>(null)
@@ -446,10 +460,31 @@ export const TagExplorerPage: React.FC = () => {
   // high-frequency /tags/stream updates.
   const tagsList = useMemo(() => Object.values(tagMap), [tagMap])
 
+  // Extract unique non-empty group names for the group filter dropdown.
+  const uniqueGroups = useMemo(() => {
+    const groups = new Set<string>()
+    for (const pt of tagsList) {
+      if (pt.group) groups.add(pt.group)
+    }
+    return Array.from(groups).sort()
+  }, [tagsList])
+
+  const toggleSort = useCallback((key: 'tag' | 'timestamp') => {
+    setSortKey((prev) => {
+      if (prev !== key) {
+        setSortDir('asc')
+        return key
+      }
+      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
+      return prev
+    })
+  }, [])
+
   const filteredTags = useMemo(() => {
     const term = searchTerm.toLowerCase()
-    return tagsList.filter((pt) => {
+    const filtered = tagsList.filter((pt) => {
       if (selectedDriver !== 'all' && pt.driver !== selectedDriver) return false
+      if (selectedGroup !== 'all' && pt.group !== selectedGroup) return false
       if (term) {
         const match =
           pt.tag.toLowerCase().includes(term) ||
@@ -459,7 +494,17 @@ export const TagExplorerPage: React.FC = () => {
       }
       return true
     })
-  }, [tagsList, searchTerm, selectedDriver])
+    if (!sortKey) return filtered
+    return [...filtered].sort((a, b) => {
+      let cmp = 0
+      if (sortKey === 'tag') {
+        cmp = a.tag.localeCompare(b.tag)
+      } else {
+        cmp = toSeconds(a.timestamp) - toSeconds(b.timestamp)
+      }
+      return sortDir === 'asc' ? cmp : -cmp
+    })
+  }, [tagsList, searchTerm, selectedDriver, selectedGroup, sortKey, sortDir])
 
   const rowVirtualizer = useVirtualizer({
     count: filteredTags.length,
@@ -596,6 +641,20 @@ export const TagExplorerPage: React.FC = () => {
                 </option>
               ))}
             </select>
+
+            {/* Group Filter */}
+            <select
+              value={selectedGroup}
+              onChange={(e) => setSelectedGroup(e.target.value)}
+              className="h-9 px-3 rounded-md border border-input bg-transparent text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+            >
+              <option value="all">{t('tags.allGroups', { defaultValue: 'All groups' })}</option>
+              {uniqueGroups.map((g) => (
+                <option key={g} value={g}>
+                  {g}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="flex items-center space-x-2 shrink-0">
@@ -653,7 +712,22 @@ export const TagExplorerPage: React.FC = () => {
               <thead className="sticky top-0 z-10 block bg-muted/80 backdrop-blur-sm border-b border-border/80 uppercase font-semibold text-[10px] text-muted-foreground tracking-wider">
                 <tr className="flex items-center">
                   <th className="px-4 py-2.5 shrink-0 overflow-hidden" style={{ width: COLS.tag }}>
-                    {t('tags.colTag')}
+                    <button
+                      type="button"
+                      onClick={() => toggleSort('tag')}
+                      className="flex items-center gap-1 hover:text-foreground transition-colors"
+                    >
+                      {t('tags.colTag')}
+                      {sortKey === 'tag' ? (
+                        sortDir === 'asc' ? (
+                          <ArrowUp className="w-3 h-3" />
+                        ) : (
+                          <ArrowDown className="w-3 h-3" />
+                        )
+                      ) : (
+                        <ChevronsUpDown className="w-3 h-3 opacity-40" />
+                      )}
+                    </button>
                   </th>
                   <th
                     className="px-4 py-2.5 shrink-0 overflow-hidden"
@@ -686,7 +760,22 @@ export const TagExplorerPage: React.FC = () => {
                     className="px-4 py-2.5 shrink-0 overflow-hidden"
                     style={{ width: COLS.timestamp }}
                   >
-                    {t('tags.colTimestamp')}
+                    <button
+                      type="button"
+                      onClick={() => toggleSort('timestamp')}
+                      className="flex items-center gap-1 hover:text-foreground transition-colors"
+                    >
+                      {t('tags.colTimestamp')}
+                      {sortKey === 'timestamp' ? (
+                        sortDir === 'asc' ? (
+                          <ArrowUp className="w-3 h-3" />
+                        ) : (
+                          <ArrowDown className="w-3 h-3" />
+                        )
+                      ) : (
+                        <ChevronsUpDown className="w-3 h-3 opacity-40" />
+                      )}
+                    </button>
                   </th>
                   <th
                     className="px-4 py-2.5 shrink-0 overflow-hidden text-right"

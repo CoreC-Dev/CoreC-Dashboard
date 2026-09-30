@@ -10,10 +10,9 @@
 //
 // Usage: node server.mjs [port] [distDir] [corecTarget]
 
-import { createServer } from 'node:http'
-import { request as httpRequest } from 'node:http'
 import { readFile, stat } from 'node:fs/promises'
-import { extname, resolve, join, sep } from 'node:path'
+import { createServer, request as httpRequest } from 'node:http'
+import { extname, join, resolve, sep } from 'node:path'
 
 const PORT = parseInt(process.argv[2] || '8080', 10)
 const DIST = resolve(process.argv[3] || './dist')

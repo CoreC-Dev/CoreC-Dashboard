@@ -1,9 +1,9 @@
 import { ExternalLink, Pencil, Plus, RefreshCw, Send, Trash2 } from 'lucide-react'
 import type React from 'react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
-import { useTransports, useUpdateConfig } from '@/api/hooks'
+import { useConfigRaw, useTransports, useUpdateConfig } from '@/api/hooks'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,6 +22,8 @@ import { EntitySearchBar, filterEntities } from '@/components/wizard/EntitySearc
 import { ValidationBanner } from '@/components/wizard/ValidationBanner'
 import { TransportWizard } from '@/features/admin/TransportWizard'
 import { useConfigValidation } from '@/hooks/useConfigValidation'
+import { parseConfigYaml } from '@/lib/configYaml'
+import { getTransportConnectionSummary } from '@/lib/connectionInfo'
 import { ConnStateLabel } from '@/lib/constants'
 import { formatNumber, isZeroTime } from '@/lib/utils'
 import { useConfigStore } from '@/stores/configStore'
@@ -34,6 +36,17 @@ export const TransportsPage: React.FC = () => {
   const adminBase = id ? `/corec/${id}/admin` : '/admin'
   const { data, refetch, isFetching } = useTransports()
   const transports = data?.transports || []
+  const { data: rawYaml } = useConfigRaw()
+  // Live config from GET /configs/raw — used for runtime card connection summaries.
+  // Wrapped in try/catch so a malformed YAML never crashes the whole list page.
+  const parsedConfig = useMemo(() => {
+    if (!rawYaml) return null
+    try {
+      return parseConfigYaml(rawYaml)
+    } catch {
+      return null
+    }
+  }, [rawYaml])
 
   // Config editing state
   const workingConfig = useConfigStore((s) => s.workingConfig)
@@ -184,6 +197,15 @@ export const TransportsPage: React.FC = () => {
                         <CardDescription className="text-[11px] font-mono">
                           {tp.type}
                         </CardDescription>
+                        {(() => {
+                          const summary = getTransportConnectionSummary(workingConfig, tp.name)
+                          if (!summary) return null
+                          return (
+                            <div className="text-[10px] text-muted-foreground/80 font-mono mt-0.5 truncate">
+                              {summary}
+                            </div>
+                          )
+                        })()}
                       </div>
                     </div>
                     <div className="flex items-center gap-1">
@@ -280,6 +302,15 @@ export const TransportsPage: React.FC = () => {
                           <CardDescription className="text-[11px] font-mono">
                             {tr.type}
                           </CardDescription>
+                          {(() => {
+                            const summary = getTransportConnectionSummary(parsedConfig, tr.name)
+                            if (!summary) return null
+                            return (
+                              <div className="text-[10px] text-muted-foreground/80 font-mono mt-0.5 truncate">
+                                {summary}
+                              </div>
+                            )
+                          })()}
                         </div>
                       </div>
                       <Badge variant="outline" className={`text-[10px] ${st.badgeColor}`}>

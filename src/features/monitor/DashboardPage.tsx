@@ -46,6 +46,23 @@ export const DashboardPage: React.FC = () => {
   const connectedDrivers = drivers.filter((d) => d.state === 2).length
   const connectedTransports = transports.filter((tr) => tr.state === 2).length
 
+  // Engine status dot — reflect the actual stats.status instead of a hardcoded
+  // green. "running"/"ok" (and the loading state with no status yet) are
+  // healthy (green); error-like states are red; anything else is amber.
+  const statusLower = stats?.status?.toLowerCase() ?? ''
+  const isStatusHealthy = statusLower === '' || statusLower === 'running' || statusLower === 'ok'
+  const isStatusError =
+    statusLower.includes('error') ||
+    statusLower.includes('fatal') ||
+    statusLower === 'stopped' ||
+    statusLower === 'down' ||
+    statusLower === 'crashed'
+  const statusDotClass = isStatusHealthy
+    ? 'bg-emerald-400 glow-success'
+    : isStatusError
+      ? 'bg-rose-400'
+      : 'bg-amber-400'
+
   const adminBase = id ? `/corec/${id}/admin` : '/admin'
   const alertsLink = id ? `/corec/${id}/monitor/alerts` : '/monitor/alerts'
 
@@ -60,7 +77,7 @@ export const DashboardPage: React.FC = () => {
             <Activity className="w-3 h-3 text-primary" />
           </div>
           <div className="flex items-center space-x-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 glow-success" />
+            <span className={`w-2 h-2 rounded-full ${statusDotClass}`} />
             <span className="text-sm font-bold capitalize">
               {stats?.status || t('common.running')}
             </span>
@@ -96,8 +113,9 @@ export const DashboardPage: React.FC = () => {
             </span>
           </div>
           <div className="text-[9px] text-emerald-400">
-            {drivers.length ? Math.round((connectedDrivers / drivers.length) * 100) : 100}%
-            {t('dashboard.onlineSuffix')}
+            {drivers.length === 0
+              ? t('dashboard.notAvailable', { defaultValue: 'N/A' })
+              : `${Math.round((connectedDrivers / drivers.length) * 100)}%${t('dashboard.onlineSuffix')}`}
           </div>
         </div>
         {/* Transports */}
@@ -113,8 +131,9 @@ export const DashboardPage: React.FC = () => {
             </span>
           </div>
           <div className="text-[9px] text-emerald-400">
-            {transports.length ? Math.round((connectedTransports / transports.length) * 100) : 100}%{' '}
-            {t('dashboard.connected')}
+            {transports.length === 0
+              ? t('dashboard.notAvailable', { defaultValue: 'N/A' })
+              : `${Math.round((connectedTransports / transports.length) * 100)}% ${t('dashboard.connected')}`}
           </div>
         </div>
         {/* Total Read */}

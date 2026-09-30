@@ -2,11 +2,13 @@ import {
   Activity,
   AlertTriangle,
   ArrowDown,
+  Ban,
   Cpu,
   MoreVertical,
   Pencil,
   Play,
   RefreshCw,
+  Send,
   Trash2,
   Zap,
 } from 'lucide-react'
@@ -28,6 +30,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { formatCompact } from '@/lib/utils'
 import type { CoreCInstance } from '@/stores/instanceStore'
 import { useInstanceStore } from '@/stores/instanceStore'
 
@@ -262,9 +265,31 @@ export const InstanceCard: React.FC<InstanceCardProps> = ({ instance, onEdit }) 
                   <span>读取</span>
                 </div>
                 <div className="text-sm font-semibold font-mono">
-                  {stats.total_read > 999
-                    ? `${(stats.total_read / 1000).toFixed(1)}k`
-                    : stats.total_read}
+                  {formatCompact(stats.total_read)}
+                </div>
+              </div>
+              {/* Total publishes */}
+              <div className="rounded-md bg-muted/50 px-2 py-1.5">
+                <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                  <Send className="w-3 h-3" />
+                  <span>发布</span>
+                </div>
+                <div className="text-sm font-semibold font-mono">
+                  {formatCompact(stats.total_publish)}
+                </div>
+              </div>
+              {/* Total dropped — highlight in amber/rose when > 0 */}
+              <div className="rounded-md bg-muted/50 px-2 py-1.5">
+                <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                  <Ban className="w-3 h-3" />
+                  <span>丢弃</span>
+                </div>
+                <div
+                  className={`text-sm font-semibold font-mono ${
+                    stats.total_dropped > 0 ? 'text-amber-500' : ''
+                  }`}
+                >
+                  {formatCompact(stats.total_dropped)}
                 </div>
               </div>
             </div>

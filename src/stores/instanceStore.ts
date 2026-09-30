@@ -61,6 +61,9 @@ export interface CoreCInstance {
           failed: number
         }
       >
+      /** Compact connection-target summaries (e.g. "192.168.1.1:502", "mqtt://broker:1883") keyed by driver/transport name. Derived from GET /configs/raw by the homepage probe so topology rows can show the address without a ConnectionProvider. */
+      driver_conn?: Record<string, string>
+      transport_conn?: Record<string, string>
       rule_list?: {
         name: string
         match: string

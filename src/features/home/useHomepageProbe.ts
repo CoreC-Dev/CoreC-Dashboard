@@ -1,4 +1,10 @@
 import { useEffect, useRef } from 'react'
+import {
+  getDriverConnectionSummary,
+  getTransportConnectionSummary,
+} from '@/lib/connectionInfo'
+import { parseConfigYaml } from '@/lib/configYaml'
+import type { CoreCConfig } from '@/types/config'
 import type { CoreCInstance } from '@/stores/instanceStore'
 import { useInstanceStore } from '@/stores/instanceStore'
 
@@ -68,12 +74,13 @@ async function probeInstance(instance: CoreCInstance): Promise<CoreCInstance['la
   const base = instance.baseUrl.trim().replace(/\/+$/, '')
   const headers = { Authorization: `Bearer ${instance.secret}` }
 
-  // Fetch GET / and GET /stats and GET /tags and GET /rules in parallel
-  const [infoRes, statsRes, tagsRes, rulesRes] = await Promise.allSettled([
+  // Fetch GET / and GET /stats and GET /tags and GET /rules and GET /configs/raw in parallel
+  const [infoRes, statsRes, tagsRes, rulesRes, rawCfgRes] = await Promise.allSettled([
     fetchWithTimeout(`${base}/`),
     fetchWithTimeout(`${base}/stats`, { headers }),
     fetchWithTimeout(`${base}/tags`, { headers }),
     fetchWithTimeout(`${base}/rules`, { headers }),
+    fetchWithTimeout(`${base}/configs/raw`, { headers }),
   ])
 
   // GET / must succeed — otherwise the instance is unreachable
@@ -135,6 +142,37 @@ async function probeInstance(instance: CoreCInstance): Promise<CoreCInstance['la
           hit_count: r.hit_count,
         }),
       )
+    }
+  }
+
+  // GET /configs/raw — parse and derive compact connection-target summaries
+  // (host:port / broker / url / webhook-addr) for each driver/transport so the
+  // topology rows on the homepage card can show the address. The runtime
+  // /stats + /drivers endpoints do not expose connection parameters.
+  if (rawCfgRes.status === 'fulfilled' && rawCfgRes.value.ok && result.stats) {
+    try {
+      const rawText = await rawCfgRes.value.text()
+      const cfg: CoreCConfig = parseConfigYaml(rawText)
+      const driverNames = Object.keys(result.stats.driver_stats ?? {})
+      const transportNames = Object.keys(result.stats.transport_stats ?? {})
+      if (driverNames.length > 0) {
+        const driverConn: Record<string, string> = {}
+        for (const n of driverNames) {
+          const summary = getDriverConnectionSummary(cfg, n)
+          if (summary) driverConn[n] = summary
+        }
+        if (Object.keys(driverConn).length > 0) result.stats.driver_conn = driverConn
+      }
+      if (transportNames.length > 0) {
+        const transportConn: Record<string, string> = {}
+        for (const n of transportNames) {
+          const summary = getTransportConnectionSummary(cfg, n)
+          if (summary) transportConn[n] = summary
+        }
+        if (Object.keys(transportConn).length > 0) result.stats.transport_conn = transportConn
+      }
+    } catch {
+      // Ignore parse errors — connection summaries are best-effort enrichment.
     }
   }
 
