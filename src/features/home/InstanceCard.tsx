@@ -307,12 +307,16 @@ export const InstanceCard: React.FC<InstanceCardProps> = ({ instance, onEdit }) 
               {allInputs.map((item) => (
                 <div key={`in-${item.name}`} className="text-[11px] space-y-0.5">
                   <div className="flex items-center gap-1.5">
-                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${stateColor(item.state)}`} />
+                    <span
+                      className={`w-1.5 h-1.5 rounded-full shrink-0 ${stateColor(item.state)}`}
+                    />
                     <span className="font-mono break-words">{item.name}</span>
                   </div>
                   <div className="pl-4 text-muted-foreground">({item.type})</div>
                   {item.conn && (
-                    <div className="pl-4 text-muted-foreground/50 font-mono break-all">{item.conn}</div>
+                    <div className="pl-4 text-muted-foreground/50 font-mono break-all">
+                      {item.conn}
+                    </div>
                   )}
                   {item.detail && (
                     <div
@@ -371,7 +375,9 @@ export const InstanceCard: React.FC<InstanceCardProps> = ({ instance, onEdit }) 
                       </div>
                       <div className="pl-4 text-muted-foreground">({item.type})</div>
                       {item.conn && (
-                        <div className="pl-4 text-muted-foreground/50 font-mono break-all">{item.conn}</div>
+                        <div className="pl-4 text-muted-foreground/50 font-mono break-all">
+                          {item.conn}
+                        </div>
                       )}
                       {item.detail && (
                         <div className="pl-4 text-muted-foreground/60">{item.detail}</div>
