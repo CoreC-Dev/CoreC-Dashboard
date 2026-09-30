@@ -190,7 +190,7 @@ export const InstanceCard: React.FC<InstanceCardProps> = ({ instance, onEdit }) 
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-2 min-w-0">
               <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${statusColor}`} />
-              <h3 className="font-semibold text-sm truncate">{instance.name}</h3>
+              <h3 className="font-semibold text-sm break-words">{instance.name}</h3>
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -223,7 +223,7 @@ export const InstanceCard: React.FC<InstanceCardProps> = ({ instance, onEdit }) 
         <div className="px-4 pb-3 space-y-2 flex-1">
           {/* URL */}
           <div
-            className="font-mono text-xs text-muted-foreground truncate"
+            className="font-mono text-xs text-muted-foreground break-all"
             title={instance.baseUrl}
           >
             {instance.baseUrl.replace(/^https?:\/\//, '')}
@@ -231,7 +231,7 @@ export const InstanceCard: React.FC<InstanceCardProps> = ({ instance, onEdit }) 
 
           {/* Error message */}
           {probeError && (
-            <div className="text-xs text-rose-500 truncate" title={probeError}>
+            <div className="text-xs text-rose-500 break-words" title={probeError}>
               {probeError}
             </div>
           )}
@@ -352,10 +352,10 @@ export const InstanceCard: React.FC<InstanceCardProps> = ({ instance, onEdit }) 
                       <span
                         className={`w-1.5 h-1.5 rounded-full shrink-0 ${stateColor(item.state)}`}
                       />
-                      <span className="font-mono truncate">{item.name}</span>
+                      <span className="font-mono break-words">{item.name}</span>
                       <span className="text-muted-foreground shrink-0">({item.type})</span>
                       {item.conn && (
-                        <span className="text-muted-foreground/50 font-mono truncate min-w-0">
+                        <span className="text-muted-foreground/50 font-mono break-all min-w-0">
                           {item.conn}
                         </span>
                       )}
@@ -382,7 +382,7 @@ export const InstanceCard: React.FC<InstanceCardProps> = ({ instance, onEdit }) 
                               className={`w-3 h-3 shrink-0 ${rule.disabled ? 'text-muted-foreground/40' : 'text-amber-500'}`}
                             />
                             <span
-                              className={`font-mono truncate ${rule.disabled ? 'line-through text-muted-foreground/50' : ''}`}
+                              className={`font-mono break-words ${rule.disabled ? 'line-through text-muted-foreground/50' : ''}`}
                             >
                               {rule.name}
                             </span>
@@ -414,10 +414,10 @@ export const InstanceCard: React.FC<InstanceCardProps> = ({ instance, onEdit }) 
                           <span
                             className={`w-1.5 h-1.5 rounded-full shrink-0 ${stateColor(item.state)}`}
                           />
-                          <span className="font-mono truncate">{item.name}</span>
+                          <span className="font-mono break-words">{item.name}</span>
                           <span className="text-muted-foreground shrink-0">({item.type})</span>
                           {item.conn && (
-                            <span className="text-muted-foreground/50 font-mono truncate min-w-0">
+                            <span className="text-muted-foreground/50 font-mono break-all min-w-0">
                               {item.conn}
                             </span>
                           )}
