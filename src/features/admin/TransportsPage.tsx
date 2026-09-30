@@ -1,6 +1,6 @@
 import { ExternalLink, Pencil, Plus, RefreshCw, Send, Trash2 } from 'lucide-react'
 import type React from 'react'
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useConfigRaw, useTransports, useUpdateConfig } from '@/api/hooks'
@@ -22,7 +22,7 @@ import { EntitySearchBar, filterEntities } from '@/components/wizard/EntitySearc
 import { ValidationBanner } from '@/components/wizard/ValidationBanner'
 import { TransportWizard } from '@/features/admin/TransportWizard'
 import { useConfigValidation } from '@/hooks/useConfigValidation'
-import { parseConfigYaml } from '@/lib/configYaml'
+import { useParsedConfig } from '@/hooks/useParsedConfig'
 import { getTransportConnectionSummary } from '@/lib/connectionInfo'
 import { ConnStateLabel } from '@/lib/constants'
 import { formatNumber, isZeroTime } from '@/lib/utils'
@@ -39,14 +39,7 @@ export const TransportsPage: React.FC = () => {
   const { data: rawYaml } = useConfigRaw()
   // Live config from GET /configs/raw — used for runtime card connection summaries.
   // Wrapped in try/catch so a malformed YAML never crashes the whole list page.
-  const parsedConfig = useMemo(() => {
-    if (!rawYaml) return null
-    try {
-      return parseConfigYaml(rawYaml)
-    } catch {
-      return null
-    }
-  }, [rawYaml])
+  const parsedConfig = useParsedConfig(rawYaml)
 
   // Config editing state
   const workingConfig = useConfigStore((s) => s.workingConfig)

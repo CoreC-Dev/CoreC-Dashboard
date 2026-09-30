@@ -21,26 +21,14 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { safePersist, safeRead } from '@/lib/storage'
 import type { LogEvent, WriteCommand } from '@/types/models'
 
 const SOUND_KEY = 'corec_alert_sound'
 const NOTIF_KEY = 'corec_alert_notification'
 
-function readPref(key: string): boolean {
-  try {
-    return localStorage.getItem(key) === '1'
-  } catch {
-    return false
-  }
-}
-
-function writePref(key: string, value: boolean): void {
-  try {
-    localStorage.setItem(key, value ? '1' : '0')
-  } catch {
-    // localStorage unavailable (private mode / SSR) — preference stays in-memory only
-  }
-}
+const readPref = (key: string): boolean => safeRead(key) === '1'
+const writePref = (key: string, value: boolean): void => safePersist(key, value ? '1' : '0')
 
 // Plays a short 800 Hz beep via the Web Audio API. The AudioContext is created
 // lazily and stored in a ref so it can be unlocked by a user gesture (the

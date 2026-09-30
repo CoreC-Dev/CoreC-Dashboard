@@ -30,54 +30,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { formatCompact } from '@/lib/utils'
+import { ConnStateLabel } from '@/lib/constants'
+import { formatCompact, formatRelativeTime, formatUptime } from '@/lib/utils'
 import type { CoreCInstance } from '@/stores/instanceStore'
 import { useInstanceStore } from '@/stores/instanceStore'
 
 export interface InstanceCardProps {
   instance: CoreCInstance
   onEdit: (instance: CoreCInstance) => void
-}
-
-function formatRelativeTime(iso?: string): string {
-  if (!iso) return ''
-  const diff = Date.now() - new Date(iso).getTime()
-  if (diff < 60_000) return '刚刚'
-  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)} 分钟前`
-  if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)} 小时前`
-  return `${Math.floor(diff / 86_400_000)} 天前`
-}
-
-/** Parse Go duration string like "25m40.650422s" or "1h30m" into a short label. */
-function formatUptime(uptime?: string): string {
-  if (!uptime || uptime === '0s') return ''
-  // Go durations: "1h30m45.123s", "25m40.650422s", "5.5s"
-  // Seconds can have a decimal fraction — only take the integer part.
-  const h = uptime.match(/(\d+)h/)
-  const m = uptime.match(/(\d+)m/)
-  const s = uptime.match(/(\d+)(?:\.\d+)?s/)
-  const hours = h ? parseInt(h[1], 10) : 0
-  const mins = m ? parseInt(m[1], 10) : 0
-  const secs = s ? parseInt(s[1], 10) : 0
-  if (hours > 0) return `${hours}h ${mins}m`
-  if (mins > 0) return `${mins}m ${secs}s`
-  if (secs > 0) return `${secs}s`
-  return uptime
-}
-
-/** Map driver/transport state number to color + label. */
-function stateColor(state: number): string {
-  // 0=Disconnected, 1=Connecting, 2=Connected, 3=Error
-  switch (state) {
-    case 2:
-      return 'bg-emerald-400'
-    case 1:
-      return 'bg-amber-400 animate-pulse'
-    case 3:
-      return 'bg-rose-500'
-    default:
-      return 'bg-zinc-400'
-  }
 }
 
 export const InstanceCard: React.FC<InstanceCardProps> = ({ instance, onEdit }) => {
@@ -310,7 +270,7 @@ export const InstanceCard: React.FC<InstanceCardProps> = ({ instance, onEdit }) 
                     <div key={`in-${item.name}`} className="text-[11px] space-y-0.5">
                       <div className="flex items-center gap-1.5">
                         <span
-                          className={`w-1.5 h-1.5 rounded-full shrink-0 ${stateColor(item.state)}`}
+                          className={`w-1.5 h-1.5 rounded-full shrink-0 ${ConnStateLabel[item.state]?.dotColor ?? 'bg-zinc-400'}`}
                         />
                         <span className="font-mono break-words">{item.name}</span>
                         <span className="ml-auto shrink-0 text-[9px] px-1 py-0.5 rounded bg-muted text-muted-foreground font-mono">
@@ -383,7 +343,7 @@ export const InstanceCard: React.FC<InstanceCardProps> = ({ instance, onEdit }) 
                     <div key={`out-${item.name}`} className="text-[11px] space-y-0.5">
                       <div className="flex items-center gap-1.5">
                         <span
-                          className={`w-1.5 h-1.5 rounded-full shrink-0 ${stateColor(item.state)}`}
+                          className={`w-1.5 h-1.5 rounded-full shrink-0 ${ConnStateLabel[item.state]?.dotColor ?? 'bg-zinc-400'}`}
                         />
                         <span className="font-mono break-words">{item.name}</span>
                         <span className="ml-auto shrink-0 text-[9px] px-1 py-0.5 rounded bg-muted text-muted-foreground font-mono">

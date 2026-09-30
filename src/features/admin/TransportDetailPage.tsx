@@ -25,6 +25,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { useParsedConfig } from '@/hooks/useParsedConfig'
 import { parseConfigYaml } from '@/lib/configYaml'
 import { extractTransportYaml, getTransportConnectionFields } from '@/lib/connectionInfo'
 import { ConnStateLabel } from '@/lib/constants'
@@ -413,14 +414,7 @@ export const TransportDetailPage: React.FC = () => {
   const { data: rawYaml, isLoading: configLoading } = useConfigRaw()
   const [yamlOpen, setYamlOpen] = useState(false)
 
-  const config = useMemo(() => {
-    if (!rawYaml) return null
-    try {
-      return parseConfigYaml(rawYaml)
-    } catch {
-      return null
-    }
-  }, [rawYaml])
+  const config = useParsedConfig(rawYaml)
   const connFields = useMemo(
     () => (transport ? getTransportConnectionFields(config, transport.name) : []),
     [config, transport],

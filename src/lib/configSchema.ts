@@ -73,7 +73,7 @@ const durationString = z
   .optional()
 
 // ─── TagConfig schema ────────────────────────────────────────────────
-export const tagConfigSchema = z
+const tagConfigSchema = z
   .object({
     name: z.string().min(1, 'tag name cannot be empty'),
     address: z.string().min(1, 'tag address cannot be empty'),
@@ -92,7 +92,7 @@ export const tagConfigSchema = z
 // record and add conditional required-field validation via superRefine.
 const driverSettingsSchema = z.record(z.string(), z.unknown()).default({})
 
-export const driverConfigSchema = z
+const driverConfigSchema = z
   .object({
     name: z.string().min(1, 'driver name cannot be empty'),
     type: z.string().min(1, 'driver type cannot be empty'),
@@ -166,7 +166,7 @@ export const driverConfigSchema = z
 // ─── Transport settings ──────────────────────────────────────────────
 const transportSettingsSchema = z.record(z.string(), z.unknown()).default({})
 
-export const transportConfigSchema = z
+const transportConfigSchema = z
   .object({
     name: z.string().min(1, 'transport name cannot be empty'),
     type: z.string().min(1, 'transport type cannot be empty'),
@@ -241,14 +241,14 @@ export const transportConfigSchema = z
   })
 
 // ─── Rule schema ─────────────────────────────────────────────────────
-export const transformConfigSchema = z
+const transformConfigSchema = z
   .object({
     expression: z.string().min(1, 'transform expression cannot be empty'),
     'tag-rename': z.string().optional(),
   })
   .passthrough()
 
-export const ruleConfigSchema = z
+const ruleConfigSchema = z
   .object({
     name: z.string().min(1, 'rule name cannot be empty'),
     match: z.string().min(1, 'rule match cannot be empty'),
@@ -278,7 +278,7 @@ export const ruleConfigSchema = z
     }
   })
 
-export const ruleProviderConfigSchema = z
+const ruleProviderConfigSchema = z
   .object({
     name: z.string().min(1),
     type: z.string().min(1),
@@ -288,7 +288,7 @@ export const ruleProviderConfigSchema = z
   .passthrough()
 
 // ─── Global config schemas ───────────────────────────────────────────
-export const apiConfigSchema = z
+const apiConfigSchema = z
   .object({
     listen: z.string().optional(),
     secret: z.string().optional(),
@@ -335,7 +335,7 @@ export const apiConfigSchema = z
     }
   })
 
-export const engineConfigSchema = z
+const engineConfigSchema = z
   .object({
     'data-bus-size': z.number().int().positive().optional(),
     workers: z.number().int().nonnegative().optional(),
@@ -350,7 +350,7 @@ export const engineConfigSchema = z
   })
   .passthrough()
 
-export const bufferConfigSchema = z
+const bufferConfigSchema = z
   .object({
     enabled: z.boolean().optional(),
     'max-size': z.number().int().optional(),
@@ -377,7 +377,7 @@ export const bufferConfigSchema = z
     }
   })
 
-export const globalConfigSchema = z
+const globalConfigSchema = z
   .object({
     'log-level': z.enum(LOG_LEVELS).optional(),
     // CoreC returns "" when log-format is unset (defaults to text at runtime).
@@ -389,7 +389,7 @@ export const globalConfigSchema = z
   })
   .passthrough()
 
-export const nodeConfigSchema = z
+const nodeConfigSchema = z
   .object({
     id: z.string().optional(),
     role: z.enum(NODE_ROLES).optional(),

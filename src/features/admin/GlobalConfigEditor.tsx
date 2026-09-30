@@ -131,9 +131,6 @@ export const GlobalConfigEditor: React.FC = () => {
   const engine = global.engine ?? {}
   const buffer = global.buffer ?? {}
 
-  // Helper to read nested values safely
-  const getVal = (obj: Record<string, unknown>, key: string): unknown => obj[key]
-
   return (
     <Card className="border-border/80 bg-card/60">
       <CardHeader className="p-4 pb-2">
@@ -224,7 +221,7 @@ export const GlobalConfigEditor: React.FC = () => {
                 restartRequired
               >
                 <Input
-                  value={(getVal(api as Record<string, unknown>, 'listen') as string) ?? ''}
+                  value={(api.listen as string) ?? ''}
                   onChange={(e) => updateGlobalField('api.listen', e.target.value || undefined)}
                   placeholder="0.0.0.0:9090"
                   className="h-8 text-xs font-mono"
@@ -238,7 +235,7 @@ export const GlobalConfigEditor: React.FC = () => {
               >
                 <Input
                   type="password"
-                  value={(getVal(api as Record<string, unknown>, 'secret') as string) ?? ''}
+                  value={(api.secret as string) ?? ''}
                   onChange={(e) => updateGlobalField('api.secret', e.target.value || undefined)}
                   placeholder="••••••••"
                   className="h-8 text-xs font-mono"
@@ -252,9 +249,7 @@ export const GlobalConfigEditor: React.FC = () => {
               >
                 <Input
                   type="number"
-                  value={
-                    (getVal(api as Record<string, unknown>, 'rate-limit-per-sec') as number) ?? ''
-                  }
+                  value={(api['rate-limit-per-sec'] as number) ?? ''}
                   onChange={(e) =>
                     updateGlobalField(
                       'api.rate-limit-per-sec',
@@ -274,10 +269,8 @@ export const GlobalConfigEditor: React.FC = () => {
               >
                 <Textarea
                   value={
-                    Array.isArray(getVal(api as Record<string, unknown>, 'allowed-origins'))
-                      ? (
-                          getVal(api as Record<string, unknown>, 'allowed-origins') as string[]
-                        ).join('\n')
+                    Array.isArray(api['allowed-origins'])
+                      ? (api['allowed-origins'] as string[]).join('\n')
                       : ''
                   }
                   onChange={(e) => {
@@ -299,7 +292,7 @@ export const GlobalConfigEditor: React.FC = () => {
                 restartRequired
               >
                 <Input
-                  value={(getVal(api as Record<string, unknown>, 'tls-cert') as string) ?? ''}
+                  value={(api['tls-cert'] as string) ?? ''}
                   onChange={(e) => updateGlobalField('api.tls-cert', e.target.value || undefined)}
                   placeholder="/path/to/cert.pem"
                   className="h-8 text-xs font-mono"
@@ -312,7 +305,7 @@ export const GlobalConfigEditor: React.FC = () => {
                 restartRequired
               >
                 <Input
-                  value={(getVal(api as Record<string, unknown>, 'tls-key') as string) ?? ''}
+                  value={(api['tls-key'] as string) ?? ''}
                   onChange={(e) => updateGlobalField('api.tls-key', e.target.value || undefined)}
                   placeholder="/path/to/key.pem"
                   className="h-8 text-xs font-mono"
@@ -337,7 +330,7 @@ export const GlobalConfigEditor: React.FC = () => {
                 ).map(([key, label]) => (
                   <FieldRow key={key} label={label} restartRequired>
                     <Input
-                      value={(getVal(api as Record<string, unknown>, key) as string) ?? ''}
+                      value={(api[key] as string) ?? ''}
                       onChange={(e) => updateGlobalField(`api.${key}`, e.target.value || undefined)}
                       placeholder="30s"
                       className="h-8 text-xs font-mono"
@@ -360,7 +353,7 @@ export const GlobalConfigEditor: React.FC = () => {
                   restartRequired
                 >
                   <Checkbox
-                    checked={Boolean(getVal(api as Record<string, unknown>, 'pprof-disabled'))}
+                    checked={Boolean(api['pprof-disabled'])}
                     onCheckedChange={(checked) =>
                       updateGlobalField('api.pprof-disabled', Boolean(checked) || undefined)
                     }
@@ -372,7 +365,7 @@ export const GlobalConfigEditor: React.FC = () => {
                   restartRequired
                 >
                   <Input
-                    value={(getVal(api as Record<string, unknown>, 'pprof-addr') as string) ?? ''}
+                    value={(api['pprof-addr'] as string) ?? ''}
                     onChange={(e) =>
                       updateGlobalField('api.pprof-addr', e.target.value || undefined)
                     }
@@ -399,9 +392,7 @@ export const GlobalConfigEditor: React.FC = () => {
               >
                 <Input
                   type="number"
-                  value={
-                    (getVal(engine as Record<string, unknown>, 'data-bus-size') as number) ?? ''
-                  }
+                  value={(engine['data-bus-size'] as number) ?? ''}
                   onChange={(e) =>
                     updateGlobalField(
                       'engine.data-bus-size',
@@ -421,7 +412,7 @@ export const GlobalConfigEditor: React.FC = () => {
               >
                 <Input
                   type="number"
-                  value={(getVal(engine as Record<string, unknown>, 'workers') as number) ?? ''}
+                  value={(engine.workers as number) ?? ''}
                   onChange={(e) =>
                     updateGlobalField(
                       'engine.workers',
@@ -440,9 +431,7 @@ export const GlobalConfigEditor: React.FC = () => {
                 restartRequired
               >
                 <Input
-                  value={
-                    (getVal(engine as Record<string, unknown>, 'shutdown-timeout') as string) ?? ''
-                  }
+                  value={(engine['shutdown-timeout'] as string) ?? ''}
                   onChange={(e) =>
                     updateGlobalField('engine.shutdown-timeout', e.target.value || undefined)
                   }
@@ -457,9 +446,7 @@ export const GlobalConfigEditor: React.FC = () => {
                 restartRequired
               >
                 <Input
-                  value={
-                    (getVal(engine as Record<string, unknown>, 'stale-threshold') as string) ?? ''
-                  }
+                  value={(engine['stale-threshold'] as string) ?? ''}
                   onChange={(e) =>
                     updateGlobalField('engine.stale-threshold', e.target.value || undefined)
                   }
@@ -475,9 +462,7 @@ export const GlobalConfigEditor: React.FC = () => {
               >
                 <Input
                   type="number"
-                  value={
-                    (getVal(engine as Record<string, unknown>, 'write-retry-count') as number) ?? ''
-                  }
+                  value={(engine['write-retry-count'] as number) ?? ''}
                   onChange={(e) =>
                     updateGlobalField(
                       'engine.write-retry-count',
@@ -497,10 +482,7 @@ export const GlobalConfigEditor: React.FC = () => {
               >
                 <Input
                   type="number"
-                  value={
-                    (getVal(engine as Record<string, unknown>, 'command-concurrency') as number) ??
-                    ''
-                  }
+                  value={(engine['command-concurrency'] as number) ?? ''}
                   onChange={(e) =>
                     updateGlobalField(
                       'engine.command-concurrency',
@@ -519,10 +501,7 @@ export const GlobalConfigEditor: React.FC = () => {
                 restartRequired
               >
                 <Input
-                  value={
-                    (getVal(engine as Record<string, unknown>, 'default-tag-interval') as string) ??
-                    ''
-                  }
+                  value={(engine['default-tag-interval'] as string) ?? ''}
                   onChange={(e) =>
                     updateGlobalField('engine.default-tag-interval', e.target.value || undefined)
                   }
@@ -537,10 +516,7 @@ export const GlobalConfigEditor: React.FC = () => {
                 restartRequired
               >
                 <Select
-                  value={
-                    (getVal(engine as Record<string, unknown>, 'on-bad-quality') as string) ??
-                    'publish'
-                  }
+                  value={(engine['on-bad-quality'] as string) ?? 'publish'}
                   onValueChange={(v) => updateGlobalField('engine.on-bad-quality', v)}
                 >
                   <SelectTrigger className="h-8 text-xs">
@@ -573,15 +549,11 @@ export const GlobalConfigEditor: React.FC = () => {
               >
                 <div className="flex items-center gap-2 h-8">
                   <Switch
-                    checked={
-                      (getVal(buffer as Record<string, unknown>, 'enabled') as boolean) ?? false
-                    }
+                    checked={(buffer.enabled as boolean) ?? false}
                     onCheckedChange={(v) => updateGlobalField('buffer.enabled', v)}
                   />
                   <span className="text-xs text-muted-foreground">
-                    {(getVal(buffer as Record<string, unknown>, 'enabled') as boolean)
-                      ? t('common.enabled')
-                      : t('common.disabled')}
+                    {(buffer.enabled as boolean) ? t('common.enabled') : t('common.disabled')}
                   </span>
                 </div>
               </FieldRow>
@@ -593,7 +565,7 @@ export const GlobalConfigEditor: React.FC = () => {
               >
                 <Input
                   type="number"
-                  value={(getVal(buffer as Record<string, unknown>, 'max-size') as number) ?? ''}
+                  value={(buffer['max-size'] as number) ?? ''}
                   onChange={(e) =>
                     updateGlobalField(
                       'buffer.max-size',
@@ -609,13 +581,11 @@ export const GlobalConfigEditor: React.FC = () => {
               <FieldRow
                 label={t('globalConfig.bufferPath')}
                 help={t('globalConfig.bufferPathHelp')}
-                required={
-                  (getVal(buffer as Record<string, unknown>, 'enabled') as boolean) ?? false
-                }
+                required={(buffer.enabled as boolean) ?? false}
                 restartRequired
               >
                 <Input
-                  value={(getVal(buffer as Record<string, unknown>, 'path') as string) ?? ''}
+                  value={(buffer.path as string) ?? ''}
                   onChange={(e) => updateGlobalField('buffer.path', e.target.value || undefined)}
                   placeholder="/var/lib/corec/buffer"
                   className="h-8 text-xs font-mono"

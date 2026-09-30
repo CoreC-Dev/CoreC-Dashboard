@@ -27,8 +27,3 @@ export function setActiveConnection(conn: ActiveConnection | null): void {
 export function getActiveConnection(): ActiveConnection | null {
   return active
 }
-
-/** Convenience: is there an active connection with credentials? */
-export function hasActiveConnection(): boolean {
-  return active !== null && !!active.baseUrl && !!active.secret
-}

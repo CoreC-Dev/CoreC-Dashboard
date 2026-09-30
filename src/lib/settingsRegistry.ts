@@ -25,15 +25,10 @@ export type FieldType =
   | 'enum' // single-select from a fixed list of strings
   | 'select' // single-select from a dynamic list (e.g. transport names)
   | 'password' // text input with masked display
-  | 'textarea' // multi-line string (YAML, expression, headers map)
-  | 'tags' // tag list editor (special composite, rendered by TagListField)
-  | 'key-value' // map[string]string editor (e.g. HTTP headers)
 
 export interface FieldGroup {
   /** Group label shown as a section header (i18n key or literal). */
   label: string
-  /** Optional one-line description for the group. */
-  description?: string
   /** Whether the group is collapsed by default (advanced fields). */
   advanced?: boolean
 }
@@ -52,7 +47,7 @@ export interface SettingsField {
   /** For enum: the fixed list of allowed values. */
   options?: readonly string[]
   /** For select: the source of dynamic options (e.g. 'transports' for fallback). */
-  optionsSource?: 'transports' | 'drivers'
+  optionsSource?: 'transports'
   /** Help text shown under the field (i18n key or literal). */
   help?: string
   /** Placeholder text for the input. */
@@ -60,8 +55,6 @@ export interface SettingsField {
   /** Min/max for number fields. */
   min?: number
   max?: number
-  /** Whether the field is only shown when another field has a specific value. */
-  visibleWhen?: { field: string; equals: unknown }
 }
 
 export interface TypeFieldRegistry {
@@ -72,7 +65,6 @@ export interface TypeFieldRegistry {
 // ─── Reusable field group fragments ──────────────────────────────────
 const RECONNECT_GROUP = {
   label: 'settings.reconnect',
-  description: 'settings.reconnectDesc',
   advanced: true,
   fields: [
     {
@@ -284,7 +276,6 @@ export const DRIVER_SETTINGS_REGISTRY: Record<string, TypeFieldRegistry> = {
       },
       {
         label: 'settings.mtls',
-        description: 'settings.mtlsDesc',
         fields: [
           {
             key: 'cert-file',
@@ -406,7 +397,6 @@ export const DRIVER_SETTINGS_REGISTRY: Record<string, TypeFieldRegistry> = {
       },
       {
         label: 'settings.security',
-        description: 'settings.securityDesc',
         advanced: true,
         fields: [
           {
@@ -455,7 +445,6 @@ export const DRIVER_SETTINGS_REGISTRY: Record<string, TypeFieldRegistry> = {
       },
       {
         label: 'settings.subscription',
-        description: 'settings.subscriptionDesc',
         advanced: true,
         fields: [
           {
@@ -463,7 +452,6 @@ export const DRIVER_SETTINGS_REGISTRY: Record<string, TypeFieldRegistry> = {
             label: 'settings.subscriptionInterval',
             type: 'duration',
             default: '500ms',
-            visibleWhen: { field: 'mode', equals: 'subscription' },
             help: 'settings.subscriptionIntervalHelp',
           },
           {
@@ -472,7 +460,6 @@ export const DRIVER_SETTINGS_REGISTRY: Record<string, TypeFieldRegistry> = {
             type: 'number',
             default: 1024,
             min: 1,
-            visibleWhen: { field: 'mode', equals: 'subscription' },
             help: 'settings.subscriptionBufferHelp',
           },
           {
@@ -563,7 +550,6 @@ export const TRANSPORT_SETTINGS_REGISTRY: Record<string, TypeFieldRegistry> = {
       },
       {
         label: 'settings.tls',
-        description: 'settings.tlsDesc',
         advanced: true,
         fields: [
           {
@@ -591,7 +577,6 @@ export const TRANSPORT_SETTINGS_REGISTRY: Record<string, TypeFieldRegistry> = {
       },
       {
         label: 'settings.command',
-        description: 'settings.commandDesc',
         advanced: true,
         fields: [
           {
@@ -638,7 +623,6 @@ export const TRANSPORT_SETTINGS_REGISTRY: Record<string, TypeFieldRegistry> = {
       },
       {
         label: 'settings.chainedInbound',
-        description: 'settings.chainedInboundDesc',
         advanced: true,
         fields: [
           {
@@ -652,7 +636,6 @@ export const TRANSPORT_SETTINGS_REGISTRY: Record<string, TypeFieldRegistry> = {
       },
       {
         label: 'settings.timeouts',
-        description: 'settings.timeoutsDesc',
         advanced: true,
         fields: [
           {
@@ -734,14 +717,7 @@ export const TRANSPORT_SETTINGS_REGISTRY: Record<string, TypeFieldRegistry> = {
             type: 'enum',
             default: 'POST',
             options: ['GET', 'POST', 'PUT', 'PATCH'],
-            visibleWhen: { field: 'url', equals: '' },
             help: 'settings.methodHelp',
-          },
-          {
-            key: 'headers',
-            label: 'settings.headers',
-            type: 'key-value',
-            help: 'settings.headersHelp',
           },
           {
             key: 'timeout',
@@ -754,7 +730,6 @@ export const TRANSPORT_SETTINGS_REGISTRY: Record<string, TypeFieldRegistry> = {
       },
       {
         label: 'settings.webhook',
-        description: 'settings.webhookDesc',
         advanced: true,
         fields: [
           {
@@ -795,7 +770,6 @@ export const TRANSPORT_SETTINGS_REGISTRY: Record<string, TypeFieldRegistry> = {
       },
       {
         label: 'settings.connectionPool',
-        description: 'settings.connectionPoolDesc',
         advanced: true,
         fields: [
           {
@@ -901,23 +875,4 @@ export function buildDefaultSettings(
     }
   }
   return settings
-}
-
-/**
- * Flattens all fields from a registry into a single array (ignoring groups).
- * Useful for quick lookups by key.
- */
-export function flattenFields(registry: TypeFieldRegistry | undefined): SettingsField[] {
-  if (!registry) return []
-  return registry.groups.flatMap((g) => g.fields)
-}
-
-/**
- * Returns the list of required field keys for a driver/transport type.
- * These are the fields that Init() will hard-fail without.
- */
-export function getRequiredFields(registry: TypeFieldRegistry | undefined): string[] {
-  return flattenFields(registry)
-    .filter((f) => f.required)
-    .map((f) => f.key)
 }

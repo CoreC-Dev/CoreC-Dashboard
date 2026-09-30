@@ -25,17 +25,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { useConfigStore } from '@/stores/configStore'
 import type { RuleProviderConfig } from '@/types/config'
-
-const PROVIDER_TYPES = ['file'] as const
 
 export const RuleProviderEditor: React.FC = () => {
   const { t } = useTranslation()
@@ -214,21 +205,7 @@ export const RuleProviderEditor: React.FC = () => {
 
               <div className="space-y-1">
                 <Label className="text-xs font-medium">{t('ruleProvider.type')}</Label>
-                <Select
-                  value={editing.type}
-                  onValueChange={(v) => setEditing({ ...editing, type: v })}
-                >
-                  <SelectTrigger className="h-8 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PROVIDER_TYPES.map((tp) => (
-                      <SelectItem key={tp} value={tp} className="text-xs font-mono">
-                        {tp}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Input value="file" readOnly className="h-8 text-xs font-mono" />
               </div>
 
               <div className="space-y-1">

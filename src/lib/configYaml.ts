@@ -227,26 +227,6 @@ export function removeRuleGroup(config: CoreCConfig, name: string): CoreCConfig 
   return { ...config, 'rule-groups': groups }
 }
 
-/** Rename a rule group (moves the rules to a new key, removes the old one).
- *  Throws if the target name already exists (and differs from the source) to
- *  prevent silently overwriting an existing group's rules. Callers should
- *  check `isRuleGroupNameUnique` first for a non-throwing guard. [M-2] */
-export function renameRuleGroup(
-  config: CoreCConfig,
-  oldName: string,
-  newName: string,
-): CoreCConfig {
-  const groups = { ...(config['rule-groups'] ?? {}) }
-  const rules = groups[oldName]
-  if (rules === undefined) return config
-  if (oldName !== newName && groups[newName] !== undefined) {
-    throw new Error(`Target rule-group name "${newName}" already exists`)
-  }
-  delete groups[oldName]
-  groups[newName] = rules
-  return { ...config, 'rule-groups': groups }
-}
-
 /** Check rule-group name uniqueness. */
 export function isRuleGroupNameUnique(config: CoreCConfig, name: string): boolean {
   return !(config['rule-groups'] && name in config['rule-groups'])

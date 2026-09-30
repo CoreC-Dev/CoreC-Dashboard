@@ -21,9 +21,17 @@ import { type ConfigValidationResult, validateFullConfig } from '@/lib/configSch
 import { upsertDriver, upsertRule, upsertTransport } from '@/lib/configYaml'
 import type { CoreCConfig, DriverConfig, RuleConfig, TransportConfig } from '@/types/config'
 
+/** Clone config, merge entity via upsert, and run full validation. */
+function validateEntityInContext<E>(
+  config: CoreCConfig | null,
+  entity: E,
+  upsert: (cfg: CoreCConfig, e: E) => CoreCConfig,
+): ConfigValidationResult {
+  return validateFullConfig(upsert(config ?? {}, entity))
+}
+
 /**
  * Validate a driver in the context of the full working config.
- * Temporarily merges the driver and runs full validation.
  * Returns ALL errors (not just driver-related) so the user sees the
  * complete impact of their change.
  */
@@ -31,31 +39,21 @@ export function validateDriverInContext(
   config: CoreCConfig | null,
   driver: DriverConfig,
 ): ConfigValidationResult {
-  const base = config ?? {}
-  const merged = upsertDriver(base, driver)
-  return validateFullConfig(merged)
+  return validateEntityInContext(config, driver, upsertDriver)
 }
 
-/**
- * Validate a transport in the context of the full working config.
- */
+/** Validate a transport in the context of the full working config. */
 export function validateTransportInContext(
   config: CoreCConfig | null,
   transport: TransportConfig,
 ): ConfigValidationResult {
-  const base = config ?? {}
-  const merged = upsertTransport(base, transport)
-  return validateFullConfig(merged)
+  return validateEntityInContext(config, transport, upsertTransport)
 }
 
-/**
- * Validate a rule in the context of the full working config.
- */
+/** Validate a rule in the context of the full working config. */
 export function validateRuleInContext(
   config: CoreCConfig | null,
   rule: RuleConfig,
 ): ConfigValidationResult {
-  const base = config ?? {}
-  const merged = upsertRule(base, rule)
-  return validateFullConfig(merged)
+  return validateEntityInContext(config, rule, upsertRule)
 }

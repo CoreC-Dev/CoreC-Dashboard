@@ -91,15 +91,6 @@ beforeEach(() => {
 })
 
 describe('configStore — loading', () => {
-  it('loadFromConfig sets working and saved, clears dirty', () => {
-    useConfigStore.getState().loadFromConfig(baseConfig)
-    const s = useConfigStore.getState()
-    expect(s.workingConfig).toEqual(baseConfig)
-    expect(s.savedConfig).toEqual(baseConfig)
-    expect(s.dirty).toBe(false)
-    expect(s.error).toBeNull()
-  })
-
   it('loadFromYaml parses YAML and sets working+saved', () => {
     const yaml = `
 global:
@@ -138,7 +129,12 @@ drivers:
 
 describe('configStore — driver CRUD', () => {
   beforeEach(() => {
-    useConfigStore.getState().loadFromConfig(baseConfig)
+    useConfigStore.setState({
+      workingConfig: baseConfig,
+      savedConfig: baseConfig,
+      dirty: false,
+      error: null,
+    })
   })
 
   it('upsertDriver adds a new driver and marks dirty', () => {
@@ -188,7 +184,12 @@ describe('configStore — driver CRUD', () => {
 
 describe('configStore — transport CRUD', () => {
   beforeEach(() => {
-    useConfigStore.getState().loadFromConfig(baseConfig)
+    useConfigStore.setState({
+      workingConfig: baseConfig,
+      savedConfig: baseConfig,
+      dirty: false,
+      error: null,
+    })
   })
 
   it('upsertTransport adds a new transport and marks dirty', () => {
@@ -206,7 +207,12 @@ describe('configStore — transport CRUD', () => {
 
 describe('configStore — rule CRUD', () => {
   beforeEach(() => {
-    useConfigStore.getState().loadFromConfig(baseConfig)
+    useConfigStore.setState({
+      workingConfig: baseConfig,
+      savedConfig: baseConfig,
+      dirty: false,
+      error: null,
+    })
   })
 
   it('upsertRule adds a new rule and marks dirty', () => {
@@ -222,27 +228,14 @@ describe('configStore — rule CRUD', () => {
   })
 })
 
-describe('configStore — section updates', () => {
-  beforeEach(() => {
-    useConfigStore.getState().loadFromConfig(baseConfig)
-  })
-
-  it('updateGlobal replaces the global section', () => {
-    useConfigStore.getState().updateGlobal({ 'log-level': 'debug' })
-    expect(useConfigStore.getState().workingConfig?.global?.['log-level']).toBe('debug')
-    expect(useConfigStore.getState().dirty).toBe(true)
-  })
-
-  it('updateNode sets the node section', () => {
-    useConfigStore.getState().updateNode({ id: 'edge-A', role: 'collector' })
-    expect(useConfigStore.getState().workingConfig?.node?.id).toBe('edge-A')
-    expect(useConfigStore.getState().dirty).toBe(true)
-  })
-})
-
 describe('configStore — save / revert', () => {
   beforeEach(() => {
-    useConfigStore.getState().loadFromConfig(baseConfig)
+    useConfigStore.setState({
+      workingConfig: baseConfig,
+      savedConfig: baseConfig,
+      dirty: false,
+      error: null,
+    })
   })
 
   it('markSaved clears dirty and snapshots working as saved', () => {
@@ -276,7 +269,12 @@ describe('configStore — save / revert', () => {
 
 describe('configStore — rule provider CRUD', () => {
   beforeEach(() => {
-    useConfigStore.getState().loadFromConfig(baseConfig)
+    useConfigStore.setState({
+      workingConfig: baseConfig,
+      savedConfig: baseConfig,
+      dirty: false,
+      error: null,
+    })
   })
 
   it('findRuleProvider locates by name', () => {
@@ -341,7 +339,12 @@ describe('configStore — rule provider CRUD', () => {
 
 describe('configStore — rule group CRUD', () => {
   beforeEach(() => {
-    useConfigStore.getState().loadFromConfig(baseConfig)
+    useConfigStore.setState({
+      workingConfig: baseConfig,
+      savedConfig: baseConfig,
+      dirty: false,
+      error: null,
+    })
   })
 
   it('findRuleGroup locates by name and returns rules array', () => {
@@ -412,7 +415,12 @@ describe('configStore — rule group CRUD', () => {
 
 describe('configStore — field-level updates', () => {
   beforeEach(() => {
-    useConfigStore.getState().loadFromConfig(baseConfig)
+    useConfigStore.setState({
+      workingConfig: baseConfig,
+      savedConfig: baseConfig,
+      dirty: false,
+      error: null,
+    })
   })
 
   it('updateGlobalField sets a top-level global field', () => {
@@ -461,7 +469,12 @@ describe('configStore — field-level updates', () => {
 
 describe('configStore — YAML output', () => {
   beforeEach(() => {
-    useConfigStore.getState().loadFromConfig(baseConfig)
+    useConfigStore.setState({
+      workingConfig: baseConfig,
+      savedConfig: baseConfig,
+      dirty: false,
+      error: null,
+    })
   })
 
   it('getWorkingYaml produces valid YAML with correct content', () => {

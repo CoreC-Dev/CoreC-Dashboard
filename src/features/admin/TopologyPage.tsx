@@ -13,7 +13,7 @@ import {
 } from '@/api/hooks'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
-import { parseConfigYaml } from '@/lib/configYaml'
+import { useParsedConfig } from '@/hooks/useParsedConfig'
 import { getDriverConnectionSummary, getTransportConnectionSummary } from '@/lib/connectionInfo'
 import { ConnStateLabel } from '@/lib/constants'
 import { formatNumber, formatUptime } from '@/lib/utils'
@@ -37,14 +37,7 @@ export const TopologyPage: React.FC = () => {
   // Parse the raw config YAML once for connection-summary lookups. The raw
   // config is not polled (no refetchInterval), so this only re-parses when the
   // config is edited via PUT /configs.
-  const config = useMemo(() => {
-    if (!rawYaml) return null
-    try {
-      return parseConfigYaml(rawYaml)
-    } catch {
-      return null
-    }
-  }, [rawYaml])
+  const config = useParsedConfig(rawYaml)
 
   const hasError = serverInfoError || driversError || transportsError || statsError || rulesError
 

@@ -192,7 +192,12 @@ describe('validateFullConfig — the function behind useConfigValidation', () =>
 
 describe('validateFullConfig — integration with configStore', () => {
   it('validating the workingConfig after store mutations catches errors', () => {
-    useConfigStore.getState().loadFromConfig(validConfig)
+    useConfigStore.setState({
+      workingConfig: validConfig,
+      savedConfig: validConfig,
+      dirty: false,
+      error: null,
+    })
     const cfg = useConfigStore.getState().workingConfig!
     expect(validateFullConfig(cfg).valid).toBe(true)
 
@@ -205,7 +210,12 @@ describe('validateFullConfig — integration with configStore', () => {
   })
 
   it('validating after adding a rule with bad target catches the error', () => {
-    useConfigStore.getState().loadFromConfig(validConfig)
+    useConfigStore.setState({
+      workingConfig: validConfig,
+      savedConfig: validConfig,
+      dirty: false,
+      error: null,
+    })
     useConfigStore.getState().upsertRule({
       name: 'bad-rule',
       match: 'ALL',

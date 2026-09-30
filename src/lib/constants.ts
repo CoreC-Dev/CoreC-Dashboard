@@ -1,18 +1,10 @@
-export const DataTypeMap = {
-  0: 'bool',
-  1: 'int8',
-  2: 'int16',
-  3: 'int32',
-  4: 'int64',
-  5: 'uint8',
-  6: 'uint16',
-  7: 'uint32',
-  8: 'uint64',
-  9: 'float32',
-  10: 'float64',
-  11: 'string',
-  12: 'bytes',
-} as const
+import { DATA_TYPES, type DataType } from '@/types/config'
+
+// Derived from the canonical DATA_TYPES list in @/types/config so the
+// numeric code → string name mapping can never drift from the source list.
+export const DataTypeMap: Readonly<Record<number, DataType>> = Object.fromEntries(
+  DATA_TYPES.map((v, i) => [i, v] as const),
+)
 
 export type DataTypeString =
   | 'bool'

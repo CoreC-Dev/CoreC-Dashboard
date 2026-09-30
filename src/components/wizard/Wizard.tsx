@@ -264,7 +264,6 @@ export const WizardDialog: React.FC<WizardDialogProps> = ({
   onCancel,
   ...wizardProps
 }) => {
-  const { t } = useTranslation()
   return (
     <Dialog
       open={open}
@@ -277,8 +276,6 @@ export const WizardDialog: React.FC<WizardDialogProps> = ({
           onOpenChange(false)
         }}
       />
-      {/* keep i18n import used even if not referenced directly above */}
-      <span className="hidden">{t('wizard.cancel')}</span>
     </Dialog>
   )
 }

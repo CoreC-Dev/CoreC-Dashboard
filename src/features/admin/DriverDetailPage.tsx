@@ -23,6 +23,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { useParsedConfig } from '@/hooks/useParsedConfig'
 import { parseConfigYaml } from '@/lib/configYaml'
 import { extractDriverYaml, getDriverConnectionFields } from '@/lib/connectionInfo'
 import { ConnStateLabel, QualityLabel } from '@/lib/constants'
@@ -414,7 +415,7 @@ export const DriverDetailPage: React.FC = () => {
   const { data: driver, isLoading, error, refetch, isFetching } = useDriver(name ?? '')
   const { data: tagsData, isLoading: tagsLoading } = useDriverTags(name ?? '')
   const { data: rawYaml } = useConfigRaw()
-  const config = useMemo(() => (rawYaml ? parseConfigYaml(rawYaml) : null), [rawYaml])
+  const config = useParsedConfig(rawYaml)
   const connFields = useMemo(
     () => (driver ? getDriverConnectionFields(config, driver.name) : []),
     [config, driver],

@@ -189,9 +189,8 @@ export function getTransportConnectionFields(
 /** Get a short one-line connection summary for list cards. */
 export function getDriverConnectionSummary(config: CoreCConfig | null, driverName: string): string {
   const fields = getDriverConnectionFields(config, driverName)
-  const primary = fields.find((f) => f.primary)
-  if (primary) return primary.value
-  return ''
+  const primaries = fields.filter((f) => f.primary)
+  return primaries.length > 0 ? primaries.map((f) => f.value).join(' · ') : ''
 }
 
 /** Get a short one-line connection summary for transport list cards. */
@@ -201,100 +200,73 @@ export function getTransportConnectionSummary(
 ): string {
   const fields = getTransportConnectionFields(config, transportName)
   const primaries = fields.filter((f) => f.primary)
-  if (primaries.length > 0) return primaries.map((f) => f.value).join(' · ')
-  return ''
+  return primaries.length > 0 ? primaries.map((f) => f.value).join(' · ') : ''
+}
+
+/** Top-level config section keys (used to detect end-of-section in YAML extraction). */
+const TOP_LEVEL_KEYS = [
+  'drivers',
+  'transports',
+  'rules',
+  'rule-providers',
+  'rule-groups',
+  'global',
+  'node',
+]
+
+/** Extract a single entity's YAML snippet from the raw config YAML string. */
+function extractEntityYaml(rawYaml: string, sectionName: string, entityName: string): string {
+  const lines = rawYaml.split('\n')
+  let inSection = false
+  let inTarget = false
+  let indent = 0
+  const result: string[] = []
+  const sectionRegex = new RegExp(`^${sectionName}\\s*:`)
+  const otherKeysRegex = new RegExp(
+    TOP_LEVEL_KEYS.filter((k) => k !== sectionName)
+      .map((k) => `^${k}\\s*:`)
+      .join('|'),
+  )
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]
+    if (sectionRegex.test(line)) {
+      inSection = true
+      continue
+    }
+    if (inSection && otherKeysRegex.test(line)) {
+      inSection = false
+      inTarget = false
+      continue
+    }
+    if (inSection && /^-\s+name:\s/.test(line)) {
+      indent = line.indexOf('-')
+      const name = line
+        .match(/name:\s*(.+)/)?.[1]
+        ?.trim()
+        .replace(/^["']|["']$/g, '')
+      inTarget = name === entityName
+      if (inTarget) result.push(line)
+      continue
+    }
+    if (inSection && inTarget) {
+      const lineIndent = line.search(/\S/)
+      if (lineIndent <= indent && line.trim() && !line.trim().startsWith('#')) {
+        inTarget = false
+        continue
+      }
+      result.push(line)
+    }
+  }
+  return result.join('\n')
 }
 
 /** Extract a single driver's YAML snippet from the raw config YAML string. */
 export function extractDriverYaml(rawYaml: string, driverName: string): string {
-  // Simple extraction: find the driver block in the YAML
-  const lines = rawYaml.split('\n')
-  let inDrivers = false
-  let inTargetDriver = false
-  let indent = 0
-  const result: string[] = []
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i]
-    if (/^drivers\s*:/.test(line)) {
-      inDrivers = true
-      continue
-    }
-    if (
-      inDrivers &&
-      /^transports\s*:|^rules\s*:|^rule-providers\s*:|^rule-groups\s*:|^global\s*:|^node\s*:/.test(
-        line,
-      )
-    ) {
-      inDrivers = false
-      inTargetDriver = false
-      continue
-    }
-    if (inDrivers && /^-\s+name:\s/.test(line)) {
-      indent = line.indexOf('-')
-      const name = line
-        .match(/name:\s*(.+)/)?.[1]
-        ?.trim()
-        .replace(/^["']|["']$/g, '')
-      inTargetDriver = name === driverName
-      if (inTargetDriver) result.push(line)
-      continue
-    }
-    if (inDrivers && inTargetDriver) {
-      // Check if this line belongs to the current driver entry
-      const lineIndent = line.search(/\S/)
-      if (lineIndent <= indent && line.trim() && !line.trim().startsWith('#')) {
-        inTargetDriver = false
-        continue
-      }
-      result.push(line)
-    }
-  }
-  return result.join('\n')
+  return extractEntityYaml(rawYaml, 'drivers', driverName)
 }
 
 /** Extract a single transport's YAML snippet from the raw config YAML string. */
 export function extractTransportYaml(rawYaml: string, transportName: string): string {
-  const lines = rawYaml.split('\n')
-  let inTransports = false
-  let inTargetTransport = false
-  let indent = 0
-  const result: string[] = []
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i]
-    if (/^transports\s*:/.test(line)) {
-      inTransports = true
-      continue
-    }
-    if (
-      inTransports &&
-      /^rules\s*:|^rule-providers\s*:|^rule-groups\s*:|^global\s*:|^node\s*:|^drivers\s*:/.test(
-        line,
-      )
-    ) {
-      inTransports = false
-      inTargetTransport = false
-      continue
-    }
-    if (inTransports && /^-\s+name:\s/.test(line)) {
-      indent = line.indexOf('-')
-      const name = line
-        .match(/name:\s*(.+)/)?.[1]
-        ?.trim()
-        .replace(/^["']|["']$/g, '')
-      inTargetTransport = name === transportName
-      if (inTargetTransport) result.push(line)
-      continue
-    }
-    if (inTransports && inTargetTransport) {
-      const lineIndent = line.search(/\S/)
-      if (lineIndent <= indent && line.trim() && !line.trim().startsWith('#')) {
-        inTargetTransport = false
-        continue
-      }
-      result.push(line)
-    }
-  }
-  return result.join('\n')
+  return extractEntityYaml(rawYaml, 'transports', transportName)
 }

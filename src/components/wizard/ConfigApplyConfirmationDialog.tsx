@@ -36,6 +36,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { parseConfigYaml } from '@/lib/configYaml'
 import { cn } from '@/lib/utils'
+import { computeLcsDiff } from '@/lib/yamlDiff'
 
 // ─── Diff computation ────────────────────────────────────────────────
 
@@ -61,12 +62,6 @@ function stableStringify(v: unknown): string {
   }
   if (Array.isArray(v)) return `[${v.map(stableStringify).join(',')}]`
   return JSON.stringify(v)
-}
-
-export interface ConfigDiffEntry {
-  entity: string
-  name: string
-  change: 'added' | 'removed' | 'modified'
 }
 
 export interface ConfigDiffSummary {
@@ -189,8 +184,7 @@ export function computeConfigDiff(
 /**
  * Simple line-level diff between two YAML strings.
  * Produces an array of { type: 'same'|'added'|'removed', text } entries.
- * Uses a basic LCS algorithm — sufficient for config YAMLs (hundreds of
- * lines max, not thousands).
+ * Delegates to the shared LCS implementation in @/lib/yamlDiff.
  */
 export interface DiffLine {
   type: 'same' | 'added' | 'removed'
@@ -198,43 +192,10 @@ export interface DiffLine {
 }
 
 export function computeLineDiff(before: string, after: string): DiffLine[] {
-  const beforeLines = before.split('\n')
-  const afterLines = after.split('\n')
-
-  // LCS table
-  const m = beforeLines.length
-  const n = afterLines.length
-  const dp: number[][] = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0))
-
-  for (let i = 1; i <= m; i++) {
-    for (let j = 1; j <= n; j++) {
-      if (beforeLines[i - 1] === afterLines[j - 1]) {
-        dp[i][j] = dp[i - 1][j - 1] + 1
-      } else {
-        dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1])
-      }
-    }
-  }
-
-  // Backtrack to build the diff
-  const result: DiffLine[] = []
-  let i = m
-  let j = n
-  while (i > 0 || j > 0) {
-    if (i > 0 && j > 0 && beforeLines[i - 1] === afterLines[j - 1]) {
-      result.unshift({ type: 'same', text: beforeLines[i - 1] })
-      i--
-      j--
-    } else if (j > 0 && (i === 0 || dp[i][j - 1] >= dp[i - 1][j])) {
-      result.unshift({ type: 'added', text: afterLines[j - 1] })
-      j--
-    } else {
-      result.unshift({ type: 'removed', text: beforeLines[i - 1] })
-      i--
-    }
-  }
-
-  return result
+  return computeLcsDiff(before, after).map((l) => ({
+    type: l.type === 'equal' ? ('same' as const) : l.type,
+    text: l.text,
+  }))
 }
 
 // ─── Dialog component ────────────────────────────────────────────────

@@ -15,19 +15,6 @@ export interface ServerInfoResponse {
   uptime: string
 }
 
-export interface VersionResponse {
-  version: string
-}
-
-export interface HealthCheckResponse {
-  status: 'alive' | 'ready' | 'not_ready'
-  reason?: string
-  components?: {
-    drivers?: { name: string; connected: boolean }[]
-    transports?: { name: string; connected: boolean }[]
-  }
-}
-
 export interface ConfigSummaryResponse {
   global?: {
     'log-level'?: string

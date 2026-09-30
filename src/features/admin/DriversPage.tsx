@@ -1,6 +1,6 @@
 import { AlertCircle, Cpu, ExternalLink, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react'
 import type React from 'react'
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useConfigRaw, useDrivers, useDriverTags, useUpdateConfig } from '@/api/hooks'
@@ -29,7 +29,7 @@ import { EntitySearchBar, filterEntities } from '@/components/wizard/EntitySearc
 import { ValidationBanner } from '@/components/wizard/ValidationBanner'
 import { DriverWizard } from '@/features/admin/DriverWizard'
 import { useConfigValidation } from '@/hooks/useConfigValidation'
-import { parseConfigYaml } from '@/lib/configYaml'
+import { useParsedConfig } from '@/hooks/useParsedConfig'
 import { getDriverConnectionSummary } from '@/lib/connectionInfo'
 import { ConnStateLabel, QualityLabel } from '@/lib/constants'
 import { formatNumber, isZeroTime } from '@/lib/utils'
@@ -45,7 +45,7 @@ export const DriversPage: React.FC = () => {
   const { data, refetch, isFetching } = useDrivers()
   const [selectedDriver, setSelectedDriver] = useState<DriverStatus | null>(null)
   const { data: rawYaml } = useConfigRaw()
-  const parsedConfig = useMemo(() => (rawYaml ? parseConfigYaml(rawYaml) : null), [rawYaml])
+  const parsedConfig = useParsedConfig(rawYaml)
 
   // Config editing state
   const workingConfig = useConfigStore((s) => s.workingConfig)

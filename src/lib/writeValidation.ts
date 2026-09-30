@@ -6,7 +6,7 @@ import type { DataTypeString } from '@/lib/constants'
  * command from silently sending null (NaN serializes to null in JSON) or
  * an out-of-range value to a physical actuator.
  */
-export const NUMERIC_RANGES: Record<string, [number, number]> = {
+const NUMERIC_RANGES: Record<string, [number, number]> = {
   int8: [-128, 127],
   int16: [-32768, 32767],
   int32: [-2147483648, 2147483647],

@@ -42,7 +42,7 @@ import { useConfigValidation } from '@/hooks/useConfigValidation'
 import { parseConfigYaml } from '@/lib/configYaml'
 import { formatNumber, formatRelativeTime, isZeroTime } from '@/lib/utils'
 import { useConfigStore } from '@/stores/configStore'
-import type { RuleConfig } from '@/types/config'
+import { DATA_TYPES, type RuleConfig } from '@/types/config'
 import type { RuleStat } from '@/types/models'
 
 // Targets serialize as `null` (not `[]`) when empty; prefer the multi-target
@@ -74,21 +74,10 @@ const EMPTY_TEST_DP: SimDataPoint = {
   quality: '0',
 }
 
-const TEST_TYPE_OPTIONS: { value: string; label: string }[] = [
-  'bool',
-  'int8',
-  'int16',
-  'int32',
-  'int64',
-  'uint8',
-  'uint16',
-  'uint32',
-  'uint64',
-  'float32',
-  'float64',
-  'string',
-  'bytes',
-].map((v) => ({ value: v, label: v }))
+const TEST_TYPE_OPTIONS: { value: string; label: string }[] = DATA_TYPES.map((v) => ({
+  value: v,
+  label: v,
+}))
 
 const getFieldValue = (dp: SimDataPoint, field: string): string | undefined => {
   switch (field) {

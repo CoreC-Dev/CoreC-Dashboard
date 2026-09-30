@@ -7,8 +7,8 @@
  *
  * This store is decision-independent — it works identically under both
  * backend paths described in CONFIGURATION_FEATURE_PLAN.md §10.1:
- *   - Path A (GET /configs/raw): loadFromConfig() receives the server's
- *     full config; user edits locally; saveConfig() PUTs the YAML back.
+ *   - Path A (GET /configs/raw): the server's raw YAML is fed straight to
+ *     loadFromYaml(); user edits locally; saveConfig() PUTs the YAML back.
  *   - Path B (pure frontend): loadFromYaml() parses an uploaded YAML or
  *     the user starts from scratch; edits locally; saveConfig() PUTs.
  *
@@ -48,8 +48,6 @@ import {
 import type {
   CoreCConfig,
   DriverConfig,
-  GlobalConfig,
-  NodeConfig,
   RuleConfig,
   RuleProviderConfig,
   TransportConfig,
@@ -97,8 +95,6 @@ export interface ConfigStoreState {
 
   /** Load config from a YAML string (path B: uploaded file or pasted YAML). */
   loadFromYaml: (yaml: string) => void
-  /** Load config from a typed object (path A: fetched from GET /configs/raw). */
-  loadFromConfig: (config: CoreCConfig) => void
   /** Start a new empty config (blank-slate creation). */
   resetToEmpty: () => void
 
@@ -117,8 +113,6 @@ export interface ConfigStoreState {
 
   // ─── Section updates ──────────────────────────────────────────────
 
-  updateGlobal: (global: GlobalConfig) => void
-  updateNode: (node: NodeConfig) => void
   /** Update a single field inside the global section (shallow path: 'log-level', 'api.listen', etc.). */
   updateGlobalField: (path: string, value: unknown) => void
   /** Update a single field inside the node section. */
@@ -191,15 +185,6 @@ export const useConfigStore = create<ConfigStoreState>((set, get) => {
           error: err instanceof Error ? err.message : String(err),
         })
       }
-    },
-
-    loadFromConfig: (config: CoreCConfig) => {
-      set({
-        workingConfig: config,
-        savedConfig: config,
-        dirty: false,
-        error: null,
-      })
     },
 
     resetToEmpty: () => {
@@ -309,20 +294,6 @@ export const useConfigStore = create<ConfigStoreState>((set, get) => {
 
     // ─── Section updates ──────────────────────────────────────────────
 
-    updateGlobal: (global: GlobalConfig) => {
-      const { workingConfig } = get()
-      if (!workingConfig) return
-      const next = { ...workingConfig, global }
-      commit(next)
-    },
-
-    updateNode: (node: NodeConfig) => {
-      const { workingConfig } = get()
-      if (!workingConfig) return
-      const next = { ...workingConfig, node }
-      commit(next)
-    },
-
     updateGlobalField: (path: string, value: unknown) => {
       const { workingConfig } = get()
       if (!workingConfig) return
@@ -345,13 +316,13 @@ export const useConfigStore = create<ConfigStoreState>((set, get) => {
 
     markSaved: () => {
       const { workingConfig } = get()
-      set({ savedConfig: workingConfig ? structuredCloneSafe(workingConfig) : null, dirty: false })
+      set({ savedConfig: workingConfig ? structuredClone(workingConfig) : null, dirty: false })
     },
 
     revert: () => {
       const { savedConfig } = get()
       set({
-        workingConfig: savedConfig ? structuredCloneSafe(savedConfig) : null,
+        workingConfig: savedConfig ? structuredClone(savedConfig) : null,
         dirty: false,
         error: null,
       })
@@ -432,14 +403,3 @@ export const useConfigStore = create<ConfigStoreState>((set, get) => {
     },
   }
 })
-
-/**
- * Deep-clone a config object safely. Uses structuredClone when available
- * (modern browsers/Node 17+), falls back to JSON round-trip.
- */
-function structuredCloneSafe<T>(obj: T): T {
-  if (typeof structuredClone === 'function') {
-    return structuredClone(obj)
-  }
-  return JSON.parse(JSON.stringify(obj)) as T
-}

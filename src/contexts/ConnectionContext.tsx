@@ -32,11 +32,6 @@ export function useConnection(): ConnectionContextValue {
   return ctx
 }
 
-/** Hook for components that may or may not be inside an instance route. */
-export function useConnectionSafe(): ConnectionContextValue | null {
-  return useContext(ConnectionContext)
-}
-
 // Per-instance QueryClient cache. Keyed by instance ID so switching instances
 // gives a fresh cache and switching back restores the previous one.
 const queryClientCache = new Map<string, QueryClient>()

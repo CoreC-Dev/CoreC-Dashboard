@@ -26,7 +26,7 @@
  */
 import { ArrowRight, GitBranch, Plus, Trash2, Zap } from 'lucide-react'
 import type React from 'react'
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
@@ -168,50 +168,42 @@ export const RuleWizard: React.FC<RuleWizardProps> = ({
   const actionMeta = ACTION_META.find((m) => m.action === action)!
   const needsTargetStep = actionMeta.needsTarget !== 'none'
 
+  // ─── Build a RuleConfig from current state ──────────────────────
+  const buildRule = useCallback(
+    (name: string, trim = false): RuleConfig => {
+      const v = (s: string) => (trim ? s.trim() : s)
+      return {
+        name,
+        match: v(match),
+        action,
+        priority,
+        ...(action === 'forward' && v(target) ? { target: v(target) } : {}),
+        ...(action === 'mirror' && targets.length > 0 ? { targets } : {}),
+        ...(action === 'transform' && v(transformExpr)
+          ? {
+              transform: {
+                expression: v(transformExpr),
+                ...(v(tagRename) ? { 'tag-rename': v(tagRename) } : {}),
+              },
+            }
+          : {}),
+      }
+    },
+    [match, action, priority, target, targets, transformExpr, tagRename],
+  )
+
   // ─── Preview YAML ────────────────────────────────────────────────
   const previewYaml = useMemo(() => {
-    const rule: RuleConfig = {
-      name: ruleName || '<rule-name>',
-      match,
-      action,
-      priority,
-      ...(action === 'forward' && target ? { target } : {}),
-      ...(action === 'mirror' && targets.length > 0 ? { targets } : {}),
-      ...(action === 'transform' && transformExpr
-        ? {
-            transform: {
-              expression: transformExpr,
-              ...(tagRename ? { 'tag-rename': tagRename } : {}),
-            },
-          }
-        : {}),
-    }
-    return dumpConfigYaml({ rules: [rule] })
-  }, [ruleName, match, action, priority, target, targets, transformExpr, tagRename])
+    return dumpConfigYaml({ rules: [buildRule(ruleName || '<rule-name>')] })
+  }, [buildRule, ruleName])
 
   // ─── Context validation ──────────────────────────────────────────
   // Merges the rule into working config to catch cross-entity issues
   // (e.g., forward target references nonexistent transport).
   const contextValidation = useMemo(() => {
     if (!ruleName.trim() || !match.trim()) return null
-    const rule: RuleConfig = {
-      name: ruleName.trim(),
-      match,
-      action,
-      priority,
-      ...(action === 'forward' && target ? { target } : {}),
-      ...(action === 'mirror' && targets.length > 0 ? { targets } : {}),
-      ...(action === 'transform' && transformExpr
-        ? {
-            transform: {
-              expression: transformExpr,
-              ...(tagRename ? { 'tag-rename': tagRename } : {}),
-            },
-          }
-        : {}),
-    }
-    return validateRuleInContext(workingConfig, rule)
-  }, [ruleName, match, action, priority, target, targets, transformExpr, tagRename, workingConfig])
+    return validateRuleInContext(workingConfig, buildRule(ruleName.trim()))
+  }, [buildRule, ruleName, match, workingConfig])
 
   const hasContextErrors = contextValidation !== null && !contextValidation.valid
 
@@ -233,23 +225,7 @@ export const RuleWizard: React.FC<RuleWizardProps> = ({
   // ─── Save ────────────────────────────────────────────────────────
   const handleFinish = () => {
     if (!ruleName.trim() || !match.trim()) return
-    const rule: RuleConfig = {
-      name: ruleName.trim(),
-      match: match.trim(),
-      action,
-      priority,
-      ...(action === 'forward' && target.trim() ? { target: target.trim() } : {}),
-      ...(action === 'mirror' && targets.length > 0 ? { targets } : {}),
-      ...(action === 'transform' && transformExpr.trim()
-        ? {
-            transform: {
-              expression: transformExpr.trim(),
-              ...(tagRename.trim() ? { 'tag-rename': tagRename.trim() } : {}),
-            },
-          }
-        : {}),
-    }
-    const ok = upsertRule(rule)
+    const ok = upsertRule(buildRule(ruleName.trim(), true))
     if (ok) {
       onOpenChange(false)
       onSaved?.()

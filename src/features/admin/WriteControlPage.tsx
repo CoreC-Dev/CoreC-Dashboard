@@ -46,23 +46,8 @@ import {
 import { Input } from '@/components/ui/input'
 import type { DataTypeString } from '@/lib/constants'
 import { validateValue } from '@/lib/writeValidation'
+import { DATA_TYPES } from '@/types/config'
 import type { DeadLetterEntry, WriteCommand } from '@/types/models'
-
-const DATA_TYPES: DataTypeString[] = [
-  'bool',
-  'int8',
-  'int16',
-  'int32',
-  'int64',
-  'uint8',
-  'uint16',
-  'uint32',
-  'uint64',
-  'float32',
-  'float64',
-  'string',
-  'bytes',
-]
 
 // Extracts a human-readable error message from CoreC's JSON error response
 // body (e.g. {"error":"unsupported patch key(s): [foo]"}). Falls back to the

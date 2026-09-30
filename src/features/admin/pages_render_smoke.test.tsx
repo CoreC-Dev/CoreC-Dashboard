@@ -59,7 +59,6 @@ vi.mock('@/api/activeConnection', () => ({
     secret: 'test-secret',
   }),
   setActiveConnection: vi.fn(),
-  hasActiveConnection: () => true,
 }))
 
 // Mock the ConnectionContext so useConnection() returns a connected state.
@@ -80,7 +79,6 @@ const _connCtx = {
 }
 vi.mock('@/contexts/ConnectionContext', () => ({
   useConnection: () => _connCtx,
-  useConnectionSafe: () => _connCtx,
   ConnectionProvider: ({ children }: { children: React.ReactNode }) => children,
 }))
 

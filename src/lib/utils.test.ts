@@ -20,8 +20,13 @@ describe('cn', () => {
 })
 
 describe('formatUptime', () => {
-  it('passes through string values (CoreC /.uptime returns duration string)', () => {
-    expect(formatUptime('4h30m')).toBe('4h30m')
+  it('parses Go duration strings (CoreC /.uptime returns a duration string)', () => {
+    expect(formatUptime('4h30m')).toBe('4h 30m')
+    expect(formatUptime('1h30m45.123s')).toBe('1h 30m')
+    expect(formatUptime('25m40.650422s')).toBe('25m 40s')
+    expect(formatUptime('5s')).toBe('5s')
+    expect(formatUptime('0s')).toBe('')
+    expect(formatUptime('')).toBe('')
   })
 
   it('converts nanoseconds to human-readable format', () => {

@@ -5,8 +5,31 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function formatUptime(uptime: string | number): string {
-  if (typeof uptime === 'string') return uptime
+/**
+ * Format an uptime value for display.
+ *
+ * - number: nanoseconds since start → "1d 2h 3m 4s" (CoreC /stats.uptime).
+ * - string: Go duration like "1h30m45.123s" → "1h 30m" (CoreC /.uptime).
+ *   "0s" or empty → "". Unrecognized strings pass through unchanged.
+ * - null/undefined → "".
+ */
+export function formatUptime(uptime: string | number | null | undefined): string {
+  if (uptime == null) return ''
+  if (typeof uptime === 'string') {
+    if (!uptime || uptime === '0s') return ''
+    // Go durations: "1h30m45.123s", "25m40.650422s", "5.5s"
+    // Seconds can have a decimal fraction — only take the integer part.
+    const h = uptime.match(/(\d+)h/)
+    const m = uptime.match(/(\d+)m/)
+    const s = uptime.match(/(\d+)(?:\.\d+)?s/)
+    const hours = h ? parseInt(h[1], 10) : 0
+    const mins = m ? parseInt(m[1], 10) : 0
+    const secs = s ? parseInt(s[1], 10) : 0
+    if (hours > 0) return `${hours}h ${mins}m`
+    if (mins > 0) return `${mins}m ${secs}s`
+    if (secs > 0) return `${secs}s`
+    return uptime
+  }
   // Nanoseconds to seconds
   const totalSeconds = Math.floor(uptime / 1e9)
   const days = Math.floor(totalSeconds / 86400)
