@@ -61,6 +61,14 @@ export interface CoreCInstance {
           failed: number
         }
       >
+      rule_list?: {
+        name: string
+        match: string
+        action: string
+        target: string
+        disabled: boolean
+        hit_count: number
+      }[]
     }
   }
   /** Creation timestamp (ISO 8601). */

@@ -1,12 +1,14 @@
 import {
   Activity,
   AlertTriangle,
+  ArrowDown,
   Cpu,
   MoreVertical,
   Pencil,
   Play,
   RefreshCw,
   Trash2,
+  Zap,
 } from 'lucide-react'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
@@ -107,6 +109,65 @@ export const InstanceCard: React.FC<InstanceCardProps> = ({ instance, onEdit }) 
   // Driver stats for display
   const driverList = stats?.driver_stats ? Object.values(stats.driver_stats) : []
   const transportList = stats?.transport_stats ? Object.values(stats.transport_stats) : []
+  const ruleList = stats?.rule_list ?? []
+
+  // Classify transports as input or output based on published/received counts
+  const inputTransports = transportList.filter((tr) => tr.received > 0 && tr.published === 0)
+  const outputTransports = transportList.filter((tr) => tr.published > 0 && tr.received === 0)
+  const bidirTransports = transportList.filter((tr) => tr.published > 0 && tr.received > 0)
+  // Ambiguous (both 0) — use name heuristic
+  const ambiguousTransports = transportList.filter((tr) => tr.published === 0 && tr.received === 0)
+  for (const tr of ambiguousTransports) {
+    if (/sub|in|from/i.test(tr.name)) {
+      inputTransports.push(tr)
+    } else {
+      outputTransports.push(tr)
+    }
+  }
+
+  // All inputs: drivers + input transports + bidirectional
+  const allInputs = [
+    ...driverList.map((d) => ({
+      name: d.name,
+      type: d.type,
+      state: d.state,
+      detail:
+        d.error_count > 0 ? `${d.error_count} err` : d.tag_count > 0 ? `${d.tag_count} tags` : '',
+      isDriver: true,
+    })),
+    ...inputTransports.map((tr) => ({
+      name: tr.name,
+      type: tr.type,
+      state: tr.state,
+      detail: tr.received > 0 ? `${tr.received} rx` : '',
+      isDriver: false,
+    })),
+    ...bidirTransports.map((tr) => ({
+      name: tr.name,
+      type: tr.type,
+      state: tr.state,
+      detail: `${tr.received} rx`,
+      isDriver: false,
+    })),
+  ]
+
+  // All outputs: output transports + bidirectional (published side)
+  const allOutputs = [
+    ...outputTransports.map((tr) => ({
+      name: tr.name,
+      type: tr.type,
+      state: tr.state,
+      detail: tr.published > 0 ? `${tr.published} pub` : '',
+    })),
+    ...bidirTransports.map((tr) => ({
+      name: tr.name,
+      type: tr.type,
+      state: tr.state,
+      detail: `${tr.published} pub`,
+    })),
+  ]
+
+  const hasTopology = allInputs.length > 0 || ruleList.length > 0 || allOutputs.length > 0
 
   return (
     <>
@@ -208,52 +269,84 @@ export const InstanceCard: React.FC<InstanceCardProps> = ({ instance, onEdit }) 
             </div>
           )}
 
-          {/* Driver health */}
-          {driverList.length > 0 && !probeError && (
-            <div className="space-y-0.5 pt-0.5">
-              {driverList.map((d) => (
-                <div key={d.name} className="flex items-center gap-1.5 text-[11px]">
-                  <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${stateColor(d.state)}`} />
-                  <span className="font-mono truncate">{d.name}</span>
-                  <span className="text-muted-foreground">({d.type})</span>
-                  {d.error_count > 0 && (
-                    <span className="text-rose-500 ml-auto">{d.error_count} err</span>
-                  )}
-                  {d.error_count === 0 && d.tag_count > 0 && (
-                    <span className="text-muted-foreground/60 ml-auto">{d.tag_count} tags</span>
+          {/* Topology flow: inputs → rules → outputs */}
+          {hasTopology && !probeError && (
+            <div className="rounded-md bg-muted/30 px-2 py-1.5 space-y-0.5">
+              {/* Inputs (drivers + incoming transports) */}
+              {allInputs.map((item) => (
+                <div key={`in-${item.name}`} className="flex items-center gap-1.5 text-[11px]">
+                  <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${stateColor(item.state)}`} />
+                  <span className="font-mono truncate">{item.name}</span>
+                  <span className="text-muted-foreground">({item.type})</span>
+                  {item.detail && (
+                    <span
+                      className={`ml-auto ${item.detail.includes('err') ? 'text-rose-500' : 'text-muted-foreground/60'}`}
+                    >
+                      {item.detail}
+                    </span>
                   )}
                 </div>
               ))}
+
+              {/* Arrow down + rules */}
+              {ruleList.length > 0 && (
+                <>
+                  <div className="flex justify-center py-0.5">
+                    <ArrowDown className="w-3 h-3 text-muted-foreground/50" />
+                  </div>
+                  {ruleList.map((rule) => (
+                    <div key={rule.name} className="text-[11px] space-y-0.5">
+                      <div className="flex items-center gap-1.5">
+                        <Zap
+                          className={`w-3 h-3 shrink-0 ${rule.disabled ? 'text-muted-foreground/40' : 'text-amber-500'}`}
+                        />
+                        <span
+                          className={`font-mono truncate ${rule.disabled ? 'line-through text-muted-foreground/50' : ''}`}
+                        >
+                          {rule.name}
+                        </span>
+                      </div>
+                      <div className="pl-4 text-muted-foreground/70 text-[10px]">
+                        {rule.match} → {rule.action} → {rule.target}
+                        {rule.hit_count > 0 && (
+                          <span className="ml-1 text-muted-foreground/50">
+                            · {rule.hit_count} hits
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </>
+              )}
+
+              {/* Arrow down + outputs */}
+              {allOutputs.length > 0 && (
+                <>
+                  <div className="flex justify-center py-0.5">
+                    <ArrowDown className="w-3 h-3 text-muted-foreground/50" />
+                  </div>
+                  {allOutputs.map((item) => (
+                    <div key={`out-${item.name}`} className="flex items-center gap-1.5 text-[11px]">
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full shrink-0 ${stateColor(item.state)}`}
+                      />
+                      <span className="font-mono truncate">{item.name}</span>
+                      <span className="text-muted-foreground">({item.type})</span>
+                      {item.detail && (
+                        <span className="text-muted-foreground/60 ml-auto">{item.detail}</span>
+                      )}
+                    </div>
+                  ))}
+                </>
+              )}
             </div>
           )}
 
-          {/* Transport health */}
-          {transportList.length > 0 && !probeError && (
-            <div className="space-y-0.5">
-              {transportList.map((tr) => (
-                <div key={tr.name} className="flex items-center gap-1.5 text-[11px]">
-                  <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${stateColor(tr.state)}`} />
-                  <span className="font-mono truncate">{tr.name}</span>
-                  <span className="text-muted-foreground">({tr.type})</span>
-                  <span className="text-muted-foreground/60 ml-auto">
-                    {tr.published > 0
-                      ? `${tr.published} pub`
-                      : tr.received > 0
-                        ? `${tr.received} rx`
-                        : ''}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Summary line: tags · rules · errors */}
+          {/* Summary line: tags · errors */}
           {stats && !probeError && (
             <div className="flex items-center gap-2 text-[10px] text-muted-foreground pt-0.5">
               {stats.tag_count !== undefined && <span>{stats.tag_count} 测点</span>}
-              {stats.tag_count !== undefined && stats.rules > 0 && <span>·</span>}
-              {stats.rules > 0 && <span>{stats.rules} 规则</span>}
-              {stats.rules > 0 && <span>·</span>}
+              {stats.tag_count !== undefined && <span>·</span>}
               {stats.total_errors > 0 ? (
                 <span className="text-rose-500 flex items-center gap-0.5">
                   <AlertTriangle className="w-2.5 h-2.5" />

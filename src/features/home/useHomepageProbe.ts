@@ -68,11 +68,12 @@ async function probeInstance(instance: CoreCInstance): Promise<CoreCInstance['la
   const base = instance.baseUrl.trim().replace(/\/+$/, '')
   const headers = { Authorization: `Bearer ${instance.secret}` }
 
-  // Fetch GET / and GET /stats and GET /tags in parallel
-  const [infoRes, statsRes, tagsRes] = await Promise.allSettled([
+  // Fetch GET / and GET /stats and GET /tags and GET /rules in parallel
+  const [infoRes, statsRes, tagsRes, rulesRes] = await Promise.allSettled([
     fetchWithTimeout(`${base}/`),
     fetchWithTimeout(`${base}/stats`, { headers }),
     fetchWithTimeout(`${base}/tags`, { headers }),
+    fetchWithTimeout(`${base}/rules`, { headers }),
   ])
 
   // GET / must succeed — otherwise the instance is unreachable
@@ -110,6 +111,30 @@ async function probeInstance(instance: CoreCInstance): Promise<CoreCInstance['la
     const tags = await tagsRes.value.json()
     if (result.stats) {
       result.stats.tag_count = Object.keys(tags.tags ?? {}).length
+    }
+  }
+
+  // GET /rules — for topology display
+  if (rulesRes.status === 'fulfilled' && rulesRes.value.ok) {
+    const rules = await rulesRes.value.json()
+    if (result.stats) {
+      result.stats.rule_list = (rules.rules ?? []).map(
+        (r: {
+          name: string
+          match: string
+          action: string
+          target: string
+          disabled: boolean
+          hit_count: number
+        }) => ({
+          name: r.name,
+          match: r.match,
+          action: r.action,
+          target: r.target,
+          disabled: r.disabled,
+          hit_count: r.hit_count,
+        }),
+      )
     }
   }
 
