@@ -189,7 +189,7 @@ export const InstanceCard: React.FC<InstanceCardProps> = ({ instance, onEdit }) 
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-2 min-w-0">
               <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${statusColor}`} />
-              <h3 className="font-semibold text-sm truncate">{instance.name}</h3>
+              <h3 className="font-semibold text-sm break-words">{instance.name}</h3>
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -222,7 +222,7 @@ export const InstanceCard: React.FC<InstanceCardProps> = ({ instance, onEdit }) 
         <div className="px-4 pb-3 space-y-2 flex-1">
           {/* URL */}
           <div
-            className="font-mono text-xs text-muted-foreground truncate"
+            className="font-mono text-xs text-muted-foreground break-all"
             title={instance.baseUrl}
           >
             {instance.baseUrl.replace(/^https?:\/\//, '')}
@@ -230,7 +230,7 @@ export const InstanceCard: React.FC<InstanceCardProps> = ({ instance, onEdit }) 
 
           {/* Error message */}
           {probeError && (
-            <div className="text-xs text-rose-500 truncate" title={probeError}>
+            <div className="text-xs text-rose-500 break-words" title={probeError}>
               {probeError}
             </div>
           )}
@@ -302,24 +302,24 @@ export const InstanceCard: React.FC<InstanceCardProps> = ({ instance, onEdit }) 
 
           {/* Topology flow: inputs → rules → outputs */}
           {hasTopology && !probeError && (
-            <div className="rounded-md bg-muted/30 px-2 py-1.5 space-y-0.5">
+            <div className="rounded-md bg-muted/30 px-2 py-1.5 space-y-1">
               {/* Inputs (drivers + incoming transports) */}
               {allInputs.map((item) => (
-                <div key={`in-${item.name}`} className="flex items-center gap-1.5 text-[11px]">
-                  <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${stateColor(item.state)}`} />
-                  <span className="font-mono truncate">{item.name}</span>
-                  <span className="text-muted-foreground shrink-0">({item.type})</span>
+                <div key={`in-${item.name}`} className="text-[11px] space-y-0.5">
+                  <div className="flex items-center gap-1.5">
+                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${stateColor(item.state)}`} />
+                    <span className="font-mono break-words">{item.name}</span>
+                  </div>
+                  <div className="pl-4 text-muted-foreground">({item.type})</div>
                   {item.conn && (
-                    <span className="text-muted-foreground/50 font-mono truncate min-w-0">
-                      {item.conn}
-                    </span>
+                    <div className="pl-4 text-muted-foreground/50 font-mono break-all">{item.conn}</div>
                   )}
                   {item.detail && (
-                    <span
-                      className={`ml-auto shrink-0 ${item.detail.includes('err') ? 'text-rose-500' : 'text-muted-foreground/60'}`}
+                    <div
+                      className={`pl-4 ${item.detail.includes('err') ? 'text-rose-500' : 'text-muted-foreground/60'}`}
                     >
                       {item.detail}
-                    </span>
+                    </div>
                   )}
                 </div>
               ))}
@@ -337,12 +337,12 @@ export const InstanceCard: React.FC<InstanceCardProps> = ({ instance, onEdit }) 
                           className={`w-3 h-3 shrink-0 ${rule.disabled ? 'text-muted-foreground/40' : 'text-amber-500'}`}
                         />
                         <span
-                          className={`font-mono truncate ${rule.disabled ? 'line-through text-muted-foreground/50' : ''}`}
+                          className={`font-mono break-words ${rule.disabled ? 'line-through text-muted-foreground/50' : ''}`}
                         >
                           {rule.name}
                         </span>
                       </div>
-                      <div className="pl-4 text-muted-foreground/70 text-[10px]">
+                      <div className="pl-4 text-muted-foreground/70 text-[10px] break-all">
                         {rule.match} → {rule.action} → {rule.target}
                         {rule.hit_count > 0 && (
                           <span className="ml-1 text-muted-foreground/50">
@@ -362,21 +362,19 @@ export const InstanceCard: React.FC<InstanceCardProps> = ({ instance, onEdit }) 
                     <ArrowDown className="w-3 h-3 text-muted-foreground/50" />
                   </div>
                   {allOutputs.map((item) => (
-                    <div key={`out-${item.name}`} className="flex items-center gap-1.5 text-[11px]">
-                      <span
-                        className={`w-1.5 h-1.5 rounded-full shrink-0 ${stateColor(item.state)}`}
-                      />
-                      <span className="font-mono truncate">{item.name}</span>
-                      <span className="text-muted-foreground shrink-0">({item.type})</span>
+                    <div key={`out-${item.name}`} className="text-[11px] space-y-0.5">
+                      <div className="flex items-center gap-1.5">
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full shrink-0 ${stateColor(item.state)}`}
+                        />
+                        <span className="font-mono break-words">{item.name}</span>
+                      </div>
+                      <div className="pl-4 text-muted-foreground">({item.type})</div>
                       {item.conn && (
-                        <span className="text-muted-foreground/50 font-mono truncate min-w-0">
-                          {item.conn}
-                        </span>
+                        <div className="pl-4 text-muted-foreground/50 font-mono break-all">{item.conn}</div>
                       )}
                       {item.detail && (
-                        <span className="text-muted-foreground/60 ml-auto shrink-0">
-                          {item.detail}
-                        </span>
+                        <div className="pl-4 text-muted-foreground/60">{item.detail}</div>
                       )}
                     </div>
                   ))}
