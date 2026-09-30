@@ -50,44 +50,44 @@
     --card-foreground: 224 71.4% 4.1%;
     --popover: 0 0% 100%;
     --popover-foreground: 224 71.4% 4.1%;
-    --primary: 220 90% 48%;
-    --primary-foreground: 210 20% 98%;
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 220 50% 16%;
-    --muted: 220 14% 96%;
-    --muted-foreground: 220 10% 42%;
-    --accent: 220 14% 94%;
-    --accent-foreground: 220 50% 16%;
+    --primary: 164 41% 38%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 164 14% 94%;
+    --secondary-foreground: 164 30% 16%;
+    --muted: 164 14% 95%;
+    --muted-foreground: 164 10% 42%;
+    --accent: 164 14% 92%;
+    --accent-foreground: 164 30% 16%;
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 20% 98%;
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 220 90% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 164 13% 90%;
+    --input: 164 13% 90%;
+    --ring: 164 41% 41%;
     --radius: 0.625rem;
     --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     --font-mono: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
   }
 
   .dark {
-    --background: 224 25% 6%;
-    --foreground: 210 20% 98%;
-    --card: 224 25% 9%;
-    --card-foreground: 210 20% 98%;
-    --popover: 224 25% 9%;
-    --popover-foreground: 210 20% 98%;
-    --primary: 217 91% 60%;
-    --primary-foreground: 222 47% 11%;
-    --secondary: 224 20% 15%;
-    --secondary-foreground: 210 20% 98%;
-    --muted: 224 20% 14%;
-    --muted-foreground: 218 15% 65%;
-    --accent: 224 20% 16%;
-    --accent-foreground: 210 20% 98%;
+    --background: 200 25% 6%;
+    --foreground: 164 20% 96%;
+    --card: 200 25% 9%;
+    --card-foreground: 164 20% 96%;
+    --popover: 200 25% 9%;
+    --popover-foreground: 164 20% 96%;
+    --primary: 164 48% 50%;
+    --primary-foreground: 200 30% 8%;
+    --secondary: 200 20% 15%;
+    --secondary-foreground: 164 20% 96%;
+    --muted: 200 20% 14%;
+    --muted-foreground: 164 15% 65%;
+    --accent: 200 20% 16%;
+    --accent-foreground: 164 20% 96%;
     --destructive: 0 72% 51%;
-    --destructive-foreground: 210 20% 98%;
-    --border: 224 20% 17%;
-    --input: 224 20% 17%;
-    --ring: 217 91% 60%;
+    --destructive-foreground: 164 20% 96%;
+    --border: 200 20% 17%;
+    --input: 200 20% 17%;
+    --ring: 164 48% 50%;
   }
 }
 
@@ -140,7 +140,7 @@ body {
   box-shadow: 0 0 10px rgba(239, 68, 68, 0.45);
 }
 .glow-primary {
-  box-shadow: 0 0 12px rgba(59, 130, 246, 0.45);
+  box-shadow: 0 0 12px rgba(84, 184, 156, 0.45);
 }
 
 /*

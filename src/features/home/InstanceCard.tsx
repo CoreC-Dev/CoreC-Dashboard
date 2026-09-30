@@ -45,13 +45,14 @@ function formatRelativeTime(iso?: string): string {
   return `${Math.floor(diff / 86_400_000)} 天前`
 }
 
-/** Parse Go duration string like "10m42.975s" or "1h30m" into a short label. */
+/** Parse Go duration string like "25m40.650422s" or "1h30m" into a short label. */
 function formatUptime(uptime?: string): string {
   if (!uptime || uptime === '0s') return ''
-  // Try parsing common Go duration formats
+  // Go durations: "1h30m45.123s", "25m40.650422s", "5.5s"
+  // Seconds can have a decimal fraction — only take the integer part.
   const h = uptime.match(/(\d+)h/)
   const m = uptime.match(/(\d+)m/)
-  const s = uptime.match(/(\d+)s/)
+  const s = uptime.match(/(\d+)(?:\.\d+)?s/)
   const hours = h ? parseInt(h[1], 10) : 0
   const mins = m ? parseInt(m[1], 10) : 0
   const secs = s ? parseInt(s[1], 10) : 0

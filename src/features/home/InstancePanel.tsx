@@ -97,11 +97,11 @@ export const InstancePanel: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* Top bar — brand bar with animated logo */}
+      {/* Top bar — brand bar with static logo */}
       <header className="h-14 border-b border-border bg-card/60 backdrop-blur-md px-4 flex items-center justify-between sticky top-0 z-30">
         <div className="flex items-center space-x-2 font-bold text-lg tracking-tight">
-          <img src="/logo-animated.svg" alt="CoreC" className="w-8 h-8" />
-          <span className="font-extrabold bg-gradient-to-r from-primary to-blue-400 bg-clip-text text-transparent">
+          <img src="/logo.svg" alt="CoreC" className="w-8 h-8" />
+          <span className="font-extrabold bg-gradient-to-r from-primary to-emerald-400 bg-clip-text text-transparent">
             CoreC
           </span>
           <span className="text-xs px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono font-normal">
