@@ -300,40 +300,50 @@ export const InstanceCard: React.FC<InstanceCardProps> = ({ instance, onEdit }) 
             </div>
           )}
 
-          {/* Topology flow: inputs → rules → outputs */}
+          {/* Topology flow: inputs → rules → outputs — three separate panels */}
           {hasTopology && !probeError && (
-            <div className="rounded-md bg-muted/30 px-2 py-1.5 space-y-1">
+            <div className="space-y-1">
               {/* Inputs (drivers + incoming transports) */}
-              {allInputs.map((item) => (
-                <div key={`in-${item.name}`} className="text-[11px] space-y-0.5">
-                  <div className="flex items-center gap-1.5">
-                    <span
-                      className={`w-1.5 h-1.5 rounded-full shrink-0 ${stateColor(item.state)}`}
-                    />
-                    <span className="font-mono break-words">{item.name}</span>
-                  </div>
-                  <div className="pl-4 text-muted-foreground">({item.type})</div>
-                  {item.conn && (
-                    <div className="pl-4 text-muted-foreground/50 font-mono break-all">
-                      {item.conn}
+              {allInputs.length > 0 && (
+                <div className="rounded-md bg-muted/30 px-2 py-1.5 space-y-1">
+                  {allInputs.map((item) => (
+                    <div key={`in-${item.name}`} className="text-[11px] space-y-0.5">
+                      <div className="flex items-center gap-1.5">
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full shrink-0 ${stateColor(item.state)}`}
+                        />
+                        <span className="font-mono break-words">{item.name}</span>
+                        <span className="ml-auto shrink-0 text-[9px] px-1 py-0.5 rounded bg-muted text-muted-foreground font-mono">
+                          {item.type}
+                        </span>
+                      </div>
+                      {item.conn && (
+                        <div className="pl-4 text-muted-foreground/50 font-mono break-all">
+                          {item.conn}
+                        </div>
+                      )}
+                      {item.detail && (
+                        <div
+                          className={`pl-4 ${item.detail.includes('err') ? 'text-rose-500' : 'text-muted-foreground/60'}`}
+                        >
+                          {item.detail}
+                        </div>
+                      )}
                     </div>
-                  )}
-                  {item.detail && (
-                    <div
-                      className={`pl-4 ${item.detail.includes('err') ? 'text-rose-500' : 'text-muted-foreground/60'}`}
-                    >
-                      {item.detail}
-                    </div>
-                  )}
+                  ))}
                 </div>
-              ))}
+              )}
 
-              {/* Arrow down + rules */}
+              {/* Arrow down */}
+              {allInputs.length > 0 && ruleList.length > 0 && (
+                <div className="flex justify-center">
+                  <ArrowDown className="w-3 h-3 text-muted-foreground/50" />
+                </div>
+              )}
+
+              {/* Rules */}
               {ruleList.length > 0 && (
-                <>
-                  <div className="flex justify-center py-0.5">
-                    <ArrowDown className="w-3 h-3 text-muted-foreground/50" />
-                  </div>
+                <div className="rounded-md bg-muted/30 px-2 py-1.5 space-y-1">
                   {ruleList.map((rule) => (
                     <div key={rule.name} className="text-[11px] space-y-0.5">
                       <div className="flex items-center gap-1.5">
@@ -356,15 +366,19 @@ export const InstanceCard: React.FC<InstanceCardProps> = ({ instance, onEdit }) 
                       </div>
                     </div>
                   ))}
-                </>
+                </div>
               )}
 
-              {/* Arrow down + outputs */}
+              {/* Arrow down */}
+              {ruleList.length > 0 && allOutputs.length > 0 && (
+                <div className="flex justify-center">
+                  <ArrowDown className="w-3 h-3 text-muted-foreground/50" />
+                </div>
+              )}
+
+              {/* Outputs */}
               {allOutputs.length > 0 && (
-                <>
-                  <div className="flex justify-center py-0.5">
-                    <ArrowDown className="w-3 h-3 text-muted-foreground/50" />
-                  </div>
+                <div className="rounded-md bg-muted/30 px-2 py-1.5 space-y-1">
                   {allOutputs.map((item) => (
                     <div key={`out-${item.name}`} className="text-[11px] space-y-0.5">
                       <div className="flex items-center gap-1.5">
@@ -372,8 +386,10 @@ export const InstanceCard: React.FC<InstanceCardProps> = ({ instance, onEdit }) 
                           className={`w-1.5 h-1.5 rounded-full shrink-0 ${stateColor(item.state)}`}
                         />
                         <span className="font-mono break-words">{item.name}</span>
+                        <span className="ml-auto shrink-0 text-[9px] px-1 py-0.5 rounded bg-muted text-muted-foreground font-mono">
+                          {item.type}
+                        </span>
                       </div>
-                      <div className="pl-4 text-muted-foreground">({item.type})</div>
                       {item.conn && (
                         <div className="pl-4 text-muted-foreground/50 font-mono break-all">
                           {item.conn}
@@ -384,7 +400,7 @@ export const InstanceCard: React.FC<InstanceCardProps> = ({ instance, onEdit }) 
                       )}
                     </div>
                   ))}
-                </>
+                </div>
               )}
             </div>
           )}
