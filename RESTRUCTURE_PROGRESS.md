@@ -13,8 +13,8 @@
 | Phase 1：骨架 + 首页 + 连接模型 | ✅ 完成 | 实例 Store、首页面板、路由重构、ConnectionProvider、TopBar、Monitor/Admin 壳 |
 | Phase 2：Monitor 空间 | ✅ 完成 | 固定 5 行仪表盘、实时测点页、告警事件页（路由已适配实例作用域） |
 | Phase 3：Admin 空间 + 全局设置 | ✅ 完成 | 所有 Admin 页面路由已适配实例作用域；全局设置页已创建 |
-| 交叉审计 | 🔄 进行中 | 4 个审计 agent 并行运行 |
-| 文档 + Push | 🔄 进行中 | 本文档 + 待提交 |
+| 交叉审计 | ✅ 完成 | 4 个审计 agent，51/51 检查通过 |
+| 文档 + Push | ✅ 完成 | RESTRUCTURE_PROGRESS.md 已生成；两个仓库已推送 |
 
 ---
 
