@@ -1,4 +1,13 @@
-import { MoreVertical, Pencil, Play, RefreshCw, Trash2 } from 'lucide-react'
+import {
+  Activity,
+  AlertTriangle,
+  Cpu,
+  MoreVertical,
+  Pencil,
+  Play,
+  RefreshCw,
+  Trash2,
+} from 'lucide-react'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
@@ -34,6 +43,37 @@ function formatRelativeTime(iso?: string): string {
   return `${Math.floor(diff / 86_400_000)} 天前`
 }
 
+/** Parse Go duration string like "10m42.975s" or "1h30m" into a short label. */
+function formatUptime(uptime?: string): string {
+  if (!uptime || uptime === '0s') return ''
+  // Try parsing common Go duration formats
+  const h = uptime.match(/(\d+)h/)
+  const m = uptime.match(/(\d+)m/)
+  const s = uptime.match(/(\d+)s/)
+  const hours = h ? parseInt(h[1], 10) : 0
+  const mins = m ? parseInt(m[1], 10) : 0
+  const secs = s ? parseInt(s[1], 10) : 0
+  if (hours > 0) return `${hours}h ${mins}m`
+  if (mins > 0) return `${mins}m ${secs}s`
+  if (secs > 0) return `${secs}s`
+  return uptime
+}
+
+/** Map driver/transport state number to color + label. */
+function stateColor(state: number): string {
+  // 0=Disconnected, 1=Connecting, 2=Connected, 3=Error
+  switch (state) {
+    case 2:
+      return 'bg-emerald-400'
+    case 1:
+      return 'bg-amber-400 animate-pulse'
+    case 3:
+      return 'bg-rose-500'
+    default:
+      return 'bg-zinc-400'
+  }
+}
+
 export const InstanceCard: React.FC<InstanceCardProps> = ({ instance, onEdit }) => {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -41,6 +81,8 @@ export const InstanceCard: React.FC<InstanceCardProps> = ({ instance, onEdit }) 
   const probing = useInstanceStore((s) => s.probing[instance.id] ?? false)
   const probeError = useInstanceStore((s) => s.probeErrors[instance.id])
   const [confirmDelete, setConfirmDelete] = React.useState(false)
+
+  const stats = instance.lastKnownInfo?.stats
 
   // Determine status: probing → connecting, probeError → error, lastConnectedAt → connected, else unknown
   const status: 'connected' | 'error' | 'connecting' | 'unknown' = probing
@@ -61,6 +103,10 @@ export const InstanceCard: React.FC<InstanceCardProps> = ({ instance, onEdit }) 
   const accentColor = instance.color || undefined
 
   const handleEnter = () => navigate(`/corec/${instance.id}/monitor/dashboard`)
+
+  // Driver stats for display
+  const driverList = stats?.driver_stats ? Object.values(stats.driver_stats) : []
+  const transportList = stats?.transport_stats ? Object.values(stats.transport_stats) : []
 
   return (
     <>
@@ -102,34 +148,131 @@ export const InstanceCard: React.FC<InstanceCardProps> = ({ instance, onEdit }) 
           </div>
         </div>
 
-        {/* Body: address, version/role, last connected */}
-        <div className="px-4 pb-3 space-y-1.5 flex-1">
+        {/* Body */}
+        <div className="px-4 pb-3 space-y-2 flex-1">
+          {/* URL */}
           <div
             className="font-mono text-xs text-muted-foreground truncate"
             title={instance.baseUrl}
           >
             {instance.baseUrl.replace(/^https?:\/\//, '')}
           </div>
-          {instance.lastKnownInfo?.version && (
-            <div className="flex items-center gap-2 text-xs">
-              <span className="px-1.5 py-0.5 rounded bg-muted font-mono">
-                v{instance.lastKnownInfo.version}
-              </span>
-              {instance.lastKnownInfo.status && (
-                <span className="text-muted-foreground">{instance.lastKnownInfo.status}</span>
-              )}
-            </div>
-          )}
+
+          {/* Error message */}
           {probeError && (
             <div className="text-xs text-rose-500 truncate" title={probeError}>
               {probeError}
             </div>
           )}
-          {instance.lastConnectedAt && !probeError && (
+
+          {/* Version + status + uptime */}
+          {instance.lastKnownInfo?.version && !probeError && (
+            <div className="flex items-center gap-1.5 text-xs flex-wrap">
+              <span className="px-1.5 py-0.5 rounded bg-muted font-mono">
+                v{instance.lastKnownInfo.version}
+              </span>
+              {instance.lastKnownInfo.uptime && (
+                <span className="text-muted-foreground">
+                  {formatUptime(instance.lastKnownInfo.uptime)}
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Key metrics grid — only when stats available */}
+          {stats && !probeError && (
+            <div className="grid grid-cols-2 gap-1.5 pt-1">
+              {/* Points per second */}
+              <div className="rounded-md bg-muted/50 px-2 py-1.5">
+                <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                  <Activity className="w-3 h-3" />
+                  <span>吞吐</span>
+                </div>
+                <div className="text-sm font-semibold font-mono">
+                  {stats.points_per_sec.toFixed(1)}
+                  <span className="text-[10px] text-muted-foreground ml-0.5">pts/s</span>
+                </div>
+              </div>
+              {/* Total reads */}
+              <div className="rounded-md bg-muted/50 px-2 py-1.5">
+                <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                  <Cpu className="w-3 h-3" />
+                  <span>读取</span>
+                </div>
+                <div className="text-sm font-semibold font-mono">
+                  {stats.total_read > 999
+                    ? `${(stats.total_read / 1000).toFixed(1)}k`
+                    : stats.total_read}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Driver health */}
+          {driverList.length > 0 && !probeError && (
+            <div className="space-y-0.5 pt-0.5">
+              {driverList.map((d) => (
+                <div key={d.name} className="flex items-center gap-1.5 text-[11px]">
+                  <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${stateColor(d.state)}`} />
+                  <span className="font-mono truncate">{d.name}</span>
+                  <span className="text-muted-foreground">({d.type})</span>
+                  {d.error_count > 0 && (
+                    <span className="text-rose-500 ml-auto">{d.error_count} err</span>
+                  )}
+                  {d.error_count === 0 && d.tag_count > 0 && (
+                    <span className="text-muted-foreground/60 ml-auto">{d.tag_count} tags</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Transport health */}
+          {transportList.length > 0 && !probeError && (
+            <div className="space-y-0.5">
+              {transportList.map((tr) => (
+                <div key={tr.name} className="flex items-center gap-1.5 text-[11px]">
+                  <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${stateColor(tr.state)}`} />
+                  <span className="font-mono truncate">{tr.name}</span>
+                  <span className="text-muted-foreground">({tr.type})</span>
+                  <span className="text-muted-foreground/60 ml-auto">
+                    {tr.published > 0
+                      ? `${tr.published} pub`
+                      : tr.received > 0
+                        ? `${tr.received} rx`
+                        : ''}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Summary line: tags · rules · errors */}
+          {stats && !probeError && (
+            <div className="flex items-center gap-2 text-[10px] text-muted-foreground pt-0.5">
+              {stats.tag_count !== undefined && <span>{stats.tag_count} 测点</span>}
+              {stats.tag_count !== undefined && stats.rules > 0 && <span>·</span>}
+              {stats.rules > 0 && <span>{stats.rules} 规则</span>}
+              {stats.rules > 0 && <span>·</span>}
+              {stats.total_errors > 0 ? (
+                <span className="text-rose-500 flex items-center gap-0.5">
+                  <AlertTriangle className="w-2.5 h-2.5" />
+                  {stats.total_errors} 错误
+                </span>
+              ) : (
+                <span>0 错误</span>
+              )}
+            </div>
+          )}
+
+          {/* Last connected */}
+          {instance.lastConnectedAt && !probeError && !stats && (
             <div className="text-[11px] text-muted-foreground/70">
               {formatRelativeTime(instance.lastConnectedAt)}
             </div>
           )}
+
+          {/* User tags */}
           {instance.tags && instance.tags.length > 0 && (
             <div className="flex flex-wrap gap-1 pt-1">
               {instance.tags.map((tag) => (

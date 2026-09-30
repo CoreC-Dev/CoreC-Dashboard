@@ -117,6 +117,8 @@ export const TopBar: React.FC = () => {
           <ArrowLeft className="w-4 h-4" />
         </Button>
 
+        <img src="/logo.svg" alt="CoreC" className="w-6 h-6 shrink-0" />
+
         {instance && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

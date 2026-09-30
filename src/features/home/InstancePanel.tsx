@@ -1,4 +1,4 @@
-import { Download, Plus, Radio, Settings, Upload } from 'lucide-react'
+import { Download, Plus, Settings, Upload } from 'lucide-react'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
@@ -17,6 +17,7 @@ import { useInstanceStore } from '@/stores/instanceStore'
 import { useThemeStore } from '@/stores/themeStore'
 import { InstanceCard } from './InstanceCard'
 import { InstanceDialog } from './InstanceDialog'
+import { useHomepageProbe } from './useHomepageProbe'
 
 export const InstancePanel: React.FC = () => {
   const { t } = useTranslation()
@@ -25,6 +26,9 @@ export const InstancePanel: React.FC = () => {
   const updateInstance = useInstanceStore((s) => s.updateInstance)
   const exportInstances = useInstanceStore((s) => s.exportInstances)
   const importInstances = useInstanceStore((s) => s.importInstances)
+
+  // Probe all instances in parallel every 15s — simultaneous multi-instance monitoring
+  useHomepageProbe()
 
   const { theme, resolvedTheme, setTheme } = useThemeStore()
 
@@ -93,12 +97,10 @@ export const InstancePanel: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* Top bar — simplified brand bar */}
+      {/* Top bar — brand bar with animated logo */}
       <header className="h-14 border-b border-border bg-card/60 backdrop-blur-md px-4 flex items-center justify-between sticky top-0 z-30">
         <div className="flex items-center space-x-2 font-bold text-lg tracking-tight">
-          <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center text-primary-foreground shadow-sm">
-            <Radio className="w-4 h-4" />
-          </div>
+          <img src="/logo-animated.svg" alt="CoreC" className="w-8 h-8" />
           <span className="font-extrabold bg-gradient-to-r from-primary to-blue-400 bg-clip-text text-transparent">
             CoreC
           </span>
@@ -141,9 +143,7 @@ export const InstancePanel: React.FC = () => {
         {instances.length === 0 ? (
           /* Empty state */
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
-              <Radio className="w-8 h-8 text-muted-foreground" />
-            </div>
+            <img src="/logo-animated.svg" alt="CoreC" className="w-16 h-16 mb-4" />
             <h2 className="text-xl font-semibold mb-2">{t('instances.emptyTitle')}</h2>
             <p className="text-sm text-muted-foreground mb-6 max-w-md">
               {t('instances.emptyDesc')}

@@ -22,12 +22,46 @@ export interface CoreCInstance {
   tags?: string[]
   /** Last successful connection timestamp (ISO 8601). */
   lastConnectedAt?: string
-  /** Last known server info (cached from GET /). */
+  /** Last known server info (cached from GET / + GET /stats). */
   lastKnownInfo?: {
     name?: string
     version?: string
     status?: string
     uptime?: string
+    /** Stats from GET /stats — fetched by the homepage probe for card display. */
+    stats?: {
+      drivers: number
+      transports: number
+      rules: number
+      total_read: number
+      total_publish: number
+      total_errors: number
+      total_dropped: number
+      points_per_sec: number
+      tag_count?: number
+      driver_stats?: Record<
+        string,
+        {
+          name: string
+          type: string
+          state: number
+          tag_count: number
+          read_count: number
+          error_count: number
+        }
+      >
+      transport_stats?: Record<
+        string,
+        {
+          name: string
+          type: string
+          state: number
+          published: number
+          received: number
+          failed: number
+        }
+      >
+    }
   }
   /** Creation timestamp (ISO 8601). */
   createdAt: string

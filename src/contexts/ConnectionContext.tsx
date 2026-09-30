@@ -150,6 +150,9 @@ export const ConnectionProvider: React.FC<{
       cancelled = true
       ctrl.abort()
       clearTimeout(timeoutId)
+      // Always reset probing on unmount — otherwise the homepage card
+      // shows a stuck yellow "connecting" dot after navigating away.
+      setProbing(instance.id, false)
     }
   }, [instance, probeNonce, setProbeResult, setProbing])
 
