@@ -137,6 +137,7 @@ export const InstanceCard: React.FC<InstanceCardProps> = ({ instance, onEdit }) 
       state: d.state,
       detail:
         d.error_count > 0 ? `${d.error_count} err` : d.tag_count > 0 ? `${d.tag_count} tags` : '',
+      conn: stats?.driver_conn?.[d.name] ?? '',
       isDriver: true,
     })),
     ...inputTransports.map((tr) => ({
@@ -144,6 +145,7 @@ export const InstanceCard: React.FC<InstanceCardProps> = ({ instance, onEdit }) 
       type: tr.type,
       state: tr.state,
       detail: tr.received > 0 ? `${tr.received} rx` : '',
+      conn: stats?.transport_conn?.[tr.name] ?? '',
       isDriver: false,
     })),
     ...bidirTransports.map((tr) => ({
@@ -151,6 +153,7 @@ export const InstanceCard: React.FC<InstanceCardProps> = ({ instance, onEdit }) 
       type: tr.type,
       state: tr.state,
       detail: `${tr.received} rx`,
+      conn: stats?.transport_conn?.[tr.name] ?? '',
       isDriver: false,
     })),
   ]
@@ -162,12 +165,14 @@ export const InstanceCard: React.FC<InstanceCardProps> = ({ instance, onEdit }) 
       type: tr.type,
       state: tr.state,
       detail: tr.published > 0 ? `${tr.published} pub` : '',
+      conn: stats?.transport_conn?.[tr.name] ?? '',
     })),
     ...bidirTransports.map((tr) => ({
       name: tr.name,
       type: tr.type,
       state: tr.state,
       detail: `${tr.published} pub`,
+      conn: stats?.transport_conn?.[tr.name] ?? '',
     })),
   ]
 
@@ -303,10 +308,15 @@ export const InstanceCard: React.FC<InstanceCardProps> = ({ instance, onEdit }) 
                 <div key={`in-${item.name}`} className="flex items-center gap-1.5 text-[11px]">
                   <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${stateColor(item.state)}`} />
                   <span className="font-mono truncate">{item.name}</span>
-                  <span className="text-muted-foreground">({item.type})</span>
+                  <span className="text-muted-foreground shrink-0">({item.type})</span>
+                  {item.conn && (
+                    <span className="text-muted-foreground/50 font-mono truncate min-w-0">
+                      {item.conn}
+                    </span>
+                  )}
                   {item.detail && (
                     <span
-                      className={`ml-auto ${item.detail.includes('err') ? 'text-rose-500' : 'text-muted-foreground/60'}`}
+                      className={`ml-auto shrink-0 ${item.detail.includes('err') ? 'text-rose-500' : 'text-muted-foreground/60'}`}
                     >
                       {item.detail}
                     </span>
@@ -357,9 +367,16 @@ export const InstanceCard: React.FC<InstanceCardProps> = ({ instance, onEdit }) 
                         className={`w-1.5 h-1.5 rounded-full shrink-0 ${stateColor(item.state)}`}
                       />
                       <span className="font-mono truncate">{item.name}</span>
-                      <span className="text-muted-foreground">({item.type})</span>
+                      <span className="text-muted-foreground shrink-0">({item.type})</span>
+                      {item.conn && (
+                        <span className="text-muted-foreground/50 font-mono truncate min-w-0">
+                          {item.conn}
+                        </span>
+                      )}
                       {item.detail && (
-                        <span className="text-muted-foreground/60 ml-auto">{item.detail}</span>
+                        <span className="text-muted-foreground/60 ml-auto shrink-0">
+                          {item.detail}
+                        </span>
                       )}
                     </div>
                   ))}
