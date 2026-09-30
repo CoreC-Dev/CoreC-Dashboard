@@ -103,7 +103,11 @@ export const ConnectionProvider: React.FC<{
   }, [instance])
 
   // Probe the connection.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: probeNonce is an intentional re-probe trigger; instance is the full dependency
+  // Use primitive deps (id, baseUrl, secret) instead of the full instance object
+  // to avoid re-running the probe when setProbeResult updates the store and
+  // creates a new instance object reference (which would cancel the in-flight
+  // probe and restart it, leaving isConnecting stuck at true / yellow dot).
+  // biome-ignore lint/correctness/useExhaustiveDependencies: probeNonce is an intentional re-probe trigger
   useEffect(() => {
     if (!instance) {
       setIsConnecting(false)
@@ -112,12 +116,13 @@ export const ConnectionProvider: React.FC<{
       return
     }
 
+    const instanceId = instance.id
     let cancelled = false
     const ctrl = new AbortController()
     const timeoutId = setTimeout(() => ctrl.abort(), 10_000)
 
     setIsConnecting(true)
-    setProbing(instance.id, true)
+    setProbing(instanceId, true)
 
     getServerInfo()
       .then((info) => {
@@ -126,7 +131,7 @@ export const ConnectionProvider: React.FC<{
         setIsConnecting(false)
         setError(null)
         setServerInfo(info)
-        setProbeResult(instance.id, true, info)
+        setProbeResult(instanceId, true, info)
       })
       .catch((err: unknown) => {
         if (cancelled) return
@@ -139,10 +144,10 @@ export const ConnectionProvider: React.FC<{
         setIsConnected(false)
         setIsConnecting(false)
         setError(errMsg)
-        setProbeResult(instance.id, false, undefined, errMsg)
+        setProbeResult(instanceId, false, undefined, errMsg)
       })
       .finally(() => {
-        if (!cancelled) setProbing(instance.id, false)
+        if (!cancelled) setProbing(instanceId, false)
         clearTimeout(timeoutId)
       })
 
@@ -152,9 +157,9 @@ export const ConnectionProvider: React.FC<{
       clearTimeout(timeoutId)
       // Always reset probing on unmount — otherwise the homepage card
       // shows a stuck yellow "connecting" dot after navigating away.
-      setProbing(instance.id, false)
+      setProbing(instanceId, false)
     }
-  }, [instance, probeNonce, setProbeResult, setProbing])
+  }, [instance?.id, instance?.baseUrl, instance?.secret, probeNonce, setProbeResult, setProbing])
 
   const reconnect = () => setProbeNonce((n) => n + 1)
 

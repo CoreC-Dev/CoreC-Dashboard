@@ -87,7 +87,6 @@ export const InstanceCard: React.FC<InstanceCardProps> = ({ instance, onEdit }) 
   const probing = useInstanceStore((s) => s.probing[instance.id] ?? false)
   const probeError = useInstanceStore((s) => s.probeErrors[instance.id])
   const [confirmDelete, setConfirmDelete] = React.useState(false)
-  const [topoExpanded, setTopoExpanded] = React.useState(false)
 
   const stats = instance.lastKnownInfo?.stats
 
@@ -190,7 +189,7 @@ export const InstanceCard: React.FC<InstanceCardProps> = ({ instance, onEdit }) 
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-2 min-w-0">
               <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${statusColor}`} />
-              <h3 className="font-semibold text-sm break-words">{instance.name}</h3>
+              <h3 className="font-semibold text-sm truncate">{instance.name}</h3>
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -223,7 +222,7 @@ export const InstanceCard: React.FC<InstanceCardProps> = ({ instance, onEdit }) 
         <div className="px-4 pb-3 space-y-2 flex-1">
           {/* URL */}
           <div
-            className="font-mono text-xs text-muted-foreground break-all"
+            className="font-mono text-xs text-muted-foreground truncate"
             title={instance.baseUrl}
           >
             {instance.baseUrl.replace(/^https?:\/\//, '')}
@@ -231,75 +230,67 @@ export const InstanceCard: React.FC<InstanceCardProps> = ({ instance, onEdit }) 
 
           {/* Error message */}
           {probeError && (
-            <div className="text-xs text-rose-500 break-words" title={probeError}>
+            <div className="text-xs text-rose-500 truncate" title={probeError}>
               {probeError}
             </div>
           )}
 
-          {/* Version + uptime + summary — compact single line */}
+          {/* Version + status + uptime */}
           {instance.lastKnownInfo?.version && !probeError && (
-            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground flex-wrap pt-0.5">
-              <span className="px-1 py-0.5 rounded bg-muted font-mono text-[10px]">
+            <div className="flex items-center gap-1.5 text-xs flex-wrap">
+              <span className="px-1.5 py-0.5 rounded bg-muted font-mono">
                 v{instance.lastKnownInfo.version}
               </span>
               {instance.lastKnownInfo.uptime && (
-                <span>{formatUptime(instance.lastKnownInfo.uptime)}</span>
-              )}
-              {stats && stats.tag_count !== undefined && (
-                <>
-                  <span>·</span>
-                  <span>{stats.tag_count} 测点</span>
-                </>
-              )}
-              {stats && stats.total_errors > 0 && (
-                <>
-                  <span>·</span>
-                  <span className="text-rose-500 flex items-center gap-0.5">
-                    <AlertTriangle className="w-2.5 h-2.5" />
-                    {stats.total_errors}
-                  </span>
-                </>
+                <span className="text-muted-foreground">
+                  {formatUptime(instance.lastKnownInfo.uptime)}
+                </span>
               )}
             </div>
           )}
 
-          {/* Key metrics — compact 4-col row */}
+          {/* Key metrics grid — only when stats available */}
           {stats && !probeError && (
-            <div className="grid grid-cols-4 gap-1 pt-1">
-              <div className="rounded bg-muted/50 px-1.5 py-1 text-center">
-                <div className="flex items-center justify-center gap-0.5 text-[9px] text-muted-foreground">
-                  <Activity className="w-2.5 h-2.5" />
+            <div className="grid grid-cols-2 gap-1.5 pt-1">
+              {/* Points per second */}
+              <div className="rounded-md bg-muted/50 px-2 py-1.5">
+                <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                  <Activity className="w-3 h-3" />
                   <span>吞吐</span>
                 </div>
-                <div className="text-xs font-semibold font-mono">
-                  {stats.points_per_sec.toFixed(0)}
+                <div className="text-sm font-semibold font-mono">
+                  {stats.points_per_sec.toFixed(1)}
+                  <span className="text-[10px] text-muted-foreground ml-0.5">pts/s</span>
                 </div>
               </div>
-              <div className="rounded bg-muted/50 px-1.5 py-1 text-center">
-                <div className="flex items-center justify-center gap-0.5 text-[9px] text-muted-foreground">
-                  <Cpu className="w-2.5 h-2.5" />
+              {/* Total reads */}
+              <div className="rounded-md bg-muted/50 px-2 py-1.5">
+                <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                  <Cpu className="w-3 h-3" />
                   <span>读取</span>
                 </div>
-                <div className="text-xs font-semibold font-mono">
+                <div className="text-sm font-semibold font-mono">
                   {formatCompact(stats.total_read)}
                 </div>
               </div>
-              <div className="rounded bg-muted/50 px-1.5 py-1 text-center">
-                <div className="flex items-center justify-center gap-0.5 text-[9px] text-muted-foreground">
-                  <Send className="w-2.5 h-2.5" />
+              {/* Total publishes */}
+              <div className="rounded-md bg-muted/50 px-2 py-1.5">
+                <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                  <Send className="w-3 h-3" />
                   <span>发布</span>
                 </div>
-                <div className="text-xs font-semibold font-mono">
+                <div className="text-sm font-semibold font-mono">
                   {formatCompact(stats.total_publish)}
                 </div>
               </div>
-              <div className="rounded bg-muted/50 px-1.5 py-1 text-center">
-                <div className="flex items-center justify-center gap-0.5 text-[9px] text-muted-foreground">
-                  <Ban className="w-2.5 h-2.5" />
+              {/* Total dropped — highlight in amber/rose when > 0 */}
+              <div className="rounded-md bg-muted/50 px-2 py-1.5">
+                <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                  <Ban className="w-3 h-3" />
                   <span>丢弃</span>
                 </div>
                 <div
-                  className={`text-xs font-semibold font-mono ${
+                  className={`text-sm font-semibold font-mono ${
                     stats.total_dropped > 0 ? 'text-amber-500' : ''
                   }`}
                 >
@@ -309,128 +300,103 @@ export const InstanceCard: React.FC<InstanceCardProps> = ({ instance, onEdit }) 
             </div>
           )}
 
-          {/* Topology flow: inputs → rules → outputs (collapsible) */}
+          {/* Topology flow: inputs → rules → outputs */}
           {hasTopology && !probeError && (
-            <div className="rounded-md bg-muted/30 px-2 py-1.5">
-              {/* Compact summary header — always visible */}
-              <button
-                type="button"
-                onClick={() => setTopoExpanded((v) => !v)}
-                className="flex items-center gap-1.5 w-full text-[11px] hover:text-primary transition-colors"
-              >
-                <ArrowDown
-                  className={`w-3 h-3 shrink-0 transition-transform ${topoExpanded ? 'rotate-[-90deg]' : ''}`}
-                />
-                <span className="font-medium">
-                  {allInputs.length > 0 && `${allInputs.length} 输入`}
-                  {ruleList.length > 0 && ` · ${ruleList.length} 规则`}
-                  {allOutputs.length > 0 && ` · ${allOutputs.length} 输出`}
-                </span>
-                {/* Inline status dots */}
-                <span className="flex items-center gap-0.5 ml-auto">
-                  {allInputs.map((item) => (
+            <div className="rounded-md bg-muted/30 px-2 py-1.5 space-y-0.5">
+              {/* Inputs (drivers + incoming transports) */}
+              {allInputs.map((item) => (
+                <div key={`in-${item.name}`} className="flex items-center gap-1.5 text-[11px]">
+                  <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${stateColor(item.state)}`} />
+                  <span className="font-mono truncate">{item.name}</span>
+                  <span className="text-muted-foreground shrink-0">({item.type})</span>
+                  {item.conn && (
+                    <span className="text-muted-foreground/50 font-mono truncate min-w-0">
+                      {item.conn}
+                    </span>
+                  )}
+                  {item.detail && (
                     <span
-                      key={`d-${item.name}`}
-                      className={`w-1.5 h-1.5 rounded-full ${stateColor(item.state)}`}
-                    />
-                  ))}
-                  {allOutputs.map((item) => (
-                    <span
-                      key={`do-${item.name}`}
-                      className={`w-1.5 h-1.5 rounded-full ${stateColor(item.state)}`}
-                    />
-                  ))}
-                </span>
-              </button>
+                      className={`ml-auto shrink-0 ${item.detail.includes('err') ? 'text-rose-500' : 'text-muted-foreground/60'}`}
+                    >
+                      {item.detail}
+                    </span>
+                  )}
+                </div>
+              ))}
 
-              {/* Expanded detail */}
-              {topoExpanded && (
-                <div className="space-y-0.5 pt-1.5 mt-1.5 border-t border-border/40">
-                  {/* Inputs (drivers + incoming transports) */}
-                  {allInputs.map((item) => (
-                    <div key={`in-${item.name}`} className="flex items-center gap-1.5 text-[11px]">
+              {/* Arrow down + rules */}
+              {ruleList.length > 0 && (
+                <>
+                  <div className="flex justify-center py-0.5">
+                    <ArrowDown className="w-3 h-3 text-muted-foreground/50" />
+                  </div>
+                  {ruleList.map((rule) => (
+                    <div key={rule.name} className="text-[11px] space-y-0.5">
+                      <div className="flex items-center gap-1.5">
+                        <Zap
+                          className={`w-3 h-3 shrink-0 ${rule.disabled ? 'text-muted-foreground/40' : 'text-amber-500'}`}
+                        />
+                        <span
+                          className={`font-mono truncate ${rule.disabled ? 'line-through text-muted-foreground/50' : ''}`}
+                        >
+                          {rule.name}
+                        </span>
+                      </div>
+                      <div className="pl-4 text-muted-foreground/70 text-[10px]">
+                        {rule.match} → {rule.action} → {rule.target}
+                        {rule.hit_count > 0 && (
+                          <span className="ml-1 text-muted-foreground/50">
+                            · {rule.hit_count} hits
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </>
+              )}
+
+              {/* Arrow down + outputs */}
+              {allOutputs.length > 0 && (
+                <>
+                  <div className="flex justify-center py-0.5">
+                    <ArrowDown className="w-3 h-3 text-muted-foreground/50" />
+                  </div>
+                  {allOutputs.map((item) => (
+                    <div key={`out-${item.name}`} className="flex items-center gap-1.5 text-[11px]">
                       <span
                         className={`w-1.5 h-1.5 rounded-full shrink-0 ${stateColor(item.state)}`}
                       />
-                      <span className="font-mono break-words">{item.name}</span>
+                      <span className="font-mono truncate">{item.name}</span>
                       <span className="text-muted-foreground shrink-0">({item.type})</span>
                       {item.conn && (
-                        <span className="text-muted-foreground/50 font-mono break-all min-w-0">
+                        <span className="text-muted-foreground/50 font-mono truncate min-w-0">
                           {item.conn}
                         </span>
                       )}
                       {item.detail && (
-                        <span
-                          className={`ml-auto shrink-0 ${item.detail.includes('err') ? 'text-rose-500' : 'text-muted-foreground/60'}`}
-                        >
+                        <span className="text-muted-foreground/60 ml-auto shrink-0">
                           {item.detail}
                         </span>
                       )}
                     </div>
                   ))}
+                </>
+              )}
+            </div>
+          )}
 
-                  {/* Arrow down + rules */}
-                  {ruleList.length > 0 && (
-                    <>
-                      <div className="flex justify-center py-0.5">
-                        <ArrowDown className="w-3 h-3 text-muted-foreground/50" />
-                      </div>
-                      {ruleList.map((rule) => (
-                        <div key={rule.name} className="text-[11px] space-y-0.5">
-                          <div className="flex items-center gap-1.5">
-                            <Zap
-                              className={`w-3 h-3 shrink-0 ${rule.disabled ? 'text-muted-foreground/40' : 'text-amber-500'}`}
-                            />
-                            <span
-                              className={`font-mono break-words ${rule.disabled ? 'line-through text-muted-foreground/50' : ''}`}
-                            >
-                              {rule.name}
-                            </span>
-                          </div>
-                          <div className="pl-4 text-muted-foreground/70 text-[10px]">
-                            {rule.match} → {rule.action} → {rule.target}
-                            {rule.hit_count > 0 && (
-                              <span className="ml-1 text-muted-foreground/50">
-                                · {rule.hit_count} hits
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </>
-                  )}
-
-                  {/* Arrow down + outputs */}
-                  {allOutputs.length > 0 && (
-                    <>
-                      <div className="flex justify-center py-0.5">
-                        <ArrowDown className="w-3 h-3 text-muted-foreground/50" />
-                      </div>
-                      {allOutputs.map((item) => (
-                        <div
-                          key={`out-${item.name}`}
-                          className="flex items-center gap-1.5 text-[11px]"
-                        >
-                          <span
-                            className={`w-1.5 h-1.5 rounded-full shrink-0 ${stateColor(item.state)}`}
-                          />
-                          <span className="font-mono break-words">{item.name}</span>
-                          <span className="text-muted-foreground shrink-0">({item.type})</span>
-                          {item.conn && (
-                            <span className="text-muted-foreground/50 font-mono break-all min-w-0">
-                              {item.conn}
-                            </span>
-                          )}
-                          {item.detail && (
-                            <span className="text-muted-foreground/60 ml-auto shrink-0">
-                              {item.detail}
-                            </span>
-                          )}
-                        </div>
-                      ))}
-                    </>
-                  )}
-                </div>
+          {/* Summary line: tags · errors */}
+          {stats && !probeError && (
+            <div className="flex items-center gap-2 text-[10px] text-muted-foreground pt-0.5">
+              {stats.tag_count !== undefined && <span>{stats.tag_count} 测点</span>}
+              {stats.tag_count !== undefined && <span>·</span>}
+              {stats.total_errors > 0 ? (
+                <span className="text-rose-500 flex items-center gap-0.5">
+                  <AlertTriangle className="w-2.5 h-2.5" />
+                  {stats.total_errors} 错误
+                </span>
+              ) : (
+                <span>0 错误</span>
               )}
             </div>
           )}
