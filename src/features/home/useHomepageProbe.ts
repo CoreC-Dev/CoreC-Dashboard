@@ -1,12 +1,9 @@
 import { useEffect, useRef } from 'react'
-import {
-  getDriverConnectionSummary,
-  getTransportConnectionSummary,
-} from '@/lib/connectionInfo'
 import { parseConfigYaml } from '@/lib/configYaml'
-import type { CoreCConfig } from '@/types/config'
+import { getDriverConnectionSummary, getTransportConnectionSummary } from '@/lib/connectionInfo'
 import type { CoreCInstance } from '@/stores/instanceStore'
 import { useInstanceStore } from '@/stores/instanceStore'
+import type { CoreCConfig } from '@/types/config'
 
 /**
  * Homepage probe — periodically checks ALL instances in parallel.
