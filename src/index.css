@@ -435,8 +435,7 @@ body {
 
 /* Sidebar collapse/expand smooth transition */
 .sidebar-transition {
-  transition: width 0.28s var(--ease-snap);
-  will-change: width;
+  transition: width 0.2s ease-out;
 }
 
 /* Nav item active indicator slide */
