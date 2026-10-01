@@ -259,7 +259,7 @@ export const AppShell: React.FC = () => {
         <div
           className={cn('flex w-full', eff ? 'flex-col items-center gap-1.5' : 'flex-col gap-1')}
         >
-          {/* Instance switcher */}
+          {/* Instance switcher with live status dot */}
           {instance && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -273,13 +273,23 @@ export const AppShell: React.FC = () => {
                   )}
                   aria-label={t('instances.switchInstance')}
                 >
-                  <Server className="w-[18px] h-[18px] shrink-0" />
+                  <span className="relative shrink-0">
+                    <Server className="w-[18px] h-[18px]" />
+                    <span
+                      className={cn(
+                        'absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full ring-1 ring-card',
+                        statusColor,
+                      )}
+                    />
+                  </span>
                   {!eff && (
-                    <span className="text-sm font-medium truncate text-left flex-1">
-                      {instance.name}
-                    </span>
+                    <>
+                      <span className="text-sm font-medium truncate text-left flex-1">
+                        {instance.name}
+                      </span>
+                      <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                    </>
                   )}
-                  {!eff && <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />}
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent side="right" align="end" className="w-56">
@@ -472,56 +482,59 @@ export const AppShell: React.FC = () => {
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
-
-          {/* Right: live indicator */}
-          <div className="ml-auto flex items-center gap-2 md:gap-2.5">
-            {instance && (
-              <div className="flex items-center gap-2 px-2.5 py-1.5 md:px-3 rounded-full bg-card border border-border shadow-sm">
-                <span className={cn('w-2 h-2 rounded-full shrink-0', statusColor)} />
-                <span className="text-xs font-semibold text-muted-foreground truncate max-w-[120px]">
-                  {instance.name}
-                </span>
-              </div>
-            )}
-            {isMonitor && (
-              <div className="flex items-center gap-1.5 px-2.5 py-1.5 md:px-3 rounded-full bg-card border border-border shadow-sm">
-                <span
-                  className={cn(
-                    'w-2 h-2 rounded-full shrink-0',
-                    isConnecting
-                      ? 'bg-status-warning'
-                      : isConnected
-                        ? 'bg-status-running glow-running'
-                        : 'bg-status-error glow-error',
-                  )}
-                />
-                <span
-                  className={cn(
-                    'text-xs font-semibold hidden sm:inline',
-                    isConnecting
-                      ? 'text-status-warning'
-                      : isConnected
-                        ? 'text-status-running'
-                        : 'text-status-error',
-                  )}
-                >
-                  {isConnecting
-                    ? t('monitor.realtimeStreamConnecting')
-                    : isConnected
-                      ? t('monitor.realtimeStreamConnected')
-                      : t('monitor.realtimeStreamDisconnected')}
-                </span>
-              </div>
-            )}
-          </div>
         </header>
 
         {/* Content — centered with max-width + page transition */}
         <main className="flex-1 overflow-y-auto">
-          <div className="w-full px-4 pb-4 md:px-8 md:pb-6 lg:max-w-[1600px] lg:mx-auto">
+          <div className="w-full max-w-[1400px] mx-auto px-4 pb-4 md:px-8 md:pb-6">
+            {/* Real-time stream indicator — aligned with content, not isolated in topbar */}
+            {isMonitor && (
+              <div className="flex justify-end mb-3">
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-card border border-border shadow-sm">
+                  <span
+                    className={cn(
+                      'w-2 h-2 rounded-full shrink-0',
+                      isConnecting
+                        ? 'bg-status-warning'
+                        : isConnected
+                          ? 'bg-status-running glow-running'
+                          : 'bg-status-error glow-error',
+                    )}
+                  />
+                  <span
+                    className={cn(
+                      'text-xs font-semibold',
+                      isConnecting
+                        ? 'text-status-warning'
+                        : isConnected
+                          ? 'text-status-running'
+                          : 'text-status-error',
+                    )}
+                  >
+                    {isConnecting
+                      ? t('monitor.realtimeStreamConnecting')
+                      : isConnected
+                        ? t('monitor.realtimeStreamConnected')
+                        : t('monitor.realtimeStreamDisconnected')}
+                  </span>
+                </div>
+              </div>
+            )}
             <div key={location.pathname} className="page-enter">
               <Outlet />
             </div>
+            {/* Footer declaration with GitHub link */}
+            <footer className="mt-8 pt-4 border-t border-border flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
+              <span>{t('common.footerText')}</span>
+              <a
+                href="https://github.com/CoreC-Dev/CoreC-Dashboard"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline font-medium"
+              >
+                GitHub
+              </a>
+            </footer>
           </div>
         </main>
       </div>

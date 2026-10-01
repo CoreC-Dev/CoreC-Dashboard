@@ -40,7 +40,7 @@ import { cn } from '@/lib/utils'
 import { validateValue } from '@/lib/writeValidation'
 import type { DataPoint } from '@/types/models'
 
-const ROW_HEIGHT = 44
+const ROW_HEIGHT = 48
 const MAX_TREND_SAMPLES = 100
 
 /** Fixed percentage column widths — header and rows share these so columns

@@ -147,7 +147,7 @@ export const DiagnosticsPage: React.FC = () => {
   const transportPublishes = metrics.filter((m) => m.name === 'corec_transport_published_total')
 
   return (
-    <div className="space-y-6 max-w-5xl">
+    <div className="space-y-6">
       <div>
         <h1 className="text-xl font-bold tracking-tight">{t('diagnostics.title')}</h1>
         <p className="text-xs text-muted-foreground">{t('diagnostics.subtitle')}</p>

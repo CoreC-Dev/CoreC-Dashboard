@@ -147,7 +147,8 @@
     "moreActions": "更多操作",
     "toggleLanguage": "切换语言",
     "lightMode": "切换到浅色模式",
-    "darkMode": "切换到深色模式"
+    "darkMode": "切换到深色模式",
+    "footerText": "CoreC Dashboard · 开源项目"
   },
   "instanceCard": {
     "throughput": "吞吐",

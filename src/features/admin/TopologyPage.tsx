@@ -42,7 +42,7 @@ export const TopologyPage: React.FC = () => {
   const hasError = serverInfoError || driversError || transportsError || statsError || rulesError
 
   return (
-    <div className="space-y-6 max-w-5xl">
+    <div className="space-y-6">
       <div>
         <h1 className="text-xl font-bold tracking-tight">{t('topology.title')}</h1>
         <p className="text-xs text-muted-foreground">{t('topology.subtitle')}</p>

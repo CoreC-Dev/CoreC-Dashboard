@@ -173,7 +173,7 @@ export const InstancePanel: React.FC = () => {
       </header>
 
       {/* Content */}
-      <main className="max-w-7xl mx-auto p-4 md:p-8">
+      <main className="max-w-[1400px] mx-auto p-4 md:p-8">
         {instances.length === 0 ? (
           /* Empty state */
           <div className="flex flex-col items-center justify-center py-20 text-center">
