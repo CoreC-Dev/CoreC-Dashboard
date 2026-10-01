@@ -217,7 +217,7 @@ export const DiagnosticsPage: React.FC = () => {
     <div className="space-y-5">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">{t('diagnostics.title')}</h1>
-        <p className="text-xs text-muted-foreground">{t('diagnostics.subtitle')}</p>
+        <p className="text-sm text-muted-foreground mt-1">{t('diagnostics.subtitle')}</p>
       </div>
 
       {/* Real-time xterm.js Terminal */}

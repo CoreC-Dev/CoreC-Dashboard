@@ -365,7 +365,7 @@ export const RulesPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">{t('rules.title')}</h1>
-          <p className="text-xs text-muted-foreground">{t('rules.subtitle')}</p>
+          <p className="text-sm text-muted-foreground mt-1">{t('rules.subtitle')}</p>
         </div>
         <div className="flex items-center gap-2">
           {dirty && (

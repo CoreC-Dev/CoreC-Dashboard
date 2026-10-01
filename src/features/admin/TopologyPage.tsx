@@ -45,7 +45,7 @@ export const TopologyPage: React.FC = () => {
     <div className="space-y-5">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">{t('topology.title')}</h1>
-        <p className="text-xs text-muted-foreground">{t('topology.subtitle')}</p>
+        <p className="text-sm text-muted-foreground mt-1">{t('topology.subtitle')}</p>
       </div>
 
       {hasError && (

@@ -461,7 +461,7 @@ export const ConfigCenterPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">{t('config.title')}</h1>
-          <p className="text-xs text-muted-foreground">{t('config.subtitle')}</p>
+          <p className="text-sm text-muted-foreground mt-1">{t('config.subtitle')}</p>
         </div>
 
         <div className="flex items-center space-x-2">

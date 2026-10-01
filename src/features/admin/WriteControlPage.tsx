@@ -233,10 +233,10 @@ export const WriteControlPage: React.FC = () => {
     <div className="space-y-5 max-w-5xl">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">{t('write.title')}</h1>
-        <p className="text-xs text-muted-foreground">{t('write.subtitle')}</p>
+        <p className="text-sm text-muted-foreground mt-1">{t('write.subtitle')}</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Left: Command Form */}
         <Card className="lg:col-span-2 border-border bg-card">
           <CardHeader className="p-4 pb-2">
