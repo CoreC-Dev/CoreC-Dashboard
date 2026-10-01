@@ -396,7 +396,7 @@ export const AppShell: React.FC = () => {
 
         {/* Content — centered with max-width + page transition */}
         <main className="flex-1 overflow-y-auto">
-          <div className="max-w-[1280px] mx-auto w-full px-5 pb-5">
+          <div className="max-w-[1600px] mx-auto w-full px-8 pb-6">
             <div key={location.pathname} className="page-enter">
               <Outlet />
             </div>
