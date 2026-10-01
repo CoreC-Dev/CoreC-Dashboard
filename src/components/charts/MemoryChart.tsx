@@ -45,16 +45,16 @@ export const MemoryChart = memo(function MemoryChart() {
           <XAxis
             dataKey="time"
             stroke="hsl(var(--muted-foreground))"
-            fontSize={10}
+            fontSize={12}
             tickLine={false}
           />
-          <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} unit="MB" />
+          <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} unit="MB" />
           <Tooltip
             contentStyle={{
               backgroundColor: 'hsl(var(--card))',
               borderColor: 'hsl(var(--border))',
               borderRadius: '8px',
-              fontSize: '11px',
+              fontSize: "13px",
             }}
           />
           <Line
