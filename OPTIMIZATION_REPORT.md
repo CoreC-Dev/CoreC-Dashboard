@@ -214,20 +214,30 @@
 | UX | TopBar 图标按钮 aria-label | `TopBar.tsx` | P1 | ✅ |
 | UX | ConfigCenterPage aria-pressed | `ConfigCenterPage.tsx` | P2 | ✅ |
 | UX | i18n 硬编码修复 | `utils.ts/InstanceCard.tsx/i18n` | P1 | ✅ |
+| 架构 | 提取 useConfigHistory hook | `src/hooks/useConfigHistory.ts` | P1 | ✅ |
+| 架构 | 提取 useStatusMessage hook | `src/hooks/useStatusMessage.ts` | P1 | ✅ |
+| 架构 | 提取 useDebouncedValue hook | `src/hooks/useDebouncedValue.ts` | P1 | ✅ |
+| UX | InstancePanel aria-label | `InstancePanel.tsx` | P2 | ✅ |
+| UX | GlobalSettingsPage aria-label | `GlobalSettingsPage.tsx` | P2 | ✅ |
+| UX | 筛选 select aria-label | `TagExplorerPage/AlertsPage.tsx` | P2 | ✅ |
+| CI | GitHub Actions test 步骤 | `deploy.yml` | P1 | ✅ |
+| CI | useLiteralKeys 修复 | `connectionInfo.ts` | P1 | ✅ |
+| 测试 | 提取 hook 单元测试 | `src/hooks/*.test.ts` | P1 | ✅ |
 
 ---
 
 ## 六、验证结果
 
 - ✅ TypeScript 类型检查通过（`tsc --noEmit` 零错误）
-- ✅ Vite 生产构建成功（454ms）
-- ✅ 全部 308 个测试通过（`vitest run`）
-- ✅ Biome lint 无错误（55 个 pre-existing `useLiteralKeys` info 不阻塞）
-- ✅ 外部功能和界面未改变（所有修改为内部实现优化）
+- ✅ Vite 生产构建成功
+- ✅ 全部 324 个测试通过（`vitest run`，18 个测试文件）
+- ✅ Biome lint 无错误无 info（113 文件检查通过）
+- ✅ GitHub Actions CI 通过（lint + build + test）
+- ✅ 外部功能的界面未改变（所有修改为内部实现优化）
 
 ## 七、后续建议（未在本轮实施）
 
-1. **ConfigCenterPage 拆分**：1102 行的 god component 应拆分为 `ConfigFormPanel`、`ConfigYamlEditor`、`ConfigToolbar` 等子组件，并提取 `useConfigApplyFlow` hook
+1. **ConfigCenterPage 进一步拆分**：已提取 3 个 hook（1027 行），可继续拆分为 `ConfigFormPanel`、`ConfigYamlEditor`、`ConfigToolbar` 等子组件
 2. **recharts → lightweight-charts**：recharts（365KB）可替换为 lightweight-charts（163KB），节省 200KB 包体积
 3. **RulesPage 拆分**：剩余 1001 行仍较大，可进一步提取规则编辑对话框为独立组件
 4. **Card padding 标准化**：各页面的 Card padding 不一致（p-3/p-4/p-6 混用），应统一为设计令牌
