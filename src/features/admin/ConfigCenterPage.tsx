@@ -42,7 +42,9 @@ import { GlobalConfigEditor } from '@/features/admin/GlobalConfigEditor'
 import { NodeConfigEditor } from '@/features/admin/NodeConfigEditor'
 import { RuleGroupEditor } from '@/features/admin/RuleGroupEditor'
 import { RuleProviderEditor } from '@/features/admin/RuleProviderEditor'
+import { type ConfigSnapshot, useConfigHistory } from '@/hooks/useConfigHistory'
 import { useConfigValidation } from '@/hooks/useConfigValidation'
+import { useStatusMessage } from '@/hooks/useStatusMessage'
 import { CONFIG_TEMPLATES, type ConfigTemplate } from '@/lib/configTemplates'
 import { computeLcsDiff, type DiffLine } from '@/lib/yamlDiff'
 import { useConfigStore } from '@/stores/configStore'
@@ -96,51 +98,6 @@ rules:
 `
 
 const STATUS_AUTO_DISMISS_MS = 2500
-
-const HISTORY_STORAGE_KEY = 'corec_config_history'
-const MAX_HISTORY_SNAPSHOTS = 10
-
-interface ConfigSnapshot {
-  timestamp: number
-  yaml: string
-  action: string
-}
-
-// Load persisted config snapshots from localStorage; tolerates malformed or
-// missing data so a corrupted entry never crashes the page.
-function loadHistory(): ConfigSnapshot[] {
-  try {
-    const raw = localStorage.getItem(HISTORY_STORAGE_KEY)
-    if (!raw) return []
-    const parsed = JSON.parse(raw)
-    if (!Array.isArray(parsed)) return []
-    return parsed
-      .filter(
-        (e): e is ConfigSnapshot =>
-          typeof e === 'object' &&
-          e !== null &&
-          typeof e.timestamp === 'number' &&
-          typeof e.yaml === 'string' &&
-          typeof e.action === 'string',
-      )
-      .slice(0, MAX_HISTORY_SNAPSHOTS)
-  } catch {
-    return []
-  }
-}
-
-// Persist snapshots (capped to MAX_HISTORY_SNAPSHOTS); swallows quota / serialize
-// errors so a failing storage backend never blocks the submit flow.
-function persistHistory(entries: ConfigSnapshot[]): void {
-  try {
-    localStorage.setItem(
-      HISTORY_STORAGE_KEY,
-      JSON.stringify(entries.slice(0, MAX_HISTORY_SNAPSHOTS)),
-    )
-  } catch {
-    // ignore — history is best-effort
-  }
-}
 
 // Line-by-line diff via longest-common-subsequence backtracking. Produces a
 // flat list of equal / added / removed lines the UI can render directly; a
@@ -235,12 +192,10 @@ export const ConfigCenterPage: React.FC = () => {
   // of on every keystroke. The editor itself stays un-debounced.
   const [debouncedYaml, setDebouncedYaml] = useState(yamlContent)
   const [currentLogLevel, setCurrentLogLevel] = useState<string>('info')
-  const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(
-    null,
-  )
+  const { statusMsg, setStatusMsg } = useStatusMessage(STATUS_AUTO_DISMISS_MS)
   // Change-history state: snapshots persisted to localStorage before every PUT,
   // plus the last successfully submitted YAML used to render the diff preview.
-  const [history, setHistory] = useState<ConfigSnapshot[]>(() => loadHistory())
+  const { history, addSnapshot } = useConfigHistory()
   const [lastSubmittedYaml, setLastSubmittedYaml] = useState<string | null>(null)
   const [diffOpen, setDiffOpen] = useState(true)
   const [templatePickerOpen, setTemplatePickerOpen] = useState(false)
@@ -248,24 +203,6 @@ export const ConfigCenterPage: React.FC = () => {
   // first successful fetch, so operators see the actual running config
   // instead of DEFAULT_SAMPLE_YAML without a manual "Load from Server" click.
   const autoLoadedRef = useRef(false)
-
-  // Auto-dismiss the status notice and clear the pending timer on unmount so we
-  // never call setState on a disposed component.
-  const statusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  useEffect(() => {
-    if (!statusMsg) return
-    if (statusTimerRef.current) clearTimeout(statusTimerRef.current)
-    statusTimerRef.current = setTimeout(() => {
-      setStatusMsg(null)
-      statusTimerRef.current = null
-    }, STATUS_AUTO_DISMISS_MS)
-    return () => {
-      if (statusTimerRef.current) {
-        clearTimeout(statusTimerRef.current)
-        statusTimerRef.current = null
-      }
-    }
-  }, [statusMsg])
 
   // Debounce the YAML editor content feeding the diff preview. Each keystroke
   // resets the timer; debouncedYaml only advances after 300ms of quiet,
@@ -428,14 +365,7 @@ export const ConfigCenterPage: React.FC = () => {
     setStatusMsg(null)
     // Persist a snapshot of the YAML being submitted BEFORE the PUT, so the
     // change history is recorded even if the server later rejects the reload.
-    const snapshot: ConfigSnapshot = {
-      timestamp: Date.now(),
-      yaml: yamlContent,
-      action: 'PUT /configs',
-    }
-    const nextHistory = [snapshot, ...history].slice(0, MAX_HISTORY_SNAPSHOTS)
-    setHistory(nextHistory)
-    persistHistory(nextHistory)
+    addSnapshot(yamlContent)
     setStatusMsg({ type: 'success', text: t('config.snapshotSaved') })
     try {
       await updateMutation.mutateAsync({ payload: yamlContent })
