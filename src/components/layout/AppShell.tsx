@@ -398,84 +398,86 @@ export const AppShell: React.FC = () => {
 
       {/* ===== Main content area ===== */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden h-full">
-        {/* Topbar */}
-        <header className="flex items-center gap-2 px-3 py-2.5 md:px-5 md:py-3 shrink-0">
-          {/* Hamburger (mobile only) */}
-          {isMobile && (
+        {/* Topbar — back button (left) + realtime indicator (right) on the same row */}
+        <header className="flex items-center justify-between px-3 py-2.5 md:px-5 md:py-3 shrink-0">
+          <div className="flex items-center gap-2">
+            {/* Hamburger (mobile only) */}
+            {isMobile && (
+              <button
+                type="button"
+                onClick={() => setMobileOpen(true)}
+                className="flex items-center justify-center w-9 h-9 rounded-lg bg-card border border-border shadow-sm text-muted-foreground hover:text-foreground hover:shadow-md transition-all duration-200 shrink-0"
+                aria-label={t('aria.openMenu')}
+              >
+                <Menu className="w-5 h-5" />
+              </button>
+            )}
+
+            {/* Back button */}
             <button
               type="button"
-              onClick={() => setMobileOpen(true)}
-              className="flex items-center justify-center w-9 h-9 rounded-lg bg-card border border-border shadow-sm text-muted-foreground hover:text-foreground hover:shadow-md transition-all duration-200 shrink-0"
-              aria-label={t('aria.openMenu')}
+              onClick={() => navigate('/')}
+              className="flex items-center justify-center w-9 h-9 md:w-8 md:h-8 rounded-full bg-card border border-border shadow-sm text-muted-foreground hover:text-foreground hover:shadow-md transition-all duration-200 shrink-0"
+              aria-label={t('instances.backHome')}
             >
-              <Menu className="w-5 h-5" />
+              <ArrowLeft className="w-4 h-4" />
             </button>
-          )}
+          </div>
 
-          {/* Back button */}
-          <button
-            type="button"
-            onClick={() => navigate('/')}
-            className="flex items-center justify-center w-9 h-9 md:w-8 md:h-8 rounded-full bg-card border border-border shadow-sm text-muted-foreground hover:text-foreground hover:shadow-md transition-all duration-200 shrink-0"
-            aria-label={t('instances.backHome')}
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </button>
+          {/* Real-time stream indicator — same row as back button, right side */}
+          {isMonitor && (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-card border border-border shadow-sm">
+              <span
+                className={cn(
+                  'w-2 h-2 rounded-full shrink-0',
+                  isConnecting
+                    ? 'bg-status-warning'
+                    : isConnected
+                      ? 'bg-status-running glow-running'
+                      : 'bg-status-error glow-error',
+                )}
+              />
+              <span
+                className={cn(
+                  'text-xs font-semibold',
+                  isConnecting
+                    ? 'text-status-warning'
+                    : isConnected
+                      ? 'text-status-running'
+                      : 'text-status-error',
+                )}
+              >
+                {isConnecting
+                  ? t('monitor.realtimeStreamConnecting')
+                  : isConnected
+                    ? t('monitor.realtimeStreamConnected')
+                    : t('monitor.realtimeStreamDisconnected')}
+              </span>
+            </div>
+          )}
         </header>
 
         {/* Content — centered with max-width + page transition */}
         <main className="flex-1 overflow-y-auto">
           <div className="w-full max-w-[1400px] mx-auto px-4 pb-4 md:px-8 md:pb-6">
-            {/* Real-time stream indicator — aligned with content, not isolated in topbar */}
-            {isMonitor && (
-              <div className="flex justify-end mb-3">
-                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-card border border-border shadow-sm">
-                  <span
-                    className={cn(
-                      'w-2 h-2 rounded-full shrink-0',
-                      isConnecting
-                        ? 'bg-status-warning'
-                        : isConnected
-                          ? 'bg-status-running glow-running'
-                          : 'bg-status-error glow-error',
-                    )}
-                  />
-                  <span
-                    className={cn(
-                      'text-xs font-semibold',
-                      isConnecting
-                        ? 'text-status-warning'
-                        : isConnected
-                          ? 'text-status-running'
-                          : 'text-status-error',
-                    )}
-                  >
-                    {isConnecting
-                      ? t('monitor.realtimeStreamConnecting')
-                      : isConnected
-                        ? t('monitor.realtimeStreamConnected')
-                        : t('monitor.realtimeStreamDisconnected')}
-                  </span>
-                </div>
-              </div>
-            )}
             <div key={location.pathname} className="page-enter">
               <Outlet />
             </div>
-            {/* Footer declaration with GitHub link */}
-            <footer className="mt-8 pt-4 border-t border-border flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
-              <span>{t('common.footerText')}</span>
-              <a
-                href="https://github.com/CoreC-Dev/CoreC-Dashboard"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary hover:underline font-medium"
-              >
-                GitHub
-              </a>
-            </footer>
           </div>
         </main>
+
+        {/* Footer — pinned to the bottom, does not scroll with content */}
+        <footer className="shrink-0 py-2.5 border-t border-border flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
+          <span>{t('common.footerText')}</span>
+          <a
+            href="https://github.com/CoreC-Dev/CoreC-Dashboard"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary hover:underline font-medium"
+          >
+            GitHub
+          </a>
+        </footer>
       </div>
 
       {/* Instance switcher — drawer (Sheet) */}
