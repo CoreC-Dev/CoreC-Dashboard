@@ -167,6 +167,7 @@ export const GlobalSettingsPage: React.FC = () => {
           </DialogHeader>
           <textarea
             className="w-full h-48 rounded-md border border-border bg-background px-3 py-2 text-xs font-mono resize-none focus:outline-none focus:ring-2 focus:ring-primary"
+            aria-label={t('instances.importTitle')}
             placeholder='[{"id":"inst_...","name":"...","baseUrl":"...","secret":"..."}]'
             value={importText}
             onChange={(e) => setImportText(e.target.value)}
