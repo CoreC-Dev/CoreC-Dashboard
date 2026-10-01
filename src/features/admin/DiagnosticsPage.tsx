@@ -99,13 +99,13 @@ const HistTile: React.FC<{
   return (
     <div className="p-3 rounded-lg bg-muted/40 border border-border">
       <div className="text-xs text-muted-foreground uppercase font-semibold">{label}</div>
-      <div className={`text-xl font-bold font-mono mt-1 ${accent}`}>{fmtSec(avg, na)}</div>
+      <div className={`text-xl font-bold font-mono mt-1 ${accent}`}>{fmtSec(p50 ?? avg, na)}</div>
       <div className="text-xs text-muted-foreground mt-1 font-mono">
         {t('diagnostics.p50')}={fmtSec(p50, na)} · {t('diagnostics.p95')}={fmtSec(p95, na)} ·{' '}
         {t('diagnostics.p99')}={fmtSec(p99, na)}
       </div>
       <div className="text-xs text-muted-foreground mt-1 font-mono">
-        n={fmtNum(count, na)} · Σ={fmtSec(sum, na)}
+        avg={fmtSec(avg, na)} · n={fmtNum(count, na)} · Σ={fmtSec(sum, na)}
       </div>
       <HistogramBars buckets={buckets} barClass={barClass} />
       <div className="text-xs text-muted-foreground/70 mt-0.5 font-mono truncate">{metric}</div>
