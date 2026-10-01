@@ -35,26 +35,26 @@ export function getDriverConnectionFields(
     case 'modbus-rtuovertcp':
     case 'modbus-udp':
     case 'modbus-rtuoverudp':
-      if (s['host']) fields.push({ label: 'Host', value: String(s['host']), primary: true })
-      if (s['port']) fields.push({ label: 'Port', value: String(s['port']) })
+      if (s.host) fields.push({ label: 'Host', value: String(s.host), primary: true })
+      if (s.port) fields.push({ label: 'Port', value: String(s.port) })
       if (s['slave-id'] !== undefined)
         fields.push({ label: 'Slave ID', value: String(s['slave-id']) })
-      if (s['timeout']) fields.push({ label: 'Timeout', value: String(s['timeout']) })
-      if (s['retry']) fields.push({ label: 'Retry', value: String(s['retry']) })
+      if (s.timeout) fields.push({ label: 'Timeout', value: String(s.timeout) })
+      if (s.retry) fields.push({ label: 'Retry', value: String(s.retry) })
       break
     case 'modbus-rtu':
       if (s['serial-device'])
         fields.push({ label: 'Serial Device', value: String(s['serial-device']), primary: true })
       if (s['baud-rate']) fields.push({ label: 'Baud Rate', value: String(s['baud-rate']) })
       if (s['data-bits']) fields.push({ label: 'Data Bits', value: String(s['data-bits']) })
-      if (s['parity']) fields.push({ label: 'Parity', value: String(s['parity']) })
+      if (s.parity) fields.push({ label: 'Parity', value: String(s.parity) })
       if (s['stop-bits']) fields.push({ label: 'Stop Bits', value: String(s['stop-bits']) })
       if (s['slave-id'] !== undefined)
         fields.push({ label: 'Slave ID', value: String(s['slave-id']) })
       break
     case 'modbus-tls':
-      if (s['host']) fields.push({ label: 'Host', value: String(s['host']), primary: true })
-      if (s['port']) fields.push({ label: 'Port', value: String(s['port']) })
+      if (s.host) fields.push({ label: 'Host', value: String(s.host), primary: true })
+      if (s.port) fields.push({ label: 'Port', value: String(s.port) })
       if (s['slave-id'] !== undefined)
         fields.push({ label: 'Slave ID', value: String(s['slave-id']) })
       if (s['cert-file']) fields.push({ label: 'Cert File', value: String(s['cert-file']) })
@@ -62,20 +62,19 @@ export function getDriverConnectionFields(
       if (s['ca-file']) fields.push({ label: 'CA File', value: String(s['ca-file']) })
       break
     case 's7':
-      if (s['host']) fields.push({ label: 'Host', value: String(s['host']), primary: true })
-      if (s['port']) fields.push({ label: 'Port', value: String(s['port']) })
-      if (s['rack'] !== undefined) fields.push({ label: 'Rack', value: String(s['rack']) })
-      if (s['slot'] !== undefined) fields.push({ label: 'Slot', value: String(s['slot']) })
+      if (s.host) fields.push({ label: 'Host', value: String(s.host), primary: true })
+      if (s.port) fields.push({ label: 'Port', value: String(s.port) })
+      if (s.rack !== undefined) fields.push({ label: 'Rack', value: String(s.rack) })
+      if (s.slot !== undefined) fields.push({ label: 'Slot', value: String(s.slot) })
       break
     case 'opcua':
-      if (s['endpoint'])
-        fields.push({ label: 'Endpoint', value: String(s['endpoint']), primary: true })
-      if (s['mode']) fields.push({ label: 'Mode', value: String(s['mode']) })
+      if (s.endpoint) fields.push({ label: 'Endpoint', value: String(s.endpoint), primary: true })
+      if (s.mode) fields.push({ label: 'Mode', value: String(s.mode) })
       if (s['security-policy'])
         fields.push({ label: 'Security Policy', value: String(s['security-policy']) })
       if (s['security-mode'])
         fields.push({ label: 'Security Mode', value: String(s['security-mode']) })
-      if (s['username']) fields.push({ label: 'Username', value: String(s['username']) })
+      if (s.username) fields.push({ label: 'Username', value: String(s.username) })
       break
     default:
       // Unknown type — show all settings as key-value
@@ -111,9 +110,9 @@ export function getTransportConnectionFields(
 
   switch (transport.type) {
     case 'mqtt':
-      if (s['broker']) fields.push({ label: 'Broker', value: String(s['broker']), primary: true })
+      if (s.broker) fields.push({ label: 'Broker', value: String(s.broker), primary: true })
       if (s['client-id']) fields.push({ label: 'Client ID', value: String(s['client-id']) })
-      if (s['qos'] !== undefined) fields.push({ label: 'QoS', value: String(s['qos']) })
+      if (s.qos !== undefined) fields.push({ label: 'QoS', value: String(s.qos) })
       if (s['topic-template'] && s['topic-template'] !== 'unused') {
         fields.push({ label: 'Publish Topic', value: String(s['topic-template']) })
       }
@@ -127,22 +126,21 @@ export function getTransportConnectionFields(
       if (s['command-topic'] && s['command-topic'] !== 'unused') {
         fields.push({ label: 'Command Topic', value: String(s['command-topic']) })
       }
-      if (s['retained'] !== undefined)
-        fields.push({ label: 'Retained', value: String(s['retained']) })
+      if (s.retained !== undefined) fields.push({ label: 'Retained', value: String(s.retained) })
       if (s['clean-session'] !== undefined)
         fields.push({ label: 'Clean Session', value: String(s['clean-session']) })
       if (s['keep-alive']) fields.push({ label: 'Keep Alive', value: String(s['keep-alive']) })
-      if (s['username']) fields.push({ label: 'Username', value: String(s['username']) })
-      if (s['parser'] && typeof s['parser'] === 'object') {
-        const p = s['parser'] as Record<string, unknown>
-        fields.push({ label: 'Parser', value: String(p['type'] ?? 'default') })
+      if (s.username) fields.push({ label: 'Username', value: String(s.username) })
+      if (s.parser && typeof s.parser === 'object') {
+        const p = s.parser as Record<string, unknown>
+        fields.push({ label: 'Parser', value: String(p.type ?? 'default') })
       }
       break
     case 'http':
-      if (s['url']) {
-        fields.push({ label: 'Publish URL', value: String(s['url']), primary: true })
+      if (s.url) {
+        fields.push({ label: 'Publish URL', value: String(s.url), primary: true })
       }
-      if (s['method']) fields.push({ label: 'Method', value: String(s['method']) })
+      if (s.method) fields.push({ label: 'Method', value: String(s.method) })
       if (s['webhook-addr']) {
         fields.push({
           label: 'Webhook Address',
@@ -152,15 +150,15 @@ export function getTransportConnectionFields(
       }
       if (s['webhook-path'])
         fields.push({ label: 'Webhook Path', value: String(s['webhook-path']) })
-      if (s['timeout']) fields.push({ label: 'Timeout', value: String(s['timeout']) })
-      if (s['headers'] && typeof s['headers'] === 'object') {
-        const headers = s['headers'] as Record<string, unknown>
+      if (s.timeout) fields.push({ label: 'Timeout', value: String(s.timeout) })
+      if (s.headers && typeof s.headers === 'object') {
+        const headers = s.headers as Record<string, unknown>
         const keys = Object.keys(headers)
         if (keys.length > 0) fields.push({ label: 'Headers', value: `${keys.length} configured` })
       }
-      if (s['parser'] && typeof s['parser'] === 'object') {
-        const p = s['parser'] as Record<string, unknown>
-        fields.push({ label: 'Parser', value: String(p['type'] ?? 'default') })
+      if (s.parser && typeof s.parser === 'object') {
+        const p = s.parser as Record<string, unknown>
+        fields.push({ label: 'Parser', value: String(p.type ?? 'default') })
       }
       break
     default:
@@ -180,8 +178,7 @@ export function getTransportConnectionFields(
     fields.push({ label: 'Retry Count', value: String(transport['retry-count']) })
   if (transport['buffer-size'] !== undefined)
     fields.push({ label: 'Buffer Size', value: String(transport['buffer-size']) })
-  if (transport['fallback'])
-    fields.push({ label: 'Fallback', value: String(transport['fallback']) })
+  if (transport.fallback) fields.push({ label: 'Fallback', value: String(transport.fallback) })
 
   return fields
 }

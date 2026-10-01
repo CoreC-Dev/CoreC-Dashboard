@@ -63,7 +63,13 @@ export const GlobalSettingsPage: React.FC = () => {
       {/* Top bar */}
       <header className="h-14 border-b border-border bg-card/60 backdrop-blur-md px-4 flex items-center justify-between sticky top-0 z-30">
         <div className="flex items-center space-x-3">
-          <Button variant="ghost" size="icon" asChild className="h-8 w-8">
+          <Button
+            variant="ghost"
+            size="icon"
+            asChild
+            aria-label={t('instances.backHome')}
+            className="h-8 w-8"
+          >
             <Link to="/">
               <ArrowLeft className="w-4 h-4" />
             </Link>

@@ -11,7 +11,7 @@ function useConnectedQuery<T>({
 }: {
   queryKey: unknown[]
   queryFn: () => Promise<T>
-  refetchInterval?: number
+  refetchInterval?: number | false
   enabled?: boolean
 }) {
   const { isConnected } = useConnection()
@@ -206,7 +206,7 @@ export function useValidateConfig() {
  * refetchInterval (default 12s) so polling is managed by TanStack Query
  * instead of a manual setInterval.
  */
-export function useMetrics(refetchInterval = 12_000) {
+export function useMetrics(refetchInterval: number | false = 12_000) {
   return useConnectedQuery({
     queryKey: ['metrics'],
     queryFn: api.getMetricsText,

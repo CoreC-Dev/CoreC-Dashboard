@@ -113,6 +113,7 @@ export const InstancePanel: React.FC = () => {
             variant="ghost"
             size="icon"
             onClick={cycleTheme}
+            aria-label={t('topbar.themeTooltip', { theme: t(`settings.${theme}`) })}
             className="h-8 w-8 text-muted-foreground hover:text-foreground"
           >
             {resolvedTheme === 'dark' ? '🌙' : '☀️'}
@@ -129,6 +130,7 @@ export const InstancePanel: React.FC = () => {
             variant="ghost"
             size="icon"
             asChild
+            aria-label={t('nav.settings')}
             className="h-8 w-8 text-muted-foreground hover:text-foreground"
           >
             <Link to="/settings">
