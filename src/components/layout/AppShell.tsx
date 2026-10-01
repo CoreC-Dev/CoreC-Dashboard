@@ -406,7 +406,15 @@ export const AppShell: React.FC = () => {
   )
 
   return (
-    <div className="h-screen w-full bg-background text-foreground overflow-hidden md:flex md:p-4 md:gap-4">
+    <div className="h-screen w-full bg-background text-foreground overflow-hidden md:flex md:p-4 md:gap-4 relative">
+      {/* Subtle decorative gradient orb */}
+      <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden="true">
+        <div
+          className="absolute -top-40 -right-40 w-[600px] h-[600px] rounded-full opacity-[0.03]"
+          style={{ background: 'radial-gradient(circle, hsl(var(--primary)) 0%, transparent 70%)' }}
+        />
+      </div>
+
       {/* ===== Route progress bar ===== */}
       {progress > 0 && (
         <div className="fixed top-0 left-0 right-0 h-0.5 z-[100] pointer-events-none">
