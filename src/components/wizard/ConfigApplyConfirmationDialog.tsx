@@ -215,6 +215,8 @@ export interface ConfigApplyConfirmationDialogProps {
   onConfirm: () => void
   /** Optional validation errors to display (from validateFullConfig). */
   validationErrors?: string[]
+  /** Optional apply-time error to display when the PUT /configs failed. */
+  applyError?: string
 }
 
 export const ConfigApplyConfirmationDialog: React.FC<ConfigApplyConfirmationDialogProps> = ({
@@ -226,6 +228,7 @@ export const ConfigApplyConfirmationDialog: React.FC<ConfigApplyConfirmationDial
   applying = false,
   onConfirm,
   validationErrors,
+  applyError,
 }) => {
   const { t } = useTranslation()
 
@@ -278,6 +281,17 @@ export const ConfigApplyConfirmationDialog: React.FC<ConfigApplyConfirmationDial
                 • {err}
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Apply-time error (PUT /configs failed) */}
+        {applyError && (
+          <div className="rounded-md border border-destructive/30 bg-destructive/10 p-2.5 text-xs text-destructive space-y-1">
+            <div className="font-semibold flex items-center gap-1.5">
+              <AlertTriangle className="h-3.5 w-3.5" />
+              {t('applyDialog.applyError')}
+            </div>
+            <div className="font-mono break-all">{applyError}</div>
           </div>
         )}
 

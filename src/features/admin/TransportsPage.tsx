@@ -1,4 +1,4 @@
-import { ExternalLink, Pencil, Plus, RefreshCw, Send, Trash2 } from 'lucide-react'
+import { ExternalLink, Loader2, Pencil, Plus, RefreshCw, Send, Trash2 } from 'lucide-react'
 import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -21,7 +21,7 @@ import { ConfigApplyConfirmationDialog } from '@/components/wizard/ConfigApplyCo
 import { EntitySearchBar, filterEntities } from '@/components/wizard/EntitySearchBar'
 import { ValidationBanner } from '@/components/wizard/ValidationBanner'
 import { TransportWizard } from '@/features/admin/TransportWizard'
-import { useConfigValidation } from '@/hooks/useConfigValidation'
+import { formatValidationErrors, useConfigValidation } from '@/hooks/useConfigValidation'
 import { useParsedConfig } from '@/hooks/useParsedConfig'
 import { getTransportConnectionSummary } from '@/lib/connectionInfo'
 import { ConnStateLabel } from '@/lib/constants'
@@ -34,7 +34,7 @@ export const TransportsPage: React.FC = () => {
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
   const adminBase = id ? `/corec/${id}/admin` : '/admin'
-  const { data, refetch, isFetching } = useTransports()
+  const { data, refetch, isFetching, isLoading } = useTransports()
   const transports = data?.transports || []
   const { data: rawYaml } = useConfigRaw()
   // Live config from GET /configs/raw — used for runtime card connection summaries.
@@ -51,10 +51,7 @@ export const TransportsPage: React.FC = () => {
   const getSavedYaml = useConfigStore((s) => s.getSavedYaml)
   const markSaved = useConfigStore((s) => s.markSaved)
   const validation = useConfigValidation()
-  const validationErrors =
-    validation.hasConfig && !validation.valid
-      ? validation.errors.map((e) => `${e.path}: ${e.message}`)
-      : undefined
+  const validationErrors = formatValidationErrors(validation)
 
   const updateConfig = useUpdateConfig()
 
@@ -62,6 +59,7 @@ export const TransportsPage: React.FC = () => {
   const [editingTransport, setEditingTransport] = useState<TransportConfig | undefined>(undefined)
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
   const [applyDialogOpen, setApplyDialogOpen] = useState(false)
+  const [applyError, setApplyError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
 
   const configTransports = workingConfig?.transports ?? []
@@ -99,7 +97,10 @@ export const TransportsPage: React.FC = () => {
             <Button
               variant="default"
               size="sm"
-              onClick={() => setApplyDialogOpen(true)}
+              onClick={() => {
+                setApplyError(null)
+                setApplyDialogOpen(true)
+              }}
               disabled={!!validationErrors}
               className="h-8 text-xs shrink-0"
             >
@@ -146,7 +147,10 @@ export const TransportsPage: React.FC = () => {
               size="sm"
               className="h-7 text-xs"
               disabled={!!validationErrors}
-              onClick={() => setApplyDialogOpen(true)}
+              onClick={() => {
+                setApplyError(null)
+                setApplyDialogOpen(true)
+              }}
             >
               {t('transports.applyChanges')}
             </Button>
@@ -260,7 +264,12 @@ export const TransportsPage: React.FC = () => {
           </Badge>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 card-stagger">
-          {transports.length === 0 ? (
+          {isLoading && transports.length === 0 ? (
+            <div className="col-span-full py-12 flex items-center justify-center gap-2 text-xs text-muted-foreground">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span>Loading…</span>
+            </div>
+          ) : transports.length === 0 ? (
             <Card className="col-span-full p-8 text-center text-xs text-muted-foreground border-dashed">
               {t('transports.empty')}
             </Card>
@@ -403,15 +412,20 @@ export const TransportsPage: React.FC = () => {
       {/* Apply Config Confirmation */}
       <ConfigApplyConfirmationDialog
         open={applyDialogOpen}
-        onOpenChange={setApplyDialogOpen}
+        onOpenChange={(v) => {
+          setApplyDialogOpen(v)
+          if (!v) setApplyError(null)
+        }}
         beforeYaml={getSavedYaml()}
         afterYaml={getWorkingYaml() ?? ''}
         applying={updateConfig.isPending}
         validationErrors={validationErrors}
+        applyError={applyError ?? undefined}
         onConfirm={() => {
           if (validationErrors) return
           const yaml = getWorkingYaml()
           if (!yaml) return
+          setApplyError(null)
           updateConfig.mutate(
             { payload: yaml },
             {
@@ -419,6 +433,7 @@ export const TransportsPage: React.FC = () => {
                 markSaved()
                 setApplyDialogOpen(false)
               },
+              onError: (err) => setApplyError(err instanceof Error ? err.message : String(err)),
             },
           )
         }}

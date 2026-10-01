@@ -58,10 +58,10 @@ export const RULE_ACTIONS = ['forward', 'drop', 'alert', 'transform', 'mirror'] 
 export type RuleAction = (typeof RULE_ACTIONS)[number]
 
 export const LOG_LEVELS = ['debug', 'info', 'warn', 'warning', 'error', 'silent'] as const
-export type LogLevel = (typeof LOG_LEVELS)[number]
+type LogLevel = (typeof LOG_LEVELS)[number]
 
 export const LOG_FORMATS = ['text', 'json'] as const
-export type LogFormat = (typeof LOG_FORMATS)[number]
+type LogFormat = (typeof LOG_FORMATS)[number]
 
 // Mirrors CoreC's config.SentinelValue ("***"). GET /configs/raw redacts every
 // secret field to this placeholder; PUT /configs back-merges it via
@@ -124,7 +124,7 @@ export interface TransportConfig {
 }
 
 // ─── Rule config (core/rule.go) ──────────────────────────────────────
-export interface TransformConfig {
+interface TransformConfig {
   /** Arithmetic expression: supports +, -, *, /, parens, and variable `value`. */
   expression: string
   /** Optional literal new tag name (not a template). */
@@ -156,7 +156,7 @@ export interface RuleProviderConfig {
 }
 
 /** rule-groups: named, reusable sub-rule groups keyed by group name. */
-export type RuleGroups = Record<string, RuleConfig[]>
+type RuleGroups = Record<string, RuleConfig[]>
 
 // ─── Global config (core/engine.go) ──────────────────────────────────
 interface APIConfig {

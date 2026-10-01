@@ -418,7 +418,13 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
             <Play className="w-3.5 h-3.5 mr-1.5" />
             {t('instances.enter')}
           </Button>
-          <Button size="sm" variant="outline" className="h-8" onClick={() => onEdit(instance)}>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-8"
+            aria-label={t('common.edit')}
+            onClick={() => onEdit(instance)}
+          >
             <Pencil className="w-3.5 h-3.5" />
           </Button>
           {status === 'error' && (

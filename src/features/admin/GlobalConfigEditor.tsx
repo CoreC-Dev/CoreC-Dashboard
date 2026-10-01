@@ -22,10 +22,11 @@
  *
  * Fields requiring restart are marked with a warning badge.
  */
-import { AlertTriangle, Bug, Cpu, Database, Gauge, Network, RotateCcw, Sliders } from 'lucide-react'
+import { Bug, Cpu, Database, Gauge, Network, RotateCcw, Sliders } from 'lucide-react'
 import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { RestartBadge } from '@/components/admin/DetailPageParts'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -44,22 +45,6 @@ import { Textarea } from '@/components/ui/textarea'
 import { useConfigStore } from '@/stores/configStore'
 import { type GlobalConfig, LOG_FORMATS, LOG_LEVELS, ON_BAD_QUALITY_POLICIES } from '@/types/config'
 
-// ─── Restart-required badge ───────────────────────────────────────────
-
-const RestartBadge: React.FC<{ show: boolean }> = ({ show }) => {
-  const { t } = useTranslation()
-  if (!show) return null
-  return (
-    <Badge
-      variant="outline"
-      className="text-[9px] px-1 py-0 border-status-warning/40 bg-status-warning/10 text-status-warning dark:text-status-warning"
-    >
-      <AlertTriangle className="w-2.5 h-2.5 mr-0.5" />
-      {t('globalConfig.restartRequired')}
-    </Badge>
-  )
-}
-
 // ─── Field row wrapper ───────────────────────────────────────────────
 
 interface FieldRowProps {
@@ -76,19 +61,22 @@ const FieldRow: React.FC<FieldRowProps> = ({
   required,
   restartRequired,
   children,
-}) => (
-  <div className="space-y-1">
-    <div className="flex items-center gap-2">
-      <Label className="text-xs font-medium">
-        {label}
-        {required && <span className="text-destructive"> *</span>}
-      </Label>
-      <RestartBadge show={restartRequired ?? false} />
+}) => {
+  const { t } = useTranslation()
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center gap-2">
+        <Label className="text-xs font-medium">
+          {label}
+          {required && <span className="text-destructive"> *</span>}
+        </Label>
+        <RestartBadge show={restartRequired ?? false} label={t('globalConfig.restartRequired')} />
+      </div>
+      {children}
+      {help && <p className="text-[10px] text-muted-foreground leading-snug">{help}</p>}
     </div>
-    {children}
-    {help && <p className="text-[10px] text-muted-foreground leading-snug">{help}</p>}
-  </div>
-)
+  )
+}
 
 // ─── Main component ──────────────────────────────────────────────────
 
@@ -215,7 +203,7 @@ export const GlobalConfigEditor: React.FC = () => {
             <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
               <Network className="w-3.5 h-3.5" />
               {t('globalConfig.sectionApi')}
-              <RestartBadge show={true} />
+              <RestartBadge label={t('globalConfig.restartRequired')} />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-lg bg-muted/30 border border-border">
               <FieldRow
@@ -385,7 +373,7 @@ export const GlobalConfigEditor: React.FC = () => {
             <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
               <Cpu className="w-3.5 h-3.5" />
               {t('globalConfig.sectionEngine')}
-              <RestartBadge show={true} />
+              <RestartBadge label={t('globalConfig.restartRequired')} />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-lg bg-muted/30 border border-border">
               <FieldRow
@@ -542,7 +530,7 @@ export const GlobalConfigEditor: React.FC = () => {
             <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
               <Database className="w-3.5 h-3.5" />
               {t('globalConfig.sectionBuffer')}
-              <RestartBadge show={true} />
+              <RestartBadge label={t('globalConfig.restartRequired')} />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-lg bg-muted/30 border border-border">
               <FieldRow

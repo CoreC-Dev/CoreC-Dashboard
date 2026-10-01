@@ -85,6 +85,7 @@ export const AppShell: React.FC = () => {
   // Route progress bar
   const [progress, setProgress] = useState(0)
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: location.pathname is an intentional trigger — re-run the progress-bar animation on every route change, not a value read in the body.
   useEffect(() => {
     setProgress(30)
     const t1 = setTimeout(() => setProgress(70), 80)
@@ -95,16 +96,17 @@ export const AppShell: React.FC = () => {
       clearTimeout(t2)
       clearTimeout(t3)
     }
-  }, [])
+  }, [location.pathname])
 
   useEffect(() => {
     localStorage.setItem(SIDEBAR_KEY, collapsed ? 'collapsed' : 'expanded')
   }, [collapsed])
 
   // Close mobile drawer on route change
+  // biome-ignore lint/correctness/useExhaustiveDependencies: location.pathname is an intentional trigger — close the drawer on navigation, not a value read in the body.
   useEffect(() => {
     setMobileOpen(false)
-  }, [])
+  }, [location.pathname])
 
   // Close mobile drawer when resizing to desktop
   useEffect(() => {
@@ -190,7 +192,11 @@ export const AppShell: React.FC = () => {
           eff ? 'flex-col gap-2' : 'justify-between px-0.5',
         )}
       >
-        <Link to="/" className="flex items-center gap-2.5 shrink-0" aria-label="CoreC home">
+        <Link
+          to="/"
+          className="flex items-center gap-2.5 shrink-0"
+          aria-label={t('aria.corecHome')}
+        >
           <img src="/logo.svg" alt="CoreC" className="w-8 h-8 shrink-0" />
           {!eff && (
             <span className="font-extrabold text-base tracking-tight whitespace-nowrap">CoreC</span>
@@ -201,7 +207,7 @@ export const AppShell: React.FC = () => {
             type="button"
             onClick={() => setCollapsed(true)}
             className="w-7 h-7 rounded-lg grid place-items-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200 shrink-0"
-            aria-label="Collapse sidebar"
+            aria-label={t('aria.collapseSidebar')}
           >
             <PanelLeftClose className="w-4 h-4" />
           </button>
@@ -211,7 +217,7 @@ export const AppShell: React.FC = () => {
             type="button"
             onClick={() => setMobileOpen(false)}
             className="w-7 h-7 rounded-lg grid place-items-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200 shrink-0"
-            aria-label="Close sidebar"
+            aria-label={t('aria.closeSidebar')}
           >
             <X className="w-4 h-4" />
           </button>
@@ -224,7 +230,7 @@ export const AppShell: React.FC = () => {
           type="button"
           onClick={() => setCollapsed(false)}
           className="w-9 h-9 rounded-full grid place-items-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200 shrink-0"
-          aria-label="Expand sidebar"
+          aria-label={t('aria.expandSidebar')}
         >
           <PanelLeftOpen className="w-[18px] h-[18px]" />
         </button>
@@ -335,7 +341,7 @@ export const AppShell: React.FC = () => {
                     ? 'w-9 h-9 rounded-full'
                     : 'w-full h-9 rounded-lg flex items-center px-2.5 gap-2.5',
                 )}
-                aria-label="Select theme"
+                aria-label={t('aria.selectTheme')}
               >
                 {resolvedTheme === 'dark' ? (
                   <Moon className="w-[18px] h-[18px] shrink-0" />
@@ -387,7 +393,7 @@ export const AppShell: React.FC = () => {
                 : 'w-full h-9 rounded-lg flex items-center px-2.5 gap-2.5',
             )}
             title={eff ? t('connection.disconnect') : undefined}
-            aria-label="Disconnect"
+            aria-label={t('aria.disconnect')}
           >
             <Unplug className="w-[18px] h-[18px] shrink-0" />
             {!eff && (
@@ -458,7 +464,7 @@ export const AppShell: React.FC = () => {
               type="button"
               onClick={() => setMobileOpen(true)}
               className="flex items-center justify-center w-9 h-9 rounded-lg bg-card border border-border shadow-sm text-muted-foreground hover:text-foreground hover:shadow-md transition-all duration-200 shrink-0"
-              aria-label="Open menu"
+              aria-label={t('aria.openMenu')}
             >
               <Menu className="w-5 h-5" />
             </button>

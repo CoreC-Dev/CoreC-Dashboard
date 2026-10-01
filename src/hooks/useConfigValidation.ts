@@ -35,6 +35,20 @@ export function useConfigValidation(): ConfigValidationResult & { hasConfig: boo
 }
 
 /**
+ * Format a validation result into the `path: message` string list used by
+ * apply-confirmation dialogs and apply buttons, or `undefined` when there
+ * are no errors to show. Shared by the Drivers/Transports/Rules/Config pages
+ * so the mapping lives in one place.
+ */
+export function formatValidationErrors(
+  validation: ConfigValidationResult & { hasConfig: boolean },
+): string[] | undefined {
+  return validation.hasConfig && !validation.valid
+    ? validation.errors.map((e) => `${e.path}: ${e.message}`)
+    : undefined
+}
+
+/**
  * Returns the list of transport names from the working config.
  * Used by SettingsFieldRenderer for the `fallback` select field and
  * by the rule wizard for the `target`/`targets` select fields.

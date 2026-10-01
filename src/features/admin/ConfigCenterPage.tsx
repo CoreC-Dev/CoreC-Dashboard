@@ -43,7 +43,7 @@ import { NodeConfigEditor } from '@/features/admin/NodeConfigEditor'
 import { RuleGroupEditor } from '@/features/admin/RuleGroupEditor'
 import { RuleProviderEditor } from '@/features/admin/RuleProviderEditor'
 import { type ConfigSnapshot, useConfigHistory } from '@/hooks/useConfigHistory'
-import { useConfigValidation } from '@/hooks/useConfigValidation'
+import { formatValidationErrors, useConfigValidation } from '@/hooks/useConfigValidation'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { useStatusMessage } from '@/hooks/useStatusMessage'
 import { CONFIG_TEMPLATES, type ConfigTemplate } from '@/lib/configTemplates'
@@ -98,7 +98,7 @@ rules:
     priority: 100
 `
 
-const STATUS_AUTO_DISMISS_MS = 2500
+const STATUS_AUTO_DISMISS_MS = 4500
 
 // Line-by-line diff via longest-common-subsequence backtracking. Produces a
 // flat list of equal / added / removed lines the UI can render directly; a
@@ -179,12 +179,10 @@ export const ConfigCenterPage: React.FC = () => {
   // working config. Errors are surfaced in the apply confirmation dialog
   // and block the apply button until resolved.
   const validation = useConfigValidation()
-  const validationErrorStrings = useMemo(
-    () => validation.errors.map((e) => `${e.path}: ${e.message}`),
-    [validation.errors],
-  )
-  const hasValidationErrors = validation.hasConfig && !validation.valid
+  const validationErrors = formatValidationErrors(validation)
+  const hasValidationErrors = validationErrors !== undefined
   const [globalApplyOpen, setGlobalApplyOpen] = useState(false)
+  const [applyError, setApplyError] = useState<string | null>(null)
 
   const [mode, setMode] = useState<'form' | 'yaml'>('form')
   const [yamlContent, setYamlContent] = useState(DEFAULT_SAMPLE_YAML)
@@ -822,7 +820,10 @@ export const ConfigCenterPage: React.FC = () => {
                   size="sm"
                   className="h-7 text-xs"
                   disabled={hasValidationErrors}
-                  onClick={() => setGlobalApplyOpen(true)}
+                  onClick={() => {
+                    setApplyError(null)
+                    setGlobalApplyOpen(true)
+                  }}
                 >
                   {t('config.applyChanges')}
                 </Button>
@@ -848,16 +849,21 @@ export const ConfigCenterPage: React.FC = () => {
           {/* Apply confirmation for configStore edits */}
           <ConfigApplyConfirmationDialog
             open={globalApplyOpen}
-            onOpenChange={setGlobalApplyOpen}
+            onOpenChange={(v) => {
+              setGlobalApplyOpen(v)
+              if (!v) setApplyError(null)
+            }}
             beforeYaml={getSavedYaml() ?? ''}
             afterYaml={getWorkingYaml() ?? ''}
             applying={updateMutation.isPending}
-            validationErrors={hasValidationErrors ? validationErrorStrings : undefined}
+            validationErrors={validationErrors}
+            applyError={applyError ?? undefined}
             onConfirm={() => {
               // Guard: never apply if validation failed. The apply button
               // is also disabled, but this is a belt-and-suspenders check.
               if (hasValidationErrors) return
               const yaml = getWorkingYaml() ?? ''
+              setApplyError(null)
               updateMutation.mutate(
                 { payload: yaml },
                 {
@@ -866,6 +872,7 @@ export const ConfigCenterPage: React.FC = () => {
                     setGlobalApplyOpen(false)
                     refetch()
                   },
+                  onError: (err) => setApplyError(err instanceof Error ? err.message : String(err)),
                 },
               )
             }}

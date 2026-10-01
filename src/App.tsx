@@ -2,8 +2,8 @@ import type React from 'react'
 import { lazy, Suspense } from 'react'
 import { HashRouter, Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
-import { AdminLayout } from '@/components/layout/AdminLayout'
-import { MonitorLayout } from '@/components/layout/MonitorLayout'
+import { AppShell } from '@/components/layout/AppShell'
+import { Button } from '@/components/ui/button'
 import { ConnectionProvider, useConnection } from '@/contexts/ConnectionContext'
 import i18n from '@/i18n'
 import { useInstanceStore } from '@/stores/instanceStore'
@@ -106,13 +106,9 @@ const ConnectionGate: React.FC<{ children: React.ReactNode }> = ({ children }) =
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
         <div className="text-status-error text-lg font-semibold">{error}</div>
-        <button
-          type="button"
-          onClick={reconnect}
-          className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm hover:bg-primary/90 transition-colors"
-        >
+        <Button type="button" onClick={reconnect}>
           {i18n.t('common.retry', { defaultValue: 'Retry' })}
-        </button>
+        </Button>
       </div>
     )
   }
@@ -151,7 +147,7 @@ export const App: React.FC = () => {
             element={
               <InstanceGuard>
                 <ConnectionGate>
-                  <MonitorLayout />
+                  <AppShell />
                 </ConnectionGate>
               </InstanceGuard>
             }
@@ -189,7 +185,7 @@ export const App: React.FC = () => {
             element={
               <InstanceGuard>
                 <ConnectionGate>
-                  <AdminLayout />
+                  <AppShell />
                 </ConnectionGate>
               </InstanceGuard>
             }

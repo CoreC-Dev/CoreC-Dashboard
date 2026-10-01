@@ -124,6 +124,8 @@ export interface ConfigStoreState {
   markSaved: () => void
   /** Discard working changes, revert to the last saved config. */
   revert: () => void
+  /** Reset the store to its initial empty state (clears working + saved config, dirty, error). */
+  reset: () => void
 
   // ─── Derived getters (not reactive; call on demand) ───────────────
 
@@ -326,6 +328,10 @@ export const useConfigStore = create<ConfigStoreState>((set, get) => {
         dirty: false,
         error: null,
       })
+    },
+
+    reset: () => {
+      set({ workingConfig: null, savedConfig: null, dirty: false, error: null })
     },
 
     // ─── Derived getters ──────────────────────────────────────────────

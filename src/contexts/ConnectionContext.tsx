@@ -3,6 +3,7 @@ import type React from 'react'
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { setActiveConnection } from '@/api/activeConnection'
 import { getServerInfo } from '@/api/endpoints'
+import { useConfigStore } from '@/stores/configStore'
 import type { CoreCInstance } from '@/stores/instanceStore'
 import { useInstanceStore } from '@/stores/instanceStore'
 
@@ -79,6 +80,15 @@ export const ConnectionProvider: React.FC<{
 
   // Keep a ref to the current baseUrl+secret so the effect can detect changes.
   const connRef = useRef({ baseUrl: instance?.baseUrl, secret: instance?.secret })
+
+  // Reset the config working-copy store when the active instance changes so a
+  // stale dirty working config from the previous instance's admin pages doesn't
+  // leak into the new one. Keyed on instanceId only — must NOT fire on probe
+  // updates or within-instance navigation, which would wipe in-progress edits.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: instanceId is an intentional trigger — reset the store only when the instance actually changes, not a value read in the body.
+  useEffect(() => {
+    useConfigStore.getState().reset()
+  }, [instanceId])
 
   // Set the active connection whenever the instance changes.
   useEffect(() => {

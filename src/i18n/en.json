@@ -19,6 +19,15 @@
     "groupSystem": "System & Mesh",
     "brandTagline": "Connect · Collect · Control"
   },
+  "aria": {
+    "corecHome": "CoreC home",
+    "collapseSidebar": "Collapse sidebar",
+    "closeSidebar": "Close sidebar",
+    "expandSidebar": "Expand sidebar",
+    "selectTheme": "Select theme",
+    "disconnect": "Disconnect",
+    "openMenu": "Open menu"
+  },
   "instances": {
     "addTitle": "Add New CoreC",
     "editTitle": "Edit CoreC Instance",
@@ -174,6 +183,7 @@
     "description": "Review the changes below before applying. The configuration will be hot-reloaded.",
     "engineSuspendWarning": "Warning: Applying config suspends the ENTIRE engine for a brief reload. All data collection and publishing pause during the reload. Non-atomic — there is no automatic rollback if the new config fails.",
     "validationErrors": "Validation errors — fix these before applying:",
+    "applyError": "Apply failed — the config was not reloaded:",
     "applying": "Applying...",
     "confirmApply": "Apply Changes",
     "drivers": "Drivers",

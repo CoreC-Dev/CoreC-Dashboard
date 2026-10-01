@@ -23,10 +23,11 @@
  *
  * Hot-reload: node config requires engine restart (not hot-updatable).
  */
-import { AlertTriangle, Info, Network, Workflow } from 'lucide-react'
+import { Info, Network, Workflow } from 'lucide-react'
 import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { RestartBadge } from '@/components/admin/DetailPageParts'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -71,21 +72,6 @@ const ROLE_META: RoleMeta[] = [
     showSubscribe: true,
   },
 ]
-
-// ─── Restart badge ───────────────────────────────────────────────────
-
-const RestartBadge: React.FC = () => {
-  const { t } = useTranslation()
-  return (
-    <Badge
-      variant="outline"
-      className="text-[9px] px-1 py-0 border-status-warning/40 bg-status-warning/10 text-status-warning dark:text-status-warning"
-    >
-      <AlertTriangle className="w-2.5 h-2.5 mr-0.5" />
-      {t('nodeConfig.restartRequired')}
-    </Badge>
-  )
-}
 
 // ─── Subscribe list editor (multi-value string array) ────────────────
 
@@ -209,7 +195,7 @@ export const NodeConfigEditor: React.FC = () => {
           <CardTitle className="text-sm font-semibold flex items-center gap-2">
             <Workflow className="w-4 h-4 text-primary" />
             <span>{t('nodeConfig.title')}</span>
-            <RestartBadge />
+            <RestartBadge label={t('nodeConfig.restartRequired')} />
             {dirty && (
               <Badge
                 variant="outline"

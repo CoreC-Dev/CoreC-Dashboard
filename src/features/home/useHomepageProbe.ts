@@ -1,5 +1,4 @@
 import { useEffect, useRef } from 'react'
-import { parseConfigYaml } from '@/lib/configYaml'
 import { getDriverConnectionSummary, getTransportConnectionSummary } from '@/lib/connectionInfo'
 import type { CoreCInstance } from '@/stores/instanceStore'
 import { useInstanceStore } from '@/stores/instanceStore'
@@ -149,7 +148,7 @@ async function probeInstance(instance: CoreCInstance): Promise<CoreCInstance['la
   if (rawCfgRes.status === 'fulfilled' && rawCfgRes.value.ok && result.stats) {
     try {
       const rawText = await rawCfgRes.value.text()
-      const cfg: CoreCConfig = parseConfigYaml(rawText)
+      const cfg: CoreCConfig = (await import('@/lib/configYaml')).parseConfigYaml(rawText)
       const driverNames = Object.keys(result.stats.driver_stats ?? {})
       const transportNames = Object.keys(result.stats.transport_stats ?? {})
       if (driverNames.length > 0) {

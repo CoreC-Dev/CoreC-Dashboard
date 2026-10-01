@@ -1,5 +1,6 @@
 import {
   AlertCircle,
+  AlertTriangle,
   ArrowLeft,
   CheckCircle2,
   ChevronDown,
@@ -9,6 +10,7 @@ import {
 } from 'lucide-react'
 import type React from 'react'
 import { Link } from 'react-router-dom'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -25,6 +27,28 @@ export const formatTimestamp = (ts: string, fallback = '—'): string => {
   if (isZeroTime(ts)) return fallback
   const d = new Date(ts)
   return Number.isNaN(d.getTime()) ? ts : d.toLocaleString()
+}
+
+/**
+ * Small warning badge marking a config field whose change requires an engine
+ * restart. Shared by GlobalConfigEditor and NodeConfigEditor. The caller
+ * supplies the already-translated label (the two editors use different i18n
+ * keys: `globalConfig.restartRequired` vs `nodeConfig.restartRequired`).
+ */
+export const RestartBadge: React.FC<{ show?: boolean; label: string }> = ({
+  show = true,
+  label,
+}) => {
+  if (!show) return null
+  return (
+    <Badge
+      variant="outline"
+      className="text-[9px] px-1 py-0 border-status-warning/40 bg-status-warning/10 text-status-warning dark:text-status-warning"
+    >
+      <AlertTriangle className="w-2.5 h-2.5 mr-0.5" />
+      {label}
+    </Badge>
+  )
 }
 
 export const BackLink: React.FC<{ to: string; children: React.ReactNode }> = ({ to, children }) => (

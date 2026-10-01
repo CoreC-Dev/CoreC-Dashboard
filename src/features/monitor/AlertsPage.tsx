@@ -7,6 +7,7 @@ import {
   BellRing,
   CheckCircle2,
   Clock,
+  Loader2,
   RefreshCw,
   RotateCcw,
   Search,
@@ -73,12 +74,13 @@ function notify(title: string, body: string): void {
 
 export const AlertsPage: React.FC = () => {
   const { t } = useTranslation()
-  const { data: deadLettersData, refetch, isFetching } = useDeadLetters()
+  const { data: deadLettersData, refetch, isFetching, isLoading } = useDeadLetters()
   const { data: rulesData } = useRules()
   const writeMutation = useWriteTag()
 
   const [liveLogs, setLiveLogs] = useState<LogEvent[]>([])
   const [retryError, setRetryError] = useState<string | null>(null)
+  const [pendingRetryKey, setPendingRetryKey] = useState<string | null>(null)
   const [soundEnabled, setSoundEnabled] = useState(() => readPref(SOUND_KEY))
   const [notifEnabled, setNotifEnabled] = useState(() => readPref(NOTIF_KEY))
 
@@ -189,13 +191,16 @@ export const AlertsPage: React.FC = () => {
     })
   }, [liveLogs, logFilter, logLevel])
 
-  const handleRetryDeadLetter = async (cmd: WriteCommand) => {
+  const handleRetryDeadLetter = async (cmd: WriteCommand, retryKey: string) => {
     setRetryError(null)
+    setPendingRetryKey(retryKey)
     try {
       await writeMutation.mutateAsync(cmd)
       await refetch()
     } catch (err: unknown) {
       setRetryError(err instanceof Error ? err.message : t('alerts.retryFailed'))
+    } finally {
+      setPendingRetryKey(null)
     }
   }
 
@@ -281,7 +286,12 @@ export const AlertsPage: React.FC = () => {
               <span>{retryError}</span>
             </div>
           )}
-          {deadLetters.length === 0 ? (
+          {isLoading && deadLetters.length === 0 ? (
+            <div className="flex items-center justify-center gap-2 py-8 text-xs text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              {t('common.loading')}
+            </div>
+          ) : deadLetters.length === 0 ? (
             <div className="py-8 text-center text-xs text-muted-foreground flex flex-col items-center space-y-1">
               <CheckCircle2 className="w-6 h-6 text-status-running mb-1" />
               <span>
@@ -292,37 +302,42 @@ export const AlertsPage: React.FC = () => {
             </div>
           ) : (
             <div className="space-y-2">
-              {deadLetters.map((entry) => (
-                <div
-                  key={`${entry.command.driver}-${entry.command.tag}-${entry.failed_at}-${entry.attempts}`}
-                  className="p-3 rounded-lg border border-status-error/20 bg-status-error/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
-                >
-                  <div className="space-y-1">
-                    <div className="font-mono font-semibold text-status-error">
-                      [{entry.command.driver}] {t('common.tag')}: {entry.command.tag} ={' '}
-                      {String(entry.command.value)}
-                    </div>
-                    <div className="text-muted-foreground font-mono text-[11px]">{entry.error}</div>
-                    <div className="text-[10px] text-muted-foreground flex items-center space-x-2">
-                      <Clock className="w-3 h-3" />
-                      <span>{new Date(entry.failed_at).toLocaleString()}</span>
-                      <span>•</span>
-                      <span>{t('alerts.attemptsExhausted', { count: entry.attempts })}</span>
-                    </div>
-                  </div>
-
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleRetryDeadLetter(entry.command)}
-                    disabled={writeMutation.isPending}
-                    className="shrink-0 text-xs border-status-error/30 text-status-error hover:bg-status-error/10"
+              {deadLetters.map((entry) => {
+                const retryKey = `${entry.command.driver}-${entry.command.tag}-${entry.failed_at}-${entry.attempts}`
+                return (
+                  <div
+                    key={retryKey}
+                    className="p-3 rounded-lg border border-status-error/20 bg-status-error/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
                   >
-                    <RotateCcw className="w-3.5 h-3.5 mr-1" />
-                    <span>{t('write.retry')}</span>
-                  </Button>
-                </div>
-              ))}
+                    <div className="space-y-1">
+                      <div className="font-mono font-semibold text-status-error">
+                        [{entry.command.driver}] {t('common.tag')}: {entry.command.tag} ={' '}
+                        {String(entry.command.value)}
+                      </div>
+                      <div className="text-muted-foreground font-mono text-[11px]">
+                        {entry.error}
+                      </div>
+                      <div className="text-[10px] text-muted-foreground flex items-center space-x-2">
+                        <Clock className="w-3 h-3" />
+                        <span>{new Date(entry.failed_at).toLocaleString()}</span>
+                        <span>•</span>
+                        <span>{t('alerts.attemptsExhausted', { count: entry.attempts })}</span>
+                      </div>
+                    </div>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleRetryDeadLetter(entry.command, retryKey)}
+                      disabled={pendingRetryKey === retryKey}
+                      className="shrink-0 text-xs border-status-error/30 text-status-error hover:bg-status-error/10"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5 mr-1" />
+                      <span>{t('write.retry')}</span>
+                    </Button>
+                  </div>
+                )
+              })}
             </div>
           )}
         </CardContent>

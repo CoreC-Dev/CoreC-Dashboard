@@ -412,7 +412,7 @@ export const coreCConfigSchema = z
   .passthrough()
 
 // ─── Cross-entity validation (mirrors config.validate cross-cutting rules) ──
-export interface ConfigValidationError {
+interface ConfigValidationError {
   path: string
   message: string
 }

@@ -45,7 +45,11 @@ export default defineConfig({
             if (id.includes('@radix-ui/')) return 'vendor-radix'
             if (id.includes('lightweight-charts')) return 'vendor-charts'
             if (id.includes('@xterm/')) return 'vendor-xterm'
-            if (id.includes('js-yaml') || id.includes('zod')) return 'vendor-config'
+            if (id.includes('js-yaml')) return 'vendor-jsyaml'
+            if (id.includes('zod')) return 'vendor-zod'
+            if (id.includes('/i18next/') || id.includes('react-i18next')) return 'vendor-i18n'
+            if (id.includes('react-hook-form') || id.includes('@hookform/resolvers'))
+              return 'vendor-rhf'
             if (id.includes('@monaco-editor/')) return 'vendor-monaco'
           }
           return undefined

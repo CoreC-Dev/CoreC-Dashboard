@@ -1,4 +1,13 @@
-import { AlertCircle, Cpu, ExternalLink, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react'
+import {
+  AlertCircle,
+  Cpu,
+  ExternalLink,
+  Loader2,
+  Pencil,
+  Plus,
+  RefreshCw,
+  Trash2,
+} from 'lucide-react'
 import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -28,7 +37,7 @@ import { ConfigApplyConfirmationDialog } from '@/components/wizard/ConfigApplyCo
 import { EntitySearchBar, filterEntities } from '@/components/wizard/EntitySearchBar'
 import { ValidationBanner } from '@/components/wizard/ValidationBanner'
 import { DriverWizard } from '@/features/admin/DriverWizard'
-import { useConfigValidation } from '@/hooks/useConfigValidation'
+import { formatValidationErrors, useConfigValidation } from '@/hooks/useConfigValidation'
 import { useParsedConfig } from '@/hooks/useParsedConfig'
 import { getDriverConnectionSummary } from '@/lib/connectionInfo'
 import { ConnStateLabel, QualityLabel } from '@/lib/constants'
@@ -42,7 +51,7 @@ export const DriversPage: React.FC = () => {
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
   const adminBase = id ? `/corec/${id}/admin` : '/admin'
-  const { data, refetch, isFetching } = useDrivers()
+  const { data, refetch, isFetching, isLoading } = useDrivers()
   const [selectedDriver, setSelectedDriver] = useState<DriverStatus | null>(null)
   const { data: rawYaml } = useConfigRaw()
   const parsedConfig = useParsedConfig(rawYaml)
@@ -57,10 +66,7 @@ export const DriversPage: React.FC = () => {
   const getSavedYaml = useConfigStore((s) => s.getSavedYaml)
   const markSaved = useConfigStore((s) => s.markSaved)
   const validation = useConfigValidation()
-  const validationErrors =
-    validation.hasConfig && !validation.valid
-      ? validation.errors.map((e) => `${e.path}: ${e.message}`)
-      : undefined
+  const validationErrors = formatValidationErrors(validation)
 
   const updateConfig = useUpdateConfig()
 
@@ -68,6 +74,7 @@ export const DriversPage: React.FC = () => {
   const [editingDriver, setEditingDriver] = useState<DriverConfig | undefined>(undefined)
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
   const [applyDialogOpen, setApplyDialogOpen] = useState(false)
+  const [applyError, setApplyError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
 
   const drivers = data?.drivers || []
@@ -114,7 +121,10 @@ export const DriversPage: React.FC = () => {
             <Button
               variant="default"
               size="sm"
-              onClick={() => setApplyDialogOpen(true)}
+              onClick={() => {
+                setApplyError(null)
+                setApplyDialogOpen(true)
+              }}
               disabled={!!validationErrors}
               className="h-8 text-xs shrink-0"
             >
@@ -161,7 +171,10 @@ export const DriversPage: React.FC = () => {
               size="sm"
               className="h-7 text-xs"
               disabled={!!validationErrors}
-              onClick={() => setApplyDialogOpen(true)}
+              onClick={() => {
+                setApplyError(null)
+                setApplyDialogOpen(true)
+              }}
             >
               {t('drivers.applyChanges')}
             </Button>
@@ -267,7 +280,12 @@ export const DriversPage: React.FC = () => {
           </Badge>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 card-stagger">
-          {drivers.length === 0 ? (
+          {isLoading && drivers.length === 0 ? (
+            <div className="col-span-full py-12 flex items-center justify-center gap-2 text-xs text-muted-foreground">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span>Loading…</span>
+            </div>
+          ) : drivers.length === 0 ? (
             <Card className="col-span-full p-8 text-center text-xs text-muted-foreground border-dashed">
               {t('drivers.empty')}
             </Card>
@@ -422,15 +440,20 @@ export const DriversPage: React.FC = () => {
       {/* Apply Config Confirmation */}
       <ConfigApplyConfirmationDialog
         open={applyDialogOpen}
-        onOpenChange={setApplyDialogOpen}
+        onOpenChange={(v) => {
+          setApplyDialogOpen(v)
+          if (!v) setApplyError(null)
+        }}
         beforeYaml={getSavedYaml()}
         afterYaml={getWorkingYaml() ?? ''}
         applying={updateConfig.isPending}
         validationErrors={validationErrors}
+        applyError={applyError ?? undefined}
         onConfirm={() => {
           if (validationErrors) return
           const yaml = getWorkingYaml()
           if (!yaml) return
+          setApplyError(null)
           updateConfig.mutate(
             { payload: yaml },
             {
@@ -438,6 +461,7 @@ export const DriversPage: React.FC = () => {
                 markSaved()
                 setApplyDialogOpen(false)
               },
+              onError: (err) => setApplyError(err instanceof Error ? err.message : String(err)),
             },
           )
         }}
