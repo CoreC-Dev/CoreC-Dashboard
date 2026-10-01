@@ -44,6 +44,7 @@ import { RuleGroupEditor } from '@/features/admin/RuleGroupEditor'
 import { RuleProviderEditor } from '@/features/admin/RuleProviderEditor'
 import { type ConfigSnapshot, useConfigHistory } from '@/hooks/useConfigHistory'
 import { useConfigValidation } from '@/hooks/useConfigValidation'
+import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { useStatusMessage } from '@/hooks/useStatusMessage'
 import { CONFIG_TEMPLATES, type ConfigTemplate } from '@/lib/configTemplates'
 import { computeLcsDiff, type DiffLine } from '@/lib/yamlDiff'
@@ -190,7 +191,7 @@ export const ConfigCenterPage: React.FC = () => {
   // Debounced copy of the editor content used only for the diff preview, so
   // the O(m×n) LCS in computeDiff runs at most ~3×/sec while typing instead
   // of on every keystroke. The editor itself stays un-debounced.
-  const [debouncedYaml, setDebouncedYaml] = useState(yamlContent)
+  const debouncedYaml = useDebouncedValue(yamlContent, 300)
   const [currentLogLevel, setCurrentLogLevel] = useState<string>('info')
   const { statusMsg, setStatusMsg } = useStatusMessage(STATUS_AUTO_DISMISS_MS)
   // Change-history state: snapshots persisted to localStorage before every PUT,
@@ -203,14 +204,6 @@ export const ConfigCenterPage: React.FC = () => {
   // first successful fetch, so operators see the actual running config
   // instead of DEFAULT_SAMPLE_YAML without a manual "Load from Server" click.
   const autoLoadedRef = useRef(false)
-
-  // Debounce the YAML editor content feeding the diff preview. Each keystroke
-  // resets the timer; debouncedYaml only advances after 300ms of quiet,
-  // bounding how often the O(m×n) LCS recomputes while typing.
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedYaml(yamlContent), 300)
-    return () => clearTimeout(timer)
-  }, [yamlContent])
 
   // Auto-load the live server config into the editor on first successful
   // fetch. Without this the editor shows DEFAULT_SAMPLE_YAML and the operator
