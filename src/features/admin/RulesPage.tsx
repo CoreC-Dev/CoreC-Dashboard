@@ -97,17 +97,18 @@ const LabeledSelect: React.FC<{
 }> = ({ label, value, onChange, options }) => (
   <div className="space-y-1.5">
     <label className="text-xs font-semibold text-foreground">{label}</label>
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="w-full h-9 px-3 rounded-md border border-input bg-transparent text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring font-mono"
-    >
-      {options.map((o) => (
-        <option key={o.value} value={o.value}>
-          {o.label}
-        </option>
-      ))}
-    </select>
+    <Select value={value} onValueChange={onChange}>
+      <SelectTrigger className="font-mono">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {options.map((o) => (
+          <SelectItem key={o.value} value={o.value} className="font-mono">
+            {o.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   </div>
 )
 

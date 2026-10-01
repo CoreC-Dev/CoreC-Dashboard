@@ -2,7 +2,6 @@ import * as SelectPrimitive from '@radix-ui/react-select'
 import {
   ArrowLeft,
   Bell,
-  Check,
   ChevronDown,
   ChevronLeft,
   ChevronRight,

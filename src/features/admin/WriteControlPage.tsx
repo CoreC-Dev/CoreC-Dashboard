@@ -44,6 +44,13 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import type { DataTypeString } from '@/lib/constants'
 import { validateValue } from '@/lib/writeValidation'
 import { DATA_TYPES } from '@/types/config'
@@ -261,19 +268,18 @@ export const WriteControlPage: React.FC = () => {
                   <label className="text-xs font-semibold text-foreground">
                     {t('write.targetDriver')} *
                   </label>
-                  <select
-                    value={driver}
-                    onChange={(e) => setDriver(e.target.value)}
-                    required
-                    className="w-full h-9 px-3 rounded-md border border-input bg-transparent text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-                  >
-                    <option value="">{t('write.selectDriver')}</option>
-                    {drivers.map((d) => (
-                      <option key={d.name} value={d.name}>
-                        {d.name} ({d.type})
-                      </option>
-                    ))}
-                  </select>
+                  <Select value={driver} onValueChange={setDriver}>
+                    <SelectTrigger>
+                      <SelectValue placeholder={t('write.selectDriver')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {drivers.map((d) => (
+                        <SelectItem key={d.name} value={d.name}>
+                          {d.name} ({d.type})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="space-y-1.5">
@@ -307,17 +313,18 @@ export const WriteControlPage: React.FC = () => {
                   <label className="text-xs font-semibold text-foreground">
                     {t('write.dataType')} *
                   </label>
-                  <select
-                    value={type}
-                    onChange={(e) => setType(e.target.value as DataTypeString)}
-                    className="w-full h-9 px-3 rounded-md border border-input bg-transparent text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring font-mono"
-                  >
-                    {DATA_TYPES.map((dt) => (
-                      <option key={dt} value={dt}>
-                        {dt}
-                      </option>
-                    ))}
-                  </select>
+                  <Select value={type} onValueChange={(v) => setType(v as DataTypeString)}>
+                    <SelectTrigger className="font-mono">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {DATA_TYPES.map((dt) => (
+                        <SelectItem key={dt} value={dt} className="font-mono">
+                          {dt}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
