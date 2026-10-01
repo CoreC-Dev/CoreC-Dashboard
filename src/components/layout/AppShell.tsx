@@ -519,10 +519,10 @@ export const AppShell: React.FC = () => {
               className="bg-card rounded-[20px] px-5 py-5 md:px-8 md:py-8 flex-1 border border-border/40 relative"
               style={{ boxShadow: 'var(--shadow-card)' }}
             >
-              {/* Real-time stream indicator — top-right inside the card */}
+              {/* Real-time stream indicator — floating top-right inside the card */}
               {isMonitor && (
-                <div className="flex justify-end mb-4">
-                  <div className="flex items-center gap-2 px-3.5 py-2 rounded-full bg-muted/50 border border-border/60">
+                <div className="absolute top-5 right-5 md:top-7 md:right-8 z-10">
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50 border border-border/60">
                     <span
                       className={cn(
                         'w-2.5 h-2.5 rounded-full shrink-0',
