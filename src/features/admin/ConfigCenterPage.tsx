@@ -548,6 +548,7 @@ export const ConfigCenterPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setMode('form')}
+              aria-pressed={mode === 'form'}
               className={`flex items-center space-x-1.5 px-3 py-1 rounded-md transition-colors ${
                 mode === 'form'
                   ? 'bg-background text-foreground font-semibold shadow-xs'
@@ -560,6 +561,7 @@ export const ConfigCenterPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setMode('yaml')}
+              aria-pressed={mode === 'yaml'}
               className={`flex items-center space-x-1.5 px-3 py-1 rounded-md transition-colors ${
                 mode === 'yaml'
                   ? 'bg-background text-foreground font-semibold shadow-xs'

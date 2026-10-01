@@ -227,6 +227,7 @@
   },
   "dashboard": {
     "title": "IIoT Gateway Operational Dashboard",
+    "loadFailed": "Failed to load dashboard data",
     "enterFullscreen": "Fullscreen",
     "exitFullscreen": "Exit Fullscreen",
     "customize": "Customize Layout",

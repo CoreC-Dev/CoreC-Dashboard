@@ -1,9 +1,11 @@
 import {
   Activity,
+  AlertCircle,
   ArrowUpRight,
   Clock,
   Cpu,
   Database,
+  Loader2,
   Send,
   ShieldCheck,
   TrendingDown,
@@ -35,7 +37,7 @@ import { formatNumber, formatUptime } from '@/lib/utils'
 export const DashboardPage: React.FC = () => {
   const { t } = useTranslation()
   const { id } = useParams<{ id: string }>()
-  const { data: stats } = useStats()
+  const { data: stats, isLoading: statsLoading, isError: statsError } = useStats()
   const { data: driversData } = useDrivers()
   const { data: transportsData } = useTransports()
   const { data: deadLettersData } = useDeadLetters()
@@ -69,6 +71,28 @@ export const DashboardPage: React.FC = () => {
 
   const adminBase = id ? `/corec/${id}/admin` : '/admin'
   const alertsLink = id ? `/corec/${id}/monitor/alerts` : '/monitor/alerts'
+
+  // Loading skeleton — shown while the initial stats fetch is in flight.
+  if (statsLoading) {
+    return (
+      <div className="flex items-center justify-center py-20 text-muted-foreground">
+        <Loader2 className="w-5 h-5 animate-spin mr-2" />
+        <span className="text-sm">{t('common.loading')}</span>
+      </div>
+    )
+  }
+
+  // Error fallback — shown if the stats fetch fails (connection lost, server
+  // down). The rest of the page degrades gracefully with empty arrays, but the
+  // KPI row needs a visible error indicator.
+  if (statsError) {
+    return (
+      <div className="flex items-center justify-center py-20 text-rose-500">
+        <AlertCircle className="w-5 h-5 mr-2" />
+        <span className="text-sm">{t('dashboard.loadFailed', { defaultValue: 'Failed to load dashboard data' })}</span>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-4">
