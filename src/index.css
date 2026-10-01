@@ -526,6 +526,26 @@ body {
   animation: progress-indeterminate 1s var(--ease-smooth) infinite;
 }
 
+/* Theme transition — circular reveal from the theme selector position.
+   Uses the View Transitions API. The old snapshot stays put (animation:
+   none) while the new snapshot expands from a circle centred at the
+   click position, giving the "原地扩散至全屏" effect. */
+::view-transition-old(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+::view-transition-new(root) {
+  animation: theme-circle-reveal 0.5s var(--ease-smooth, ease);
+}
+@keyframes theme-circle-reveal {
+  from {
+    clip-path: circle(0% at var(--theme-x, 50%) var(--theme-y, 50%));
+  }
+  to {
+    clip-path: circle(var(--theme-r, 150%) at var(--theme-x, 50%) var(--theme-y, 50%));
+  }
+}
+
 /* Respect reduced motion preference */
 @media (prefers-reduced-motion: reduce) {
   *,

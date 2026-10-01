@@ -24,7 +24,8 @@ import {
   X,
 } from 'lucide-react'
 import type React from 'react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { flushSync } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { Link, NavLink, Outlet, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { Select, SelectContent, SelectItem } from '@/components/ui/select'
@@ -75,6 +76,36 @@ export const AppShell: React.FC = () => {
 
   // Mobile drawer open/close
   const [mobileOpen, setMobileOpen] = useState(false)
+
+  // Theme trigger ref — used to anchor the circular-reveal view transition.
+  const themeTriggerRef = useRef<HTMLButtonElement>(null)
+
+  /**
+   * Switch theme with a circular-reveal animation that expands from the
+   * theme selector button position to cover the full screen. Uses the
+   * View Transitions API (Chromium 111+); falls back to an instant
+   * switch when the API is unavailable.
+   */
+  const handleThemeChange = (newTheme: string) => {
+    const btn = themeTriggerRef.current
+    if (!btn || !document.startViewTransition) {
+      setTheme(newTheme as typeof theme)
+      return
+    }
+    const rect = btn.getBoundingClientRect()
+    const x = rect.left + rect.width / 2
+    const y = rect.top + rect.height / 2
+    const endRadius = Math.hypot(
+      Math.max(x, window.innerWidth - x),
+      Math.max(y, window.innerHeight - y),
+    )
+    document.documentElement.style.setProperty('--theme-x', `${x}px`)
+    document.documentElement.style.setProperty('--theme-y', `${y}px`)
+    document.documentElement.style.setProperty('--theme-r', `${endRadius}px`)
+    document.startViewTransition(() => {
+      flushSync(() => setTheme(newTheme as typeof theme))
+    })
+  }
 
   // Route progress bar
   const [progress, setProgress] = useState(0)
@@ -336,9 +367,10 @@ export const AppShell: React.FC = () => {
           </button>
 
           {/* Theme selector — dropdown (Select) */}
-          <Select value={theme} onValueChange={(v) => setTheme(v as typeof theme)}>
+          <Select value={theme} onValueChange={handleThemeChange}>
             <SelectPrimitive.Trigger asChild>
               <button
+                ref={themeTriggerRef}
                 type="button"
                 className={cn(
                   'grid place-items-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200',
