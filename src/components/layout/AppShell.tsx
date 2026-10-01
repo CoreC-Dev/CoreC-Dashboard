@@ -219,7 +219,7 @@ export const AppShell: React.FC = () => {
           <img
             src="/logo-animated.svg"
             alt="CoreC"
-            className={cn('shrink-0 transition-all duration-300', eff ? 'w-9 h-9' : 'w-12 h-12')}
+            className={cn('shrink-0 transition-all duration-300', eff ? 'w-9 h-9' : 'w-14 h-14')}
           />
         </Link>
         {!eff && isMobile && (
@@ -234,8 +234,40 @@ export const AppShell: React.FC = () => {
         )}
       </div>
 
+      {/* ===== Back-to-home bubble — white card between logo and nav ===== */}
+      <div className="shrink-0">
+        <div
+          className={cn(
+            'bg-card rounded-2xl border border-border/40',
+            eff ? 'p-2 flex items-center justify-center' : 'p-2.5 flex w-full',
+          )}
+          style={{ boxShadow: 'var(--shadow-card)' }}
+        >
+          <button
+            type="button"
+            onClick={() => navigate('/')}
+            className={cn(
+              'grid place-items-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200',
+              eff
+                ? 'w-9 h-9 rounded-full'
+                : 'w-full h-9 rounded-lg flex items-center px-2.5 gap-2.5',
+            )}
+            aria-label={t('instances.backHome')}
+          >
+            <ArrowLeft className="w-[18px] h-[18px] shrink-0" />
+            {!eff && (
+              <span className="text-sm font-medium truncate text-left flex-1">
+                {t('instances.backHome')}
+              </span>
+            )}
+          </button>
+        </div>
+      </div>
+
       {/* ===== Centered navigation area — white bubble card ===== */}
-      <div className={cn('flex-1 flex flex-col justify-center', eff ? 'items-center' : '')}>
+      <div
+        className={cn('flex-1 flex flex-col justify-center relative', eff ? 'items-center' : '')}
+      >
         <div
           className={cn(
             'bg-card rounded-2xl border border-border/40',
@@ -259,6 +291,17 @@ export const AppShell: React.FC = () => {
             {adminItems.map(renderItem)}
           </nav>
         </div>
+        {/* Floating collapse/expand toggle — at the center height of the nav bubble */}
+        {!isMobile && (
+          <button
+            type="button"
+            onClick={() => setCollapsed(!collapsed)}
+            className="absolute top-1/2 -translate-y-1/2 -right-3 z-20 w-6 h-12 rounded-full bg-card border border-border shadow-md grid place-items-center text-muted-foreground hover:text-foreground hover:bg-muted hover:scale-110 transition-all duration-200"
+            aria-label={collapsed ? t('aria.expandSidebar') : t('aria.collapseSidebar')}
+          >
+            {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+          </button>
+        )}
       </div>
 
       {/* ===== Bottom fixed function area — white bubble card ===== */}
@@ -455,26 +498,17 @@ export const AppShell: React.FC = () => {
       {!isMobile && (
         <aside
           className={cn(
-            'sidebar-transition shrink-0 flex flex-col py-4 relative',
+            'sidebar-transition shrink-0 flex flex-col py-4',
             collapsed ? 'w-[72px] px-2 gap-2.5 items-center' : 'w-[220px] px-3 gap-2.5',
           )}
         >
           {sidebarContent}
-          {/* Floating collapse/expand toggle — sits on the sidebar's right edge */}
-          <button
-            type="button"
-            onClick={() => setCollapsed(!collapsed)}
-            className="absolute -right-3 top-1/2 -translate-y-1/2 z-20 w-6 h-12 rounded-full bg-card border border-border shadow-md grid place-items-center text-muted-foreground hover:text-foreground hover:bg-muted hover:scale-110 transition-all duration-200"
-            aria-label={collapsed ? t('aria.expandSidebar') : t('aria.collapseSidebar')}
-          >
-            {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-          </button>
         </aside>
       )}
 
       {/* ===== Main content area ===== */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden h-full">
-        {/* Topbar — back button (left) + realtime indicator (right) on the same row */}
+        {/* Topbar — hamburger (mobile) + realtime indicator (monitor) */}
         <header className="flex items-center justify-between px-4 py-3 md:px-6 md:py-4 shrink-0">
           <div className="flex items-center gap-2.5">
             {/* Hamburger (mobile only) */}
@@ -488,16 +522,6 @@ export const AppShell: React.FC = () => {
                 <Menu className="w-5 h-5" />
               </button>
             )}
-
-            {/* Back button */}
-            <button
-              type="button"
-              onClick={() => navigate('/')}
-              className="flex items-center justify-center w-10 h-10 rounded-xl bg-card border border-border shadow-sm text-muted-foreground hover:text-foreground hover:shadow-md hover:-translate-x-0.5 transition-all duration-200 shrink-0"
-              aria-label={t('instances.backHome')}
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
           </div>
 
           {/* Real-time stream indicator — same row as back button, right side */}
