@@ -1,5 +1,4 @@
 import {
-  Activity,
   ArrowLeft,
   Bell,
   Check,
@@ -15,7 +14,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Send,
-  Settings,
+  Server,
   Sliders,
   Sun,
   Tag,
@@ -99,8 +98,6 @@ export const AppShell: React.FC = () => {
 
   const isMonitor = location.pathname.includes('/monitor')
   const isAdmin = location.pathname.includes('/admin')
-  const monitorLink = instanceId ? `/corec/${instanceId}/monitor/dashboard` : '/'
-  const adminLink = instanceId ? `/corec/${instanceId}/admin/drivers` : '/'
 
   const renderItem = (item: RailItem) => {
     const Icon = item.icon
@@ -129,69 +126,66 @@ export const AppShell: React.FC = () => {
     )
   }
 
+  const renderGroupLabel = (label: string) => {
+    if (collapsed) return null
+    return (
+      <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70 px-2.5 pt-1 pb-0.5">
+        {label}
+      </span>
+    )
+  }
+
   return (
     <div className="h-screen w-full flex bg-background text-foreground overflow-hidden p-4 gap-4">
-      {/* ===== Floating sidebar — collapsible icon/text navigation ===== */}
+      {/* ===== Floating sidebar ===== */}
       <aside
         className={cn(
           'sidebar-transition shrink-0 flex flex-col py-4 bg-card rounded-[20px] overflow-hidden',
-          collapsed ? 'w-[72px] px-2 gap-3 items-center' : 'w-[220px] px-3 gap-2',
+          collapsed ? 'w-[72px] px-2 gap-1 items-center' : 'w-[220px] px-3 gap-1',
         )}
         style={{ boxShadow: 'var(--shadow-card)' }}
       >
-        {/* Brand mark + toggle */}
-        <div
+        {/* Collapse/expand toggle */}
+        <button
+          type="button"
+          onClick={() => setCollapsed(!collapsed)}
           className={cn(
-            'flex items-center shrink-0',
-            collapsed ? 'justify-center' : 'justify-between px-0.5',
+            'grid place-items-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200 shrink-0',
+            collapsed
+              ? 'w-9 h-9 rounded-full'
+              : 'w-full h-9 rounded-lg flex items-center px-2.5 gap-2.5',
           )}
+          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
-          <Link to="/" className="flex items-center gap-2.5 shrink-0" aria-label="CoreC home">
-            <img src="/logo.svg" alt="CoreC" className="w-8 h-8 shrink-0" />
-            {!collapsed && (
-              <span className="font-extrabold text-base tracking-tight whitespace-nowrap">
-                CoreC
+          {collapsed ? (
+            <PanelLeftOpen className="w-[18px] h-[18px] shrink-0" />
+          ) : (
+            <>
+              <PanelLeftClose className="w-[18px] h-[18px] shrink-0" />
+              <span className="text-sm font-medium truncate text-left flex-1">
+                {t('nav.collapse', { defaultValue: 'Collapse' })}
               </span>
-            )}
-          </Link>
-          {!collapsed && (
-            <button
-              type="button"
-              onClick={() => setCollapsed(true)}
-              className="w-7 h-7 rounded-lg grid place-items-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200 shrink-0"
-              aria-label="Collapse sidebar"
-            >
-              <PanelLeftClose className="w-4 h-4" />
-            </button>
+            </>
           )}
-        </div>
+        </button>
 
-        {/* Collapse toggle (when collapsed — show expand button) */}
-        {collapsed && (
-          <button
-            type="button"
-            onClick={() => setCollapsed(false)}
-            className="w-9 h-9 rounded-full grid place-items-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200 shrink-0"
-            aria-label="Expand sidebar"
-          >
-            <PanelLeftOpen className="w-[18px] h-[18px]" />
-          </button>
-        )}
+        {/* Monitor group label */}
+        {renderGroupLabel(t('nav.monitor'))}
 
         {/* Monitor nav group */}
         <nav className={cn('flex flex-col w-full', collapsed ? 'gap-1.5 items-center' : 'gap-1')}>
           {monitorItems.map(renderItem)}
         </nav>
 
-        {/* Divider */}
-        <div className={cn('h-px bg-border shrink-0', collapsed ? 'w-8' : 'w-full')} />
+        {/* Admin group label */}
+        {renderGroupLabel(t('nav.admin'))}
 
         {/* Admin nav group */}
         <nav className={cn('flex flex-col w-full', collapsed ? 'gap-1.5 items-center' : 'gap-1')}>
           {adminItems.map(renderItem)}
         </nav>
 
-        {/* Bottom fixed function area — theme + disconnect */}
+        {/* ===== Bottom fixed function area ===== */}
         <div className={cn('mt-auto', collapsed ? 'pt-3' : 'pt-2')}>
           <div
             className={cn('h-px bg-border mb-2 shrink-0', collapsed ? 'w-8 mx-auto' : 'w-full')}
@@ -202,6 +196,81 @@ export const AppShell: React.FC = () => {
               collapsed ? 'flex-col items-center gap-1.5' : 'flex-col gap-1',
             )}
           >
+            {/* Instance switcher */}
+            {instance && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className={cn(
+                      'grid place-items-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200',
+                      collapsed
+                        ? 'w-9 h-9 rounded-full'
+                        : 'w-full h-9 rounded-lg flex items-center px-2.5 gap-2.5',
+                    )}
+                    aria-label={t('instances.switchInstance')}
+                  >
+                    <Server className="w-[18px] h-[18px] shrink-0" />
+                    {!collapsed && (
+                      <span className="text-sm font-medium truncate text-left flex-1">
+                        {instance.name}
+                      </span>
+                    )}
+                    {!collapsed && (
+                      <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                    )}
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent side="right" align="end" className="w-56">
+                  <DropdownMenuLabel>{t('instances.switchInstance')}</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {instances.map((inst) => (
+                    <DropdownMenuItem
+                      key={inst.id}
+                      onClick={() => {
+                        const space = isMonitor
+                          ? 'monitor/dashboard'
+                          : isAdmin
+                            ? 'admin/drivers'
+                            : 'monitor/dashboard'
+                        navigate(`/corec/${inst.id}/${space}`)
+                      }}
+                      className={inst.id === instance.id ? 'bg-accent' : ''}
+                    >
+                      <span
+                        className={cn(
+                          'w-1.5 h-1.5 rounded-full mr-2 shrink-0',
+                          inst.lastConnectedAt ? 'bg-status-running' : 'bg-status-idle',
+                        )}
+                      />
+                      <span className="truncate">{inst.name}</span>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+
+            {/* Language toggle */}
+            <button
+              type="button"
+              onClick={toggleLanguage}
+              className={cn(
+                'grid place-items-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200',
+                collapsed
+                  ? 'w-9 h-9 rounded-full'
+                  : 'w-full h-9 rounded-lg flex items-center px-2.5 gap-2.5',
+              )}
+              aria-label={t('common.toggleLanguage')}
+            >
+              <Globe className="w-[18px] h-[18px] shrink-0" />
+              {!collapsed && (
+                <span className="text-sm font-medium truncate text-left flex-1">
+                  {i18nInst.language.startsWith('zh') ? '中文' : 'English'}
+                </span>
+              )}
+            </button>
+
+            {/* Theme selector */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
@@ -252,6 +321,8 @@ export const AppShell: React.FC = () => {
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
+
+            {/* Disconnect */}
             <button
               type="button"
               onClick={() => navigate('/')}
@@ -277,101 +348,36 @@ export const AppShell: React.FC = () => {
 
       {/* ===== Main content area ===== */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Pill-shaped floating topbar */}
+        {/* Topbar — logo bubble + live indicator */}
         <header className="flex items-center gap-2.5 px-5 py-3 shrink-0">
-          {/* Brand pill (left) */}
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-card border border-border shadow-sm transition-all duration-200 hover:shadow-md">
-            <button
-              type="button"
-              onClick={() => navigate('/')}
-              className="text-muted-foreground hover:text-foreground transition-colors duration-200"
-              aria-label={t('instances.backHome')}
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-            </button>
-            {instance && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    type="button"
-                    className="flex items-center gap-1.5 text-sm font-semibold transition-colors duration-200"
-                  >
-                    <span
-                      className={cn('w-2 h-2 rounded-full shrink-0 transition-colors', statusColor)}
-                    />
-                    <span className="max-w-[140px] truncate">{instance.name}</span>
-                    <ChevronDown className="w-3 h-3 text-muted-foreground shrink-0" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-56">
-                  <DropdownMenuLabel>{t('instances.switchInstance')}</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  {instances.map((inst) => (
-                    <DropdownMenuItem
-                      key={inst.id}
-                      onClick={() => {
-                        const space = isMonitor
-                          ? 'monitor/dashboard'
-                          : isAdmin
-                            ? 'admin/drivers'
-                            : 'monitor/dashboard'
-                        navigate(`/corec/${inst.id}/${space}`)
-                      }}
-                      className={inst.id === instance.id ? 'bg-accent' : ''}
-                    >
-                      <span
-                        className={cn(
-                          'w-1.5 h-1.5 rounded-full mr-2 shrink-0',
-                          inst.lastConnectedAt ? 'bg-status-running' : 'bg-status-idle',
-                        )}
-                      />
-                      <span className="truncate">{inst.name}</span>
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-          </div>
+          {/* Logo + CoreC title bubble (top-left, aligned with topbar) */}
+          <Link
+            to="/"
+            className="flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-card border border-border shadow-sm transition-all duration-200 hover:shadow-md shrink-0"
+            aria-label="CoreC home"
+          >
+            <img src="/logo.svg" alt="CoreC" className="w-7 h-7 shrink-0" />
+            <span className="font-extrabold text-base tracking-tight whitespace-nowrap">CoreC</span>
+          </Link>
 
-          {/* Center: Monitor/Admin switcher */}
-          <div className="flex items-center gap-1.5 px-1.5 py-1 rounded-full bg-card border border-border shadow-sm">
-            <Link
-              to={monitorLink}
-              className={cn(
-                'flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all duration-200',
-                isMonitor
-                  ? 'bg-foreground text-background shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted',
-              )}
-            >
-              <Activity className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">{t('nav.monitor')}</span>
-            </Link>
-            <Link
-              to={adminLink}
-              className={cn(
-                'flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all duration-200',
-                isAdmin
-                  ? 'bg-foreground text-background shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted',
-              )}
-            >
-              <Settings className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">{t('nav.admin')}</span>
-            </Link>
-          </div>
+          {/* Back button */}
+          <button
+            type="button"
+            onClick={() => navigate('/')}
+            className="flex items-center justify-center w-8 h-8 rounded-full bg-card border border-border shadow-sm text-muted-foreground hover:text-foreground hover:shadow-md transition-all duration-200 shrink-0"
+            aria-label={t('instances.backHome')}
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </button>
 
-          {/* Right: language + live indicator */}
+          {/* Right: live indicator */}
           <div className="ml-auto flex items-center gap-2.5">
-            <button
-              type="button"
-              onClick={toggleLanguage}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-card border border-border shadow-sm text-xs font-semibold text-muted-foreground hover:text-foreground hover:shadow-md transition-all duration-200"
-              aria-label={t('common.toggleLanguage')}
-            >
-              <Globe className="w-3.5 h-3.5" />
-              <span>{i18nInst.language.startsWith('zh') ? '中' : 'EN'}</span>
-            </button>
+            {instance && (
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-card border border-border shadow-sm">
+                <span className={cn('w-2 h-2 rounded-full shrink-0', statusColor)} />
+                <span className="text-xs font-semibold text-muted-foreground">{instance.name}</span>
+              </div>
+            )}
             {isMonitor && (
               <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-card border border-border shadow-sm">
                 <span className="w-2 h-2 rounded-full bg-status-running glow-running" />
