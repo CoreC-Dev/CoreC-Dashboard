@@ -38,7 +38,7 @@ export const MemoryChart = memo(function MemoryChart() {
   }, [])
 
   return (
-    <div className="w-full h-56 pt-2">
+    <div className="w-full h-56 pt-2 [&_*]:outline-none">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} />

@@ -64,7 +64,7 @@ export const TrafficChart = memo(function TrafficChart() {
   }, [])
 
   return (
-    <div className="w-full h-56 pt-2">
+    <div className="w-full h-56 pt-2 [&_*]:outline-none">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
           <defs>

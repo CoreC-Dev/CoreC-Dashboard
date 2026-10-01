@@ -604,6 +604,11 @@ export const TagExplorerPage: React.FC = () => {
   }
 
   const trendNumeric = trendTag ? isNumericType(trendTag.type) : false
+  // Live-updating point for the trend detail panel. tagMap is updated by the
+  // WS stream (rAF-batched), so looking up the selected tag here gives the
+  // freshest value/quality/timestamp without extra state. Falls back to the
+  // snapshot captured at open-time if the tag isn't in the live map yet.
+  const trendLivePoint = trendTag ? (tagMap[tagKey(trendTag)] ?? trendTag) : null
 
   // The WS subscription may already be streaming points before the REST
   // snapshot resolves. Only show the loading/error placeholder when we have
@@ -877,7 +882,10 @@ export const TagExplorerPage: React.FC = () => {
                   <div className="text-[11px] text-muted-foreground">
                     {t('tags.liveTrend', { count: trendSamples.length, max: MAX_TREND_SAMPLES })}
                   </div>
-                  <div ref={chartContainerRef} className="w-full h-[260px]" />
+                  <div
+                    ref={chartContainerRef}
+                    className="w-full h-[260px] [&_canvas]:outline-none"
+                  />
                 </>
               ) : (
                 <div className="text-xs text-muted-foreground py-12 text-center">
@@ -885,34 +893,38 @@ export const TagExplorerPage: React.FC = () => {
                 </div>
               )}
 
-              <div className="rounded-lg border border-border bg-muted/30 p-3 text-xs font-mono space-y-1">
-                <div>
-                  <span className="text-muted-foreground">{t('common.type')}: </span>
-                  <span className="text-foreground">{trendTag.type}</span>
+              {trendLivePoint && (
+                <div className="rounded-lg border border-border bg-muted/30 p-3 text-xs font-mono space-y-1">
+                  <div>
+                    <span className="text-muted-foreground">{t('common.type')}: </span>
+                    <span className="text-foreground">{trendLivePoint.type}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">{t('common.value')}: </span>
+                    <span className="text-foreground">
+                      {typeof trendLivePoint.value === 'boolean'
+                        ? trendLivePoint.value
+                          ? t('tags.trueValue')
+                          : t('tags.falseValue')
+                        : String(trendLivePoint.value)}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">{t('common.quality')}: </span>
+                    <span className="text-foreground">
+                      {t((QualityLabel[trendLivePoint.quality] ?? QualityLabel[0]).key)}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">{t('common.timestamp')}: </span>
+                    <span className="text-foreground">
+                      {trendLivePoint.timestamp
+                        ? new Date(trendLivePoint.timestamp).toLocaleString()
+                        : '-'}
+                    </span>
+                  </div>
                 </div>
-                <div>
-                  <span className="text-muted-foreground">{t('common.value')}: </span>
-                  <span className="text-foreground">
-                    {typeof trendTag.value === 'boolean'
-                      ? trendTag.value
-                        ? t('tags.trueValue')
-                        : t('tags.falseValue')
-                      : String(trendTag.value)}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">{t('common.quality')}: </span>
-                  <span className="text-foreground">
-                    {t((QualityLabel[trendTag.quality] ?? QualityLabel[0]).key)}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">{t('common.timestamp')}: </span>
-                  <span className="text-foreground">
-                    {trendTag.timestamp ? new Date(trendTag.timestamp).toLocaleString() : '-'}
-                  </span>
-                </div>
-              </div>
+              )}
             </div>
           </div>
         </div>
