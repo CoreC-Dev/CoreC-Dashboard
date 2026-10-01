@@ -14,9 +14,9 @@ interface CountUpNumberProps {
 export function CountUpNumber({
   value,
   duration = 800,
-  format = (n) => Math.round(n).toLocaleString(),
+  format = (n) => n.toLocaleString(),
   className,
 }: CountUpNumberProps) {
   const animated = useCountUp(value, duration)
-  return <span className={className}>{format(animated)}</span>
+  return <span className={className}>{format(Math.round(animated))}</span>
 }
