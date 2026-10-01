@@ -130,13 +130,14 @@ export const AppShell: React.FC = () => {
   }
 
   return (
-    <div className="h-screen w-full flex bg-background text-foreground overflow-hidden">
-      {/* ===== Side rail — collapsible icon/text navigation ===== */}
+    <div className="h-screen w-full flex bg-background text-foreground overflow-hidden p-4 gap-4">
+      {/* ===== Floating sidebar — collapsible icon/text navigation ===== */}
       <aside
         className={cn(
-          'sidebar-transition shrink-0 flex flex-col py-3 bg-card border-r border-border overflow-hidden',
+          'sidebar-transition shrink-0 flex flex-col py-4 bg-card rounded-[20px] overflow-hidden',
           collapsed ? 'w-[72px] px-2 gap-3 items-center' : 'w-[220px] px-3 gap-2',
         )}
+        style={{ boxShadow: 'var(--shadow-card)' }}
       >
         {/* Brand mark + toggle */}
         <div
@@ -190,82 +191,87 @@ export const AppShell: React.FC = () => {
           {adminItems.map(renderItem)}
         </nav>
 
-        {/* Bottom: theme + disconnect */}
-        <div
-          className={cn(
-            'mt-auto flex w-full',
-            collapsed ? 'flex-col items-center gap-1.5' : 'flex-col gap-1',
-          )}
-        >
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                type="button"
-                className={cn(
-                  'grid place-items-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200',
-                  collapsed
-                    ? 'w-9 h-9 rounded-full'
-                    : 'w-full h-9 rounded-lg flex items-center px-2.5 gap-2.5',
-                )}
-                aria-label="Select theme"
-              >
-                {resolvedTheme === 'dark' ? (
-                  <Moon className="w-[18px] h-[18px] shrink-0" />
-                ) : (
-                  <Sun className="w-[18px] h-[18px] shrink-0" />
-                )}
-                {!collapsed && (
-                  <span className="text-sm font-medium truncate text-left flex-1">
-                    {THEME_LABELS[theme]}
-                  </span>
-                )}
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent side="right" align="end" className="w-40">
-              <DropdownMenuLabel className="flex items-center gap-2">
-                <Palette className="w-3.5 h-3.5" />
-                {t('settings.theme', { defaultValue: 'Theme' })}
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => setTheme('system')}
-                className="flex items-center justify-between"
-              >
-                <span>{THEME_LABELS.system}</span>
-                {theme === 'system' && <Check className="w-3.5 h-3.5" />}
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              {THEME_VARIANTS.map((variant) => (
+        {/* Bottom fixed function area — theme + disconnect */}
+        <div className={cn('mt-auto', collapsed ? 'pt-3' : 'pt-2')}>
+          <div
+            className={cn('h-px bg-border mb-2 shrink-0', collapsed ? 'w-8 mx-auto' : 'w-full')}
+          />
+          <div
+            className={cn(
+              'flex w-full',
+              collapsed ? 'flex-col items-center gap-1.5' : 'flex-col gap-1',
+            )}
+          >
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className={cn(
+                    'grid place-items-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200',
+                    collapsed
+                      ? 'w-9 h-9 rounded-full'
+                      : 'w-full h-9 rounded-lg flex items-center px-2.5 gap-2.5',
+                  )}
+                  aria-label="Select theme"
+                >
+                  {resolvedTheme === 'dark' ? (
+                    <Moon className="w-[18px] h-[18px] shrink-0" />
+                  ) : (
+                    <Sun className="w-[18px] h-[18px] shrink-0" />
+                  )}
+                  {!collapsed && (
+                    <span className="text-sm font-medium truncate text-left flex-1">
+                      {THEME_LABELS[theme]}
+                    </span>
+                  )}
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent side="right" align="end" className="w-40">
+                <DropdownMenuLabel className="flex items-center gap-2">
+                  <Palette className="w-3.5 h-3.5" />
+                  {t('settings.theme', { defaultValue: 'Theme' })}
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem
-                  key={variant}
-                  onClick={() => setTheme(variant)}
+                  onClick={() => setTheme('system')}
                   className="flex items-center justify-between"
                 >
-                  <span>{THEME_LABELS[variant]}</span>
-                  {theme === variant && <Check className="w-3.5 h-3.5" />}
+                  <span>{THEME_LABELS.system}</span>
+                  {theme === 'system' && <Check className="w-3.5 h-3.5" />}
                 </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <button
-            type="button"
-            onClick={() => navigate('/')}
-            className={cn(
-              'grid place-items-center text-muted-foreground hover:text-status-error hover:bg-status-error/10 transition-all duration-200',
-              collapsed
-                ? 'w-9 h-9 rounded-full'
-                : 'w-full h-9 rounded-lg flex items-center px-2.5 gap-2.5',
-            )}
-            title={collapsed ? t('connection.disconnect') : undefined}
-            aria-label="Disconnect"
-          >
-            <Unplug className="w-[18px] h-[18px] shrink-0" />
-            {!collapsed && (
-              <span className="text-sm font-medium truncate text-left flex-1">
-                {t('connection.disconnect')}
-              </span>
-            )}
-          </button>
+                <DropdownMenuSeparator />
+                {THEME_VARIANTS.map((variant) => (
+                  <DropdownMenuItem
+                    key={variant}
+                    onClick={() => setTheme(variant)}
+                    className="flex items-center justify-between"
+                  >
+                    <span>{THEME_LABELS[variant]}</span>
+                    {theme === variant && <Check className="w-3.5 h-3.5" />}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <button
+              type="button"
+              onClick={() => navigate('/')}
+              className={cn(
+                'grid place-items-center text-muted-foreground hover:text-status-error hover:bg-status-error/10 transition-all duration-200',
+                collapsed
+                  ? 'w-9 h-9 rounded-full'
+                  : 'w-full h-9 rounded-lg flex items-center px-2.5 gap-2.5',
+              )}
+              title={collapsed ? t('connection.disconnect') : undefined}
+              aria-label="Disconnect"
+            >
+              <Unplug className="w-[18px] h-[18px] shrink-0" />
+              {!collapsed && (
+                <span className="text-sm font-medium truncate text-left flex-1">
+                  {t('connection.disconnect')}
+                </span>
+              )}
+            </button>
+          </div>
         </div>
       </aside>
 
