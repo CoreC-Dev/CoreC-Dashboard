@@ -348,7 +348,7 @@ export const RulesPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {toggleError && (
         <div className="flex items-center gap-2 rounded-md border border-status-error/30 bg-status-error/10 px-3 py-2 text-xs text-status-error">
           <AlertCircle className="h-4 w-4 shrink-0" />

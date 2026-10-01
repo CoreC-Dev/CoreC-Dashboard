@@ -428,7 +428,7 @@ export const DriverDetailPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-5">
         <BackLink to={`${adminBase}/drivers`}>
           {t('drivers.driverList', { defaultValue: 'Back to Drivers' })}
         </BackLink>
@@ -441,7 +441,7 @@ export const DriverDetailPage: React.FC = () => {
 
   if (error || !driver) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-5">
         <BackLink to={`${adminBase}/drivers`}>
           {t('drivers.driverList', { defaultValue: 'Back to Drivers' })}
         </BackLink>
@@ -468,7 +468,7 @@ export const DriverDetailPage: React.FC = () => {
   const tags = tagsData?.tags ? Object.values(tagsData.tags) : []
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <BackLink to={`${adminBase}/drivers`}>
           {t('drivers.driverList', { defaultValue: 'Back to Drivers' })}

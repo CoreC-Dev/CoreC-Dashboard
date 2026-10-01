@@ -607,7 +607,7 @@ export const TagExplorerPage: React.FC = () => {
   const showError = isError && filteredTags.length === 0
 
   return (
-    <div className={trendTag ? 'flex flex-col md:flex-row gap-4 md:items-start' : 'space-y-4'}>
+    <div className={trendTag ? 'flex flex-col md:flex-row gap-4 md:items-start' : 'space-y-5'}>
       <div className={trendTag ? 'flex-1 min-w-0 space-y-4' : 'space-y-4'}>
         {/* Search & Filter Bar */}
         <Card className="border-border bg-card">

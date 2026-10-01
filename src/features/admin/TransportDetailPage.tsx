@@ -426,7 +426,7 @@ export const TransportDetailPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-5">
         <BackLink to={`${adminBase}/transports`}>
           {t('transports.transportList', { defaultValue: 'Back to Transports' })}
         </BackLink>
@@ -439,7 +439,7 @@ export const TransportDetailPage: React.FC = () => {
 
   if (error || !transport) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-5">
         <BackLink to={`${adminBase}/transports`}>
           {t('transports.transportList', { defaultValue: 'Back to Transports' })}
         </BackLink>
@@ -466,7 +466,7 @@ export const TransportDetailPage: React.FC = () => {
   const queueActive = transport.queue_size > 0
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <BackLink to={`${adminBase}/transports`}>
           {t('transports.transportList', { defaultValue: 'Back to Transports' })}

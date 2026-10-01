@@ -230,7 +230,7 @@ export const WriteControlPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6 max-w-5xl">
+    <div className="space-y-5 max-w-5xl">
       <div>
         <h1 className="text-xl font-bold tracking-tight">{t('write.title')}</h1>
         <p className="text-xs text-muted-foreground">{t('write.subtitle')}</p>
