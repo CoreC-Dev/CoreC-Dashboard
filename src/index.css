@@ -1,17 +1,10 @@
 @import "tailwindcss";
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
 
 /*
- * Tailwind v4 design-token registration.
- *
- * Tailwind v4 no longer reads an opaque tailwind.config.js for the shadcn/ui
- * semantic color palette. Instead, every color utility (bg-card, text-muted-
- * foreground, border-border, ring-ring, ...) is generated ONLY from tokens
- * declared inside an `@theme` block. Without this block, 600+ semantic utility
- * usages across the app resolve to nothing and the entire UI renders unstyled.
- *
- * `@theme inline` keeps the token values referencing the HSL channel variables
- * defined in :root / .dark below, so the existing dark/light theme switching
- * (toggling the `.dark` class) keeps working without duplicating color values.
+ * AIOT-Hub design system — soft, rounded, card-based aesthetic.
+ * Lime-green accent, Inter font, large radii, soft layered shadows.
+ * Ported from aiot-dashboard (github.com/lsy1291455142/aiot-dashboard).
  */
 @theme inline {
   --color-background: hsl(var(--background));
@@ -34,64 +27,111 @@
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
 
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: var(--radius);
-  --radius-lg: var(--radius);
+  --color-status-running: hsl(var(--status-running));
+  --color-status-warning: hsl(var(--status-warning));
+  --color-status-error: hsl(var(--status-error));
+  --color-status-stale: hsl(var(--status-stale));
+  --color-status-queued: hsl(var(--status-queued));
+  --color-status-idle: hsl(var(--status-idle));
+
+  --color-chart-1: hsl(var(--chart-1));
+  --color-chart-2: hsl(var(--chart-2));
+  --color-chart-3: hsl(var(--chart-3));
+  --color-chart-4: hsl(var(--chart-4));
+  --color-chart-5: hsl(var(--chart-5));
+  --color-chart-grid: hsl(var(--chart-grid));
+
+  --radius-sm: 8px;
+  --radius-md: 13px;
+  --radius-lg: 22px;
 
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
 }
 
 @layer base {
+  /* ---------- Light theme (default) ---------- */
   :root {
-    --background: 220 20% 98%;
-    --foreground: 224 71.4% 4.1%;
-    --card: 0 0% 100%;
-    --card-foreground: 224 71.4% 4.1%;
+    --background: 220 14% 94%;          /* #eff0f3 canvas */
+    --foreground: 213 11% 9%;           /* #15171a text */
+    --card: 0 0% 100%;                  /* #ffffff surface */
+    --card-foreground: 213 11% 9%;
     --popover: 0 0% 100%;
-    --popover-foreground: 224 71.4% 4.1%;
-    --primary: 164 41% 38%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 164 14% 94%;
-    --secondary-foreground: 164 30% 16%;
-    --muted: 164 14% 95%;
-    --muted-foreground: 164 10% 42%;
-    --accent: 164 14% 92%;
-    --accent-foreground: 164 30% 16%;
-    --destructive: 0 84.2% 60.2%;
+    --popover-foreground: 213 11% 9%;
+    --primary: 75 87% 61%;             /* #b7f245 lime */
+    --primary-foreground: 96 50% 10%;   /* dark green text on lime */
+    --secondary: 210 20% 97%;          /* #f7f8f9 surface-soft */
+    --secondary-foreground: 213 11% 9%;
+    --muted: 210 20% 97%;              /* #f7f8f9 */
+    --muted-foreground: 219 5% 49%;    /* #777c84 */
+    --accent: 210 20% 97%;
+    --accent-foreground: 213 11% 9%;
+    --destructive: 354 76% 62%;        /* #e65363 */
     --destructive-foreground: 0 0% 100%;
-    --border: 164 13% 90%;
-    --input: 164 13% 90%;
-    --ring: 164 41% 41%;
-    --radius: 0.625rem;
-    --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --border: 200 14% 94%;             /* #edf0f2 */
+    --input: 200 14% 94%;
+    --ring: 75 87% 61%;                /* lime */
+    --radius: 13px;
+    --font-sans: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     --font-mono: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
-    --chart-1: 258 90% 66%;
-    --chart-2: 189 94% 43%;
+
+    --status-running: 146 70% 42%;     /* #20b46a green */
+    --status-warning: 40 86% 56%;      /* #efb62d yellow */
+    --status-error: 354 76% 62%;       /* #e65363 red */
+    --status-stale: 40 60% 50%;        /* dimmed yellow */
+    --status-queued: 207 90% 61%;      /* #42a5f5 blue */
+    --status-idle: 219 5% 49%;         /* #777c84 muted */
+
+    --chart-1: 75 87% 61%;             /* lime */
+    --chart-2: 146 70% 42%;            /* green */
+    --chart-3: 207 90% 61%;            /* blue */
+    --chart-4: 40 86% 56%;             /* yellow */
+    --chart-5: 354 76% 62%;            /* red */
+    --chart-grid: 200 14% 94%;
+
+    --shadow-card: 0 8px 22px hsl(213 11% 9% / 0.045);
+    --shadow-card-hover: 0 14px 30px hsl(213 11% 9% / 0.075);
+    --shadow-panel: 0 18px 45px hsl(213 11% 9% / 0.07);
   }
 
+  /* ---------- Dark theme ---------- */
   .dark {
-    --background: 200 25% 6%;
-    --foreground: 164 20% 96%;
-    --card: 200 25% 9%;
-    --card-foreground: 164 20% 96%;
-    --popover: 200 25% 9%;
-    --popover-foreground: 164 20% 96%;
-    --primary: 164 48% 50%;
-    --primary-foreground: 200 30% 8%;
-    --secondary: 200 20% 15%;
-    --secondary-foreground: 164 20% 96%;
-    --muted: 200 20% 14%;
-    --muted-foreground: 164 15% 65%;
-    --accent: 200 20% 16%;
-    --accent-foreground: 164 20% 96%;
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 164 20% 96%;
-    --border: 200 20% 17%;
-    --input: 200 20% 17%;
-    --ring: 164 48% 50%;
-    --chart-1: 258 90% 66%;
-    --chart-2: 189 94% 43%;
+    --background: 220 14% 5%;          /* #0c0d10 canvas */
+    --foreground: 216 18% 94%;         /* #eef0f3 text */
+    --card: 219 13% 13%;               /* #1c1f24 surface */
+    --card-foreground: 216 18% 94%;
+    --popover: 220 12% 10%;            /* #16181c panel */
+    --popover-foreground: 216 18% 94%;
+    --primary: 75 87% 61%;             /* #b7f245 lime */
+    --primary-foreground: 96 50% 8%;
+    --secondary: 219 11% 15%;          /* #23262c surface-soft */
+    --secondary-foreground: 216 18% 94%;
+    --muted: 219 11% 15%;              /* #23262c */
+    --muted-foreground: 219 7% 61%;    /* #9499a1 */
+    --accent: 219 11% 15%;
+    --accent-foreground: 216 18% 94%;
+    --destructive: 354 100% 70%;       /* #ff6575 */
+    --destructive-foreground: 0 0% 100%;
+    --border: 216 11% 17%;             /* #272b31 */
+    --input: 216 11% 17%;
+    --ring: 75 87% 61%;                /* lime */
+    --chart-1: 75 87% 61%;
+    --chart-2: 149 63% 50%;            /* #2fcf7e */
+    --chart-3: 207 100% 68%;           /* #5bb6ff */
+    --chart-4: 41 100% 62%;            /* #ffc23d */
+    --chart-5: 354 100% 70%;           /* #ff6575 */
+    --chart-grid: 216 11% 17%;
+
+    --status-running: 149 63% 50%;     /* #2fcf7e */
+    --status-warning: 41 100% 62%;     /* #ffc23d */
+    --status-error: 354 100% 70%;      /* #ff6575 */
+    --status-stale: 41 70% 52%;
+    --status-queued: 207 100% 68%;     /* #5bb6ff */
+    --status-idle: 219 7% 61%;         /* #9499a1 */
+
+    --shadow-card: 0 8px 22px hsl(0 0% 0% / 0.3);
+    --shadow-card-hover: 0 14px 30px hsl(0 0% 0% / 0.42);
+    --shadow-panel: 0 18px 45px hsl(0 0% 0% / 0.45);
   }
 }
 
@@ -112,12 +152,19 @@ body {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
   font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.4;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
   overflow-x: hidden;
 }
 
-/* Custom industrial scrollbars */
+::selection {
+  background: hsl(var(--primary) / 0.45);
+}
+
+/* Soft rounded scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -126,20 +173,40 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted-foreground) / 0.25);
+  background: hsl(var(--muted-foreground) / 0.2);
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground) / 0.45);
+  background: hsl(var(--muted-foreground) / 0.35);
 }
 
-/* Glass & Neon industrial indicators */
-.glow-success {
-  box-shadow: 0 0 10px hsl(142 71% 45% / 0.45);
+/* Tabular numbers for data displays */
+.tnum {
+  font-variant-numeric: tabular-nums;
 }
-.glow-danger {
-  box-shadow: 0 0 10px hsl(var(--destructive) / 0.45);
+
+/* Soft glow for live/active indicators */
+.glow-running {
+  box-shadow: 0 0 0 0 hsl(var(--status-running) / 0.5);
+  animation: glow-pulse 1.6s infinite;
+}
+.glow-error {
+  box-shadow: 0 0 8px hsl(var(--status-error) / 0.4);
 }
 .glow-primary {
-  box-shadow: 0 0 12px hsl(var(--ring) / 0.45);
+  box-shadow: 0 7px 16px hsl(var(--primary) / 0.35);
+}
+@keyframes glow-pulse {
+  0% { box-shadow: 0 0 0 0 hsl(var(--status-running) / 0.5); }
+  70% { box-shadow: 0 0 0 8px hsl(var(--status-running) / 0); }
+  100% { box-shadow: 0 0 0 0 hsl(var(--status-running) / 0); }
+}
+
+/* Lime gradient button (primary action) */
+.btn-lime {
+  background: linear-gradient(180deg, hsl(78 90% 68%), hsl(var(--primary)));
+  box-shadow: 0 7px 16px hsl(var(--primary) / 0.35);
+}
+.btn-lime:hover {
+  box-shadow: 0 9px 20px hsl(var(--primary) / 0.5);
 }
