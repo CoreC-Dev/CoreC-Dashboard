@@ -498,81 +498,67 @@ export const AppShell: React.FC = () => {
 
       {/* ===== Main content area ===== */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden h-full">
-        {/* Topbar — hamburger (mobile) + realtime indicator (monitor) */}
-        <header className="flex items-center justify-between px-4 py-3 md:px-6 md:py-4 shrink-0">
-          <div className="flex items-center gap-2.5">
-            {/* Hamburger (mobile only) */}
-            {isMobile && (
-              <button
-                type="button"
-                onClick={() => setMobileOpen(true)}
-                className="flex items-center justify-center w-10 h-10 rounded-xl bg-card border border-border shadow-sm text-muted-foreground hover:text-foreground hover:shadow-md transition-all duration-200 shrink-0"
-                aria-label={t('aria.openMenu')}
-              >
-                <Menu className="w-5 h-5" />
-              </button>
-            )}
-          </div>
+        {/* Mobile-only topbar with hamburger */}
+        {isMobile && (
+          <header className="flex items-center justify-between px-4 py-3 shrink-0">
+            <button
+              type="button"
+              onClick={() => setMobileOpen(true)}
+              className="flex items-center justify-center w-10 h-10 rounded-xl bg-card border border-border shadow-sm text-muted-foreground hover:text-foreground hover:shadow-md transition-all duration-200 shrink-0"
+              aria-label={t('aria.openMenu')}
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+          </header>
+        )}
 
-          {/* Real-time stream indicator — same row as back button, right side */}
-          {isMonitor && (
-            <div className="flex items-center gap-2 px-3.5 py-2 rounded-full bg-card border border-border shadow-sm">
-              <span
-                className={cn(
-                  'w-2.5 h-2.5 rounded-full shrink-0',
-                  isConnecting
-                    ? 'bg-status-warning'
-                    : isConnected
-                      ? 'bg-status-running glow-running'
-                      : 'bg-status-error glow-error',
-                )}
-              />
-              <span
-                className={cn(
-                  'text-sm font-semibold',
-                  isConnecting
-                    ? 'text-status-warning'
-                    : isConnected
-                      ? 'text-status-running'
-                      : 'text-status-error',
-                )}
-              >
-                {isConnecting
-                  ? t('monitor.realtimeStreamConnecting')
-                  : isConnected
-                    ? t('monitor.realtimeStreamConnected')
-                    : t('monitor.realtimeStreamDisconnected')}
-              </span>
-            </div>
-          )}
-        </header>
-
-        {/* Content — floating white rounded card with page transition */}
+        {/* Content — floating white rounded card, aligned with sidebar */}
         <main className="flex-1 overflow-y-auto flex flex-col">
-          <div className="w-full max-w-[1400px] mx-auto p-2 md:p-3 flex-1 flex flex-col">
+          <div className="w-full max-w-[1400px] mx-auto p-2 md:py-4 md:px-3 flex-1 flex flex-col">
             <div
-              className="bg-card rounded-[20px] px-5 py-5 md:px-8 md:py-8 flex-1 border border-border/40"
+              className="bg-card rounded-[20px] px-5 py-5 md:px-8 md:py-8 flex-1 border border-border/40 relative"
               style={{ boxShadow: 'var(--shadow-card)' }}
             >
+              {/* Real-time stream indicator — top-right inside the card */}
+              {isMonitor && (
+                <div className="flex justify-end mb-4">
+                  <div className="flex items-center gap-2 px-3.5 py-2 rounded-full bg-muted/50 border border-border/60">
+                    <span
+                      className={cn(
+                        'w-2.5 h-2.5 rounded-full shrink-0',
+                        isConnecting
+                          ? 'bg-status-warning'
+                          : isConnected
+                            ? 'bg-status-running glow-running'
+                            : 'bg-status-error glow-error',
+                      )}
+                    />
+                    <span
+                      className={cn(
+                        'text-sm font-semibold',
+                        isConnecting
+                          ? 'text-status-warning'
+                          : isConnected
+                            ? 'text-status-running'
+                            : 'text-status-error',
+                      )}
+                    >
+                      {isConnecting
+                        ? t('monitor.realtimeStreamConnecting')
+                        : isConnected
+                          ? t('monitor.realtimeStreamConnected')
+                          : t('monitor.realtimeStreamDisconnected')}
+                    </span>
+                  </div>
+                </div>
+              )}
+
               <div key={location.pathname} className="page-enter">
                 <Outlet />
               </div>
             </div>
           </div>
         </main>
-
-        {/* Footer — pinned to the bottom, transparent */}
-        <footer className="shrink-0 py-3 flex items-center justify-center gap-2 text-sm text-muted-foreground">
-          <span>{t('common.footerText')}</span>
-          <a
-            href="https://github.com/CoreC-Dev/CoreC-Dashboard"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-primary hover:underline font-medium transition-colors"
-          >
-            GitHub
-          </a>
-        </footer>
       </div>
     </div>
   )
