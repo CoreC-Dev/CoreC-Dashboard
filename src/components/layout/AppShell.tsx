@@ -234,36 +234,6 @@ export const AppShell: React.FC = () => {
         )}
       </div>
 
-      {/* ===== Back-to-home bubble — white card between logo and nav ===== */}
-      <div className="shrink-0">
-        <div
-          className={cn(
-            'bg-card rounded-2xl border border-border/40',
-            eff ? 'p-2 flex items-center justify-center' : 'p-2.5 flex w-full',
-          )}
-          style={{ boxShadow: 'var(--shadow-card)' }}
-        >
-          <button
-            type="button"
-            onClick={() => navigate('/')}
-            className={cn(
-              'grid place-items-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200',
-              eff
-                ? 'w-9 h-9 rounded-full'
-                : 'w-full h-9 rounded-lg flex items-center px-2.5 gap-2.5',
-            )}
-            aria-label={t('instances.backHome')}
-          >
-            <ArrowLeft className="w-[18px] h-[18px] shrink-0" />
-            {!eff && (
-              <span className="text-sm font-medium truncate text-left flex-1">
-                {t('instances.backHome')}
-              </span>
-            )}
-          </button>
-        </div>
-      </div>
-
       {/* ===== Centered navigation area — white bubble card ===== */}
       <div
         className={cn('flex-1 flex flex-col justify-center relative', eff ? 'items-center' : '')}
@@ -313,6 +283,26 @@ export const AppShell: React.FC = () => {
           )}
           style={{ boxShadow: 'var(--shadow-card)' }}
         >
+          {/* Back to home */}
+          <button
+            type="button"
+            onClick={() => navigate('/')}
+            className={cn(
+              'grid place-items-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200',
+              eff
+                ? 'w-9 h-9 rounded-full'
+                : 'w-full h-9 rounded-lg flex items-center px-2.5 gap-2.5',
+            )}
+            aria-label={t('instances.backHome')}
+          >
+            <ArrowLeft className="w-[18px] h-[18px] shrink-0" />
+            {!eff && (
+              <span className="text-sm font-medium truncate text-left flex-1">
+                {t('instances.backHome')}
+              </span>
+            )}
+          </button>
+
           {/* Instance switcher — dropdown (Select) */}
           {instance && (
             <Select
