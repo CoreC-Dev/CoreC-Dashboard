@@ -22,7 +22,7 @@ import {
 import i18n, { setLocale } from '@/i18n'
 import type { CoreCInstance } from '@/stores/instanceStore'
 import { useInstanceStore } from '@/stores/instanceStore'
-import { THEME_LABELS, THEME_VARIANTS, useThemeStore } from '@/stores/themeStore'
+import { THEME_I18N_KEYS, THEME_VARIANTS, useThemeStore } from '@/stores/themeStore'
 import { InstanceCard } from './InstanceCard'
 import { InstanceDialog } from './InstanceDialog'
 import { useHomepageProbe } from './useHomepageProbe'
@@ -134,7 +134,7 @@ export const InstancePanel: React.FC = () => {
                 onClick={() => setTheme('system')}
                 className="flex items-center justify-between"
               >
-                <span>{THEME_LABELS.system}</span>
+                <span>{t(THEME_I18N_KEYS.system)}</span>
                 {theme === 'system' && <Check className="w-3.5 h-3.5" />}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
@@ -144,7 +144,7 @@ export const InstancePanel: React.FC = () => {
                   onClick={() => setTheme(variant)}
                   className="flex items-center justify-between"
                 >
-                  <span>{THEME_LABELS[variant]}</span>
+                  <span>{t(THEME_I18N_KEYS[variant])}</span>
                   {theme === variant && <Check className="w-3.5 h-3.5" />}
                 </DropdownMenuItem>
               ))}

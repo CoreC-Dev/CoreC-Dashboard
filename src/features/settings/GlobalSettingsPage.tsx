@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/select'
 import i18n, { setLocale } from '@/i18n'
 import { useInstanceStore } from '@/stores/instanceStore'
-import { THEME_LABELS, THEME_VARIANTS, type ThemeMode, useThemeStore } from '@/stores/themeStore'
+import { THEME_I18N_KEYS, THEME_VARIANTS, type ThemeMode, useThemeStore } from '@/stores/themeStore'
 
 export const GlobalSettingsPage: React.FC = () => {
   const { t } = useTranslation()
@@ -94,10 +94,10 @@ export const GlobalSettingsPage: React.FC = () => {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="system">{THEME_LABELS.system}</SelectItem>
+                <SelectItem value="system">{t(THEME_I18N_KEYS.system)}</SelectItem>
                 {THEME_VARIANTS.map((variant) => (
                   <SelectItem key={variant} value={variant}>
-                    {THEME_LABELS[variant]}
+                    {t(THEME_I18N_KEYS[variant])}
                   </SelectItem>
                 ))}
               </SelectContent>

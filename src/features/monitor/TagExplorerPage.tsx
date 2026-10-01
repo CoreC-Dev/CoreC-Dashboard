@@ -35,6 +35,13 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { QualityLabel } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import { validateValue } from '@/lib/writeValidation'
@@ -240,18 +247,9 @@ export const TagExplorerPage: React.FC = () => {
   // currently-selected trend tag so it can read the latest value live.
   const trendTagRef = useRef<DataPoint | null>(null)
   const hasSeeded = useRef(false)
-  // Drawer panel ref — focused on open so Escape-to-close works without
-  // requiring a prior click inside the panel.
-  const drawerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     trendTagRef.current = trendTag
-  }, [trendTag])
-
-  // Move focus into the drawer panel when it opens so the keyboard handler
-  // below receives Escape without the user first clicking inside the panel.
-  useEffect(() => {
-    if (trendTag) drawerRef.current?.focus()
   }, [trendTag])
 
   // Seed the tag map from the REST snapshot ONCE on first load.
@@ -410,8 +408,7 @@ export const TagExplorerPage: React.FC = () => {
     const primary = resolve('--primary')
 
     const chart = createChart(container, {
-      width: container.clientWidth,
-      height: 260,
+      autoSize: true,
       layout: {
         background: { color: 'transparent' },
         textColor: mutedFg,
@@ -430,15 +427,7 @@ export const TagExplorerPage: React.FC = () => {
     chartRef.current = chart
     seriesRef.current = series
 
-    const ro = new ResizeObserver(() => {
-      if (chartContainerRef.current && chartRef.current) {
-        chartRef.current.applyOptions({ width: chartContainerRef.current.clientWidth })
-      }
-    })
-    ro.observe(container)
-
     return () => {
-      ro.disconnect()
       chart.remove()
       chartRef.current = null
       seriesRef.current = null
@@ -618,316 +607,301 @@ export const TagExplorerPage: React.FC = () => {
   const showError = isError && filteredTags.length === 0
 
   return (
-    <div className="space-y-4">
-      {/* Search & Filter Bar */}
-      <Card className="border-border bg-card">
-        <CardContent className="p-4 flex flex-col md:flex-row items-center justify-between gap-3">
-          <div className="flex flex-1 items-center space-x-2 w-full">
-            <div className="relative flex-1">
-              <Search className="w-4 h-4 absolute left-3 top-2.5 text-muted-foreground" />
-              <Input
-                placeholder={t('common.search')}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 h-9 text-xs"
-              />
-            </div>
-
-            {/* Driver Filter */}
-            <select
-              value={selectedDriver}
-              onChange={(e) => setSelectedDriver(e.target.value)}
-              aria-label={t('tags.allDrivers')}
-              className="h-9 px-3 rounded-md border border-input bg-transparent text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-            >
-              <option value="all">{t('tags.allDrivers')}</option>
-              {drivers.map((d) => (
-                <option key={d.name} value={d.name}>
-                  {d.name} ({d.type})
-                </option>
-              ))}
-            </select>
-
-            {/* Group Filter */}
-            <select
-              value={selectedGroup}
-              onChange={(e) => setSelectedGroup(e.target.value)}
-              aria-label={t('tags.allGroups', { defaultValue: 'All groups' })}
-              className="h-9 px-3 rounded-md border border-input bg-transparent text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-            >
-              <option value="all">{t('tags.allGroups', { defaultValue: 'All groups' })}</option>
-              {uniqueGroups.map((g) => (
-                <option key={g} value={g}>
-                  {g}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex items-center space-x-2 shrink-0">
-            <div className="text-xs text-muted-foreground font-mono">
-              {t('tags.total', { count: filteredTags.length })}
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRefresh}
-              disabled={isFetching}
-              className="h-9 text-xs"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${isFetching ? 'animate-spin' : ''}`} />
-              <span>{t('common.refresh')}</span>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Tags Data Table (virtualized rows via @tanstack/react-virtual) */}
-      <Card className="border-border bg-card overflow-hidden">
-        <div className="flex items-center justify-between border-b border-border px-4 py-2">
-          <div className="text-xs font-semibold text-foreground">{t('tags.tagsLabel')}</div>
-          <div className="text-[11px] text-muted-foreground">{t('tags.clickToOpenTrend')}</div>
-        </div>
-        {showLoading ? (
-          <div className="flex items-center justify-center gap-2 py-16 text-xs text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            {t('common.loading')}
-          </div>
-        ) : showError ? (
-          <div className="space-y-3 py-10 text-center">
-            <AlertCircle className="mx-auto h-8 w-8 text-status-error" />
-            <div className="text-sm font-semibold">{t('common.error')}</div>
-            {error instanceof Error && error.message && (
-              <div className="mx-auto max-w-md break-all font-mono text-[11px] text-status-error/80">
-                {error.message}
+    <div className={trendTag ? 'flex gap-4 items-start' : 'space-y-4'}>
+      <div className={trendTag ? 'flex-1 min-w-0 space-y-4' : 'space-y-4'}>
+        {/* Search & Filter Bar */}
+        <Card className="border-border bg-card">
+          <CardContent className="p-4 flex flex-col md:flex-row items-center justify-between gap-3">
+            <div className="flex flex-1 items-center space-x-2 w-full">
+              <div className="relative flex-1">
+                <Search className="w-4 h-4 absolute left-3 top-2.5 text-muted-foreground" />
+                <Input
+                  placeholder={t('common.search')}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9 h-9 text-xs"
+                />
               </div>
-            )}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => refetch()}
-              disabled={isFetching}
-              className="h-8 text-xs"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${isFetching ? 'animate-spin' : ''}`} />
-              {t('common.retry')}
-            </Button>
-          </div>
-        ) : (
-          <div ref={setScrollEl} className="overflow-auto max-h-[70vh]">
-            <table className="w-full text-xs text-left">
-              <thead className="sticky top-0 z-10 block bg-muted/80 border-b border-border uppercase font-semibold text-[10px] text-muted-foreground tracking-wider">
-                <tr className="flex items-center">
-                  <th className="px-4 py-2.5 shrink-0 overflow-hidden" style={{ width: COLS.tag }}>
-                    <button
-                      type="button"
-                      onClick={() => toggleSort('tag')}
-                      className="flex items-center gap-1 hover:text-foreground transition-colors"
-                    >
-                      {t('tags.colTag')}
-                      {sortKey === 'tag' ? (
-                        sortDir === 'asc' ? (
-                          <ArrowUp className="w-3 h-3" />
-                        ) : (
-                          <ArrowDown className="w-3 h-3" />
-                        )
-                      ) : (
-                        <ChevronsUpDown className="w-3 h-3 opacity-40" />
-                      )}
-                    </button>
-                  </th>
-                  <th
-                    className="px-4 py-2.5 shrink-0 overflow-hidden"
-                    style={{ width: COLS.driver }}
-                  >
-                    {t('tags.colDriver')}
-                  </th>
-                  <th
-                    className="px-4 py-2.5 shrink-0 overflow-hidden"
-                    style={{ width: COLS.group }}
-                  >
-                    {t('tags.colGroup')}
-                  </th>
-                  <th
-                    className="px-4 py-2.5 shrink-0 overflow-hidden"
-                    style={{ width: COLS.value }}
-                  >
-                    {t('tags.colValue')}
-                  </th>
-                  <th className="px-4 py-2.5 shrink-0 overflow-hidden" style={{ width: COLS.type }}>
-                    {t('tags.colType')}
-                  </th>
-                  <th
-                    className="px-4 py-2.5 shrink-0 overflow-hidden"
-                    style={{ width: COLS.quality }}
-                  >
-                    {t('tags.colQuality')}
-                  </th>
-                  <th
-                    className="px-4 py-2.5 shrink-0 overflow-hidden"
-                    style={{ width: COLS.timestamp }}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => toggleSort('timestamp')}
-                      className="flex items-center gap-1 hover:text-foreground transition-colors"
-                    >
-                      {t('tags.colTimestamp')}
-                      {sortKey === 'timestamp' ? (
-                        sortDir === 'asc' ? (
-                          <ArrowUp className="w-3 h-3" />
-                        ) : (
-                          <ArrowDown className="w-3 h-3" />
-                        )
-                      ) : (
-                        <ChevronsUpDown className="w-3 h-3 opacity-40" />
-                      )}
-                    </button>
-                  </th>
-                  <th
-                    className="px-4 py-2.5 shrink-0 overflow-hidden text-right"
-                    style={{ width: COLS.actions }}
-                  >
-                    {t('tags.colActions')}
-                  </th>
-                </tr>
-              </thead>
-              <tbody
-                className="block relative"
-                style={{ height: rowVirtualizer.getTotalSize(), width: '100%' }}
-              >
-                {filteredTags.length === 0 ? (
-                  <tr className="block">
-                    <td className="block py-10 text-center text-muted-foreground">
-                      {t('tags.noPoints')}
-                    </td>
-                  </tr>
-                ) : (
-                  rowVirtualizer.getVirtualItems().map((virtualRow) => {
-                    const point = filteredTags[virtualRow.index]
-                    const key = tagKey(point)
-                    return (
-                      <TagRow
-                        key={key}
-                        point={point}
-                        start={virtualRow.start}
-                        flashTick={flashTick[key] ?? 0}
-                        onOpen={openTrend}
-                        onWrite={handleWriteClick}
-                      />
-                    )
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Card>
 
-      {/*
-       * Trend drawer.
-       *
-       * The task brief references the shadcn Sheet component at
-       * src/components/ui/sheet.tsx, but that file does not exist in this
-       * checkout and the "do not touch any other files" constraint forbids
-       * creating it. The drawer is therefore implemented inline as a
-       * fixed-position side panel with a backdrop; it delivers the same
-       * feature (click a row -> slide-in panel with a lightweight-charts
-       * trend of the last N WS samples).
-       */}
-      {trendTag && (
-        <div className="fixed inset-0 z-50 flex justify-end">
-          <div
-            onClick={closeTrend}
-            aria-hidden
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-          />
-          <div
-            ref={drawerRef}
-            role="dialog"
-            aria-modal="true"
-            aria-label={t('tags.trendTitle', { tag: trendTag.tag })}
-            tabIndex={-1}
-            onKeyDown={(e) => {
-              if (e.key === 'Escape') closeTrend()
-            }}
-            className="relative h-full w-full max-w-md border-l border-border bg-card shadow-2xl flex flex-col focus:outline-none"
-          >
-            <div className="flex items-center justify-between border-b border-border px-4 py-3">
-              <div className="flex items-center space-x-2 min-w-0">
-                <Activity className="w-4 h-4 text-primary shrink-0" />
-                <div className="min-w-0">
-                  <div className="text-sm font-semibold text-foreground truncate">
-                    {trendTag.tag}
-                  </div>
-                  <div className="text-[11px] text-muted-foreground font-mono truncate">
-                    {trendTag.driver}
-                    {trendTag.device ? ` · ${trendTag.device}` : ''}
-                  </div>
-                </div>
+              {/* Driver Filter */}
+              <Select value={selectedDriver} onValueChange={setSelectedDriver}>
+                <SelectTrigger className="h-9 w-auto text-xs" aria-label={t('tags.allDrivers')}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t('tags.allDrivers')}</SelectItem>
+                  {drivers.map((d) => (
+                    <SelectItem key={d.name} value={d.name}>
+                      {d.name} ({d.type})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Group Filter */}
+              <Select value={selectedGroup} onValueChange={setSelectedGroup}>
+                <SelectTrigger
+                  className="h-9 w-auto text-xs"
+                  aria-label={t('tags.allGroups', { defaultValue: 'All groups' })}
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">
+                    {t('tags.allGroups', { defaultValue: 'All groups' })}
+                  </SelectItem>
+                  {uniqueGroups.map((g) => (
+                    <SelectItem key={g} value={g}>
+                      {g}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex items-center space-x-2 shrink-0">
+              <div className="text-xs text-muted-foreground font-mono">
+                {t('tags.total', { count: filteredTags.length })}
               </div>
               <Button
-                variant="ghost"
+                variant="outline"
                 size="sm"
-                onClick={closeTrend}
-                className="h-8 w-8 p-0 shrink-0"
+                onClick={handleRefresh}
+                disabled={isFetching}
+                className="h-9 text-xs"
               >
-                <X className="h-4 w-4" />
+                <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${isFetching ? 'animate-spin' : ''}`} />
+                <span>{t('common.refresh')}</span>
               </Button>
             </div>
+          </CardContent>
+        </Card>
 
-            <div className="flex-1 overflow-auto p-4 space-y-3">
-              {trendNumeric ? (
-                <>
-                  <div className="text-[11px] text-muted-foreground">
-                    {t('tags.liveTrend', { count: trendSamples.length, max: MAX_TREND_SAMPLES })}
-                  </div>
-                  <div
-                    ref={chartContainerRef}
-                    className="w-full h-[260px] [&_canvas]:outline-none"
-                  />
-                </>
-              ) : (
-                <div className="text-xs text-muted-foreground py-12 text-center">
-                  {t('tags.noTrendData')}
-                </div>
-              )}
-
-              {trendLivePoint && (
-                <div className="rounded-lg border border-border bg-muted/30 p-3 text-xs font-mono space-y-1">
-                  <div>
-                    <span className="text-muted-foreground">{t('common.type')}: </span>
-                    <span className="text-foreground">{trendLivePoint.type}</span>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">{t('common.value')}: </span>
-                    <span className="text-foreground">
-                      {typeof trendLivePoint.value === 'boolean'
-                        ? trendLivePoint.value
-                          ? t('tags.trueValue')
-                          : t('tags.falseValue')
-                        : String(trendLivePoint.value)}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">{t('common.quality')}: </span>
-                    <span className="text-foreground">
-                      {t((QualityLabel[trendLivePoint.quality] ?? QualityLabel[0]).key)}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">{t('common.timestamp')}: </span>
-                    <span className="text-foreground">
-                      {trendLivePoint.timestamp
-                        ? new Date(trendLivePoint.timestamp).toLocaleString()
-                        : '-'}
-                    </span>
-                  </div>
-                </div>
-              )}
-            </div>
+        {/* Tags Data Table (virtualized rows via @tanstack/react-virtual) */}
+        <Card className="border-border bg-card overflow-hidden">
+          <div className="flex items-center justify-between border-b border-border px-4 py-2">
+            <div className="text-xs font-semibold text-foreground">{t('tags.tagsLabel')}</div>
+            <div className="text-[11px] text-muted-foreground">{t('tags.clickToOpenTrend')}</div>
           </div>
-        </div>
+          {showLoading ? (
+            <div className="flex items-center justify-center gap-2 py-16 text-xs text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              {t('common.loading')}
+            </div>
+          ) : showError ? (
+            <div className="space-y-3 py-10 text-center">
+              <AlertCircle className="mx-auto h-8 w-8 text-status-error" />
+              <div className="text-sm font-semibold">{t('common.error')}</div>
+              {error instanceof Error && error.message && (
+                <div className="mx-auto max-w-md break-all font-mono text-[11px] text-status-error/80">
+                  {error.message}
+                </div>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => refetch()}
+                disabled={isFetching}
+                className="h-8 text-xs"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${isFetching ? 'animate-spin' : ''}`} />
+                {t('common.retry')}
+              </Button>
+            </div>
+          ) : (
+            <div ref={setScrollEl} className="overflow-auto max-h-[70vh]">
+              <table className="w-full text-xs text-left">
+                <thead className="sticky top-0 z-10 block bg-muted/80 border-b border-border uppercase font-semibold text-[10px] text-muted-foreground tracking-wider">
+                  <tr className="flex items-center">
+                    <th
+                      className="px-4 py-2.5 shrink-0 overflow-hidden"
+                      style={{ width: COLS.tag }}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => toggleSort('tag')}
+                        className="flex items-center gap-1 hover:text-foreground transition-colors"
+                      >
+                        {t('tags.colTag')}
+                        {sortKey === 'tag' ? (
+                          sortDir === 'asc' ? (
+                            <ArrowUp className="w-3 h-3" />
+                          ) : (
+                            <ArrowDown className="w-3 h-3" />
+                          )
+                        ) : (
+                          <ChevronsUpDown className="w-3 h-3 opacity-40" />
+                        )}
+                      </button>
+                    </th>
+                    <th
+                      className="px-4 py-2.5 shrink-0 overflow-hidden"
+                      style={{ width: COLS.driver }}
+                    >
+                      {t('tags.colDriver')}
+                    </th>
+                    <th
+                      className="px-4 py-2.5 shrink-0 overflow-hidden"
+                      style={{ width: COLS.group }}
+                    >
+                      {t('tags.colGroup')}
+                    </th>
+                    <th
+                      className="px-4 py-2.5 shrink-0 overflow-hidden"
+                      style={{ width: COLS.value }}
+                    >
+                      {t('tags.colValue')}
+                    </th>
+                    <th
+                      className="px-4 py-2.5 shrink-0 overflow-hidden"
+                      style={{ width: COLS.type }}
+                    >
+                      {t('tags.colType')}
+                    </th>
+                    <th
+                      className="px-4 py-2.5 shrink-0 overflow-hidden"
+                      style={{ width: COLS.quality }}
+                    >
+                      {t('tags.colQuality')}
+                    </th>
+                    <th
+                      className="px-4 py-2.5 shrink-0 overflow-hidden"
+                      style={{ width: COLS.timestamp }}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => toggleSort('timestamp')}
+                        className="flex items-center gap-1 hover:text-foreground transition-colors"
+                      >
+                        {t('tags.colTimestamp')}
+                        {sortKey === 'timestamp' ? (
+                          sortDir === 'asc' ? (
+                            <ArrowUp className="w-3 h-3" />
+                          ) : (
+                            <ArrowDown className="w-3 h-3" />
+                          )
+                        ) : (
+                          <ChevronsUpDown className="w-3 h-3 opacity-40" />
+                        )}
+                      </button>
+                    </th>
+                    <th
+                      className="px-4 py-2.5 shrink-0 overflow-hidden text-right"
+                      style={{ width: COLS.actions }}
+                    >
+                      {t('tags.colActions')}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody
+                  className="block relative"
+                  style={{ height: rowVirtualizer.getTotalSize(), width: '100%' }}
+                >
+                  {filteredTags.length === 0 ? (
+                    <tr className="block">
+                      <td className="block py-10 text-center text-muted-foreground">
+                        {t('tags.noPoints')}
+                      </td>
+                    </tr>
+                  ) : (
+                    rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                      const point = filteredTags[virtualRow.index]
+                      const key = tagKey(point)
+                      return (
+                        <TagRow
+                          key={key}
+                          point={point}
+                          start={virtualRow.start}
+                          flashTick={flashTick[key] ?? 0}
+                          onOpen={openTrend}
+                          onWrite={handleWriteClick}
+                        />
+                      )
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+      </div>
+
+      {/*
+       * Trend panel — right column in a two-column layout.
+       * Clicking a tag row splits the page: tag list on the left,
+       * live trend chart + details on the right. No fixed overlay.
+       */}
+      {trendTag && (
+        <Card
+          className="w-[440px] shrink-0 flex flex-col self-stretch overflow-hidden border-border bg-card"
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') closeTrend()
+          }}
+        >
+          <div className="flex items-center justify-between border-b border-border px-4 py-3 shrink-0">
+            <div className="flex items-center space-x-2 min-w-0">
+              <Activity className="w-4 h-4 text-primary shrink-0" />
+              <div className="min-w-0">
+                <div className="text-sm font-semibold text-foreground truncate">{trendTag.tag}</div>
+                <div className="text-[11px] text-muted-foreground font-mono truncate">
+                  {trendTag.driver}
+                  {trendTag.device ? ` · ${trendTag.device}` : ''}
+                </div>
+              </div>
+            </div>
+            <Button variant="ghost" size="sm" onClick={closeTrend} className="h-8 w-8 p-0 shrink-0">
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+
+          <div className="flex-1 overflow-auto p-4 space-y-3">
+            {trendNumeric ? (
+              <>
+                <div className="text-[11px] text-muted-foreground">
+                  {t('tags.liveTrend', { count: trendSamples.length, max: MAX_TREND_SAMPLES })}
+                </div>
+                <div ref={chartContainerRef} className="w-full h-[320px] [&_canvas]:outline-none" />
+              </>
+            ) : (
+              <div className="text-xs text-muted-foreground py-12 text-center">
+                {t('tags.noTrendData')}
+              </div>
+            )}
+
+            {trendLivePoint && (
+              <div className="rounded-lg border border-border bg-muted/30 p-3 text-xs font-mono space-y-1">
+                <div>
+                  <span className="text-muted-foreground">{t('common.type')}: </span>
+                  <span className="text-foreground">{trendLivePoint.type}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">{t('common.value')}: </span>
+                  <span className="text-foreground">
+                    {typeof trendLivePoint.value === 'boolean'
+                      ? trendLivePoint.value
+                        ? t('tags.trueValue')
+                        : t('tags.falseValue')
+                      : String(trendLivePoint.value)}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">{t('common.quality')}: </span>
+                  <span className="text-foreground">
+                    {t((QualityLabel[trendLivePoint.quality] ?? QualityLabel[0]).key)}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">{t('common.timestamp')}: </span>
+                  <span className="text-foreground">
+                    {trendLivePoint.timestamp
+                      ? new Date(trendLivePoint.timestamp).toLocaleString()
+                      : '-'}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+        </Card>
       )}
 
       {/* Write Command Dialog */}

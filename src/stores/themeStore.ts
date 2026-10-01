@@ -30,6 +30,17 @@ export const THEME_LABELS: Record<ThemeMode, string> = {
   'dark-forest': 'Forest',
 }
 
+/** i18n keys for each theme variant — use t(THEME_I18N_KEYS[mode]) in components. */
+export const THEME_I18N_KEYS: Record<ThemeMode, string> = {
+  system: 'settings.system',
+  light: 'settings.light',
+  dark: 'settings.dark',
+  'light-sepia': 'settings.themeSepia',
+  'light-nord': 'settings.themeNord',
+  'dark-midnight': 'settings.themeMidnight',
+  'dark-forest': 'settings.themeForest',
+}
+
 /** Whether a variant is a dark theme (needs `.dark` class for Tailwind). */
 const DARK_VARIANTS: ThemeMode[] = ['dark', 'dark-midnight', 'dark-forest']
 
