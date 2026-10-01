@@ -78,7 +78,7 @@ export const GlobalSettingsPage: React.FC = () => {
         </div>
       </header>
 
-      <main className="max-w-2xl mx-auto p-4 md:p-8 space-y-6">
+      <main className="max-w-2xl mx-auto p-4 md:p-8 space-y-5">
         {/* Appearance */}
         <section className="rounded-lg border border-border bg-card p-6 space-y-4">
           <div className="flex items-center gap-2">
