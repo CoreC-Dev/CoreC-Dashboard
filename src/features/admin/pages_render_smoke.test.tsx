@@ -30,6 +30,7 @@ vi.mock('@/api/endpoints', () => ({
   getRules: vi.fn().mockResolvedValue({
     rules: [
       {
+        index: 0,
         name: 'forward-all',
         match: 'data_point.name == "*"',
         action: 'forward',
