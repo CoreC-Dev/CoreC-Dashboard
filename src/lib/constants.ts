@@ -1,25 +1,8 @@
-import { DATA_TYPES, type DataType } from '@/types/config'
+import { type DataType } from '@/types/config'
 
-// Derived from the canonical DATA_TYPES list in @/types/config so the
-// numeric code → string name mapping can never drift from the source list.
-export const DataTypeMap: Readonly<Record<number, DataType>> = Object.fromEntries(
-  DATA_TYPES.map((v, i) => [i, v] as const),
-)
-
-export type DataTypeString =
-  | 'bool'
-  | 'int8'
-  | 'int16'
-  | 'int32'
-  | 'int64'
-  | 'uint8'
-  | 'uint16'
-  | 'uint32'
-  | 'uint64'
-  | 'float32'
-  | 'float64'
-  | 'string'
-  | 'bytes'
+// Unified with the canonical DataType from @/types/config (derived from
+// DATA_TYPES) so the two can never drift.
+export type DataTypeString = DataType
 
 export const Quality = {
   Good: 0,
@@ -60,30 +43,14 @@ export const ConnStateLabel: Record<number, { key: string; dotColor: string; bad
     },
     [ConnState.Connected]: {
       key: 'common.connected',
-      dotColor: 'bg-emerald-400 glow-success',
+      dotColor: 'bg-emerald-400 glow-running',
       badgeColor: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30',
     },
     [ConnState.Error]: {
       key: 'common.error',
-      dotColor: 'bg-rose-500 glow-danger',
+      dotColor: 'bg-rose-500 glow-error',
       badgeColor: 'text-rose-400 bg-rose-500/10 border-rose-500/30',
     },
   }
-
-export const DriverProtocols = [
-  { value: 'modbus-tcp', label: 'Modbus TCP' },
-  { value: 'modbus-rtu', label: 'Modbus RTU (Serial)' },
-  { value: 'modbus-rtuovertcp', label: 'Modbus RTU over TCP' },
-  { value: 'modbus-udp', label: 'Modbus UDP' },
-  { value: 'modbus-rtuoverudp', label: 'Modbus RTU over UDP' },
-  { value: 'modbus-tls', label: 'Modbus TLS (mTLS)' },
-  { value: 's7', label: 'Siemens S7 (200..1500)' },
-  { value: 'opcua', label: 'OPC UA Client' },
-]
-
-export const TransportProtocols = [
-  { value: 'mqtt', label: 'MQTT Publisher' },
-  { value: 'http', label: 'HTTP Push' },
-]
 
 export const DEFAULT_COREC_URL = 'http://127.0.0.1:9090'

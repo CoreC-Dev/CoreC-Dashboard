@@ -17,6 +17,7 @@ import {
   LayoutTemplate,
   ListChecks,
   Network,
+  RefreshCw,
   RotateCcw,
   Sliders,
   Upload,
@@ -162,7 +163,14 @@ const ComponentList: React.FC<{
 export const ConfigCenterPage: React.FC = () => {
   const { resolvedTheme } = useThemeStore()
   const { t } = useTranslation()
-  const { data: configData, refetch, isLoading: isLoadingConfigs } = useConfigs()
+  const {
+    data: configData,
+    refetch,
+    isLoading: isLoadingConfigs,
+    isError,
+    error,
+    isFetching: isFetchingConfigs,
+  } = useConfigs()
   const patchMutation = usePatchConfig()
   const updateMutation = useUpdateConfig()
   // Path A — full redacted config from GET /configs/raw + server-side dry-run.
@@ -464,7 +472,7 @@ export const ConfigCenterPage: React.FC = () => {
           <p className="text-sm text-muted-foreground mt-1">{t('config.subtitle')}</p>
         </div>
 
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 flex-wrap">
           {/* Mode Switcher */}
           <div className="flex items-center bg-muted p-0.5 rounded-lg border border-border text-xs">
             <button
@@ -535,6 +543,7 @@ export const ConfigCenterPage: React.FC = () => {
             onClick={() => fileInputRef.current?.click()}
             className="h-8 text-xs"
             title={t('config.uploadFileHint')}
+            aria-label={t('config.uploadFileHint')}
           >
             <Upload className="w-3.5 h-3.5" />
           </Button>
@@ -544,6 +553,7 @@ export const ConfigCenterPage: React.FC = () => {
             onClick={handleFileDownload}
             className="h-8 text-xs"
             title={t('config.downloadFileHint')}
+            aria-label={t('config.downloadFileHint')}
           >
             <Download className="w-3.5 h-3.5" />
           </Button>
@@ -555,6 +565,7 @@ export const ConfigCenterPage: React.FC = () => {
               onClick={() => setTemplatePickerOpen((v) => !v)}
               className="h-8 text-xs"
               title={t('config.templatesHint')}
+              aria-label={t('config.templatesHint')}
             >
               <LayoutTemplate className="w-3.5 h-3.5" />
             </Button>
@@ -609,6 +620,7 @@ export const ConfigCenterPage: React.FC = () => {
             disabled={rawConfigQuery.isFetching}
             className="h-8 text-xs"
             title={t('config.loadFromServerHint')}
+            aria-label={t('config.loadFromServerHint')}
           >
             <CloudDownload className="w-3.5 h-3.5" />
           </Button>
@@ -722,6 +734,28 @@ export const ConfigCenterPage: React.FC = () => {
               {isLoadingConfigs && !configData ? (
                 <div className="text-xs text-muted-foreground py-6 text-center">
                   {t('config.loadingOverview')}
+                </div>
+              ) : isError ? (
+                <div className="space-y-3 py-10 text-center">
+                  <AlertCircle className="mx-auto h-8 w-8 text-status-error" />
+                  <div className="text-sm font-semibold">{t('common.error')}</div>
+                  {error instanceof Error && error.message && (
+                    <div className="mx-auto max-w-md break-all font-mono text-xs text-status-error/80">
+                      {error.message}
+                    </div>
+                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => refetch()}
+                    disabled={isFetchingConfigs}
+                    className="h-8 text-xs"
+                  >
+                    <RefreshCw
+                      className={`w-3.5 h-3.5 mr-1.5 ${isFetchingConfigs ? 'animate-spin' : ''}`}
+                    />
+                    {t('common.retry')}
+                  </Button>
                 </div>
               ) : (
                 <>
@@ -945,7 +979,7 @@ export const ConfigCenterPage: React.FC = () => {
               </div>
               <span className="text-xs text-muted-foreground">{t('config.envVarNote')}</span>
             </CardHeader>
-            <div className="h-[480px]">
+            <div className="h-[60vh] min-h-[320px] md:h-[480px]">
               <Editor
                 height="100%"
                 defaultLanguage="yaml"

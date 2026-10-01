@@ -52,7 +52,7 @@ export const DriversPage: React.FC = () => {
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
   const adminBase = id ? `/corec/${id}/admin` : '/admin'
-  const { data, refetch, isFetching, isLoading } = useDrivers()
+  const { data, refetch, isFetching, isLoading, isError, error } = useDrivers()
   const [selectedDriver, setSelectedDriver] = useState<DriverStatus | null>(null)
   const { data: rawYaml } = useConfigRaw()
   const parsedConfig = useParsedConfig(rawYaml)
@@ -218,6 +218,7 @@ export const DriversPage: React.FC = () => {
                         onClick={() => handleEdit(drv.name)}
                         className="p-1.5 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground"
                         title={t('common.edit')}
+                        aria-label={t('common.edit')}
                       >
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
@@ -226,6 +227,7 @@ export const DriversPage: React.FC = () => {
                         onClick={() => handleDelete(drv.name)}
                         className="p-1.5 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
                         title={t('common.delete')}
+                        aria-label={t('common.delete')}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -268,6 +270,26 @@ export const DriversPage: React.FC = () => {
               <Loader2 className="w-4 h-4 animate-spin" />
               <span>Loading…</span>
             </div>
+          ) : isError ? (
+            <Card className="col-span-full p-8 text-center space-y-3">
+              <AlertCircle className="mx-auto h-8 w-8 text-status-error" />
+              <div className="text-sm font-semibold">{t('common.error')}</div>
+              {error instanceof Error && error.message && (
+                <div className="mx-auto max-w-md break-all font-mono text-xs text-status-error/80">
+                  {error.message}
+                </div>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => refetch()}
+                disabled={isFetching}
+                className="h-8 text-xs"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${isFetching ? 'animate-spin' : ''}`} />
+                {t('common.retry')}
+              </Button>
+            </Card>
           ) : drivers.length === 0 ? (
             <Card className="col-span-full p-8 text-center text-xs text-muted-foreground border-dashed">
               {t('drivers.empty')}
@@ -484,7 +506,7 @@ const DriverDetailDialog: React.FC<{
               {t('drivers.noTags', { driver: driver.name })}
             </div>
           ) : (
-            <div className="border border-border rounded-lg overflow-hidden">
+            <div className="border border-border rounded-lg overflow-x-auto">
               <table className="w-full text-xs text-left">
                 <thead className="bg-muted/60 border-b border-border text-xs uppercase font-semibold text-muted-foreground">
                   <tr>

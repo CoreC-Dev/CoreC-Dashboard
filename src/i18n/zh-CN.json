@@ -9,15 +9,10 @@
     "transports": "北向传输",
     "rules": "规则编排",
     "write": "控制下发",
-    "dashboardEditor": "大屏编排",
     "config": "配置中心",
     "topology": "拓扑架构",
     "diagnostics": "系统诊断",
-    "settings": "系统设置",
-    "groupSouthbound": "南向与北向",
-    "groupControl": "控制面",
-    "groupSystem": "系统与网格",
-    "brandTagline": "连接 · 采集 · 控制"
+    "settings": "系统设置"
   },
   "aria": {
     "corecHome": "CoreC 首页",
@@ -227,19 +222,7 @@
     "validationPassed": "校验通过 — 可以保存"
   },
   "connection": {
-    "title": "连接 CoreC 引擎",
-    "subtitle": "请输入工业物联网边缘核心的 API 地址与认证令牌",
-    "serverUrl": "服务地址 (REST & WebSocket)",
-    "secretToken": "API 密钥 (Bearer Token)",
-    "connect": "连接并进入系统",
-    "disconnect": "断开连接",
-    "connectedTo": "已连接至",
-    "invalidSecret": "密钥至少需要 8 个字符 (CoreC 安全要求)",
-    "invalidUrl": "请输入有效的 http:// 或 https:// 地址",
-    "connectionFailed": "连接失败，请检查服务状态与网络",
-    "secretHint": "* CoreC 要求 secret 长度 ≥ 8 字符",
-    "urlPlaceholder": "http://127.0.0.1:9090",
-    "httpError": "HTTP {{status}}: {{statusText}}"
+    "disconnect": "断开连接"
   },
   "dashboard": {
     "title": "工业物联网监控大屏",

@@ -65,7 +65,7 @@ export const DashboardPage: React.FC = () => {
     statusLower === 'down' ||
     statusLower === 'crashed'
   const statusDotClass = isStatusHealthy
-    ? 'bg-status-running glow-success'
+    ? 'bg-status-running glow-running'
     : isStatusError
       ? 'bg-status-error'
       : 'bg-status-warning'

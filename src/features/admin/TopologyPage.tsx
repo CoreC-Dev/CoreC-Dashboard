@@ -85,7 +85,7 @@ export const TopologyPage: React.FC = () => {
 
       {/* Visual Interactive Architecture Diagram */}
       <Card className="border-border bg-card p-6 overflow-hidden">
-        <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
+        <div className="flex flex-col md:flex-row items-stretch justify-between gap-6">
           {/* Southbound Layer */}
           <div className="flex-1 w-full space-y-3">
             <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center space-x-1.5">

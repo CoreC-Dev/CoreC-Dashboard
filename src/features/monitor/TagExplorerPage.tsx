@@ -19,7 +19,15 @@ import {
   X,
 } from 'lucide-react'
 import type React from 'react'
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  memo,
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { useTranslation } from 'react-i18next'
 import { useDrivers, useTags, useWriteTag } from '@/api/hooks'
 import { CoreCWebSocket } from '@/api/websocket'
@@ -226,6 +234,12 @@ export const TagExplorerPage: React.FC = () => {
   // Per-row update counter; bumping it retriggers the flash animation.
   const [flashTick, setFlashTick] = useState<Record<string, number>>({})
   const [searchTerm, setSearchTerm] = useState('')
+  // Defer the search term so the expensive filter+sort in filteredTags runs at
+  // a lower priority than the input's keystroke rendering. The <Input> below
+  // keeps using the immediate `searchTerm` for responsive typing, while the
+  // heavy filteredTags memo recomputes on the deferred value — preventing the
+  // rAF-flushed tag map from cascading into a 60×/sec filter+sort per keystroke.
+  const deferredSearchTerm = useDeferredValue(searchTerm)
   const [selectedDriver, setSelectedDriver] = useState<string>('all')
   const [selectedGroup, setSelectedGroup] = useState<string>('all')
   const [sortKey, setSortKey] = useState<'tag' | 'timestamp' | null>(null)
@@ -470,7 +484,7 @@ export const TagExplorerPage: React.FC = () => {
   }, [])
 
   const filteredTags = useMemo(() => {
-    const term = searchTerm.toLowerCase()
+    const term = deferredSearchTerm.toLowerCase()
     const filtered = tagsList.filter((pt) => {
       if (selectedDriver !== 'all' && pt.driver !== selectedDriver) return false
       if (selectedGroup !== 'all' && pt.group !== selectedGroup) return false
@@ -493,7 +507,7 @@ export const TagExplorerPage: React.FC = () => {
       }
       return sortDir === 'asc' ? cmp : -cmp
     })
-  }, [tagsList, searchTerm, selectedDriver, selectedGroup, sortKey, sortDir])
+  }, [tagsList, deferredSearchTerm, selectedDriver, selectedGroup, sortKey, sortDir])
 
   const rowVirtualizer = useVirtualizer({
     count: filteredTags.length,

@@ -9,15 +9,10 @@
     "transports": "Northbound Transports",
     "rules": "Rule Pipeline",
     "write": "Control & DLQ",
-    "dashboardEditor": "Screen Layout",
     "config": "Config Center",
     "topology": "Topology",
     "diagnostics": "Diagnostics",
-    "settings": "Settings",
-    "groupSouthbound": "South & Northbound",
-    "groupControl": "Control Plane",
-    "groupSystem": "System & Mesh",
-    "brandTagline": "Connect · Collect · Control"
+    "settings": "Settings"
   },
   "aria": {
     "corecHome": "CoreC home",
@@ -227,19 +222,7 @@
     "validationPassed": "Validation passed — ready to save"
   },
   "connection": {
-    "title": "Connect to CoreC Engine",
-    "subtitle": "Provide REST and WebSocket API endpoint credentials",
-    "serverUrl": "Endpoint URL",
-    "secretToken": "API Secret (Bearer Token)",
-    "connect": "Connect to CoreC",
-    "disconnect": "Disconnect",
-    "connectedTo": "Connected to",
-    "invalidSecret": "Secret must be at least 8 characters long",
-    "invalidUrl": "Please enter a valid http:// or https:// URL",
-    "connectionFailed": "Failed to connect to CoreC instance",
-    "secretHint": "* CoreC requires secret length ≥ 8 characters",
-    "urlPlaceholder": "http://127.0.0.1:9090",
-    "httpError": "HTTP {{status}}: {{statusText}}"
+    "disconnect": "Disconnect"
   },
   "dashboard": {
     "title": "IIoT Gateway Operational Dashboard",

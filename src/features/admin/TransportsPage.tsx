@@ -1,4 +1,4 @@
-import { ExternalLink, Loader2, Pencil, Plus, RefreshCw, Send, Trash2 } from 'lucide-react'
+import { AlertCircle, ExternalLink, Loader2, Pencil, Plus, RefreshCw, Send, Trash2 } from 'lucide-react'
 import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -35,7 +35,7 @@ export const TransportsPage: React.FC = () => {
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
   const adminBase = id ? `/corec/${id}/admin` : '/admin'
-  const { data, refetch, isFetching, isLoading } = useTransports()
+  const { data, refetch, isFetching, isLoading, isError, error } = useTransports()
   const transports = data?.transports || []
   const { data: rawYaml } = useConfigRaw()
   // Live config from GET /configs/raw — used for runtime card connection summaries.
@@ -194,6 +194,7 @@ export const TransportsPage: React.FC = () => {
                         onClick={() => handleEdit(tp.name)}
                         className="p-1.5 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground"
                         title={t('common.edit')}
+                        aria-label={t('common.edit')}
                       >
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
@@ -202,6 +203,7 @@ export const TransportsPage: React.FC = () => {
                         onClick={() => setDeleteTarget(tp.name)}
                         className="p-1.5 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
                         title={t('common.delete')}
+                        aria-label={t('common.delete')}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -252,6 +254,26 @@ export const TransportsPage: React.FC = () => {
               <Loader2 className="w-4 h-4 animate-spin" />
               <span>Loading…</span>
             </div>
+          ) : isError ? (
+            <Card className="col-span-full p-8 text-center space-y-3">
+              <AlertCircle className="mx-auto h-8 w-8 text-status-error" />
+              <div className="text-sm font-semibold">{t('common.error')}</div>
+              {error instanceof Error && error.message && (
+                <div className="mx-auto max-w-md break-all font-mono text-xs text-status-error/80">
+                  {error.message}
+                </div>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => refetch()}
+                disabled={isFetching}
+                className="h-8 text-xs"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${isFetching ? 'animate-spin' : ''}`} />
+                {t('common.retry')}
+              </Button>
+            </Card>
           ) : transports.length === 0 ? (
             <Card className="col-span-full p-8 text-center text-xs text-muted-foreground border-dashed">
               {t('transports.empty')}

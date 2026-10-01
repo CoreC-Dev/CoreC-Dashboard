@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { validateFullConfig } from './configSchema'
-import { CONFIG_TEMPLATES, getTemplateById, getTemplatesByCategory } from './configTemplates'
+import { CONFIG_TEMPLATES } from './configTemplates'
 import { parseConfigYaml } from './configYaml'
 
 describe('configTemplates', () => {
@@ -65,19 +65,19 @@ describe('configTemplates', () => {
 
   // ─── Template-specific checks ───────────────────────────────────
   it('modbus-mqtt template has modbus-tcp driver and mqtt transport', () => {
-    const config = parseConfigYaml(getTemplateById('modbus-mqtt')!.yaml)
+    const config = parseConfigYaml(CONFIG_TEMPLATES.find((t) => t.id === 'modbus-mqtt')!.yaml)
     expect(config.drivers?.[0]?.type).toBe('modbus-tcp')
     expect(config.transports?.[0]?.type).toBe('mqtt')
   })
 
   it('opcua-http template has opcua driver and http transport', () => {
-    const config = parseConfigYaml(getTemplateById('opcua-http')!.yaml)
+    const config = parseConfigYaml(CONFIG_TEMPLATES.find((t) => t.id === 'opcua-http')!.yaml)
     expect(config.drivers?.[0]?.type).toBe('opcua')
     expect(config.transports?.[0]?.type).toBe('http')
   })
 
   it('s7-mqtt-transform template has transform rule', () => {
-    const config = parseConfigYaml(getTemplateById('s7-mqtt-transform')!.yaml)
+    const config = parseConfigYaml(CONFIG_TEMPLATES.find((t) => t.id === 's7-mqtt-transform')!.yaml)
     const transformRule = config.rules?.find((r) => r.action === 'transform')
     expect(transformRule).toBeDefined()
     expect(transformRule?.transform).toBeDefined()
@@ -85,7 +85,7 @@ describe('configTemplates', () => {
   })
 
   it('relay-node template has zero drivers and mirror rule', () => {
-    const config = parseConfigYaml(getTemplateById('relay-node')!.yaml)
+    const config = parseConfigYaml(CONFIG_TEMPLATES.find((t) => t.id === 'relay-node')!.yaml)
     expect(config.drivers ?? []).toHaveLength(0)
     const mirrorRule = config.rules?.find((r) => r.action === 'mirror')
     expect(mirrorRule).toBeDefined()
@@ -94,25 +94,8 @@ describe('configTemplates', () => {
   })
 
   it('mqtt-http-batch template has fallback transport', () => {
-    const config = parseConfigYaml(getTemplateById('mqtt-http-batch')!.yaml)
+    const config = parseConfigYaml(CONFIG_TEMPLATES.find((t) => t.id === 'mqtt-http-batch')!.yaml)
     const cloudMqtt = config.transports?.find((tp) => tp.name === 'cloud-mqtt')
     expect(cloudMqtt?.fallback).toBe('http-backup')
-  })
-
-  // ─── Helper functions ───────────────────────────────────────────
-  it('getTemplatesByCategory returns correct templates', () => {
-    const industrial = getTemplatesByCategory('industrial')
-    expect(industrial.length).toBeGreaterThanOrEqual(1)
-    expect(industrial.every((t) => t.category === 'industrial')).toBe(true)
-  })
-
-  it('getTemplateById returns correct template', () => {
-    const t = getTemplateById('modbus-mqtt')
-    expect(t).toBeDefined()
-    expect(t!.id).toBe('modbus-mqtt')
-  })
-
-  it('getTemplateById returns undefined for unknown ID', () => {
-    expect(getTemplateById('nonexistent')).toBeUndefined()
   })
 })

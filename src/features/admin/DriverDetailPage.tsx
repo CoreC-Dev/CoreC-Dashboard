@@ -24,10 +24,11 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useParsedConfig } from '@/hooks/useParsedConfig'
-import { parseConfigYaml } from '@/lib/configYaml'
+import { dumpConfigYaml, parseConfigYaml, upsertDriver } from '@/lib/configYaml'
 import { extractDriverYaml, getDriverConnectionFields } from '@/lib/connectionInfo'
 import { ConnStateLabel, QualityLabel } from '@/lib/constants'
 import { formatNumber } from '@/lib/utils'
+import type { DriverConfig } from '@/types/config'
 import type { DriverStatus } from '@/types/models'
 
 // --- Driver Configuration Edit Section ---
@@ -363,17 +364,37 @@ const DriverEditConfigSection: React.FC<{ driver: DriverStatus }> = ({ driver })
     }
   }, [rawYaml, driver.name, fields])
 
-  const generatedYaml = useMemo(
+  // Preview: just the driver section (readable for the operator).
+  const previewYaml = useMemo(
     () => buildDriverYaml(driver, fields, values),
     [driver, fields, values],
   )
+
+  // Apply: merge the edited driver into the FULL config so PUT /configs
+  // doesn't wipe every other section (other drivers, transports, rules,
+  // global, node). Falls back to the single-driver doc only if the raw
+  // config can't be parsed.
+  const applyYaml = useMemo(() => {
+    if (!rawYaml) return previewYaml
+    try {
+      const fullConfig = parseConfigYaml(rawYaml)
+      const existing = fullConfig.drivers?.find((d) => d.name === driver.name)
+      const settings = buildDriverSettings(fields, values)
+      const updatedDriver: DriverConfig = existing
+        ? { ...existing, settings }
+        : { name: driver.name, type: driver.type, settings, tags: [] }
+      return dumpConfigYaml(upsertDriver(fullConfig, updatedDriver))
+    } catch {
+      return previewYaml
+    }
+  }, [rawYaml, driver, fields, values, previewYaml])
 
   const setField = (key: string, v: string) => setValues((prev) => ({ ...prev, [key]: v }))
 
   const handleGenerateAndReload = async () => {
     setStatusMsg(null)
     try {
-      await updateConfig.mutateAsync({ payload: generatedYaml })
+      await updateConfig.mutateAsync({ payload: applyYaml })
       setStatusMsg({ type: 'success', text: t('drivers.editConfig.reloadSuccess') })
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : ''
@@ -398,7 +419,7 @@ const DriverEditConfigSection: React.FC<{ driver: DriverStatus }> = ({ driver })
       onFieldChange={setField}
       unsupportedMessage={t('drivers.editConfig.unsupportedProtocol')}
       yamlPreviewLabel={t('drivers.editConfig.yamlPreview')}
-      yamlPreview={generatedYaml}
+      yamlPreview={previewYaml}
       statusMsg={statusMsg}
       reloadingLabel={t('drivers.editConfig.reloading')}
       reloadButtonLabel={t('drivers.editConfig.generateAndReload')}

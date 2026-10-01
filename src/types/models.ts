@@ -1,3 +1,4 @@
+import type { RuleAction } from '@/types/config'
 import type { DataTypeString } from '@/lib/constants'
 
 export interface DataPoint {
@@ -5,7 +6,7 @@ export interface DataPoint {
   device?: string
   group?: string
   tag: string
-  value: any
+  value: unknown
   type: DataTypeString
   quality: number // 0=Good, 1=Bad, 2=Uncertain
   timestamp: string // ISO 8601 string
@@ -17,7 +18,7 @@ export interface WriteCommand {
   driver: string
   device?: string
   tag: string
-  value: any
+  value: unknown
   type: DataTypeString | number
 }
 
@@ -50,7 +51,7 @@ export interface RuleStat {
   name: string
   type: 'simple' | 'rule-set' | 'sub-rule'
   match: string
-  action: 'forward' | 'drop' | 'alert' | 'transform' | 'mirror'
+  action: RuleAction
   target: string
   // CoreC serializes targets as null (not []) when empty.
   targets: string[] | null
@@ -80,8 +81,8 @@ export interface EngineStats {
   total_errors: number
   total_dropped: number
   points_per_sec: number
-  driver_stats?: Record<string, any>
-  transport_stats?: Record<string, any>
+  driver_stats?: Record<string, unknown>
+  transport_stats?: Record<string, unknown>
 }
 
 export interface LogEvent {

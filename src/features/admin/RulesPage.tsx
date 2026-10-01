@@ -356,6 +356,7 @@ export const RulesPage: React.FC = () => {
           <button
             type="button"
             onClick={() => setToggleError(null)}
+            aria-label="Dismiss"
             className="ml-auto text-status-error/60 hover:text-status-error"
           >
             ×
@@ -470,6 +471,7 @@ export const RulesPage: React.FC = () => {
                           onClick={() => handleEditRule(rl.name)}
                           className="p-1.5 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground"
                           title={t('common.edit')}
+                          aria-label={t('common.edit')}
                         >
                           <Pencil className="w-3.5 h-3.5" />
                         </button>
@@ -478,6 +480,7 @@ export const RulesPage: React.FC = () => {
                           onClick={() => setDeleteTarget(rl.name)}
                           className="p-1.5 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
                           title={t('common.delete')}
+                          aria-label={t('common.delete')}
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>

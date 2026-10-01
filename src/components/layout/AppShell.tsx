@@ -42,16 +42,16 @@ type RailItem = {
 }
 
 const SIDEBAR_KEY = 'corec_sidebar_collapsed'
-const MOBILE_BP = 768
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(() =>
-    typeof window === 'undefined' ? false : window.innerWidth < MOBILE_BP,
+    typeof window === 'undefined' ? false : window.matchMedia('(max-width: 767px)').matches,
   )
   useEffect(() => {
-    const handler = () => setIsMobile(window.innerWidth < MOBILE_BP)
-    window.addEventListener('resize', handler)
-    return () => window.removeEventListener('resize', handler)
+    const mql = window.matchMedia('(max-width: 767px)')
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches)
+    mql.addEventListener('change', handler)
+    return () => mql.removeEventListener('change', handler)
   }, [])
   return isMobile
 }
@@ -181,7 +181,7 @@ export const AppShell: React.FC = () => {
         className={({ isActive }) =>
           cn(
             'relative grid place-items-center transition-all duration-200 group',
-            eff ? 'w-9 h-9 rounded-full' : 'w-full h-9 rounded-lg flex items-center px-2.5 gap-2.5',
+            eff ? 'w-9 h-9 rounded-full' : 'w-full h-11 rounded-lg flex items-center px-2.5 gap-2.5',
             isActive
               ? 'nav-indicator bg-foreground text-background shadow-md'
               : 'text-muted-foreground hover:text-foreground hover:bg-muted hover:translate-x-0.5',
@@ -226,7 +226,7 @@ export const AppShell: React.FC = () => {
           <button
             type="button"
             onClick={() => setMobileOpen(false)}
-            className="w-7 h-7 rounded-lg grid place-items-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200 shrink-0 ml-auto"
+            className="w-9 h-9 rounded-lg grid place-items-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200 shrink-0 ml-auto"
             aria-label={t('aria.closeSidebar')}
           >
             <X className="w-4 h-4" />
@@ -291,7 +291,7 @@ export const AppShell: React.FC = () => {
               'grid place-items-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200',
               eff
                 ? 'w-9 h-9 rounded-full'
-                : 'w-full h-9 rounded-lg flex items-center px-2.5 gap-2.5',
+                : 'w-full h-11 rounded-lg flex items-center px-2.5 gap-2.5',
             )}
             aria-label={t('instances.backHome')}
           >
@@ -325,7 +325,7 @@ export const AppShell: React.FC = () => {
                     'grid place-items-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200',
                     eff
                       ? 'w-9 h-9 rounded-full'
-                      : 'w-full h-9 rounded-lg flex items-center px-2.5 gap-2.5',
+                      : 'w-full h-11 rounded-lg flex items-center px-2.5 gap-2.5',
                   )}
                   aria-label={t('instances.switchInstance')}
                 >
@@ -374,7 +374,7 @@ export const AppShell: React.FC = () => {
               'grid place-items-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200',
               eff
                 ? 'w-9 h-9 rounded-full'
-                : 'w-full h-9 rounded-lg flex items-center px-2.5 gap-2.5',
+                : 'w-full h-11 rounded-lg flex items-center px-2.5 gap-2.5',
             )}
             aria-label={t('common.toggleLanguage')}
           >
@@ -396,7 +396,7 @@ export const AppShell: React.FC = () => {
                   'grid place-items-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200',
                   eff
                     ? 'w-9 h-9 rounded-full'
-                    : 'w-full h-9 rounded-lg flex items-center px-2.5 gap-2.5',
+                    : 'w-full h-11 rounded-lg flex items-center px-2.5 gap-2.5',
                 )}
                 aria-label={t('aria.selectTheme')}
               >
@@ -433,7 +433,7 @@ export const AppShell: React.FC = () => {
               'grid place-items-center text-muted-foreground hover:text-status-error hover:bg-status-error/10 transition-all duration-200',
               eff
                 ? 'w-9 h-9 rounded-full'
-                : 'w-full h-9 rounded-lg flex items-center px-2.5 gap-2.5',
+                : 'w-full h-11 rounded-lg flex items-center px-2.5 gap-2.5',
             )}
             title={eff ? t('connection.disconnect') : undefined}
             aria-label={t('aria.disconnect')}
@@ -460,12 +460,12 @@ export const AppShell: React.FC = () => {
         />
       </div>
 
-      {/* ===== Route progress bar ===== */}
+      {/* ===== Route progress bar (composited transform, no layout thrash) ===== */}
       {progress > 0 && (
         <div className="fixed top-0 left-0 right-0 h-0.5 z-[100] pointer-events-none">
           <div
-            className="h-full bg-primary transition-all duration-300 ease-out"
-            style={{ width: `${progress}%` }}
+            className="h-full w-full bg-primary transition-transform duration-300 ease-out origin-left"
+            style={{ transform: `scaleX(${progress / 100})` }}
           />
         </div>
       )}
@@ -498,17 +498,39 @@ export const AppShell: React.FC = () => {
 
       {/* ===== Main content area ===== */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden h-full">
-        {/* Mobile-only topbar with hamburger */}
+        {/* Mobile-only topbar with hamburger, brand, and connection status */}
         {isMobile && (
-          <header className="flex items-center justify-between px-4 py-3 shrink-0">
+          <header className="flex items-center justify-between px-4 py-3 shrink-0 gap-3">
             <button
               type="button"
               onClick={() => setMobileOpen(true)}
-              className="flex items-center justify-center w-10 h-10 rounded-xl bg-card border border-border shadow-sm text-muted-foreground hover:text-foreground hover:shadow-md transition-all duration-200 shrink-0"
+              className="flex items-center justify-center w-11 h-11 rounded-xl bg-card border border-border shadow-sm text-muted-foreground hover:text-foreground hover:shadow-md transition-all duration-200 shrink-0"
               aria-label={t('aria.openMenu')}
             >
               <Menu className="w-5 h-5" />
             </button>
+            <Link to="/" className="flex items-center shrink-0" aria-label={t('aria.corecHome')}>
+              <img src="/logo-animated.svg" alt="CoreC" className="w-8 h-8 shrink-0" />
+            </Link>
+            {isMonitor && (
+              <span
+                className={cn(
+                  'w-2.5 h-2.5 rounded-full shrink-0 ml-auto',
+                  isConnecting
+                    ? 'bg-status-warning'
+                    : isConnected
+                      ? 'bg-status-running glow-running'
+                      : 'bg-status-error glow-error',
+                )}
+                aria-label={
+                  isConnecting
+                    ? t('monitor.realtimeStreamConnecting')
+                    : isConnected
+                      ? t('monitor.realtimeStreamConnected')
+                      : t('monitor.realtimeStreamDisconnected')
+                }
+              />
+            )}
           </header>
         )}
 
@@ -516,12 +538,12 @@ export const AppShell: React.FC = () => {
         <main className="flex-1 overflow-y-auto flex flex-col">
           <div className="w-full max-w-[1400px] mx-auto p-2 md:py-4 md:px-3 flex-1 flex flex-col">
             <div
-              className="bg-card rounded-[20px] px-5 py-5 md:px-8 md:py-8 flex-1 border border-border/40 relative"
+              className="bg-card rounded-2xl px-5 py-5 md:px-8 md:py-8 flex-1 border border-border/40 relative"
               style={{ boxShadow: 'var(--shadow-card)' }}
             >
-              {/* Real-time stream indicator — floating top-right inside the card */}
+              {/* Real-time stream indicator — floating top-right inside the card (desktop only; mobile uses the topbar dot) */}
               {isMonitor && (
-                <div className="absolute top-5 right-5 md:top-7 md:right-8 z-10">
+                <div className="hidden md:block absolute top-7 right-8 z-10">
                   <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50 border border-border/60">
                     <span
                       className={cn(

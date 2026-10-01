@@ -19,17 +19,6 @@ export const THEME_VARIANTS: ThemeMode[] = [
   'dark-forest',
 ]
 
-/** Human-readable labels for each variant. */
-export const THEME_LABELS: Record<ThemeMode, string> = {
-  system: 'System',
-  light: 'Light',
-  dark: 'Dark',
-  'light-sepia': 'Sepia',
-  'light-nord': 'Nord',
-  'dark-midnight': 'Midnight',
-  'dark-forest': 'Forest',
-}
-
 /** i18n keys for each theme variant — use t(THEME_I18N_KEYS[mode]) in components. */
 export const THEME_I18N_KEYS: Record<ThemeMode, string> = {
   system: 'settings.system',

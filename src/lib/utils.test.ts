@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { cn, formatBytes, formatNumber, formatUptime, isZeroTime } from './utils'
+import { cn, formatNumber, formatUptime, isZeroTime } from './utils'
 
 describe('cn', () => {
   it('merges class names', () => {
@@ -45,28 +45,6 @@ describe('formatUptime', () => {
 
   it('handles zero', () => {
     expect(formatUptime(0)).toBe('0s')
-  })
-})
-
-describe('formatBytes', () => {
-  it('returns 0 B for zero', () => {
-    expect(formatBytes(0)).toBe('0 B')
-  })
-
-  it('formats bytes', () => {
-    expect(formatBytes(1024)).toBe('1 KB')
-  })
-
-  it('formats megabytes', () => {
-    expect(formatBytes(1048576)).toBe('1 MB')
-  })
-
-  it('respects decimal parameter', () => {
-    expect(formatBytes(1536, 1)).toBe('1.5 KB')
-  })
-
-  it('handles negative decimals by clamping to 0', () => {
-    expect(formatBytes(1536, -1)).toBe('2 KB')
   })
 })
 

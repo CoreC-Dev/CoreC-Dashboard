@@ -35,7 +35,7 @@ export function useDrivers() {
   return useConnectedQuery({
     queryKey: ['drivers'],
     queryFn: api.getDrivers,
-    refetchInterval: 5000,
+    refetchInterval: 15000,
   })
 }
 
@@ -61,7 +61,7 @@ export function useTransports() {
   return useConnectedQuery({
     queryKey: ['transports'],
     queryFn: api.getTransports,
-    refetchInterval: 5000,
+    refetchInterval: 15000,
   })
 }
 
@@ -86,7 +86,7 @@ export function useRules() {
   return useConnectedQuery({
     queryKey: ['rules'],
     queryFn: api.getRules,
-    refetchInterval: 5000,
+    refetchInterval: 15000,
   })
 }
 

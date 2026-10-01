@@ -2,26 +2,10 @@ import { describe, expect, it } from 'vitest'
 import {
   ConnState,
   ConnStateLabel,
-  DataTypeMap,
   DEFAULT_COREC_URL,
-  DriverProtocols,
   Quality,
   QualityLabel,
-  TransportProtocols,
 } from './constants'
-
-describe('DataTypeMap', () => {
-  it('maps numeric type codes to string names', () => {
-    expect(DataTypeMap[0]).toBe('bool')
-    expect(DataTypeMap[9]).toBe('float32')
-    expect(DataTypeMap[10]).toBe('float64')
-    expect(DataTypeMap[11]).toBe('string')
-  })
-
-  it('has 13 data types (0-12)', () => {
-    expect(Object.keys(DataTypeMap)).toHaveLength(13)
-  })
-})
 
 describe('Quality', () => {
   it('has correct numeric values', () => {
@@ -65,31 +49,6 @@ describe('ConnStateLabel', () => {
   it('has dot colors for all connection states', () => {
     expect(ConnStateLabel[ConnState.Disconnected].dotColor).toContain('bg-')
     expect(ConnStateLabel[ConnState.Connected].dotColor).toContain('bg-emerald')
-  })
-})
-
-describe('DriverProtocols', () => {
-  it('includes modbus-tcp', () => {
-    expect(DriverProtocols.some((p) => p.value === 'modbus-tcp')).toBe(true)
-  })
-
-  it('includes s7 and opcua', () => {
-    expect(DriverProtocols.some((p) => p.value === 's7')).toBe(true)
-    expect(DriverProtocols.some((p) => p.value === 'opcua')).toBe(true)
-  })
-
-  it('has value and label for each protocol', () => {
-    for (const p of DriverProtocols) {
-      expect(p.value).toBeTruthy()
-      expect(p.label).toBeTruthy()
-    }
-  })
-})
-
-describe('TransportProtocols', () => {
-  it('includes mqtt and http', () => {
-    expect(TransportProtocols.some((p) => p.value === 'mqtt')).toBe(true)
-    expect(TransportProtocols.some((p) => p.value === 'http')).toBe(true)
   })
 })
 

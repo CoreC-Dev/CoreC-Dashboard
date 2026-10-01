@@ -81,7 +81,7 @@ function notify(title: string, body: string): void {
 
 export const AlertsPage: React.FC = () => {
   const { t } = useTranslation()
-  const { data: deadLettersData, refetch, isFetching, isLoading } = useDeadLetters()
+  const { data: deadLettersData, refetch, isFetching, isLoading, isError, error } = useDeadLetters()
   const { data: rulesData } = useRules()
   const writeMutation = useWriteTag()
 
@@ -305,6 +305,26 @@ export const AlertsPage: React.FC = () => {
             <div className="flex items-center justify-center gap-2 py-8 text-xs text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" />
               {t('common.loading')}
+            </div>
+          ) : isError ? (
+            <div className="space-y-3 py-8 text-center">
+              <AlertCircle className="mx-auto h-8 w-8 text-status-error" />
+              <div className="text-sm font-semibold">{t('common.error')}</div>
+              {error instanceof Error && error.message && (
+                <div className="mx-auto max-w-md break-all font-mono text-xs text-status-error/80">
+                  {error.message}
+                </div>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => refetch()}
+                disabled={isFetching}
+                className="h-8 text-xs"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${isFetching ? 'animate-spin' : ''}`} />
+                {t('common.retry')}
+              </Button>
             </div>
           ) : deadLetters.length === 0 ? (
             <div className="py-8 text-center text-xs text-muted-foreground flex flex-col items-center space-y-1">

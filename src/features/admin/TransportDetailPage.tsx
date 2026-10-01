@@ -26,10 +26,11 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useParsedConfig } from '@/hooks/useParsedConfig'
-import { parseConfigYaml } from '@/lib/configYaml'
+import { dumpConfigYaml, parseConfigYaml, upsertTransport } from '@/lib/configYaml'
 import { extractTransportYaml, getTransportConnectionFields } from '@/lib/connectionInfo'
 import { ConnStateLabel } from '@/lib/constants'
 import { formatNumber } from '@/lib/utils'
+import type { TransportConfig } from '@/types/config'
 import type { TransportStatus } from '@/types/models'
 
 // --- Transport Configuration Edit Section ---
@@ -289,11 +290,11 @@ function configValueToString(f: TransportEditField, src: unknown): string {
   return String(src)
 }
 
-function buildTransportYaml(
+function buildTransportEntry(
   transport: TransportStatus,
   fields: readonly TransportEditField[],
   values: Record<string, string>,
-): string {
+): Record<string, unknown> {
   const settings: Record<string, unknown> = {}
   const top: Record<string, unknown> = {}
   for (const f of fields) {
@@ -319,7 +320,18 @@ function buildTransportYaml(
   if (Object.keys(settings).length > 0) entry.settings = settings
   // Top-level transport fields (batch-size, flush-interval, retry-count, buffer-size).
   for (const [k, v] of Object.entries(top)) entry[k] = v
-  return dump({ transports: [entry] }, { skipInvalid: true, noRefs: true, lineWidth: -1 })
+  return entry
+}
+
+function buildTransportYaml(
+  transport: TransportStatus,
+  fields: readonly TransportEditField[],
+  values: Record<string, string>,
+): string {
+  return dump(
+    { transports: [buildTransportEntry(transport, fields, values)] },
+    { skipInvalid: true, noRefs: true, lineWidth: -1 },
+  )
 }
 
 const TransportEditConfigSection: React.FC<{ transport: TransportStatus }> = ({ transport }) => {
@@ -358,17 +370,39 @@ const TransportEditConfigSection: React.FC<{ transport: TransportStatus }> = ({ 
     }
   }, [rawYaml, transport.name, fields])
 
-  const generatedYaml = useMemo(
+  // Preview: just the transport section (readable for the operator).
+  const previewYaml = useMemo(
     () => buildTransportYaml(transport, fields, values),
     [transport, fields, values],
   )
+
+  // Apply: merge the edited transport into the FULL config so PUT /configs
+  // doesn't wipe every other section. Falls back to the single-transport doc
+  // only if the raw config can't be parsed.
+  const applyYaml = useMemo(() => {
+    if (!rawYaml) return previewYaml
+    try {
+      const fullConfig = parseConfigYaml(rawYaml)
+      const existing = fullConfig.transports?.find((tp) => tp.name === transport.name)
+      const entry = buildTransportEntry(transport, fields, values)
+      const base: TransportConfig = existing ?? {
+        name: transport.name,
+        type: transport.type,
+        settings: {},
+      }
+      const updatedTransport = { ...base, ...entry } as TransportConfig
+      return dumpConfigYaml(upsertTransport(fullConfig, updatedTransport))
+    } catch {
+      return previewYaml
+    }
+  }, [rawYaml, transport, fields, values, previewYaml])
 
   const setField = (key: string, v: string) => setValues((prev) => ({ ...prev, [key]: v }))
 
   const handleGenerateAndReload = async () => {
     setStatusMsg(null)
     try {
-      await updateConfig.mutateAsync({ payload: generatedYaml })
+      await updateConfig.mutateAsync({ payload: applyYaml })
       setStatusMsg({ type: 'success', text: t('transports.editConfig.reloadSuccess') })
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : ''
@@ -393,7 +427,7 @@ const TransportEditConfigSection: React.FC<{ transport: TransportStatus }> = ({ 
       onFieldChange={setField}
       unsupportedMessage={t('transports.editConfig.unsupportedProtocol')}
       yamlPreviewLabel={t('transports.editConfig.yamlPreview')}
-      yamlPreview={generatedYaml}
+      yamlPreview={previewYaml}
       statusMsg={statusMsg}
       reloadingLabel={t('transports.editConfig.reloading')}
       reloadButtonLabel={t('transports.editConfig.generateAndReload')}

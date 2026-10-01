@@ -363,17 +363,3 @@ rules: []
 `,
   },
 ]
-
-/**
- * Get templates filtered by category.
- */
-export function getTemplatesByCategory(category: ConfigTemplate['category']): ConfigTemplate[] {
-  return CONFIG_TEMPLATES.filter((t) => t.category === category)
-}
-
-/**
- * Get a template by ID.
- */
-export function getTemplateById(id: string): ConfigTemplate | undefined {
-  return CONFIG_TEMPLATES.find((t) => t.id === id)
-}
