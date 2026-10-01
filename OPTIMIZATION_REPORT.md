@@ -235,10 +235,10 @@
 - ✅ GitHub Actions CI 通过（lint + build + test）
 - ✅ 外部功能的界面未改变（所有修改为内部实现优化）
 
-## 七、后续建议（未在本轮实施）
+## 七、后续建议
 
-1. **ConfigCenterPage 进一步拆分**：已提取 3 个 hook（1027 行），可继续拆分为 `ConfigFormPanel`、`ConfigYamlEditor`、`ConfigToolbar` 等子组件
-2. **recharts → lightweight-charts**：recharts（365KB）可替换为 lightweight-charts（163KB），节省 200KB 包体积
-3. **RulesPage 拆分**：剩余 1001 行仍较大，可进一步提取规则编辑对话框为独立组件
-4. **Card padding 标准化**：各页面的 Card padding 不一致（p-3/p-4/p-6 混用），应统一为设计令牌
-5. **max-width 容器标准化**：部分页面使用 `max-w-5xl`，部分无限制，应统一
+1. **ConfigCenterPage 子组件拆分**（部分完成）：已提取 3 个 hook（1104→1027 行），可继续拆分为 `ConfigFormPanel`、`ConfigYamlEditor`、`ConfigToolbar` 等子组件
+2. **recharts → lightweight-charts**（不适用）：替换会改变图表渲染外观，违反"不改变外部功能和界面"约束
+3. **RulesPage 对话框拆分**（部分完成）：已提取 `ruleMatchEvaluator.ts` + `ruleYaml.ts`（1101→942 行），可进一步提取规则编辑对话框为独立组件
+4. **Card padding 标准化**（不适用）：p-3/p-4 差异为有意设计（紧凑仪表盘卡 vs 标准管理页卡），统一会改变界面外观
+5. **max-width 容器标准化**（已完成）：管理页统一 `max-w-5xl`，首页 `max-w-7xl`，按页面类型已一致
