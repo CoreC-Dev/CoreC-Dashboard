@@ -213,16 +213,26 @@ export const AlertsPage: React.FC = () => {
 
   return (
     <div className="space-y-5">
+      {/* Greeting */}
+      <div className="pt-1">
+        <h1 className="text-2xl font-bold tracking-tight">{t('nav.alerts')}</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          {t('alerts.realtimeWarningDesc', {
+            defaultValue: 'Real-time alerts & dead letter queue',
+          })}
+        </p>
+      </div>
+
       {/* Top Banner */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 card-stagger">
         <Card className="border-border bg-card card-enter">
-          <CardHeader className="p-4 pb-1">
+          <CardHeader className="p-4 pb-2">
             <CardDescription className="text-xs flex items-center justify-between">
               <span>{t('alerts.deadLetterQueue')}</span>
               <AlertOctagon className="w-4 h-4 text-status-error" />
             </CardDescription>
           </CardHeader>
-          <CardContent className="p-4 pt-1">
+          <CardContent className="p-4 pt-0">
             <div className="text-2xl font-bold font-mono text-status-error">
               {deadLetters.length}
             </div>
@@ -231,13 +241,13 @@ export const AlertsPage: React.FC = () => {
         </Card>
 
         <Card className="border-border bg-card card-enter">
-          <CardHeader className="p-4 pb-1">
+          <CardHeader className="p-4 pb-2">
             <CardDescription className="text-xs flex items-center justify-between">
               <span>{t('alerts.alertRulesConfigured')}</span>
               <Bell className="w-4 h-4 text-status-warning" />
             </CardDescription>
           </CardHeader>
-          <CardContent className="p-4 pt-1">
+          <CardContent className="p-4 pt-0">
             <div className="text-2xl font-bold font-mono text-status-warning">
               {alertRules.length}
             </div>
@@ -248,13 +258,13 @@ export const AlertsPage: React.FC = () => {
         </Card>
 
         <Card className="border-border bg-card card-enter">
-          <CardHeader className="p-4 pb-1">
+          <CardHeader className="p-4 pb-2">
             <CardDescription className="text-xs flex items-center justify-between">
               <span>{t('alerts.systemErrorStream')}</span>
               <ShieldAlert className="w-4 h-4 text-primary" />
             </CardDescription>
           </CardHeader>
-          <CardContent className="p-4 pt-1">
+          <CardContent className="p-4 pt-0">
             <div className="text-2xl font-bold font-mono text-foreground">{liveLogs.length}</div>
             <div className="text-xs text-muted-foreground mt-1">
               {t('alerts.realtimeWarningDesc', { defaultValue: 'Warnings & errors received' })}

@@ -114,7 +114,7 @@ export const DriversPage: React.FC = () => {
     <div className="space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold tracking-tight">{t('drivers.title')}</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{t('drivers.title')}</h1>
           <p className="text-xs text-muted-foreground">{t('drivers.subtitle')}</p>
         </div>
         <div className="flex items-center gap-2">

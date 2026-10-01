@@ -216,7 +216,7 @@ export const DiagnosticsPage: React.FC = () => {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-xl font-bold tracking-tight">{t('diagnostics.title')}</h1>
+        <h1 className="text-2xl font-bold tracking-tight">{t('diagnostics.title')}</h1>
         <p className="text-xs text-muted-foreground">{t('diagnostics.subtitle')}</p>
       </div>
 

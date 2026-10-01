@@ -608,7 +608,15 @@ export const TagExplorerPage: React.FC = () => {
 
   return (
     <div className={trendTag ? 'flex flex-col md:flex-row gap-4 md:items-start' : 'space-y-5'}>
-      <div className={trendTag ? 'flex-1 min-w-0 space-y-4' : 'space-y-4'}>
+      <div className={trendTag ? 'flex-1 min-w-0 space-y-4' : 'space-y-5'}>
+        {/* Greeting */}
+        <div className="pt-1">
+          <h1 className="text-2xl font-bold tracking-tight">{t('nav.tags')}</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            {t('tags.explorerDesc', { defaultValue: 'Browse & write tags in real time' })}
+          </p>
+        </div>
+
         {/* Search & Filter Bar */}
         <Card className="border-border bg-card">
           <CardContent className="p-4 flex flex-col md:flex-row items-center justify-between gap-3">

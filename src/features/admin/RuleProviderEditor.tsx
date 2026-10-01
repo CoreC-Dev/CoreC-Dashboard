@@ -79,7 +79,7 @@ export const RuleProviderEditor: React.FC = () => {
             <span>{t('ruleProvider.title')}</span>
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-4 pt-1">
+        <CardContent className="p-4 pt-0">
           <Button
             variant="outline"
             size="sm"
@@ -129,7 +129,7 @@ export const RuleProviderEditor: React.FC = () => {
         <CardDescription className="text-xs">{t('ruleProvider.desc')}</CardDescription>
       </CardHeader>
 
-      <CardContent className="p-4 pt-1 space-y-3">
+      <CardContent className="p-4 pt-0 space-y-3">
         {providers.length === 0 && !editing && (
           <div className="py-6 text-center text-xs text-muted-foreground border border-dashed rounded-lg">
             {t('ruleProvider.empty')}

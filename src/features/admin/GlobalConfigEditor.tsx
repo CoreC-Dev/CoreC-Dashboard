@@ -99,7 +99,7 @@ export const GlobalConfigEditor: React.FC = () => {
           </CardTitle>
           <CardDescription className="text-xs">{t('globalConfig.noConfigDesc')}</CardDescription>
         </CardHeader>
-        <CardContent className="p-4 pt-1">
+        <CardContent className="p-4 pt-0">
           <Button
             variant="outline"
             size="sm"
@@ -148,7 +148,7 @@ export const GlobalConfigEditor: React.FC = () => {
       </CardHeader>
 
       {expanded && (
-        <CardContent className="p-4 pt-1 space-y-4">
+        <CardContent className="p-4 pt-0 space-y-4">
           {/* ─── Logging section ─────────────────────────────────── */}
           <div className="space-y-3">
             <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide">

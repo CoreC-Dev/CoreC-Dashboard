@@ -168,7 +168,7 @@ export const NodeConfigEditor: React.FC = () => {
             <span>{t('nodeConfig.title')}</span>
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-4 pt-1">
+        <CardContent className="p-4 pt-0">
           <Button
             variant="outline"
             size="sm"
@@ -218,7 +218,7 @@ export const NodeConfigEditor: React.FC = () => {
       </CardHeader>
 
       {expanded && (
-        <CardContent className="p-4 pt-1 space-y-4">
+        <CardContent className="p-4 pt-0 space-y-4">
           {/* ─── Node ID (toggle for auto-discovery) ─────────────── */}
           <div className="space-y-1">
             <div className="flex items-center gap-2">

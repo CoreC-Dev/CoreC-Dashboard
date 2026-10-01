@@ -574,7 +574,7 @@ export const RuleGroupEditor: React.FC = () => {
             <span>{t('ruleGroup.title')}</span>
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-4 pt-1">
+        <CardContent className="p-4 pt-0">
           <Button
             variant="outline"
             size="sm"
@@ -626,7 +626,7 @@ export const RuleGroupEditor: React.FC = () => {
         <CardDescription className="text-xs">{t('ruleGroup.desc')}</CardDescription>
       </CardHeader>
 
-      <CardContent className="p-4 pt-1 space-y-2">
+      <CardContent className="p-4 pt-0 space-y-2">
         {groupEntries.length === 0 && !showCreate && (
           <div className="py-6 text-center text-xs text-muted-foreground border border-dashed rounded-lg">
             {t('ruleGroup.empty')}

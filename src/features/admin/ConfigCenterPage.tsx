@@ -460,7 +460,7 @@ export const ConfigCenterPage: React.FC = () => {
     <div className="space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold tracking-tight">{t('config.title')}</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{t('config.title')}</h1>
           <p className="text-xs text-muted-foreground">{t('config.subtitle')}</p>
         </div>
 
@@ -675,7 +675,7 @@ export const ConfigCenterPage: React.FC = () => {
               </CardTitle>
               <CardDescription className="text-xs">{t('config.runtimeParamsDesc')}</CardDescription>
             </CardHeader>
-            <CardContent className="p-4 pt-1 space-y-4">
+            <CardContent className="p-4 pt-0 space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-lg bg-muted/40 border border-border">
                 <div>
                   <div className="text-xs font-semibold text-foreground">
@@ -718,7 +718,7 @@ export const ConfigCenterPage: React.FC = () => {
               </CardTitle>
               <CardDescription className="text-xs">{t('config.activeSummaryDesc')}</CardDescription>
             </CardHeader>
-            <CardContent className="p-4 pt-1 space-y-4">
+            <CardContent className="p-4 pt-0 space-y-4">
               {isLoadingConfigs && !configData ? (
                 <div className="text-xs text-muted-foreground py-6 text-center">
                   {t('config.loadingOverview')}
@@ -891,7 +891,7 @@ export const ConfigCenterPage: React.FC = () => {
                 </Button>
               </CardHeader>
               {diffOpen && (
-                <CardContent className="p-4 pt-1">
+                <CardContent className="p-4 pt-0">
                   {hasDiffChanges ? (
                     <div className="rounded-lg border border-border overflow-hidden">
                       <div className="flex items-center space-x-4 px-3 py-1.5 bg-muted/40 border-b border-border text-xs">
@@ -975,7 +975,7 @@ export const ConfigCenterPage: React.FC = () => {
           </CardTitle>
           <CardDescription className="text-xs">{t('config.historyDesc')}</CardDescription>
         </CardHeader>
-        <CardContent className="p-4 pt-1">
+        <CardContent className="p-4 pt-0">
           {history.length === 0 ? (
             <div className="text-xs text-muted-foreground py-4 text-center">
               {t('config.historyEmpty')}
