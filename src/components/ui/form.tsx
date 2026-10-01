@@ -5,8 +5,7 @@
  * resolver), and `FormField` + `FormItem`/`FormLabel`/`FormControl`/
  * `FormMessage` render each field with automatic error display.
  *
- * Used by the driver/transport/rule wizards (CONFIGURATION_FEATURE_PLAN.md
- * §6.2) for controlled, validated form state.
+ * Used by the driver/transport/rule wizards for controlled, validated form state.
  */
 
 import type * as LabelPrimitive from '@radix-ui/react-label'

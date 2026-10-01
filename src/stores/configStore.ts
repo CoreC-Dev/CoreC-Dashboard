@@ -6,7 +6,7 @@
  * CRUD actions that delegate to the pure helpers in configYaml.ts.
  *
  * This store is decision-independent — it works identically under both
- * backend paths described in CONFIGURATION_FEATURE_PLAN.md §10.1:
+ * backend paths:
  *   - Path A (GET /configs/raw): the server's raw YAML is fed straight to
  *     loadFromYaml(); user edits locally; saveConfig() PUTs the YAML back.
  *   - Path B (pure frontend): loadFromYaml() parses an uploaded YAML or

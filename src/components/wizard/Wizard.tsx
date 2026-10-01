@@ -1,8 +1,7 @@
 /**
  * Generic multi-step Wizard component.
  *
- * Underpins the driver/transport/rule creation wizards described in
- * CONFIGURATION_FEATURE_PLAN.md §6.1. Design:
+ * Underpins the driver/transport/rule creation wizards. Design:
  *   - Controlled by parent via `value` (current step index) and `onValueChange`.
  *   - Each step declares an optional `canProceed` gate (zod validation result,
  *     required-field check, etc.); the Next button is disabled when the gate

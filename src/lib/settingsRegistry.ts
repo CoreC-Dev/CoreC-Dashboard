@@ -3,7 +3,7 @@
  *
  * Declarative description of every known settings field for each driver and
  * transport type. Powers dynamic form rendering in the create/edit wizards
- * (CONFIGURATION_FEATURE_PLAN.md §6.2): instead of hand-writing a form per
+ * Instead of hand-writing a form per
  * protocol, the wizard reads this registry and renders the appropriate input
  * control (text, number, duration picker, enum select, checkbox) with the
  * correct required/optional marker, default value, and help text.
