@@ -20,6 +20,7 @@ import { MemoryChart } from '@/components/charts/MemoryChart'
 import { TrafficChart } from '@/components/charts/TrafficChart'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { CountUpNumber } from '@/components/ui/count-up-number'
 import { ConnStateLabel } from '@/lib/constants'
 import { formatNumber, formatUptime } from '@/lib/utils'
 
@@ -107,9 +108,9 @@ export const DashboardPage: React.FC = () => {
       </div>
 
       {/* Row 1 — KPI indicators */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 card-stagger">
         {/* Engine Status */}
-        <div className="rounded-lg border border-border bg-card p-2.5 card-hover">
+        <div className="rounded-lg border border-border bg-card p-2.5 card-hover card-enter">
           <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1">
             <span>{t('dashboard.engineStatus')}</span>
             <Activity className="w-3 h-3 text-primary" />
@@ -126,26 +127,30 @@ export const DashboardPage: React.FC = () => {
           </div>
         </div>
         {/* Sample Rate */}
-        <div className="rounded-lg border border-border bg-card p-2.5 card-hover">
+        <div className="rounded-lg border border-border bg-card p-2.5 card-hover card-enter">
           <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1">
             <span>{t('dashboard.sampleRate')}</span>
             <TrendingUp className="w-3 h-3 text-status-running" />
           </div>
           <div className="text-base font-bold font-mono">
-            {stats?.points_per_sec?.toFixed(1) || '0.0'}
+            <CountUpNumber
+              value={stats?.points_per_sec ?? 0}
+              duration={600}
+              format={(n) => n.toFixed(1)}
+            />
           </div>
           <div className="text-[9px] text-muted-foreground">
             {t('dashboard.pointsPerSecond', { defaultValue: 'points / second' })}
           </div>
         </div>
         {/* Drivers */}
-        <div className="rounded-lg border border-border bg-card p-2.5 card-hover">
+        <div className="rounded-lg border border-border bg-card p-2.5 card-hover card-enter">
           <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1">
             <span>{t('dashboard.drivers')}</span>
             <Cpu className="w-3 h-3 text-status-queued" />
           </div>
           <div className="text-base font-bold font-mono">
-            {connectedDrivers}{' '}
+            <CountUpNumber value={connectedDrivers} duration={600} />{' '}
             <span className="text-[10px] text-muted-foreground font-normal">
               / {drivers.length}
             </span>
@@ -157,13 +162,13 @@ export const DashboardPage: React.FC = () => {
           </div>
         </div>
         {/* Transports */}
-        <div className="rounded-lg border border-border bg-card p-2.5 card-hover">
+        <div className="rounded-lg border border-border bg-card p-2.5 card-hover card-enter">
           <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1">
             <span>{t('dashboard.sinks')}</span>
             <Send className="w-3 h-3 text-primary" />
           </div>
           <div className="text-base font-bold font-mono">
-            {connectedTransports}{' '}
+            <CountUpNumber value={connectedTransports} duration={600} />{' '}
             <span className="text-[10px] text-muted-foreground font-normal">
               / {transports.length}
             </span>
@@ -175,26 +180,26 @@ export const DashboardPage: React.FC = () => {
           </div>
         </div>
         {/* Total Read */}
-        <div className="rounded-lg border border-border bg-card p-2.5 card-hover">
+        <div className="rounded-lg border border-border bg-card p-2.5 card-hover card-enter">
           <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1">
             <span>{t('dashboard.totalRead')}</span>
             <Database className="w-3 h-3 text-status-warning" />
           </div>
           <div className="text-base font-bold font-mono">
-            {formatNumber(stats?.total_read || 0)}
+            <CountUpNumber value={stats?.total_read ?? 0} duration={800} format={formatNumber} />
           </div>
           <div className="text-[9px] text-muted-foreground">
             {t('dashboard.pub', { defaultValue: 'Pub' })}: {formatNumber(stats?.total_publish || 0)}
           </div>
         </div>
         {/* Dropped */}
-        <div className="rounded-lg border border-border bg-card p-2.5 card-hover">
+        <div className="rounded-lg border border-border bg-card p-2.5 card-hover card-enter">
           <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1">
             <span>{t('dashboard.dropped')}</span>
             <TrendingDown className="w-3 h-3 text-status-error" />
           </div>
           <div className="text-base font-bold font-mono text-status-error">
-            {formatNumber(stats?.total_dropped || 0)}
+            <CountUpNumber value={stats?.total_dropped ?? 0} duration={800} format={formatNumber} />
           </div>
           <div className="text-[9px] text-muted-foreground">
             {t('dashboard.errors', { defaultValue: 'Errors' })}: {stats?.total_errors || 0}
@@ -203,8 +208,8 @@ export const DashboardPage: React.FC = () => {
       </div>
 
       {/* Row 2 — Real-time charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card className="border-border bg-card">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 card-stagger">
+        <Card className="border-border bg-card card-enter">
           <CardHeader className="p-3 pb-1">
             <CardTitle className="text-xs font-semibold">{t('dashboard.trafficChart')}</CardTitle>
           </CardHeader>
@@ -212,7 +217,7 @@ export const DashboardPage: React.FC = () => {
             <TrafficChart />
           </CardContent>
         </Card>
-        <Card className="border-border bg-card">
+        <Card className="border-border bg-card card-enter">
           <CardHeader className="p-3 pb-1">
             <CardTitle className="text-xs font-semibold">{t('dashboard.memoryChart')}</CardTitle>
           </CardHeader>

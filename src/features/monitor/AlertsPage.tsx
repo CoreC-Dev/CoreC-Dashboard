@@ -202,8 +202,8 @@ export const AlertsPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Top Banner */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <Card className="border-border bg-card">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 card-stagger">
+        <Card className="border-border bg-card card-enter">
           <CardHeader className="p-4 pb-1">
             <CardDescription className="text-xs flex items-center justify-between">
               <span>{t('alerts.deadLetterQueue')}</span>
@@ -220,7 +220,7 @@ export const AlertsPage: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card className="border-border bg-card">
+        <Card className="border-border bg-card card-enter">
           <CardHeader className="p-4 pb-1">
             <CardDescription className="text-xs flex items-center justify-between">
               <span>{t('alerts.alertRulesConfigured')}</span>
@@ -237,7 +237,7 @@ export const AlertsPage: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card className="border-border bg-card">
+        <Card className="border-border bg-card card-enter">
           <CardHeader className="p-4 pb-1">
             <CardDescription className="text-xs flex items-center justify-between">
               <span>{t('alerts.systemErrorStream')}</span>

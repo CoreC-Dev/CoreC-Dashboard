@@ -82,6 +82,21 @@ export const AppShell: React.FC = () => {
   // Mobile drawer open/close
   const [mobileOpen, setMobileOpen] = useState(false)
 
+  // Route progress bar
+  const [progress, setProgress] = useState(0)
+
+  useEffect(() => {
+    setProgress(30)
+    const t1 = setTimeout(() => setProgress(70), 80)
+    const t2 = setTimeout(() => setProgress(100), 250)
+    const t3 = setTimeout(() => setProgress(0), 500)
+    return () => {
+      clearTimeout(t1)
+      clearTimeout(t2)
+      clearTimeout(t3)
+    }
+  }, [])
+
   useEffect(() => {
     localStorage.setItem(SIDEBAR_KEY, collapsed ? 'collapsed' : 'expanded')
   }, [collapsed])
@@ -142,15 +157,34 @@ export const AppShell: React.FC = () => {
             'relative grid place-items-center transition-all duration-200 group',
             eff ? 'w-9 h-9 rounded-full' : 'w-full h-9 rounded-lg flex items-center px-2.5 gap-2.5',
             isActive
-              ? 'bg-foreground text-background shadow-md'
+              ? 'text-foreground'
               : 'text-muted-foreground hover:text-foreground hover:bg-muted hover:translate-x-0.5',
           )
         }
         title={eff ? item.label : undefined}
       >
-        <Icon className="w-[18px] h-[18px] shrink-0" />
-        {!eff && (
-          <span className="text-sm font-medium truncate text-left flex-1">{item.label}</span>
+        {({ isActive }) => (
+          <>
+            {isActive && (
+              <span
+                className={cn(
+                  'nav-indicator absolute inset-0 rounded-lg bg-foreground -z-10',
+                  eff && 'rounded-full',
+                )}
+              />
+            )}
+            <Icon className="w-[18px] h-[18px] shrink-0 transition-transform duration-200 group-hover:scale-110" />
+            {!eff && (
+              <span
+                className={cn(
+                  'text-sm font-medium truncate text-left flex-1 transition-colors duration-200',
+                  isActive && 'text-background',
+                )}
+              >
+                {item.label}
+              </span>
+            )}
+          </>
         )}
       </NavLink>
     )
@@ -388,6 +422,16 @@ export const AppShell: React.FC = () => {
 
   return (
     <div className="h-screen w-full bg-background text-foreground overflow-hidden md:flex md:p-4 md:gap-4">
+      {/* ===== Route progress bar ===== */}
+      {progress > 0 && (
+        <div className="fixed top-0 left-0 right-0 h-0.5 z-[100] pointer-events-none">
+          <div
+            className="h-full bg-primary transition-all duration-300 ease-out"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      )}
+
       {/* ===== Mobile backdrop ===== */}
       {isMobile && mobileOpen && (
         <div

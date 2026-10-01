@@ -191,9 +191,9 @@ export const DriversPage: React.FC = () => {
               {t('common.noResults', { query: searchQuery }) || `No results for "${searchQuery}"`}
             </p>
           )}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 card-stagger">
             {filteredConfigDrivers.map((drv) => (
-              <Card key={drv.name} className="border-border bg-card">
+              <Card key={drv.name} className="border-border bg-card card-enter">
                 <CardHeader className="p-4 pb-2">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center space-x-2.5">
@@ -266,7 +266,7 @@ export const DriversPage: React.FC = () => {
             {drivers.length}
           </Badge>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 card-stagger">
           {drivers.length === 0 ? (
             <Card className="col-span-full p-8 text-center text-xs text-muted-foreground border-dashed">
               {t('drivers.empty')}
@@ -280,7 +280,7 @@ export const DriversPage: React.FC = () => {
                   tabIndex={0}
                   role="button"
                   aria-label={`${drv.name} — ${st}`}
-                  className="border-border bg-card hover:border-primary/40 transition-all cursor-pointer group focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  className="border-border bg-card card-enter hover:border-primary/40 transition-all cursor-pointer group focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   onClick={() => navigate(`${adminBase}/drivers/${encodeURIComponent(drv.name)}`)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
