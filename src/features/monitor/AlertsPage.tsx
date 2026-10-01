@@ -382,6 +382,7 @@ export const AlertsPage: React.FC = () => {
             <select
               value={logLevel}
               onChange={(e) => setLogLevel(e.target.value as 'all' | 'warning' | 'error')}
+              aria-label={t('alerts.logLevel', { defaultValue: 'Log level' })}
               className="h-9 px-3 rounded-md border border-input bg-transparent text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring shrink-0"
             >
               <option value="all">{t('alerts.levelAll', { defaultValue: 'All levels' })}</option>

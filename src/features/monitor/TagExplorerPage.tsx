@@ -632,6 +632,7 @@ export const TagExplorerPage: React.FC = () => {
             <select
               value={selectedDriver}
               onChange={(e) => setSelectedDriver(e.target.value)}
+              aria-label={t('tags.allDrivers')}
               className="h-9 px-3 rounded-md border border-input bg-transparent text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
             >
               <option value="all">{t('tags.allDrivers')}</option>
@@ -646,6 +647,7 @@ export const TagExplorerPage: React.FC = () => {
             <select
               value={selectedGroup}
               onChange={(e) => setSelectedGroup(e.target.value)}
+              aria-label={t('tags.allGroups', { defaultValue: 'All groups' })}
               className="h-9 px-3 rounded-md border border-input bg-transparent text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
             >
               <option value="all">{t('tags.allGroups', { defaultValue: 'All groups' })}</option>
