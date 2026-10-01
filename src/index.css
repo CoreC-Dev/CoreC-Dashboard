@@ -1,9 +1,8 @@
 @import "tailwindcss";
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
 
 /*
  * AIOT-Hub design system — soft, rounded, card-based aesthetic.
- * Lime-green accent, Inter font, large radii, soft layered shadows.
+ * Lime-green accent, system font stack, large radii, soft layered shadows.
  * Ported from aiot-dashboard (github.com/lsy1291455142/aiot-dashboard).
  */
 @theme inline {
@@ -72,7 +71,7 @@
     --input: 200 14% 94%;
     --ring: 163 41% 53%;               /* logo teal */
     --radius: 13px;
-    --font-sans: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", "Helvetica Neue", Arial, sans-serif;
     --font-mono: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
 
     --status-running: 146 70% 42%;     /* #20b46a green */
@@ -308,7 +307,7 @@ body {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
   font-family: var(--font-sans);
-  font-size: 18px;
+  font-size: 20px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

@@ -4,6 +4,8 @@ import {
   Bell,
   Check,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Cpu,
   FileCode2,
   Gauge,
@@ -12,8 +14,6 @@ import {
   Menu,
   Moon,
   Network,
-  PanelLeftClose,
-  PanelLeftOpen,
   Send,
   Server,
   Sliders,
@@ -210,13 +210,8 @@ export const AppShell: React.FC = () => {
   // Shared sidebar content
   const sidebarContent = (
     <>
-      {/* Brand mark + collapse toggle */}
-      <div
-        className={cn(
-          'flex items-center shrink-0',
-          eff ? 'flex-col gap-2' : 'justify-between px-0.5',
-        )}
-      >
+      {/* Brand mark */}
+      <div className={cn('flex items-center shrink-0', eff ? 'justify-center' : 'px-0.5')}>
         <Link
           to="/"
           className="flex items-center gap-2.5 shrink-0"
@@ -227,21 +222,11 @@ export const AppShell: React.FC = () => {
             <span className="font-extrabold text-base tracking-tight whitespace-nowrap">CoreC</span>
           )}
         </Link>
-        {!eff && !isMobile && (
-          <button
-            type="button"
-            onClick={() => setCollapsed(true)}
-            className="w-7 h-7 rounded-lg grid place-items-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200 shrink-0"
-            aria-label={t('aria.collapseSidebar')}
-          >
-            <PanelLeftClose className="w-4 h-4" />
-          </button>
-        )}
         {!eff && isMobile && (
           <button
             type="button"
             onClick={() => setMobileOpen(false)}
-            className="w-7 h-7 rounded-lg grid place-items-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200 shrink-0"
+            className="w-7 h-7 rounded-lg grid place-items-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200 shrink-0 ml-auto"
             aria-label={t('aria.closeSidebar')}
           >
             <X className="w-4 h-4" />
@@ -249,36 +234,27 @@ export const AppShell: React.FC = () => {
         )}
       </div>
 
-      {/* Expand button (desktop collapsed state) */}
-      {eff && !isMobile && (
-        <button
-          type="button"
-          onClick={() => setCollapsed(false)}
-          className="w-9 h-9 rounded-full grid place-items-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200 shrink-0"
-          aria-label={t('aria.expandSidebar')}
-        >
-          <PanelLeftOpen className="w-[18px] h-[18px]" />
-        </button>
-      )}
+      {/* ===== Centered navigation area ===== */}
+      <div className={cn('flex-1 flex flex-col justify-center', eff ? 'items-center' : '')}>
+        {/* Monitor group label */}
+        {renderGroupLabel(t('nav.monitor'))}
 
-      {/* Monitor group label */}
-      {renderGroupLabel(t('nav.monitor'))}
+        {/* Monitor nav group */}
+        <nav className={cn('flex flex-col w-full', eff ? 'gap-1.5 items-center' : 'gap-1')}>
+          {monitorItems.map(renderItem)}
+        </nav>
 
-      {/* Monitor nav group */}
-      <nav className={cn('flex flex-col w-full', eff ? 'gap-1.5 items-center' : 'gap-1')}>
-        {monitorItems.map(renderItem)}
-      </nav>
+        {/* Admin group label */}
+        {renderGroupLabel(t('nav.admin'))}
 
-      {/* Admin group label */}
-      {renderGroupLabel(t('nav.admin'))}
-
-      {/* Admin nav group */}
-      <nav className={cn('flex flex-col w-full', eff ? 'gap-1.5 items-center' : 'gap-1')}>
-        {adminItems.map(renderItem)}
-      </nav>
+        {/* Admin nav group */}
+        <nav className={cn('flex flex-col w-full', eff ? 'gap-1.5 items-center' : 'gap-1')}>
+          {adminItems.map(renderItem)}
+        </nav>
+      </div>
 
       {/* ===== Bottom fixed function area ===== */}
-      <div className={cn('mt-auto', eff ? 'pt-3' : 'pt-2')}>
+      <div className={cn('shrink-0', eff ? 'pt-3' : 'pt-2')}>
         <div className={cn('h-px bg-border mb-2 shrink-0', eff ? 'w-8 mx-auto' : 'w-full')} />
         <div
           className={cn('flex w-full', eff ? 'flex-col items-center gap-1.5' : 'flex-col gap-1')}
@@ -460,12 +436,21 @@ export const AppShell: React.FC = () => {
       {!isMobile && (
         <aside
           className={cn(
-            'sidebar-transition shrink-0 flex flex-col py-4 bg-card rounded-[20px] overflow-hidden',
+            'sidebar-transition shrink-0 flex flex-col py-4 bg-card rounded-[20px] relative',
             collapsed ? 'w-[72px] px-2 gap-1 items-center' : 'w-[220px] px-3 gap-1',
           )}
           style={{ boxShadow: 'var(--shadow-card)' }}
         >
           {sidebarContent}
+          {/* Floating collapse/expand toggle — sits on the sidebar's right edge */}
+          <button
+            type="button"
+            onClick={() => setCollapsed(!collapsed)}
+            className="absolute -right-3 top-1/2 -translate-y-1/2 z-20 w-6 h-12 rounded-full bg-card border border-border shadow-md grid place-items-center text-muted-foreground hover:text-foreground hover:bg-muted hover:scale-110 transition-all duration-200"
+            aria-label={collapsed ? t('aria.expandSidebar') : t('aria.collapseSidebar')}
+          >
+            {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+          </button>
         </aside>
       )}
 
