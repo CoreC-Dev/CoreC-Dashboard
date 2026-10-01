@@ -147,7 +147,7 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
   return (
     <>
       <div
-        className="group relative rounded-lg border border-border bg-card hover:border-primary/40 hover:shadow-lg transition-all overflow-hidden flex flex-col"
+        className="group relative rounded-lg border border-border bg-card hover:border-primary/40 card-hover overflow-hidden flex flex-col"
         style={accentColor ? { borderTopColor: accentColor, borderTopWidth: '3px' } : undefined}
       >
         {/* Header: status dot + name */}

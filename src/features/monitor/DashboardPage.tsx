@@ -109,10 +109,7 @@ export const DashboardPage: React.FC = () => {
       {/* Row 1 — KPI indicators */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {/* Engine Status */}
-        <div
-          className="rounded-lg border border-border bg-card p-2.5"
-          style={{ boxShadow: 'var(--shadow-card)' }}
-        >
+        <div className="rounded-lg border border-border bg-card p-2.5 card-hover">
           <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1">
             <span>{t('dashboard.engineStatus')}</span>
             <Activity className="w-3 h-3 text-primary" />
@@ -129,7 +126,7 @@ export const DashboardPage: React.FC = () => {
           </div>
         </div>
         {/* Sample Rate */}
-        <div className="rounded-lg border border-border bg-card p-2.5">
+        <div className="rounded-lg border border-border bg-card p-2.5 card-hover">
           <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1">
             <span>{t('dashboard.sampleRate')}</span>
             <TrendingUp className="w-3 h-3 text-status-running" />
@@ -142,7 +139,7 @@ export const DashboardPage: React.FC = () => {
           </div>
         </div>
         {/* Drivers */}
-        <div className="rounded-lg border border-border bg-card p-2.5">
+        <div className="rounded-lg border border-border bg-card p-2.5 card-hover">
           <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1">
             <span>{t('dashboard.drivers')}</span>
             <Cpu className="w-3 h-3 text-status-queued" />
@@ -160,7 +157,7 @@ export const DashboardPage: React.FC = () => {
           </div>
         </div>
         {/* Transports */}
-        <div className="rounded-lg border border-border bg-card p-2.5">
+        <div className="rounded-lg border border-border bg-card p-2.5 card-hover">
           <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1">
             <span>{t('dashboard.sinks')}</span>
             <Send className="w-3 h-3 text-primary" />
@@ -178,7 +175,7 @@ export const DashboardPage: React.FC = () => {
           </div>
         </div>
         {/* Total Read */}
-        <div className="rounded-lg border border-border bg-card p-2.5">
+        <div className="rounded-lg border border-border bg-card p-2.5 card-hover">
           <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1">
             <span>{t('dashboard.totalRead')}</span>
             <Database className="w-3 h-3 text-status-warning" />
@@ -191,7 +188,7 @@ export const DashboardPage: React.FC = () => {
           </div>
         </div>
         {/* Dropped */}
-        <div className="rounded-lg border border-border bg-card p-2.5">
+        <div className="rounded-lg border border-border bg-card p-2.5 card-hover">
           <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1">
             <span>{t('dashboard.dropped')}</span>
             <TrendingDown className="w-3 h-3 text-status-error" />
