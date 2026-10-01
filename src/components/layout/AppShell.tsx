@@ -27,7 +27,6 @@ import { useEffect, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { Link, NavLink, Outlet, useLocation, useNavigate, useParams } from 'react-router-dom'
-import { AnimatedLogo } from '@/components/layout/AnimatedLogo'
 import { Select, SelectContent, SelectItem } from '@/components/ui/select'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { useConnection } from '@/contexts/ConnectionContext'
@@ -210,14 +209,18 @@ export const AppShell: React.FC = () => {
   // Shared sidebar content
   const sidebarContent = (
     <>
-      {/* Brand mark — logo centered, no text */}
+      {/* Brand mark — animated logo centered, no text */}
       <div className={cn('flex items-center shrink-0', eff ? 'justify-center' : 'justify-center')}>
         <Link
           to="/"
-          className="flex items-center justify-center shrink-0 text-primary"
+          className="flex items-center justify-center shrink-0"
           aria-label={t('aria.corecHome')}
         >
-          <AnimatedLogo className="w-9 h-9 shrink-0" />
+          <img
+            src="/logo-animated.svg"
+            alt="CoreC"
+            className={cn('shrink-0 transition-all duration-300', eff ? 'w-9 h-9' : 'w-12 h-12')}
+          />
         </Link>
         {!eff && isMobile && (
           <button
@@ -231,30 +234,41 @@ export const AppShell: React.FC = () => {
         )}
       </div>
 
-      {/* ===== Centered navigation area ===== */}
+      {/* ===== Centered navigation area — white bubble card ===== */}
       <div className={cn('flex-1 flex flex-col justify-center', eff ? 'items-center' : '')}>
-        {/* Monitor group label */}
-        {renderGroupLabel(t('nav.monitor'))}
+        <div
+          className={cn(
+            'bg-card rounded-2xl border border-border/40',
+            eff ? 'p-2 flex flex-col items-center gap-1.5' : 'p-2.5 flex flex-col w-full gap-1',
+          )}
+          style={{ boxShadow: 'var(--shadow-card)' }}
+        >
+          {/* Monitor group label */}
+          {renderGroupLabel(t('nav.monitor'))}
 
-        {/* Monitor nav group */}
-        <nav className={cn('flex flex-col w-full', eff ? 'gap-1.5 items-center' : 'gap-1')}>
-          {monitorItems.map(renderItem)}
-        </nav>
+          {/* Monitor nav group */}
+          <nav className={cn('flex flex-col w-full', eff ? 'gap-1.5 items-center' : 'gap-1')}>
+            {monitorItems.map(renderItem)}
+          </nav>
 
-        {/* Admin group label */}
-        {renderGroupLabel(t('nav.admin'))}
+          {/* Admin group label */}
+          {renderGroupLabel(t('nav.admin'))}
 
-        {/* Admin nav group */}
-        <nav className={cn('flex flex-col w-full', eff ? 'gap-1.5 items-center' : 'gap-1')}>
-          {adminItems.map(renderItem)}
-        </nav>
+          {/* Admin nav group */}
+          <nav className={cn('flex flex-col w-full', eff ? 'gap-1.5 items-center' : 'gap-1')}>
+            {adminItems.map(renderItem)}
+          </nav>
+        </div>
       </div>
 
-      {/* ===== Bottom fixed function area ===== */}
-      <div className={cn('shrink-0', eff ? 'pt-3' : 'pt-2')}>
-        <div className={cn('h-px bg-border mb-2 shrink-0', eff ? 'w-8 mx-auto' : 'w-full')} />
+      {/* ===== Bottom fixed function area — white bubble card ===== */}
+      <div className="shrink-0">
         <div
-          className={cn('flex w-full', eff ? 'flex-col items-center gap-1.5' : 'flex-col gap-1')}
+          className={cn(
+            'bg-card rounded-2xl border border-border/40',
+            eff ? 'p-2 flex flex-col items-center gap-1.5' : 'p-2.5 flex flex-col w-full gap-1',
+          )}
+          style={{ boxShadow: 'var(--shadow-card)' }}
         >
           {/* Instance switcher — dropdown (Select) */}
           {instance && (
@@ -442,7 +456,7 @@ export const AppShell: React.FC = () => {
         <aside
           className={cn(
             'sidebar-transition shrink-0 flex flex-col py-4 relative',
-            collapsed ? 'w-[72px] px-2 gap-1 items-center' : 'w-[220px] px-3 gap-1',
+            collapsed ? 'w-[72px] px-2 gap-2.5 items-center' : 'w-[220px] px-3 gap-2.5',
           )}
         >
           {sidebarContent}

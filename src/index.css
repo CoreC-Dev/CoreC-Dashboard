@@ -552,20 +552,6 @@ body {
   }
 }
 
-/* ===== Animated logo keyframes ===== */
-@keyframes logo-spin {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
-}
-@keyframes logo-flow {
-  from { stroke-dashoffset: 10; }
-  to   { stroke-dashoffset: 0; }
-}
-@keyframes logo-pulse {
-  0%, 100% { transform: scale(1);    opacity: 1;   }
-  50%      { transform: scale(0.82); opacity: 0.7; }
-}
-
 /* Respect reduced motion preference */
 @media (prefers-reduced-motion: reduce) {
   *,
