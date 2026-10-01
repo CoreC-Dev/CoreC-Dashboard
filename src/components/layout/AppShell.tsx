@@ -1,3 +1,4 @@
+import * as SelectPrimitive from '@radix-ui/react-select'
 import {
   ArrowLeft,
   Bell,
@@ -11,7 +12,6 @@ import {
   Menu,
   Moon,
   Network,
-  Palette,
   PanelLeftClose,
   PanelLeftOpen,
   Send,
@@ -27,7 +27,7 @@ import type React from 'react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, NavLink, Outlet, useLocation, useNavigate, useParams } from 'react-router-dom'
-import { Button } from '@/components/ui/button'
+import { Select, SelectContent, SelectItem } from '@/components/ui/select'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { useConnection } from '@/contexts/ConnectionContext'
 import { setLocale } from '@/i18n'
@@ -75,10 +75,6 @@ export const AppShell: React.FC = () => {
 
   // Mobile drawer open/close
   const [mobileOpen, setMobileOpen] = useState(false)
-
-  // Sidebar instance/theme sheets (drawer, not popover)
-  const [instanceSheetOpen, setInstanceSheetOpen] = useState(false)
-  const [themeSheetOpen, setThemeSheetOpen] = useState(false)
 
   // Route progress bar
   const [progress, setProgress] = useState(0)
@@ -256,37 +252,67 @@ export const AppShell: React.FC = () => {
         <div
           className={cn('flex w-full', eff ? 'flex-col items-center gap-1.5' : 'flex-col gap-1')}
         >
-          {/* Instance switcher with live status dot */}
+          {/* Instance switcher — dropdown (Select) */}
           {instance && (
-            <button
-              type="button"
-              onClick={() => setInstanceSheetOpen(true)}
-              className={cn(
-                'grid place-items-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200',
-                eff
-                  ? 'w-9 h-9 rounded-full'
-                  : 'w-full h-9 rounded-lg flex items-center px-2.5 gap-2.5',
-              )}
-              aria-label={t('instances.switchInstance')}
+            <Select
+              value={instance.id}
+              onValueChange={(id) => {
+                const inst = instances.find((i) => i.id === id)
+                if (!inst) return
+                const space = isMonitor
+                  ? 'monitor/dashboard'
+                  : isAdmin
+                    ? 'admin/drivers'
+                    : 'monitor/dashboard'
+                navigate(`/corec/${id}/${space}`)
+              }}
             >
-              <span className="relative shrink-0">
-                <Server className="w-[18px] h-[18px]" />
-                <span
+              <SelectPrimitive.Trigger asChild>
+                <button
+                  type="button"
                   className={cn(
-                    'absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full ring-1 ring-card',
-                    statusColor,
+                    'grid place-items-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200',
+                    eff
+                      ? 'w-9 h-9 rounded-full'
+                      : 'w-full h-9 rounded-lg flex items-center px-2.5 gap-2.5',
                   )}
-                />
-              </span>
-              {!eff && (
-                <>
-                  <span className="text-sm font-medium truncate text-left flex-1">
-                    {instance.name}
+                  aria-label={t('instances.switchInstance')}
+                >
+                  <span className="relative shrink-0">
+                    <Server className="w-[18px] h-[18px]" />
+                    <span
+                      className={cn(
+                        'absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full ring-1 ring-card',
+                        statusColor,
+                      )}
+                    />
                   </span>
-                  <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                </>
-              )}
-            </button>
+                  {!eff && (
+                    <>
+                      <span className="text-sm font-medium truncate text-left flex-1">
+                        {instance.name}
+                      </span>
+                      <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                    </>
+                  )}
+                </button>
+              </SelectPrimitive.Trigger>
+              <SelectContent side="right" align="start" className="w-56">
+                {instances.map((inst) => (
+                  <SelectItem key={inst.id} value={inst.id}>
+                    <span className="flex items-center gap-2">
+                      <span
+                        className={cn(
+                          'w-1.5 h-1.5 rounded-full shrink-0',
+                          inst.lastConnectedAt ? 'bg-status-running' : 'bg-status-idle',
+                        )}
+                      />
+                      <span className="truncate">{inst.name}</span>
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           )}
 
           {/* Language toggle */}
@@ -309,29 +335,43 @@ export const AppShell: React.FC = () => {
             )}
           </button>
 
-          {/* Theme selector */}
-          <button
-            type="button"
-            onClick={() => setThemeSheetOpen(true)}
-            className={cn(
-              'grid place-items-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200',
-              eff
-                ? 'w-9 h-9 rounded-full'
-                : 'w-full h-9 rounded-lg flex items-center px-2.5 gap-2.5',
-            )}
-            aria-label={t('aria.selectTheme')}
-          >
-            {resolvedTheme === 'dark' ? (
-              <Moon className="w-[18px] h-[18px] shrink-0" />
-            ) : (
-              <Sun className="w-[18px] h-[18px] shrink-0" />
-            )}
-            {!eff && (
-              <span className="text-sm font-medium truncate text-left flex-1">
-                {t(THEME_I18N_KEYS[theme])}
-              </span>
-            )}
-          </button>
+          {/* Theme selector — dropdown (Select) */}
+          <Select value={theme} onValueChange={(v) => setTheme(v as typeof theme)}>
+            <SelectPrimitive.Trigger asChild>
+              <button
+                type="button"
+                className={cn(
+                  'grid place-items-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200',
+                  eff
+                    ? 'w-9 h-9 rounded-full'
+                    : 'w-full h-9 rounded-lg flex items-center px-2.5 gap-2.5',
+                )}
+                aria-label={t('aria.selectTheme')}
+              >
+                {resolvedTheme === 'dark' ? (
+                  <Moon className="w-[18px] h-[18px] shrink-0" />
+                ) : (
+                  <Sun className="w-[18px] h-[18px] shrink-0" />
+                )}
+                {!eff && (
+                  <>
+                    <span className="text-sm font-medium truncate text-left flex-1">
+                      {t(THEME_I18N_KEYS[theme])}
+                    </span>
+                    <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                  </>
+                )}
+              </button>
+            </SelectPrimitive.Trigger>
+            <SelectContent side="right" align="start" className="w-40">
+              <SelectItem value="system">{t(THEME_I18N_KEYS.system)}</SelectItem>
+              {THEME_VARIANTS.map((variant) => (
+                <SelectItem key={variant} value={variant}>
+                  {t(THEME_I18N_KEYS[variant])}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
           {/* Disconnect */}
           <button
@@ -480,124 +520,6 @@ export const AppShell: React.FC = () => {
           </a>
         </footer>
       </div>
-
-      {/* Instance switcher — drawer (Sheet) */}
-      <Sheet open={instanceSheetOpen} onOpenChange={setInstanceSheetOpen}>
-        <SheetContent side="left">
-          <SheetTitle>{t('instances.switchInstance')}</SheetTitle>
-          <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
-            <div className="flex items-center gap-2">
-              <Server className="w-4 h-4 text-primary" />
-              <span className="text-sm font-semibold text-foreground">
-                {t('instances.switchInstance')}
-              </span>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setInstanceSheetOpen(false)}
-              className="h-8 w-8 p-0 shrink-0"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-          <div className="flex-1 overflow-y-auto p-2">
-            {instances.map((inst) => (
-              <button
-                key={inst.id}
-                type="button"
-                onClick={() => {
-                  const space = isMonitor
-                    ? 'monitor/dashboard'
-                    : isAdmin
-                      ? 'admin/drivers'
-                      : 'monitor/dashboard'
-                  navigate(`/corec/${inst.id}/${space}`)
-                  setInstanceSheetOpen(false)
-                }}
-                className={cn(
-                  'flex items-center gap-2.5 w-full px-3 py-2.5 rounded-lg text-sm transition-colors',
-                  inst.id === instance?.id
-                    ? 'bg-accent text-accent-foreground font-medium'
-                    : 'text-foreground hover:bg-muted',
-                )}
-              >
-                <span
-                  className={cn(
-                    'w-2 h-2 rounded-full shrink-0',
-                    inst.lastConnectedAt ? 'bg-status-running' : 'bg-status-idle',
-                  )}
-                />
-                <span className="truncate flex-1 text-left">{inst.name}</span>
-                {inst.id === instance?.id && (
-                  <Check className="w-3.5 h-3.5 text-primary shrink-0" />
-                )}
-              </button>
-            ))}
-          </div>
-        </SheetContent>
-      </Sheet>
-
-      {/* Theme selector — drawer (Sheet) */}
-      <Sheet open={themeSheetOpen} onOpenChange={setThemeSheetOpen}>
-        <SheetContent side="left" className="w-[300px]">
-          <SheetTitle>{t('settings.theme', { defaultValue: 'Theme' })}</SheetTitle>
-          <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
-            <div className="flex items-center gap-2">
-              <Palette className="w-4 h-4 text-primary" />
-              <span className="text-sm font-semibold text-foreground">
-                {t('settings.theme', { defaultValue: 'Theme' })}
-              </span>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setThemeSheetOpen(false)}
-              className="h-8 w-8 p-0 shrink-0"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-          <div className="flex-1 overflow-y-auto p-2">
-            <button
-              type="button"
-              onClick={() => {
-                setTheme('system')
-                setThemeSheetOpen(false)
-              }}
-              className={cn(
-                'flex items-center justify-between w-full px-3 py-2.5 rounded-lg text-sm transition-colors',
-                theme === 'system'
-                  ? 'bg-accent text-accent-foreground font-medium'
-                  : 'text-foreground hover:bg-muted',
-              )}
-            >
-              <span>{t(THEME_I18N_KEYS.system)}</span>
-              {theme === 'system' && <Check className="w-3.5 h-3.5 text-primary" />}
-            </button>
-            <div className="h-px bg-border my-1.5 mx-3" />
-            {THEME_VARIANTS.map((variant) => (
-              <button
-                key={variant}
-                type="button"
-                onClick={() => {
-                  setTheme(variant)
-                  setThemeSheetOpen(false)
-                }}
-                className={cn(
-                  'flex items-center justify-between w-full px-3 py-2.5 rounded-lg text-sm transition-colors',
-                  theme === variant
-                    ? 'bg-accent text-accent-foreground font-medium'
-                    : 'text-foreground hover:bg-muted',
-                )}
-              >
-                <span>{t(THEME_I18N_KEYS[variant])}</span>
-                {theme === variant && <Check className="w-3.5 h-3.5 text-primary" />}
-              </button>
-            ))}
-          </div>
-        </SheetContent>
-      </Sheet>
     </div>
   )
 }
