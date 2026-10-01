@@ -218,46 +218,46 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
 
           {/* Key metrics grid — only when stats available */}
           {stats && !probeError && (
-            <div className="grid grid-cols-2 gap-1.5 pt-1">
+            <div className="grid grid-cols-2 gap-2 pt-1">
               {/* Points per second */}
-              <div className="rounded-md bg-muted/50 px-2 py-1.5">
-                <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                  <Activity className="w-3 h-3" />
+              <div className="rounded-lg bg-muted/50 px-2.5 py-2">
+                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <Activity className="w-3.5 h-3.5" />
                   <span>{t('instanceCard.throughput')}</span>
                 </div>
-                <div className="text-sm font-semibold font-mono">
+                <div className="text-sm font-semibold font-mono tnum mt-0.5">
                   {stats.points_per_sec.toFixed(1)}
-                  <span className="text-[10px] text-muted-foreground ml-0.5">pts/s</span>
+                  <span className="text-xs text-muted-foreground ml-1">pts/s</span>
                 </div>
               </div>
               {/* Total reads */}
-              <div className="rounded-md bg-muted/50 px-2 py-1.5">
-                <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                  <Cpu className="w-3 h-3" />
+              <div className="rounded-lg bg-muted/50 px-2.5 py-2">
+                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <Cpu className="w-3.5 h-3.5" />
                   <span>{t('instanceCard.reads')}</span>
                 </div>
-                <div className="text-sm font-semibold font-mono">
+                <div className="text-sm font-semibold font-mono tnum mt-0.5">
                   {formatCompact(stats.total_read)}
                 </div>
               </div>
               {/* Total publishes */}
-              <div className="rounded-md bg-muted/50 px-2 py-1.5">
-                <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                  <Send className="w-3 h-3" />
+              <div className="rounded-lg bg-muted/50 px-2.5 py-2">
+                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <Send className="w-3.5 h-3.5" />
                   <span>{t('instanceCard.publishes')}</span>
                 </div>
-                <div className="text-sm font-semibold font-mono">
+                <div className="text-sm font-semibold font-mono tnum mt-0.5">
                   {formatCompact(stats.total_publish)}
                 </div>
               </div>
               {/* Total dropped — highlight in amber/rose when > 0 */}
-              <div className="rounded-md bg-muted/50 px-2 py-1.5">
-                <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                  <Ban className="w-3 h-3" />
+              <div className="rounded-lg bg-muted/50 px-2.5 py-2">
+                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <Ban className="w-3.5 h-3.5" />
                   <span>{t('instanceCard.dropped')}</span>
                 </div>
                 <div
-                  className={`text-sm font-semibold font-mono ${
+                  className={`text-sm font-semibold font-mono tnum mt-0.5 ${
                     stats.total_dropped > 0 ? 'text-status-warning' : ''
                   }`}
                 >
@@ -269,29 +269,29 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
 
           {/* Topology flow: inputs → rules → outputs — three separate panels */}
           {hasTopology && !probeError && (
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               {/* Inputs (drivers + incoming transports) */}
               {allInputs.length > 0 && (
-                <div className="rounded-md bg-muted/30 px-2 py-1.5 space-y-1">
+                <div className="rounded-lg bg-muted/30 px-2.5 py-2 space-y-1.5">
                   {allInputs.map((item) => (
-                    <div key={`in-${item.name}`} className="text-[11px] space-y-0.5">
+                    <div key={`in-${item.name}`} className="text-xs space-y-0.5">
                       <div className="flex items-center gap-1.5">
                         <span
-                          className={`w-1.5 h-1.5 rounded-full shrink-0 ${ConnStateLabel[item.state]?.dotColor ?? 'bg-status-idle'}`}
+                          className={`w-2 h-2 rounded-full shrink-0 ${ConnStateLabel[item.state]?.dotColor ?? 'bg-status-idle'}`}
                         />
                         <span className="font-mono break-words">{item.name}</span>
-                        <span className="ml-auto shrink-0 text-[9px] px-1 py-0.5 rounded bg-muted text-muted-foreground font-mono">
+                        <span className="ml-auto shrink-0 text-xs px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono">
                           {item.type}
                         </span>
                       </div>
                       {item.conn && (
-                        <div className="pl-4 text-muted-foreground/50 font-mono break-all">
+                        <div className="pl-4 text-muted-foreground/60 font-mono break-all text-xs">
                           {item.conn}
                         </div>
                       )}
                       {item.detail && (
                         <div
-                          className={`pl-4 ${item.detail.includes('err') ? 'text-status-error' : 'text-muted-foreground/60'}`}
+                          className={`pl-4 text-xs ${item.detail.includes('err') ? 'text-status-error' : 'text-muted-foreground/70'}`}
                         >
                           {item.detail}
                         </div>
@@ -304,18 +304,18 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
               {/* Arrow down */}
               {allInputs.length > 0 && ruleList.length > 0 && (
                 <div className="flex justify-center">
-                  <ArrowDown className="w-3 h-3 text-muted-foreground/50" />
+                  <ArrowDown className="w-3.5 h-3.5 text-muted-foreground/50" />
                 </div>
               )}
 
               {/* Rules */}
               {ruleList.length > 0 && (
-                <div className="rounded-md bg-muted/30 px-2 py-1.5 space-y-1">
+                <div className="rounded-lg bg-muted/30 px-2.5 py-2 space-y-1.5">
                   {ruleList.map((rule) => (
-                    <div key={rule.name} className="text-[11px] space-y-0.5">
+                    <div key={rule.name} className="text-xs space-y-0.5">
                       <div className="flex items-center gap-1.5">
                         <Zap
-                          className={`w-3 h-3 shrink-0 ${rule.disabled ? 'text-muted-foreground/40' : 'text-status-warning'}`}
+                          className={`w-3.5 h-3.5 shrink-0 ${rule.disabled ? 'text-muted-foreground/40' : 'text-status-warning'}`}
                         />
                         <span
                           className={`font-mono break-words ${rule.disabled ? 'line-through text-muted-foreground/50' : ''}`}
@@ -323,7 +323,7 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
                           {rule.name}
                         </span>
                       </div>
-                      <div className="pl-4 text-muted-foreground/70 text-[10px] break-all">
+                      <div className="pl-4 text-muted-foreground/70 text-xs break-all">
                         {rule.match} → {rule.action} → {rule.target}
                         {rule.hit_count > 0 && (
                           <span className="ml-1 text-muted-foreground/50">
@@ -339,31 +339,31 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
               {/* Arrow down */}
               {ruleList.length > 0 && allOutputs.length > 0 && (
                 <div className="flex justify-center">
-                  <ArrowDown className="w-3 h-3 text-muted-foreground/50" />
+                  <ArrowDown className="w-3.5 h-3.5 text-muted-foreground/50" />
                 </div>
               )}
 
               {/* Outputs */}
               {allOutputs.length > 0 && (
-                <div className="rounded-md bg-muted/30 px-2 py-1.5 space-y-1">
+                <div className="rounded-lg bg-muted/30 px-2.5 py-2 space-y-1.5">
                   {allOutputs.map((item) => (
-                    <div key={`out-${item.name}`} className="text-[11px] space-y-0.5">
+                    <div key={`out-${item.name}`} className="text-xs space-y-0.5">
                       <div className="flex items-center gap-1.5">
                         <span
-                          className={`w-1.5 h-1.5 rounded-full shrink-0 ${ConnStateLabel[item.state]?.dotColor ?? 'bg-status-idle'}`}
+                          className={`w-2 h-2 rounded-full shrink-0 ${ConnStateLabel[item.state]?.dotColor ?? 'bg-status-idle'}`}
                         />
                         <span className="font-mono break-words">{item.name}</span>
-                        <span className="ml-auto shrink-0 text-[9px] px-1 py-0.5 rounded bg-muted text-muted-foreground font-mono">
+                        <span className="ml-auto shrink-0 text-xs px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono">
                           {item.type}
                         </span>
                       </div>
                       {item.conn && (
-                        <div className="pl-4 text-muted-foreground/50 font-mono break-all">
+                        <div className="pl-4 text-muted-foreground/60 font-mono break-all text-xs">
                           {item.conn}
                         </div>
                       )}
                       {item.detail && (
-                        <div className="pl-4 text-muted-foreground/60">{item.detail}</div>
+                        <div className="pl-4 text-muted-foreground/70 text-xs">{item.detail}</div>
                       )}
                     </div>
                   ))}
@@ -374,14 +374,14 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
 
           {/* Summary line: tags · errors */}
           {stats && !probeError && (
-            <div className="flex items-center gap-2 text-[10px] text-muted-foreground pt-0.5">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground pt-1">
               {stats.tag_count !== undefined && (
                 <span>{t('instanceCard.points', { count: stats.tag_count })}</span>
               )}
               {stats.tag_count !== undefined && <span>·</span>}
               {stats.total_errors > 0 ? (
                 <span className="text-status-error flex items-center gap-0.5">
-                  <AlertTriangle className="w-2.5 h-2.5" />
+                  <AlertTriangle className="w-3 h-3" />
                   {t('instanceCard.errors', { count: stats.total_errors })}
                 </span>
               ) : (
@@ -392,18 +392,18 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
 
           {/* Last connected */}
           {instance.lastConnectedAt && !probeError && !stats && (
-            <div className="text-[11px] text-muted-foreground/70">
+            <div className="text-xs text-muted-foreground/70">
               {formatRelativeTime(instance.lastConnectedAt)}
             </div>
           )}
 
           {/* User tags */}
           {instance.tags && instance.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1 pt-1">
+            <div className="flex flex-wrap gap-1.5 pt-1">
               {instance.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary"
+                  className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium"
                 >
                   {tag}
                 </span>

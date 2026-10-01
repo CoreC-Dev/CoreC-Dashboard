@@ -168,7 +168,7 @@ export const Wizard: React.FC<WizardProps> = ({
               >
                 <span
                   className={cn(
-                    'flex h-4 w-4 items-center justify-center rounded-full text-[10px] border',
+                    'flex h-4 w-4 items-center justify-center rounded-full text-xs border',
                     active && 'border-primary text-primary',
                     done && !active && 'border-status-running/40 text-status-running',
                     !done && !active && 'border-muted-foreground/30',

@@ -98,17 +98,17 @@ const HistTile: React.FC<{
   const na = t('diagnostics.notAvailable')
   return (
     <div className="p-3 rounded-lg bg-muted/40 border border-border">
-      <div className="text-[10px] text-muted-foreground uppercase font-semibold">{label}</div>
+      <div className="text-xs text-muted-foreground uppercase font-semibold">{label}</div>
       <div className={`text-xl font-bold font-mono mt-1 ${accent}`}>{fmtSec(avg, na)}</div>
-      <div className="text-[10px] text-muted-foreground mt-1 font-mono">
+      <div className="text-xs text-muted-foreground mt-1 font-mono">
         {t('diagnostics.p50')}={fmtSec(p50, na)} · {t('diagnostics.p95')}={fmtSec(p95, na)} ·{' '}
         {t('diagnostics.p99')}={fmtSec(p99, na)}
       </div>
-      <div className="text-[10px] text-muted-foreground mt-1 font-mono">
+      <div className="text-xs text-muted-foreground mt-1 font-mono">
         n={fmtNum(count, na)} · Σ={fmtSec(sum, na)}
       </div>
       <HistogramBars buckets={buckets} barClass={barClass} />
-      <div className="text-[9px] text-muted-foreground/70 mt-0.5 font-mono truncate">{metric}</div>
+      <div className="text-xs text-muted-foreground/70 mt-0.5 font-mono truncate">{metric}</div>
     </div>
   )
 }
@@ -258,13 +258,13 @@ export const DiagnosticsPage: React.FC = () => {
         <CardContent className="p-4 pt-0">
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
             <div className="p-3 rounded-lg bg-muted/40 border border-border text-center">
-              <div className="text-[10px] text-muted-foreground uppercase font-semibold">
+              <div className="text-xs text-muted-foreground uppercase font-semibold">
                 {t('diagnostics.goroutines')}
               </div>
               <div className="text-xl font-bold font-mono text-primary mt-1">{goroutines}</div>
             </div>
             <div className="p-3 rounded-lg bg-muted/40 border border-border text-center">
-              <div className="text-[10px] text-muted-foreground uppercase font-semibold">
+              <div className="text-xs text-muted-foreground uppercase font-semibold">
                 {t('diagnostics.heapAllocated')}
               </div>
               <div className="text-xl font-bold font-mono text-primary mt-1">
@@ -272,13 +272,13 @@ export const DiagnosticsPage: React.FC = () => {
               </div>
             </div>
             <div className="p-3 rounded-lg bg-muted/40 border border-border text-center">
-              <div className="text-[10px] text-muted-foreground uppercase font-semibold">
+              <div className="text-xs text-muted-foreground uppercase font-semibold">
                 {t('diagnostics.gcCycles')}
               </div>
               <div className="text-xl font-bold font-mono text-primary mt-1">{gcCount}</div>
             </div>
             <div className="p-3 rounded-lg bg-muted/40 border border-border text-center">
-              <div className="text-[10px] text-muted-foreground uppercase font-semibold">
+              <div className="text-xs text-muted-foreground uppercase font-semibold">
                 {t('diagnostics.offlineBuffer')}
               </div>
               <div className="text-xl font-bold font-mono text-status-running mt-1">
@@ -286,7 +286,7 @@ export const DiagnosticsPage: React.FC = () => {
               </div>
             </div>
             <div className="p-3 rounded-lg bg-muted/40 border border-border text-center">
-              <div className="text-[10px] text-muted-foreground uppercase font-semibold">
+              <div className="text-xs text-muted-foreground uppercase font-semibold">
                 {t('diagnostics.busDropped')}
               </div>
               <div className="text-xl font-bold font-mono text-status-error mt-1">
@@ -345,16 +345,16 @@ export const DiagnosticsPage: React.FC = () => {
               barClass="bg-status-queued"
             />
             <div className="p-3 rounded-lg bg-muted/40 border border-border">
-              <div className="text-[10px] text-muted-foreground uppercase font-semibold">
+              <div className="text-xs text-muted-foreground uppercase font-semibold">
                 {t('diagnostics.dataAge')}
               </div>
               <div className="text-xl font-bold font-mono text-status-warning mt-1">
                 {fmtSec(dataAge, t('diagnostics.notAvailable'))}
               </div>
-              <div className="text-[10px] text-muted-foreground mt-1 font-mono">
+              <div className="text-xs text-muted-foreground mt-1 font-mono">
                 {t('diagnostics.currentMaxAge')}
               </div>
-              <div className="text-[9px] text-muted-foreground/70 mt-0.5 font-mono truncate">
+              <div className="text-xs text-muted-foreground/70 mt-0.5 font-mono truncate">
                 corec_data_age_seconds
               </div>
             </div>
@@ -375,7 +375,7 @@ export const DiagnosticsPage: React.FC = () => {
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-left">
-              <thead className="bg-muted/50 border-b border-border uppercase font-semibold text-[10px] text-muted-foreground tracking-wider">
+              <thead className="bg-muted/50 border-b border-border uppercase font-semibold text-xs text-muted-foreground tracking-wider">
                 <tr>
                   <th className="px-4 py-2">{t('common.driver')}</th>
                   <th className="px-4 py-2">{t('common.type')}</th>
@@ -426,7 +426,7 @@ export const DiagnosticsPage: React.FC = () => {
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-left">
-              <thead className="bg-muted/50 border-b border-border uppercase font-semibold text-[10px] text-muted-foreground tracking-wider">
+              <thead className="bg-muted/50 border-b border-border uppercase font-semibold text-xs text-muted-foreground tracking-wider">
                 <tr>
                   <th className="px-4 py-2">{t('transports.colTransport')}</th>
                   <th className="px-4 py-2">{t('common.type')}</th>
@@ -499,9 +499,7 @@ export const DiagnosticsPage: React.FC = () => {
               )
             })}
           </div>
-          <p className="text-[10px] text-muted-foreground mt-3">
-            {t('diagnostics.pprofFetchNote')}
-          </p>
+          <p className="text-xs text-muted-foreground mt-3">{t('diagnostics.pprofFetchNote')}</p>
         </CardContent>
       </Card>
     </div>

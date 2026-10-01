@@ -201,7 +201,7 @@ export const AppShell: React.FC = () => {
   const renderGroupLabel = (label: string) => {
     if (eff) return null
     return (
-      <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70 px-2.5 pt-1 pb-0.5">
+      <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70 px-2.5 pt-2 pb-1">
         {label}
       </span>
     )
@@ -457,14 +457,14 @@ export const AppShell: React.FC = () => {
       {/* ===== Main content area ===== */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden h-full">
         {/* Topbar — back button (left) + realtime indicator (right) on the same row */}
-        <header className="flex items-center justify-between px-3 py-2.5 md:px-5 md:py-3 shrink-0">
-          <div className="flex items-center gap-2">
+        <header className="flex items-center justify-between px-4 py-3 md:px-6 md:py-4 shrink-0">
+          <div className="flex items-center gap-2.5">
             {/* Hamburger (mobile only) */}
             {isMobile && (
               <button
                 type="button"
                 onClick={() => setMobileOpen(true)}
-                className="flex items-center justify-center w-9 h-9 rounded-lg bg-card border border-border shadow-sm text-muted-foreground hover:text-foreground hover:shadow-md transition-all duration-200 shrink-0"
+                className="flex items-center justify-center w-10 h-10 rounded-xl bg-card border border-border shadow-sm text-muted-foreground hover:text-foreground hover:shadow-md transition-all duration-200 shrink-0"
                 aria-label={t('aria.openMenu')}
               >
                 <Menu className="w-5 h-5" />
@@ -475,19 +475,19 @@ export const AppShell: React.FC = () => {
             <button
               type="button"
               onClick={() => navigate('/')}
-              className="flex items-center justify-center w-9 h-9 md:w-8 md:h-8 rounded-full bg-card border border-border shadow-sm text-muted-foreground hover:text-foreground hover:shadow-md transition-all duration-200 shrink-0"
+              className="flex items-center justify-center w-10 h-10 rounded-xl bg-card border border-border shadow-sm text-muted-foreground hover:text-foreground hover:shadow-md hover:-translate-x-0.5 transition-all duration-200 shrink-0"
               aria-label={t('instances.backHome')}
             >
-              <ArrowLeft className="w-4 h-4" />
+              <ArrowLeft className="w-5 h-5" />
             </button>
           </div>
 
           {/* Real-time stream indicator — same row as back button, right side */}
           {isMonitor && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-card border border-border shadow-sm">
+            <div className="flex items-center gap-2 px-3.5 py-2 rounded-full bg-card border border-border shadow-sm">
               <span
                 className={cn(
-                  'w-2 h-2 rounded-full shrink-0',
+                  'w-2.5 h-2.5 rounded-full shrink-0',
                   isConnecting
                     ? 'bg-status-warning'
                     : isConnected
@@ -497,7 +497,7 @@ export const AppShell: React.FC = () => {
               />
               <span
                 className={cn(
-                  'text-xs font-semibold',
+                  'text-sm font-semibold',
                   isConnecting
                     ? 'text-status-warning'
                     : isConnected
@@ -517,7 +517,7 @@ export const AppShell: React.FC = () => {
 
         {/* Content — centered with max-width + page transition */}
         <main className="flex-1 overflow-y-auto">
-          <div className="w-full max-w-[1400px] mx-auto px-4 pb-4 md:px-8 md:pb-6">
+          <div className="w-full max-w-[1400px] mx-auto px-5 pb-5 md:px-8 md:pb-8">
             <div key={location.pathname} className="page-enter">
               <Outlet />
             </div>
@@ -525,13 +525,13 @@ export const AppShell: React.FC = () => {
         </main>
 
         {/* Footer — pinned to the bottom, does not scroll with content */}
-        <footer className="shrink-0 py-2.5 border-t border-border flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
+        <footer className="shrink-0 py-3 border-t border-border flex items-center justify-center gap-2 text-sm text-muted-foreground">
           <span>{t('common.footerText')}</span>
           <a
             href="https://github.com/CoreC-Dev/CoreC-Dashboard"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-primary hover:underline font-medium"
+            className="text-primary hover:underline font-medium transition-colors"
           >
             GitHub
           </a>

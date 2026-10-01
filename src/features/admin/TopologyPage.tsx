@@ -88,7 +88,7 @@ export const TopologyPage: React.FC = () => {
         <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
           {/* Southbound Layer */}
           <div className="flex-1 w-full space-y-3">
-            <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center space-x-1.5">
+            <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center space-x-1.5">
               <Cpu className="w-3.5 h-3.5 text-primary" />
               <span>{t('topology.southboundDevices', { count: drivers.length })}</span>
             </div>
@@ -111,21 +111,21 @@ export const TopologyPage: React.FC = () => {
                         <span className={`w-2 h-2 rounded-full shrink-0 ${st.dotColor}`} />
                         <div className="min-w-0">
                           <div className="font-semibold text-foreground truncate">{d.name}</div>
-                          <div className="text-[10px] text-muted-foreground font-mono truncate">
+                          <div className="text-xs text-muted-foreground font-mono truncate">
                             {d.type}
                           </div>
                           {connSummary && (
-                            <div className="text-[10px] text-muted-foreground/70 font-mono truncate">
+                            <div className="text-xs text-muted-foreground/70 font-mono truncate">
                               {connSummary}
                             </div>
                           )}
                         </div>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
-                        <Badge variant="outline" className="text-[10px]">
+                        <Badge variant="outline" className="text-xs">
                           {t('topology.tagsCount', { count: d.tag_count })}
                         </Badge>
-                        <Badge variant="outline" className={`text-[10px] ${st.badgeColor}`}>
+                        <Badge variant="outline" className={`text-xs ${st.badgeColor}`}>
                           {t(st.key)}
                         </Badge>
                       </div>
@@ -147,10 +147,10 @@ export const TopologyPage: React.FC = () => {
             <div className="text-xs text-primary font-mono font-medium mt-0.5">
               {t('topology.status')}: {stats?.status || '—'}
             </div>
-            <div className="text-[10px] text-muted-foreground mt-1">
+            <div className="text-xs text-muted-foreground mt-1">
               {t('topology.uptime')}: {formatUptime(stats?.uptime || 0)}
             </div>
-            <div className="text-[10px] text-muted-foreground mt-2 border-t border-border pt-2 w-full space-y-1">
+            <div className="text-xs text-muted-foreground mt-2 border-t border-border pt-2 w-full space-y-1">
               <div>
                 {t('topology.throughput')}: {stats?.points_per_sec?.toFixed(1) || '0.0'}{' '}
                 {t('topology.throughputUnit')}
@@ -165,7 +165,7 @@ export const TopologyPage: React.FC = () => {
 
           {/* Northbound Layer */}
           <div className="flex-1 w-full space-y-3">
-            <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center space-x-1.5">
+            <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center space-x-1.5">
               <Send className="w-3.5 h-3.5 text-primary" />
               <span>{t('topology.northboundSinks', { count: transports.length })}</span>
             </div>
@@ -193,18 +193,18 @@ export const TopologyPage: React.FC = () => {
                             <div className="font-semibold text-foreground truncate">
                               {transport.name}
                             </div>
-                            <div className="text-[10px] text-muted-foreground font-mono truncate">
+                            <div className="text-xs text-muted-foreground font-mono truncate">
                               {transport.type}
                             </div>
                           </div>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
-                          <Badge variant="outline" className="text-[10px]">
+                          <Badge variant="outline" className="text-xs">
                             {t('topology.publishedSent', {
                               count: formatNumber(transport.published),
                             })}
                           </Badge>
-                          <Badge variant="outline" className={`text-[10px] ${st.badgeColor}`}>
+                          <Badge variant="outline" className={`text-xs ${st.badgeColor}`}>
                             {t(st.key)}
                           </Badge>
                         </div>
@@ -215,10 +215,10 @@ export const TopologyPage: React.FC = () => {
                         transport.queue_size ||
                         transport.dropped_commands) && (
                         <div className="mt-1.5 flex items-center justify-between gap-2 pl-4">
-                          <div className="text-[10px] text-muted-foreground/70 font-mono truncate min-w-0">
+                          <div className="text-xs text-muted-foreground/70 font-mono truncate min-w-0">
                             {connSummary}
                           </div>
-                          <div className="text-[10px] text-muted-foreground font-mono shrink-0 flex items-center gap-2">
+                          <div className="text-xs text-muted-foreground font-mono shrink-0 flex items-center gap-2">
                             <span>
                               {t('topology.received', { defaultValue: 'rcv' })}:
                               {formatNumber(transport.received)}
@@ -250,7 +250,7 @@ export const TopologyPage: React.FC = () => {
       {/* Rule Pipeline */}
       {rules.length > 0 && (
         <Card className="border-border bg-card p-4">
-          <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center space-x-1.5 mb-3">
+          <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center space-x-1.5 mb-3">
             <GitBranch className="w-3.5 h-3.5 text-status-warning" />
             <span>
               {t('topology.rulePipelineActive', {
@@ -269,20 +269,18 @@ export const TopologyPage: React.FC = () => {
                     : 'border-status-warning/30 bg-status-warning/5'
                 }`}
               >
-                <span className="font-mono text-[10px] text-muted-foreground">
-                  #{rule.priority}
-                </span>
+                <span className="font-mono text-xs text-muted-foreground">#{rule.priority}</span>
                 <span className="font-semibold text-foreground">{rule.name}</span>
-                <Badge variant="outline" className="text-[9px]">
+                <Badge variant="outline" className="text-xs">
                   {rule.action}
                 </Badge>
                 {rule.disabled && (
-                  <Badge variant="outline" className="text-[9px] text-muted-foreground">
+                  <Badge variant="outline" className="text-xs text-muted-foreground">
                     {t('topology.off')}
                   </Badge>
                 )}
                 {(rule.hit_count > 0 || rule.miss_count > 0) && (
-                  <span className="text-[9px] text-muted-foreground font-mono">
+                  <span className="text-xs text-muted-foreground font-mono">
                     {rule.hit_count}↑/{rule.miss_count}↓
                   </span>
                 )}

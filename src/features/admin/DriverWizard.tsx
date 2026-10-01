@@ -287,7 +287,7 @@ export const DriverWizard: React.FC<DriverWizardProps> = ({
                     <span className="text-primary">{meta.icon}</span>
                     <span className="text-sm font-medium">{meta.label}</span>
                   </div>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">{meta.description}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{meta.description}</p>
                 </div>
               </label>
             ))}
@@ -332,7 +332,7 @@ export const DriverWizard: React.FC<DriverWizardProps> = ({
                       {t(group.label)}
                     </span>
                     {group.advanced && (
-                      <span className="text-[10px] text-muted-foreground/60">
+                      <span className="text-xs text-muted-foreground/60">
                         ({t('wizard.optional')})
                       </span>
                     )}
@@ -418,7 +418,7 @@ export const DriverWizard: React.FC<DriverWizardProps> = ({
       onCancel={() => onOpenChange(false)}
       dialogTitle={isEdit ? t('driverWizard.editTitle') : t('driverWizard.createTitle')}
       previewNode={
-        <pre className="text-[11px] font-mono whitespace-pre-wrap text-muted-foreground">
+        <pre className="text-xs font-mono whitespace-pre-wrap text-muted-foreground">
           {previewYaml}
         </pre>
       }
@@ -467,7 +467,7 @@ const TagListEditor: React.FC<{
         </div>
       ) : (
         <div className="rounded-md border overflow-hidden">
-          <div className="grid grid-cols-[1fr_1fr_100px_1fr_90px_36px] gap-2 bg-muted/60 border-b px-3 py-1.5 text-[10px] uppercase font-semibold text-muted-foreground">
+          <div className="grid grid-cols-[1fr_1fr_100px_1fr_90px_36px] gap-2 bg-muted/60 border-b px-3 py-1.5 text-xs uppercase font-semibold text-muted-foreground">
             <span>{t('common.name')} *</span>
             <span>{t('wizard.address')} *</span>
             <span>{t('wizard.type')} *</span>

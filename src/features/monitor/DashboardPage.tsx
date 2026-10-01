@@ -76,9 +76,9 @@ export const DashboardPage: React.FC = () => {
   // Loading skeleton — shown while the initial stats fetch is in flight.
   if (statsLoading) {
     return (
-      <div className="flex items-center justify-center py-20 text-muted-foreground">
-        <Loader2 className="w-5 h-5 animate-spin mr-2" />
-        <span className="text-sm">{t('common.loading')}</span>
+      <div className="flex items-center justify-center py-24 text-muted-foreground">
+        <Loader2 className="w-6 h-6 animate-spin mr-3" />
+        <span className="text-base">{t('common.loading')}</span>
       </div>
     )
   }
@@ -88,9 +88,9 @@ export const DashboardPage: React.FC = () => {
   // KPI row needs a visible error indicator.
   if (statsError) {
     return (
-      <div className="flex items-center justify-center py-20 text-status-error">
-        <AlertCircle className="w-5 h-5 mr-2" />
-        <span className="text-sm">
+      <div className="flex items-center justify-center py-24 text-status-error">
+        <AlertCircle className="w-6 h-6 mr-3" />
+        <span className="text-base">
           {t('dashboard.loadFailed', { defaultValue: 'Failed to load dashboard data' })}
         </span>
       </div>
@@ -98,11 +98,11 @@ export const DashboardPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {/* Greeting */}
       <div className="pt-1">
         <h1 className="text-2xl font-bold tracking-tight">{t('nav.dashboard')}</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">
+        <p className="text-sm text-muted-foreground mt-1">
           {t('dashboard.realtimeMonitor', { defaultValue: 'Real-time monitoring & control' })}
         </p>
       </div>
@@ -110,98 +110,94 @@ export const DashboardPage: React.FC = () => {
       {/* Row 1 — KPI indicators */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 card-stagger">
         {/* Engine Status */}
-        <div className="rounded-lg border border-border bg-card p-2.5 card-hover card-enter">
-          <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1">
+        <div className="rounded-lg border border-border bg-card p-3 card-hover card-enter">
+          <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
             <span>{t('dashboard.engineStatus')}</span>
-            <Activity className="w-3 h-3 text-primary" />
+            <Activity className="w-3.5 h-3.5 text-primary" />
           </div>
-          <div className="flex items-center space-x-1.5">
-            <span className={`w-2 h-2 rounded-full ${statusDotClass}`} />
-            <span className="text-sm font-bold capitalize">
+          <div className="flex items-center space-x-2">
+            <span className={`w-2.5 h-2.5 rounded-full ${statusDotClass}`} />
+            <span className="text-base font-bold capitalize">
               {stats?.status || t('common.running')}
             </span>
           </div>
-          <div className="text-[9px] text-muted-foreground mt-0.5 flex items-center space-x-1">
-            <Clock className="w-2.5 h-2.5" />
+          <div className="text-xs text-muted-foreground mt-1 flex items-center space-x-1">
+            <Clock className="w-3 h-3" />
             <span>{formatUptime(stats?.uptime || 0)}</span>
           </div>
         </div>
         {/* Sample Rate */}
-        <div className="rounded-lg border border-border bg-card p-2.5 card-hover card-enter">
-          <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1">
+        <div className="rounded-lg border border-border bg-card p-3 card-hover card-enter">
+          <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
             <span>{t('dashboard.sampleRate')}</span>
-            <TrendingUp className="w-3 h-3 text-status-running" />
+            <TrendingUp className="w-3.5 h-3.5 text-status-running" />
           </div>
-          <div className="text-base font-bold font-mono">
+          <div className="text-lg font-bold font-mono tnum">
             <CountUpNumber
               value={stats?.points_per_sec ?? 0}
               duration={600}
               format={(n) => n.toFixed(1)}
             />
           </div>
-          <div className="text-[9px] text-muted-foreground">
+          <div className="text-xs text-muted-foreground mt-0.5">
             {t('dashboard.pointsPerSecond', { defaultValue: 'points / second' })}
           </div>
         </div>
         {/* Drivers */}
-        <div className="rounded-lg border border-border bg-card p-2.5 card-hover card-enter">
-          <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1">
+        <div className="rounded-lg border border-border bg-card p-3 card-hover card-enter">
+          <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
             <span>{t('dashboard.drivers')}</span>
-            <Cpu className="w-3 h-3 text-status-queued" />
+            <Cpu className="w-3.5 h-3.5 text-status-queued" />
           </div>
-          <div className="text-base font-bold font-mono">
+          <div className="text-lg font-bold font-mono tnum">
             <CountUpNumber value={connectedDrivers} duration={600} />{' '}
-            <span className="text-[10px] text-muted-foreground font-normal">
-              / {drivers.length}
-            </span>
+            <span className="text-xs text-muted-foreground font-normal">/ {drivers.length}</span>
           </div>
-          <div className="text-[9px] text-status-running">
+          <div className="text-xs text-status-running mt-0.5">
             {drivers.length === 0
               ? t('dashboard.notAvailable', { defaultValue: 'N/A' })
               : `${Math.round((connectedDrivers / drivers.length) * 100)}%${t('dashboard.onlineSuffix')}`}
           </div>
         </div>
         {/* Transports */}
-        <div className="rounded-lg border border-border bg-card p-2.5 card-hover card-enter">
-          <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1">
+        <div className="rounded-lg border border-border bg-card p-3 card-hover card-enter">
+          <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
             <span>{t('dashboard.sinks')}</span>
-            <Send className="w-3 h-3 text-primary" />
+            <Send className="w-3.5 h-3.5 text-primary" />
           </div>
-          <div className="text-base font-bold font-mono">
+          <div className="text-lg font-bold font-mono tnum">
             <CountUpNumber value={connectedTransports} duration={600} />{' '}
-            <span className="text-[10px] text-muted-foreground font-normal">
-              / {transports.length}
-            </span>
+            <span className="text-xs text-muted-foreground font-normal">/ {transports.length}</span>
           </div>
-          <div className="text-[9px] text-status-running">
+          <div className="text-xs text-status-running mt-0.5">
             {transports.length === 0
               ? t('dashboard.notAvailable', { defaultValue: 'N/A' })
               : `${Math.round((connectedTransports / transports.length) * 100)}% ${t('dashboard.connected')}`}
           </div>
         </div>
         {/* Total Read */}
-        <div className="rounded-lg border border-border bg-card p-2.5 card-hover card-enter">
-          <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1">
+        <div className="rounded-lg border border-border bg-card p-3 card-hover card-enter">
+          <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
             <span>{t('dashboard.totalRead')}</span>
-            <Database className="w-3 h-3 text-status-warning" />
+            <Database className="w-3.5 h-3.5 text-status-warning" />
           </div>
-          <div className="text-base font-bold font-mono">
+          <div className="text-lg font-bold font-mono tnum">
             <CountUpNumber value={stats?.total_read ?? 0} duration={800} format={formatNumber} />
           </div>
-          <div className="text-[9px] text-muted-foreground">
+          <div className="text-xs text-muted-foreground mt-0.5">
             {t('dashboard.pub', { defaultValue: 'Pub' })}: {formatNumber(stats?.total_publish || 0)}
           </div>
         </div>
         {/* Dropped */}
-        <div className="rounded-lg border border-border bg-card p-2.5 card-hover card-enter">
-          <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1">
+        <div className="rounded-lg border border-border bg-card p-3 card-hover card-enter">
+          <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
             <span>{t('dashboard.dropped')}</span>
-            <TrendingDown className="w-3 h-3 text-status-error" />
+            <TrendingDown className="w-3.5 h-3.5 text-status-error" />
           </div>
-          <div className="text-base font-bold font-mono text-status-error">
+          <div className="text-lg font-bold font-mono tnum text-status-error">
             <CountUpNumber value={stats?.total_dropped ?? 0} duration={800} format={formatNumber} />
           </div>
-          <div className="text-[9px] text-muted-foreground">
+          <div className="text-xs text-muted-foreground mt-0.5">
             {t('dashboard.errors', { defaultValue: 'Errors' })}: {stats?.total_errors || 0}
           </div>
         </div>
@@ -210,18 +206,18 @@ export const DashboardPage: React.FC = () => {
       {/* Row 2 — Real-time charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 card-stagger">
         <Card className="border-border bg-card card-enter">
-          <CardHeader className="p-3 pb-1">
-            <CardTitle className="text-xs font-semibold">{t('dashboard.trafficChart')}</CardTitle>
+          <CardHeader className="p-4 pb-2">
+            <CardTitle className="text-sm font-semibold">{t('dashboard.trafficChart')}</CardTitle>
           </CardHeader>
-          <CardContent className="p-3 pt-0">
+          <CardContent className="p-4 pt-0">
             <TrafficChart />
           </CardContent>
         </Card>
         <Card className="border-border bg-card card-enter">
-          <CardHeader className="p-3 pb-1">
-            <CardTitle className="text-xs font-semibold">{t('dashboard.memoryChart')}</CardTitle>
+          <CardHeader className="p-4 pb-2">
+            <CardTitle className="text-sm font-semibold">{t('dashboard.memoryChart')}</CardTitle>
           </CardHeader>
-          <CardContent className="p-3 pt-0">
+          <CardContent className="p-4 pt-0">
             <MemoryChart />
           </CardContent>
         </Card>
@@ -229,36 +225,36 @@ export const DashboardPage: React.FC = () => {
 
       {/* Row 3 — Driver matrix */}
       <Card className="border-border bg-card">
-        <CardHeader className="p-3 pb-1 flex flex-row items-center justify-between">
-          <CardTitle className="text-xs font-semibold">{t('dashboard.driverList')}</CardTitle>
+        <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between">
+          <CardTitle className="text-sm font-semibold">{t('dashboard.driverList')}</CardTitle>
           <Link
             to={`${adminBase}/drivers`}
-            className="text-[10px] text-primary hover:underline flex items-center space-x-0.5"
+            className="text-xs text-primary hover:underline flex items-center space-x-0.5"
           >
             <span>{t('dashboard.manage', { defaultValue: 'Manage' })}</span>
-            <ArrowUpRight className="w-3 h-3" />
+            <ArrowUpRight className="w-3.5 h-3.5" />
           </Link>
         </CardHeader>
-        <CardContent className="p-3 pt-0">
+        <CardContent className="p-4 pt-0">
           {drivers.length === 0 ? (
-            <div className="text-xs text-muted-foreground py-4 text-center">
+            <div className="text-sm text-muted-foreground py-6 text-center">
               {t('dashboard.noDrivers', { defaultValue: 'No drivers configured' })}
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5">
               {drivers.map((drv) => {
                 const st = ConnStateLabel[drv.state] || ConnStateLabel[0]
                 return (
                   <div
                     key={drv.name}
-                    className="p-2 rounded-lg border border-border bg-card text-xs"
+                    className="p-2.5 rounded-lg border border-border bg-card text-sm"
                   >
-                    <div className="flex items-center space-x-1.5 mb-1">
-                      <span className={`w-1.5 h-1.5 rounded-full ${st.dotColor}`} />
+                    <div className="flex items-center space-x-2 mb-1.5">
+                      <span className={`w-2 h-2 rounded-full ${st.dotColor}`} />
                       <span className="font-semibold truncate">{drv.name}</span>
                     </div>
-                    <div className="text-[10px] text-muted-foreground font-mono">{drv.type}</div>
-                    <div className="flex items-center justify-between mt-1 text-[10px]">
+                    <div className="text-xs text-muted-foreground font-mono">{drv.type}</div>
+                    <div className="flex items-center justify-between mt-1.5 text-xs">
                       <span className="text-muted-foreground">
                         R:{formatNumber(drv.read_count)}
                       </span>
@@ -274,36 +270,36 @@ export const DashboardPage: React.FC = () => {
 
       {/* Row 4 — Transport matrix */}
       <Card className="border-border bg-card">
-        <CardHeader className="p-3 pb-1 flex flex-row items-center justify-between">
-          <CardTitle className="text-xs font-semibold">{t('dashboard.transportList')}</CardTitle>
+        <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between">
+          <CardTitle className="text-sm font-semibold">{t('dashboard.transportList')}</CardTitle>
           <Link
             to={`${adminBase}/transports`}
-            className="text-[10px] text-primary hover:underline flex items-center space-x-0.5"
+            className="text-xs text-primary hover:underline flex items-center space-x-0.5"
           >
             <span>{t('dashboard.manage', { defaultValue: 'Manage' })}</span>
-            <ArrowUpRight className="w-3 h-3" />
+            <ArrowUpRight className="w-3.5 h-3.5" />
           </Link>
         </CardHeader>
-        <CardContent className="p-3 pt-0">
+        <CardContent className="p-4 pt-0">
           {transports.length === 0 ? (
-            <div className="text-xs text-muted-foreground py-4 text-center">
+            <div className="text-sm text-muted-foreground py-6 text-center">
               {t('dashboard.noTransports', { defaultValue: 'No transports configured' })}
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5">
               {transports.map((tr) => {
                 const st = ConnStateLabel[tr.state] || ConnStateLabel[0]
                 return (
                   <div
                     key={tr.name}
-                    className="p-2 rounded-lg border border-border bg-card text-xs"
+                    className="p-2.5 rounded-lg border border-border bg-card text-sm"
                   >
-                    <div className="flex items-center space-x-1.5 mb-1">
-                      <span className={`w-1.5 h-1.5 rounded-full ${st.dotColor}`} />
+                    <div className="flex items-center space-x-2 mb-1.5">
+                      <span className={`w-2 h-2 rounded-full ${st.dotColor}`} />
                       <span className="font-semibold truncate">{tr.name}</span>
                     </div>
-                    <div className="text-[10px] text-muted-foreground font-mono">{tr.type}</div>
-                    <div className="flex items-center justify-between mt-1 text-[10px]">
+                    <div className="text-xs text-muted-foreground font-mono">{tr.type}</div>
+                    <div className="flex items-center justify-between mt-1.5 text-xs">
                       <span className="text-muted-foreground">P:{formatNumber(tr.published)}</span>
                       <span className="text-status-warning">Q:{tr.queue_size}</span>
                     </div>
@@ -317,20 +313,20 @@ export const DashboardPage: React.FC = () => {
 
       {/* Row 5 — Recent alerts / dead letters */}
       <Card className="border-border bg-card">
-        <CardHeader className="p-3 pb-1 flex flex-row items-center justify-between">
-          <CardTitle className="text-xs font-semibold">{t('dashboard.recentAlerts')}</CardTitle>
+        <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between">
+          <CardTitle className="text-sm font-semibold">{t('dashboard.recentAlerts')}</CardTitle>
           <Link
             to={alertsLink}
-            className="text-[10px] text-primary hover:underline flex items-center space-x-0.5"
+            className="text-xs text-primary hover:underline flex items-center space-x-0.5"
           >
             <span>{t('dashboard.manage', { defaultValue: 'View All' })}</span>
-            <ArrowUpRight className="w-3 h-3" />
+            <ArrowUpRight className="w-3.5 h-3.5" />
           </Link>
         </CardHeader>
-        <CardContent className="p-3 pt-0">
+        <CardContent className="p-4 pt-0">
           {deadLetters.length === 0 ? (
-            <div className="py-4 text-center text-xs text-muted-foreground flex flex-col items-center space-y-1">
-              <ShieldCheck className="w-5 h-5 text-status-running mb-1" />
+            <div className="py-6 text-center text-sm text-muted-foreground flex flex-col items-center space-y-2">
+              <ShieldCheck className="w-6 h-6 text-status-running" />
               <span>
                 {t('dashboard.allHealthy', {
                   defaultValue: 'All systems healthy. No dead letter write failures.',
@@ -342,22 +338,22 @@ export const DashboardPage: React.FC = () => {
               {deadLetters.slice(0, 8).map((item) => (
                 <div
                   key={`${item.command.driver}-${item.command.tag}-${item.failed_at}-${item.attempts}`}
-                  className="p-2.5 rounded-lg border border-status-error/20 bg-status-error/5 flex items-center justify-between text-xs"
+                  className="p-3 rounded-lg border border-status-error/20 bg-status-error/5 flex items-center justify-between text-sm"
                 >
-                  <div className="space-y-0.5 min-w-0">
+                  <div className="space-y-1 min-w-0">
                     <div className="font-mono font-semibold text-status-error truncate">
                       [{item.command.driver}] {item.command.tag} = {String(item.command.value)}
                     </div>
-                    <div className="text-[10px] text-muted-foreground truncate">{item.error}</div>
+                    <div className="text-xs text-muted-foreground truncate">{item.error}</div>
                   </div>
-                  <div className="text-right shrink-0 ml-2">
+                  <div className="text-right shrink-0 ml-3">
                     <Badge
                       variant="outline"
-                      className="border-status-error/30 text-status-error text-[9px]"
+                      className="border-status-error/30 text-status-error text-xs"
                     >
                       {t('dashboard.retries', { count: item.attempts })}
                     </Badge>
-                    <div className="text-[9px] text-muted-foreground mt-0.5">
+                    <div className="text-xs text-muted-foreground mt-1">
                       {new Date(item.failed_at).toLocaleTimeString()}
                     </div>
                   </div>

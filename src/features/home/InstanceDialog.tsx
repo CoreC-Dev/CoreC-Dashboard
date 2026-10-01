@@ -1,5 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect } from 'react'
+import { Eye, EyeOff } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
@@ -73,6 +74,7 @@ export const InstanceDialog: React.FC<InstanceDialogProps> = ({
 }) => {
   const { t } = useTranslation()
   const isEdit = !!instance
+  const [showSecret, setShowSecret] = useState(false)
 
   const form = useForm<InstanceFormData>({
     resolver: zodResolver(instanceSchema(t)),
@@ -161,7 +163,22 @@ export const InstanceDialog: React.FC<InstanceDialogProps> = ({
                 <FormItem>
                   <FormLabel>{t('instances.secretToken')}</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="********" {...field} />
+                    <div className="relative">
+                      <Input
+                        type={showSecret ? 'text' : 'password'}
+                        placeholder="********"
+                        className="pr-10"
+                        {...field}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowSecret((s) => !s)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        aria-label={showSecret ? t('common.hide') : t('common.show')}
+                      >
+                        {showSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -181,7 +198,9 @@ export const InstanceDialog: React.FC<InstanceDialogProps> = ({
                           key={c.value}
                           type="button"
                           onClick={() => field.onChange(c.value)}
-                          className={`w-7 h-7 rounded-full border-2 transition-all ${
+                          aria-pressed={field.value === c.value}
+                          aria-label={c.label}
+                          className={`w-8 h-8 rounded-full border-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
                             field.value === c.value
                               ? 'border-foreground scale-110'
                               : 'border-transparent hover:scale-105'

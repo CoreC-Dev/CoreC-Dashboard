@@ -336,7 +336,7 @@ export const WriteControlPage: React.FC = () => {
                 />
               </div>
 
-              <div className="p-3 rounded-lg bg-status-warning/10 border border-status-warning/20 text-[11px] text-status-warning">
+              <div className="p-3 rounded-lg bg-status-warning/10 border border-status-warning/20 text-xs text-status-warning">
                 {t('write.confirmWarning')}
               </div>
             </CardContent>
@@ -405,7 +405,7 @@ export const WriteControlPage: React.FC = () => {
             </div>
           )}
 
-          <div className="p-3 rounded-lg bg-status-warning/10 border border-status-warning/20 text-[11px] text-status-warning">
+          <div className="p-3 rounded-lg bg-status-warning/10 border border-status-warning/20 text-xs text-status-warning">
             {t('write.confirmWarning')}
           </div>
 
@@ -499,7 +499,7 @@ export const WriteControlPage: React.FC = () => {
               <AlertCircle className="mx-auto h-8 w-8 text-status-error" />
               <div className="text-sm font-semibold">{t('common.error')}</div>
               {dlqError instanceof Error && dlqError.message && (
-                <div className="mx-auto max-w-md break-all font-mono text-[11px] text-status-error/80">
+                <div className="mx-auto max-w-md break-all font-mono text-xs text-status-error/80">
                   {dlqError.message}
                 </div>
               )}
@@ -531,8 +531,8 @@ export const WriteControlPage: React.FC = () => {
                       [{dl.command.driver}] {t('common.tag')}: {dl.command.tag} ={' '}
                       {String(dl.command.value)} ({dl.command.type})
                     </div>
-                    <div className="text-[11px] text-muted-foreground">{dl.error}</div>
-                    <div className="text-[10px] text-muted-foreground flex items-center space-x-2">
+                    <div className="text-xs text-muted-foreground">{dl.error}</div>
+                    <div className="text-xs text-muted-foreground flex items-center space-x-2">
                       <Clock className="w-3 h-3" />
                       <span>{new Date(dl.failed_at).toLocaleString()}</span>
                       <span>•</span>

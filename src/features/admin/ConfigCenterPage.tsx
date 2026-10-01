@@ -123,13 +123,13 @@ const ComponentList: React.FC<{
   <div className="rounded-lg border border-border bg-muted/30 overflow-hidden">
     <div className="px-3 py-2 border-b border-border bg-muted/40 flex items-center space-x-1.5">
       {icon}
-      <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+      <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
         {title} · {entries.length}
       </span>
     </div>
     <div className="max-h-56 overflow-y-auto divide-y divide-border/40">
       {entries.length === 0 ? (
-        <div className="px-3 py-4 text-[11px] text-muted-foreground">{emptyText}</div>
+        <div className="px-3 py-4 text-xs text-muted-foreground">{emptyText}</div>
       ) : (
         entries.map((e) => (
           <div
@@ -138,18 +138,18 @@ const ComponentList: React.FC<{
           >
             <div className="min-w-0">
               <div className="text-xs font-semibold text-foreground truncate">{e.name}</div>
-              <div className="text-[10px] font-mono text-muted-foreground truncate">
+              <div className="text-xs font-mono text-muted-foreground truncate">
                 {typeLabel}: {e.type}
               </div>
             </div>
             <div className="flex items-center space-x-1.5 shrink-0">
               {e.action && (
-                <Badge variant="outline" className="text-[10px]">
+                <Badge variant="outline" className="text-xs">
                   {e.action}
                 </Badge>
               )}
               {typeof e.priority === 'number' && (
-                <span className="text-[10px] font-mono text-muted-foreground">#{e.priority}</span>
+                <span className="text-xs font-mono text-muted-foreground">#{e.priority}</span>
               )}
             </div>
           </div>
@@ -574,7 +574,7 @@ export const ConfigCenterPage: React.FC = () => {
                 />
                 <div className="absolute right-0 top-full mt-1 z-50 w-80 max-h-96 overflow-y-auto rounded-lg border border-border bg-popover shadow-lg">
                   <div className="p-2 space-y-1">
-                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide px-2 py-1">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-2 py-1">
                       {t('config.templates')}
                     </p>
                     {CONFIG_TEMPLATES.map((tpl) => (
@@ -586,13 +586,11 @@ export const ConfigCenterPage: React.FC = () => {
                       >
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-medium">{tpl.name}</span>
-                          <Badge variant="outline" className="text-[9px] px-1 py-0 shrink-0">
+                          <Badge variant="outline" className="text-xs px-1 py-0 shrink-0">
                             {tpl.category}
                           </Badge>
                         </div>
-                        <p className="text-[10px] text-muted-foreground mt-0.5">
-                          {tpl.description}
-                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{tpl.description}</p>
                       </button>
                     ))}
                   </div>
@@ -683,7 +681,7 @@ export const ConfigCenterPage: React.FC = () => {
                   <div className="text-xs font-semibold text-foreground">
                     {t('config.globalLogLevel')}
                   </div>
-                  <div className="text-[11px] text-muted-foreground">
+                  <div className="text-xs text-muted-foreground">
                     {t('config.globalLogLevelDesc')}
                   </div>
                 </div>
@@ -730,7 +728,7 @@ export const ConfigCenterPage: React.FC = () => {
                   {/* Global + API summary tiles */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <div className="p-3 rounded-lg bg-muted/40 border border-border">
-                      <div className="text-[10px] text-muted-foreground uppercase font-semibold">
+                      <div className="text-xs text-muted-foreground uppercase font-semibold">
                         {t('config.globalLogLevel')}
                       </div>
                       <div className="font-mono text-xs font-bold text-foreground mt-1 uppercase">
@@ -738,7 +736,7 @@ export const ConfigCenterPage: React.FC = () => {
                       </div>
                     </div>
                     <div className="p-3 rounded-lg bg-muted/40 border border-border">
-                      <div className="text-[10px] text-muted-foreground uppercase font-semibold">
+                      <div className="text-xs text-muted-foreground uppercase font-semibold">
                         {t('config.apiListener')}
                       </div>
                       <div className="font-mono text-xs font-bold text-foreground mt-1">
@@ -746,7 +744,7 @@ export const ConfigCenterPage: React.FC = () => {
                       </div>
                     </div>
                     <div className="p-3 rounded-lg bg-muted/40 border border-border">
-                      <div className="text-[10px] text-muted-foreground uppercase font-semibold flex items-center space-x-1">
+                      <div className="text-xs text-muted-foreground uppercase font-semibold flex items-center space-x-1">
                         <KeyRound className="w-3 h-3" />
                         <span>{t('config.apiSecret')}</span>
                       </div>
@@ -763,7 +761,7 @@ export const ConfigCenterPage: React.FC = () => {
                       </div>
                     </div>
                     <div className="p-3 rounded-lg bg-muted/40 border border-border">
-                      <div className="text-[10px] text-muted-foreground uppercase font-semibold">
+                      <div className="text-xs text-muted-foreground uppercase font-semibold">
                         {t('config.components')}
                       </div>
                       <div className="font-mono text-xs font-bold text-foreground mt-1">
@@ -896,7 +894,7 @@ export const ConfigCenterPage: React.FC = () => {
                 <CardContent className="p-4 pt-1">
                   {hasDiffChanges ? (
                     <div className="rounded-lg border border-border overflow-hidden">
-                      <div className="flex items-center space-x-4 px-3 py-1.5 bg-muted/40 border-b border-border text-[10px]">
+                      <div className="flex items-center space-x-4 px-3 py-1.5 bg-muted/40 border-b border-border text-xs">
                         <span className="flex items-center space-x-1.5">
                           <span className="w-2.5 h-2.5 rounded-sm bg-status-running/40" />
                           <span className="text-muted-foreground">{t('config.diffAdded')}</span>
@@ -945,7 +943,7 @@ export const ConfigCenterPage: React.FC = () => {
                 <FileText className="w-3.5 h-3.5 text-primary" />
                 <span>{t('config.corecYaml')}</span>
               </div>
-              <span className="text-[10px] text-muted-foreground">{t('config.envVarNote')}</span>
+              <span className="text-xs text-muted-foreground">{t('config.envVarNote')}</span>
             </CardHeader>
             <div className="h-[480px]">
               <Editor
@@ -994,9 +992,7 @@ export const ConfigCenterPage: React.FC = () => {
                       <div className="text-xs font-mono text-foreground">
                         {new Date(snap.timestamp).toLocaleString()}
                       </div>
-                      <div className="text-[10px] text-muted-foreground truncate">
-                        {snap.action}
-                      </div>
+                      <div className="text-xs text-muted-foreground truncate">{snap.action}</div>
                     </div>
                     <Button
                       size="sm"

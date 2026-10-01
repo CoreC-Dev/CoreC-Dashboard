@@ -451,7 +451,7 @@ export const TransportDetailPage: React.FC = () => {
               {name ? t('transports.notRegistered', { name }) : t('transports.noNameProvided')}
             </div>
             {error instanceof Error && error.message && (
-              <div className="break-all font-mono text-[11px] text-status-error/80">
+              <div className="break-all font-mono text-xs text-status-error/80">
                 {error.message}
               </div>
             )}
@@ -492,10 +492,10 @@ export const TransportDetailPage: React.FC = () => {
             </div>
             <div>
               <CardTitle className="text-lg font-bold">{transport.name}</CardTitle>
-              <CardDescription className="font-mono text-[11px]">{transport.type}</CardDescription>
+              <CardDescription className="font-mono text-xs">{transport.type}</CardDescription>
             </div>
           </div>
-          <Badge variant="outline" className={`text-[10px] ${st.badgeColor}`}>
+          <Badge variant="outline" className={`text-xs ${st.badgeColor}`}>
             <span className={`mr-1.5 h-1.5 w-1.5 rounded-full ${st.dotColor}`} />
             {t(st.key)}
           </Badge>
@@ -541,14 +541,14 @@ export const TransportDetailPage: React.FC = () => {
             {queueActive ? (
               <Badge
                 variant="outline"
-                className="text-[10px] border-status-warning/30 bg-status-warning/10 text-status-warning"
+                className="text-xs border-status-warning/30 bg-status-warning/10 text-status-warning"
               >
                 {t('transports.backpressure')}
               </Badge>
             ) : (
               <Badge
                 variant="outline"
-                className="text-[10px] border-status-running/30 bg-status-running/10 text-status-running"
+                className="text-xs border-status-running/30 bg-status-running/10 text-status-running"
               >
                 {t('transports.drained')}
               </Badge>
@@ -558,7 +558,7 @@ export const TransportDetailPage: React.FC = () => {
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex items-baseline justify-between">
-            <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+            <span className="text-xs uppercase tracking-wide text-muted-foreground">
               {t('transports.queueSize')}
             </span>
             <span
@@ -578,7 +578,7 @@ export const TransportDetailPage: React.FC = () => {
           {queueActive && (
             <div className="flex items-start gap-2 rounded-lg border border-status-warning/20 bg-status-warning/10 p-2.5 text-status-warning">
               <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-              <span className="text-[11px]">
+              <span className="text-xs">
                 {t('transports.commandsQueued', { count: formatNumber(transport.queue_size) })}
               </span>
             </div>
@@ -604,7 +604,7 @@ export const TransportDetailPage: React.FC = () => {
               <span className="font-mono">{transport.type}</span>
             </Param>
             <Param label={t('transports.connectionState')}>
-              <Badge variant="outline" className={`text-[10px] ${st.badgeColor}`}>
+              <Badge variant="outline" className={`text-xs ${st.badgeColor}`}>
                 <span className={`mr-1.5 h-1.5 w-1.5 rounded-full ${st.dotColor}`} />
                 {t(st.key)}
               </Badge>
@@ -663,7 +663,7 @@ export const TransportDetailPage: React.FC = () => {
             <div className="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2">
               {connFields.map((f) => (
                 <div key={f.label} className="min-w-0 space-y-1">
-                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                  <div className="text-xs uppercase tracking-wide text-muted-foreground">
                     {f.label}
                   </div>
                   <div
@@ -703,7 +703,7 @@ export const TransportDetailPage: React.FC = () => {
         {yamlOpen && (
           <CardContent>
             {yamlSnippet.trim() ? (
-              <pre className="max-h-72 overflow-auto rounded-lg border border-border bg-status-idle p-3 font-mono text-[11px] leading-relaxed whitespace-pre-wrap break-all text-status-idle">
+              <pre className="max-h-72 overflow-auto rounded-lg border border-border bg-status-idle p-3 font-mono text-xs leading-relaxed whitespace-pre-wrap break-all text-status-idle">
                 {yamlSnippet}
               </pre>
             ) : (

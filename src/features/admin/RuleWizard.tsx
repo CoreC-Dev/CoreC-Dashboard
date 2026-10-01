@@ -280,13 +280,13 @@ export const RuleWizard: React.FC<RuleWizardProps> = ({
                   key={tpl.value}
                   type="button"
                   onClick={() => setMatch(tpl.value)}
-                  className="text-[10px] px-2 py-0.5 rounded border border-border hover:bg-accent font-mono text-muted-foreground hover:text-foreground transition-colors"
+                  className="text-xs px-2 py-0.5 rounded border border-border hover:bg-accent font-mono text-muted-foreground hover:text-foreground transition-colors"
                 >
                   {tpl.label}
                 </button>
               ))}
             </div>
-            <p className="text-[10px] text-muted-foreground">{t('ruleWizard.matchHelp')}</p>
+            <p className="text-xs text-muted-foreground">{t('ruleWizard.matchHelp')}</p>
             {/* Live expression syntax validation */}
             <ExprValidationMessages result={validateRuleExpression(match)} variant="icon" />
           </div>
@@ -300,7 +300,7 @@ export const RuleWizard: React.FC<RuleWizardProps> = ({
               min={0}
               className="w-24"
             />
-            <p className="text-[10px] text-muted-foreground">{t('ruleWizard.priorityHelp')}</p>
+            <p className="text-xs text-muted-foreground">{t('ruleWizard.priorityHelp')}</p>
           </div>
         </div>
       ),
@@ -335,7 +335,7 @@ export const RuleWizard: React.FC<RuleWizardProps> = ({
               <span className="text-primary">{meta.icon}</span>
               <div className="flex-1">
                 <div className="text-sm font-medium">{t(meta.labelKey)}</div>
-                <p className="text-[11px] text-muted-foreground">{t(meta.descKey)}</p>
+                <p className="text-xs text-muted-foreground">{t(meta.descKey)}</p>
               </div>
             </label>
           ))}
@@ -414,7 +414,7 @@ export const RuleWizard: React.FC<RuleWizardProps> = ({
                 </div>
               )}
               {targets.length > 0 && (
-                <p className="text-[10px] text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   {t('ruleWizard.selectedCount', { count: targets.length })}
                 </p>
               )}
@@ -436,9 +436,7 @@ export const RuleWizard: React.FC<RuleWizardProps> = ({
                   placeholder="value * 1.8 + 32"
                   className="font-mono text-xs"
                 />
-                <p className="text-[10px] text-muted-foreground">
-                  {t('ruleWizard.transformExprHelp')}
-                </p>
+                <p className="text-xs text-muted-foreground">{t('ruleWizard.transformExprHelp')}</p>
                 {/* Live transform expression validation */}
                 <ExprValidationMessages
                   result={validateTransformExpression(transformExpr)}
@@ -453,7 +451,7 @@ export const RuleWizard: React.FC<RuleWizardProps> = ({
                   placeholder="temperature_f"
                   className="font-mono text-xs"
                 />
-                <p className="text-[10px] text-muted-foreground">{t('ruleWizard.tagRenameHelp')}</p>
+                <p className="text-xs text-muted-foreground">{t('ruleWizard.tagRenameHelp')}</p>
               </div>
             </div>
           )
@@ -494,7 +492,7 @@ export const RuleWizard: React.FC<RuleWizardProps> = ({
       onCancel={() => onOpenChange(false)}
       dialogTitle={isEdit ? t('ruleWizard.editTitle') : t('ruleWizard.createTitle')}
       previewNode={
-        <pre className="text-[11px] font-mono whitespace-pre-wrap text-muted-foreground">
+        <pre className="text-xs font-mono whitespace-pre-wrap text-muted-foreground">
           {previewYaml}
         </pre>
       }

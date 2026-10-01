@@ -453,7 +453,7 @@ export const DriverDetailPage: React.FC = () => {
               {name ? t('drivers.notRegistered', { name }) : t('drivers.noNameProvided')}
             </div>
             {error instanceof Error && error.message && (
-              <div className="break-all font-mono text-[11px] text-status-error/80">
+              <div className="break-all font-mono text-xs text-status-error/80">
                 {error.message}
               </div>
             )}
@@ -494,10 +494,10 @@ export const DriverDetailPage: React.FC = () => {
             </div>
             <div>
               <CardTitle className="text-lg font-bold">{driver.name}</CardTitle>
-              <CardDescription className="font-mono text-[11px]">{driver.type}</CardDescription>
+              <CardDescription className="font-mono text-xs">{driver.type}</CardDescription>
             </div>
           </div>
-          <Badge variant="outline" className={`text-[10px] ${st.badgeColor}`}>
+          <Badge variant="outline" className={`text-xs ${st.badgeColor}`}>
             <span className={`mr-1.5 h-1.5 w-1.5 rounded-full ${st.dotColor}`} />
             {t(st.key)}
           </Badge>
@@ -544,7 +544,7 @@ export const DriverDetailPage: React.FC = () => {
               <span className="font-mono">{driver.type}</span>
             </Param>
             <Param label={t('drivers.connectionState')}>
-              <Badge variant="outline" className={`text-[10px] ${st.badgeColor}`}>
+              <Badge variant="outline" className={`text-xs ${st.badgeColor}`}>
                 <span className={`mr-1.5 h-1.5 w-1.5 rounded-full ${st.dotColor}`} />
                 {t(st.key)}
               </Badge>
@@ -579,11 +579,11 @@ export const DriverDetailPage: React.FC = () => {
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
               <div className="min-w-0">
                 <div className="mb-0.5 text-xs font-semibold">{t('drivers.lastError')}</div>
-                <div className="break-all font-mono text-[11px]">{driver.last_error}</div>
+                <div className="break-all font-mono text-xs">{driver.last_error}</div>
               </div>
             </div>
           ) : (
-            <div className="text-[11px] text-muted-foreground">{t('drivers.noRecentErrors')}</div>
+            <div className="text-xs text-muted-foreground">{t('drivers.noRecentErrors')}</div>
           )}
         </CardContent>
       </Card>
@@ -604,7 +604,7 @@ export const DriverDetailPage: React.FC = () => {
             <div className="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2">
               {connFields.map((field) => (
                 <div key={field.label} className="min-w-0 space-y-1">
-                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                  <div className="text-xs uppercase tracking-wide text-muted-foreground">
                     {field.label}
                   </div>
                   <div
@@ -645,7 +645,7 @@ export const DriverDetailPage: React.FC = () => {
         {yamlOpen && (
           <CardContent>
             {yamlSnippet.trim() ? (
-              <pre className="max-h-96 overflow-auto rounded-lg border border-border bg-status-idle p-3 font-mono text-[11px] leading-relaxed whitespace-pre-wrap break-all text-status-idle">
+              <pre className="max-h-96 overflow-auto rounded-lg border border-border bg-status-idle p-3 font-mono text-xs leading-relaxed whitespace-pre-wrap break-all text-status-idle">
                 {yamlSnippet}
               </pre>
             ) : (
@@ -679,7 +679,7 @@ export const DriverDetailPage: React.FC = () => {
           ) : (
             <div className="overflow-x-auto rounded-lg border border-border">
               <table className="w-full text-left text-xs">
-                <thead className="border-b border-border bg-muted/60 text-[10px] uppercase font-semibold text-muted-foreground">
+                <thead className="border-b border-border bg-muted/60 text-xs uppercase font-semibold text-muted-foreground">
                   <tr>
                     <th className="px-3 py-2">{t('common.tag')}</th>
                     <th className="px-3 py-2">{t('common.value')}</th>
@@ -701,29 +701,29 @@ export const DriverDetailPage: React.FC = () => {
                         <td className="px-3 py-2 font-mono font-bold text-foreground">
                           {String(tag.value)}
                         </td>
-                        <td className="px-3 py-2 font-mono text-[10px] text-muted-foreground">
+                        <td className="px-3 py-2 font-mono text-xs text-muted-foreground">
                           {tag.type}
                         </td>
                         <td className="px-3 py-2">
-                          <Badge variant="outline" className={`h-4 py-0 text-[9px] ${q.color}`}>
+                          <Badge variant="outline" className={`h-4 py-0 text-xs ${q.color}`}>
                             {t(q.key)}
                           </Badge>
                         </td>
-                        <td className="px-3 py-2 font-mono text-[10px] text-muted-foreground">
+                        <td className="px-3 py-2 font-mono text-xs text-muted-foreground">
                           {tag.timestamp ? formatTimestamp(tag.timestamp) : '-'}
                         </td>
                         <td className="px-3 py-2">
                           {tag.is_stale ? (
                             <Badge
                               variant="outline"
-                              className="h-4 py-0 text-[9px] border-status-warning/30 bg-status-warning/10 text-status-warning"
+                              className="h-4 py-0 text-xs border-status-warning/30 bg-status-warning/10 text-status-warning"
                             >
                               {t('common.stale')}
                             </Badge>
                           ) : (
                             <Badge
                               variant="outline"
-                              className="h-4 py-0 text-[9px] border-status-running/30 bg-status-running/10 text-status-running"
+                              className="h-4 py-0 text-xs border-status-running/30 bg-status-running/10 text-status-running"
                             >
                               {t('common.fresh')}
                             </Badge>
@@ -735,7 +735,7 @@ export const DriverDetailPage: React.FC = () => {
                 </tbody>
               </table>
               {tags.length > 200 && (
-                <div className="border-t border-border bg-muted/40 px-3 py-2 text-center text-[11px] text-muted-foreground">
+                <div className="border-t border-border bg-muted/40 px-3 py-2 text-center text-xs text-muted-foreground">
                   {t('drivers.showingFirstTags', { count: tags.length })}
                 </div>
               )}

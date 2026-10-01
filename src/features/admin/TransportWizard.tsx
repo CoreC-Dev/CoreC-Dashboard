@@ -245,7 +245,7 @@ export const TransportWizard: React.FC<TransportWizardProps> = ({
                     <span className="text-primary">{meta.icon}</span>
                     <span className="text-sm font-medium">{meta.label}</span>
                   </div>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">{meta.description}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{meta.description}</p>
                 </div>
               </label>
             ))}
@@ -290,7 +290,7 @@ export const TransportWizard: React.FC<TransportWizardProps> = ({
                       {t(group.label)}
                     </span>
                     {group.advanced && (
-                      <span className="text-[10px] text-muted-foreground/60">
+                      <span className="text-xs text-muted-foreground/60">
                         ({t('wizard.optional')})
                       </span>
                     )}
@@ -353,7 +353,7 @@ export const TransportWizard: React.FC<TransportWizardProps> = ({
       onCancel={() => onOpenChange(false)}
       dialogTitle={isEdit ? t('transportWizard.editTitle') : t('transportWizard.createTitle')}
       previewNode={
-        <pre className="text-[11px] font-mono whitespace-pre-wrap text-muted-foreground">
+        <pre className="text-xs font-mono whitespace-pre-wrap text-muted-foreground">
           {previewYaml}
         </pre>
       }

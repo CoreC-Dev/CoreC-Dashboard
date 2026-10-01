@@ -39,12 +39,12 @@ export const ValidationBanner: React.FC<{ maxErrors?: number }> = ({ maxErrors =
       </div>
       <ul className="space-y-0.5 ml-5 list-disc">
         {errorStrings.slice(0, maxErrors).map((err, i) => (
-          <li key={i} className="font-mono text-[11px] opacity-90">
+          <li key={i} className="font-mono text-xs opacity-90">
             {err}
           </li>
         ))}
         {errorStrings.length > maxErrors && (
-          <li className="text-[10px] opacity-70">
+          <li className="text-xs opacity-70">
             {t('config.validationErrorsMore', { count: errorStrings.length - maxErrors })}
           </li>
         )}

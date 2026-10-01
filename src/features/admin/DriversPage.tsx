@@ -177,7 +177,7 @@ export const DriversPage: React.FC = () => {
             <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
               {t('drivers.configSection')}
             </h2>
-            <Badge variant="outline" className="text-[10px]">
+            <Badge variant="outline" className="text-xs">
               {configDrivers.length}
             </Badge>
             {configDrivers.length > 6 && (
@@ -200,14 +200,12 @@ export const DriversPage: React.FC = () => {
                       </div>
                       <div>
                         <CardTitle className="text-sm font-semibold">{drv.name}</CardTitle>
-                        <CardDescription className="text-[11px] font-mono">
-                          {drv.type}
-                        </CardDescription>
+                        <CardDescription className="text-xs font-mono">{drv.type}</CardDescription>
                         {(() => {
                           const summary = getDriverConnectionSummary(workingConfig, drv.name)
                           if (!summary) return null
                           return (
-                            <div className="text-[10px] text-muted-foreground/80 font-mono mt-0.5 truncate">
+                            <div className="text-xs text-muted-foreground/80 font-mono mt-0.5 truncate">
                               {summary}
                             </div>
                           )
@@ -235,7 +233,7 @@ export const DriversPage: React.FC = () => {
                   </div>
                 </CardHeader>
                 <CardContent className="p-4 pt-2 space-y-2">
-                  <div className="grid grid-cols-2 gap-2 text-[11px]">
+                  <div className="grid grid-cols-2 gap-2 text-xs">
                     <div className="flex items-center justify-between p-1.5 rounded bg-muted/30">
                       <span className="text-muted-foreground">{t('drivers.tags')}</span>
                       <span className="font-mono font-bold">{drv.tags?.length ?? 0}</span>
@@ -260,7 +258,7 @@ export const DriversPage: React.FC = () => {
           <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
             {t('drivers.runtimeSection')}
           </h2>
-          <Badge variant="outline" className="text-[10px]">
+          <Badge variant="outline" className="text-xs">
             {drivers.length}
           </Badge>
         </div>
@@ -300,21 +298,21 @@ export const DriversPage: React.FC = () => {
                         </div>
                         <div>
                           <CardTitle className="text-sm font-semibold">{drv.name}</CardTitle>
-                          <CardDescription className="text-[11px] font-mono">
+                          <CardDescription className="text-xs font-mono">
                             {drv.type}
                           </CardDescription>
                           {(() => {
                             const summary = getDriverConnectionSummary(parsedConfig, drv.name)
                             if (!summary) return null
                             return (
-                              <div className="text-[10px] text-muted-foreground/80 font-mono mt-0.5 truncate">
+                              <div className="text-xs text-muted-foreground/80 font-mono mt-0.5 truncate">
                                 {summary}
                               </div>
                             )
                           })()}
                         </div>
                       </div>
-                      <Badge variant="outline" className={`text-[10px] ${st.badgeColor}`}>
+                      <Badge variant="outline" className={`text-xs ${st.badgeColor}`}>
                         <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${st.dotColor}`} />
                         {t(st.key)}
                       </Badge>
@@ -322,30 +320,26 @@ export const DriversPage: React.FC = () => {
                   </CardHeader>
 
                   <CardContent className="p-4 pt-2 space-y-3">
-                    <div className="grid grid-cols-3 gap-2 text-center p-2 rounded-lg bg-muted/40 border border-border text-[11px]">
+                    <div className="grid grid-cols-3 gap-2 text-center p-2 rounded-lg bg-muted/40 border border-border text-xs">
                       <div>
-                        <div className="text-muted-foreground text-[10px]">{t('drivers.tags')}</div>
+                        <div className="text-muted-foreground text-xs">{t('drivers.tags')}</div>
                         <div className="font-mono font-bold">{drv.tag_count}</div>
                       </div>
                       <div>
-                        <div className="text-muted-foreground text-[10px]">
-                          {t('drivers.reads')}
-                        </div>
+                        <div className="text-muted-foreground text-xs">{t('drivers.reads')}</div>
                         <div className="font-mono font-bold text-status-running">
                           {formatNumber(drv.read_count)}
                         </div>
                       </div>
                       <div>
-                        <div className="text-muted-foreground text-[10px]">
-                          {t('drivers.errors')}
-                        </div>
+                        <div className="text-muted-foreground text-xs">{t('drivers.errors')}</div>
                         <div className="font-mono font-bold text-status-error">
                           {drv.error_count}
                         </div>
                       </div>
                     </div>
 
-                    <div className="text-[11px] space-y-1 text-muted-foreground">
+                    <div className="text-xs space-y-1 text-muted-foreground">
                       <div className="flex items-center justify-between">
                         <span>{t('drivers.reconnectFailures')}</span>
                         <span className="font-mono font-medium text-foreground">
@@ -363,13 +357,13 @@ export const DriversPage: React.FC = () => {
                     </div>
 
                     {drv.last_error && (
-                      <div className="p-2 rounded bg-status-error/10 border border-status-error/20 text-status-error text-[11px] truncate flex items-center space-x-1.5">
+                      <div className="p-2 rounded bg-status-error/10 border border-status-error/20 text-status-error text-xs truncate flex items-center space-x-1.5">
                         <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                         <span className="truncate">{drv.last_error}</span>
                       </div>
                     )}
 
-                    <div className="pt-1 flex items-center justify-between text-[11px]">
+                    <div className="pt-1 flex items-center justify-between text-xs">
                       <button
                         type="button"
                         onClick={(e) => {
@@ -492,7 +486,7 @@ const DriverDetailDialog: React.FC<{
           ) : (
             <div className="border border-border rounded-lg overflow-hidden">
               <table className="w-full text-xs text-left">
-                <thead className="bg-muted/60 border-b border-border text-[10px] uppercase font-semibold text-muted-foreground">
+                <thead className="bg-muted/60 border-b border-border text-xs uppercase font-semibold text-muted-foreground">
                   <tr>
                     <th className="px-3 py-2">{t('drivers.colTag')}</th>
                     <th className="px-3 py-2">{t('drivers.colGroup')}</th>
@@ -512,13 +506,13 @@ const DriverDetailDialog: React.FC<{
                         <td className="px-3 py-2 font-mono font-bold text-foreground">
                           {String(tag.value)}
                         </td>
-                        <td className="px-3 py-2 font-mono text-[10px]">{tag.type}</td>
+                        <td className="px-3 py-2 font-mono text-xs">{tag.type}</td>
                         <td className="px-3 py-2">
-                          <Badge variant="outline" className={`text-[9px] py-0 h-4 ${q.color}`}>
+                          <Badge variant="outline" className={`text-xs py-0 h-4 ${q.color}`}>
                             {t(q.key)}
                           </Badge>
                         </td>
-                        <td className="px-3 py-2 text-muted-foreground font-mono text-[10px]">
+                        <td className="px-3 py-2 text-muted-foreground font-mono text-xs">
                           {tag.timestamp ? new Date(tag.timestamp).toLocaleTimeString() : '-'}
                         </td>
                       </tr>

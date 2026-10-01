@@ -153,7 +153,7 @@ export const TransportsPage: React.FC = () => {
             <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
               {t('transports.configSection')}
             </h2>
-            <Badge variant="outline" className="text-[10px]">
+            <Badge variant="outline" className="text-xs">
               {configTransports.length}
             </Badge>
             {configTransports.length > 6 && (
@@ -176,14 +176,12 @@ export const TransportsPage: React.FC = () => {
                       </div>
                       <div>
                         <CardTitle className="text-sm font-semibold">{tp.name}</CardTitle>
-                        <CardDescription className="text-[11px] font-mono">
-                          {tp.type}
-                        </CardDescription>
+                        <CardDescription className="text-xs font-mono">{tp.type}</CardDescription>
                         {(() => {
                           const summary = getTransportConnectionSummary(workingConfig, tp.name)
                           if (!summary) return null
                           return (
-                            <div className="text-[10px] text-muted-foreground/80 font-mono mt-0.5 truncate">
+                            <div className="text-xs text-muted-foreground/80 font-mono mt-0.5 truncate">
                               {summary}
                             </div>
                           )
@@ -211,7 +209,7 @@ export const TransportsPage: React.FC = () => {
                   </div>
                 </CardHeader>
                 <CardContent className="p-4 pt-2 space-y-2">
-                  <div className="grid grid-cols-2 gap-2 text-[11px]">
+                  <div className="grid grid-cols-2 gap-2 text-xs">
                     {tp['batch-size'] !== undefined && (
                       <div className="flex items-center justify-between p-1.5 rounded bg-muted/30">
                         <span className="text-muted-foreground">{t('settings.batchSize')}</span>
@@ -244,7 +242,7 @@ export const TransportsPage: React.FC = () => {
           <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
             {t('transports.runtimeSection')}
           </h2>
-          <Badge variant="outline" className="text-[10px]">
+          <Badge variant="outline" className="text-xs">
             {transports.length}
           </Badge>
         </div>
@@ -286,21 +284,19 @@ export const TransportsPage: React.FC = () => {
                         </div>
                         <div>
                           <CardTitle className="text-sm font-semibold">{tr.name}</CardTitle>
-                          <CardDescription className="text-[11px] font-mono">
-                            {tr.type}
-                          </CardDescription>
+                          <CardDescription className="text-xs font-mono">{tr.type}</CardDescription>
                           {(() => {
                             const summary = getTransportConnectionSummary(parsedConfig, tr.name)
                             if (!summary) return null
                             return (
-                              <div className="text-[10px] text-muted-foreground/80 font-mono mt-0.5 truncate">
+                              <div className="text-xs text-muted-foreground/80 font-mono mt-0.5 truncate">
                                 {summary}
                               </div>
                             )
                           })()}
                         </div>
                       </div>
-                      <Badge variant="outline" className={`text-[10px] ${st.badgeColor}`}>
+                      <Badge variant="outline" className={`text-xs ${st.badgeColor}`}>
                         <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${st.dotColor}`} />
                         {t(st.key)}
                       </Badge>
@@ -308,9 +304,9 @@ export const TransportsPage: React.FC = () => {
                   </CardHeader>
 
                   <CardContent className="p-4 pt-2 space-y-3">
-                    <div className="grid grid-cols-3 gap-2 text-center p-2 rounded-lg bg-muted/40 border border-border text-[11px]">
+                    <div className="grid grid-cols-3 gap-2 text-center p-2 rounded-lg bg-muted/40 border border-border text-xs">
                       <div>
-                        <div className="text-muted-foreground text-[10px]">
+                        <div className="text-muted-foreground text-xs">
                           {t('transports.published')}
                         </div>
                         <div className="font-mono font-bold text-status-running">
@@ -318,20 +314,20 @@ export const TransportsPage: React.FC = () => {
                         </div>
                       </div>
                       <div>
-                        <div className="text-muted-foreground text-[10px]">
+                        <div className="text-muted-foreground text-xs">
                           {t('transports.failed')}
                         </div>
                         <div className="font-mono font-bold text-status-error">{tr.failed}</div>
                       </div>
                       <div>
-                        <div className="text-muted-foreground text-[10px]">
+                        <div className="text-muted-foreground text-xs">
                           {t('transports.queueSize')}
                         </div>
                         <div className="font-mono font-bold">{tr.queue_size}</div>
                       </div>
                     </div>
 
-                    <div className="text-[11px] space-y-1 text-muted-foreground">
+                    <div className="text-xs space-y-1 text-muted-foreground">
                       <div className="flex items-center justify-between">
                         <span>{t('transports.commandsReceived')}</span>
                         <span className="font-mono font-medium text-foreground">
@@ -354,7 +350,7 @@ export const TransportsPage: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="pt-1 flex items-center justify-end text-[11px] text-primary group-hover:underline">
+                    <div className="pt-1 flex items-center justify-end text-xs text-primary group-hover:underline">
                       <span>{t('transports.viewDetails')}</span>
                       <ExternalLink className="w-3 h-3 ml-1" />
                     </div>

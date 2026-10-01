@@ -7,8 +7,8 @@
  *
  * Two visual variants — the originals differed only in icon vs. text prefix
  * and text size:
- *   - 'icon'   (RuleWizard): AlertCircle icon, text-[10px], flex row.
- *   - 'prefix' (RuleGroupEditor): ⚠ text prefix, text-[9px].
+ *   - 'icon'   (RuleWizard): AlertCircle icon, text-xs, flex row.
+ *   - 'prefix' (RuleGroupEditor): ⚠ text prefix, text-xs.
  *
  * Returns null when the result is valid with no warnings, matching the
  * original inline IIFE guards.
@@ -32,12 +32,12 @@ export const ExprValidationMessages: React.FC<{
     return (
       <div className="space-y-0.5">
         {result.errors.map((err, i) => (
-          <p key={`e-${i}`} className="text-[9px] text-destructive">
+          <p key={`e-${i}`} className="text-xs text-destructive">
             ⚠ {err}
           </p>
         ))}
         {result.warnings.map((warn, i) => (
-          <p key={`w-${i}`} className="text-[9px] text-status-warning dark:text-status-warning">
+          <p key={`w-${i}`} className="text-xs text-status-warning dark:text-status-warning">
             ⚠ {warn}
           </p>
         ))}
@@ -48,7 +48,7 @@ export const ExprValidationMessages: React.FC<{
   return (
     <div className="space-y-0.5">
       {result.errors.map((err, i) => (
-        <p key={`e-${i}`} className="text-[10px] text-destructive flex items-start gap-1">
+        <p key={`e-${i}`} className="text-xs text-destructive flex items-start gap-1">
           <AlertCircle className="w-3 h-3 mt-0.5 shrink-0" />
           {err}
         </p>
@@ -56,7 +56,7 @@ export const ExprValidationMessages: React.FC<{
       {result.warnings.map((warn, i) => (
         <p
           key={`w-${i}`}
-          className="text-[10px] text-status-warning dark:text-status-warning flex items-start gap-1"
+          className="text-xs text-status-warning dark:text-status-warning flex items-start gap-1"
         >
           <AlertCircle className="w-3 h-3 mt-0.5 shrink-0" />
           {warn}

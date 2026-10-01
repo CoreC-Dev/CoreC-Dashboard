@@ -107,7 +107,7 @@ export const RuleProviderEditor: React.FC = () => {
             <span>{t('ruleProvider.title')}</span>
             <Badge
               variant="outline"
-              className="text-[9px] px-1 py-0 border-status-warning/40 bg-status-warning/10 text-status-warning dark:text-status-warning"
+              className="text-xs px-1 py-0 border-status-warning/40 bg-status-warning/10 text-status-warning dark:text-status-warning"
             >
               <AlertTriangle className="w-2.5 h-2.5 mr-0.5" />
               {t('ruleProvider.restartRequired')}
@@ -115,7 +115,7 @@ export const RuleProviderEditor: React.FC = () => {
             {dirty && (
               <Badge
                 variant="outline"
-                className="text-[9px] border-status-warning/40 text-status-warning"
+                className="text-xs border-status-warning/40 text-status-warning"
               >
                 {t('globalConfig.unsaved')}
               </Badge>
@@ -147,16 +147,16 @@ export const RuleProviderEditor: React.FC = () => {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-semibold">{p.name}</span>
-                    <Badge variant="outline" className="text-[9px] px-1 py-0">
+                    <Badge variant="outline" className="text-xs px-1 py-0">
                       {p.type}
                     </Badge>
                   </div>
-                  <div className="flex items-center gap-1 mt-0.5 text-[10px] text-muted-foreground">
+                  <div className="flex items-center gap-1 mt-0.5 text-xs text-muted-foreground">
                     <FolderOpen className="w-3 h-3 shrink-0" />
                     <span className="font-mono truncate">{p.path}</span>
                   </div>
                   {p.interval && (
-                    <div className="text-[10px] text-muted-foreground mt-0.5">
+                    <div className="text-xs text-muted-foreground mt-0.5">
                       {t('ruleProvider.intervalLabel')}:{' '}
                       <span className="font-mono">{p.interval}</span>
                     </div>
@@ -202,7 +202,7 @@ export const RuleProviderEditor: React.FC = () => {
                   className="h-8 text-xs font-mono"
                 />
                 {isNew && editing.name && !isRuleProviderNameUnique(editing.name) && (
-                  <p className="text-[10px] text-destructive">{t('ruleProvider.nameExists')}</p>
+                  <p className="text-xs text-destructive">{t('ruleProvider.nameExists')}</p>
                 )}
               </div>
 
@@ -222,7 +222,7 @@ export const RuleProviderEditor: React.FC = () => {
                   placeholder="/etc/corec/rules/external.yaml"
                   className="h-8 text-xs font-mono"
                 />
-                <p className="text-[10px] text-muted-foreground">{t('ruleProvider.pathHelp')}</p>
+                <p className="text-xs text-muted-foreground">{t('ruleProvider.pathHelp')}</p>
               </div>
 
               <div className="space-y-1">
@@ -235,9 +235,7 @@ export const RuleProviderEditor: React.FC = () => {
                   placeholder="30s"
                   className="h-8 text-xs font-mono"
                 />
-                <p className="text-[10px] text-muted-foreground">
-                  {t('ruleProvider.intervalHelp')}
-                </p>
+                <p className="text-xs text-muted-foreground">{t('ruleProvider.intervalHelp')}</p>
               </div>
             </div>
 

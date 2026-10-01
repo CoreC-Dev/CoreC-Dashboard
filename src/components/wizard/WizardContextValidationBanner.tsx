@@ -49,12 +49,12 @@ export const WizardContextValidationBanner: React.FC<{
           </div>
           <ul className="space-y-0.5 ml-5 list-disc">
             {contextValidation.errors.slice(0, 6).map((err, i) => (
-              <li key={i} className="font-mono text-[10px] opacity-90">
+              <li key={i} className="font-mono text-xs opacity-90">
                 {err.path}: {err.message}
               </li>
             ))}
             {contextValidation.errors.length > 6 && (
-              <li className="text-[9px] opacity-70">
+              <li className="text-xs opacity-70">
                 {t('driverWizard.validationMore', {
                   count: contextValidation.errors.length - 6,
                 })}

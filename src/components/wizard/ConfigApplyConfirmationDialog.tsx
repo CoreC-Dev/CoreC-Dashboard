@@ -301,22 +301,22 @@ export const ConfigApplyConfirmationDialog: React.FC<ConfigApplyConfirmationDial
           <ChangeBadge label={t('applyDialog.transports')} counts={summary.transports} />
           <ChangeBadge label={t('applyDialog.rules')} counts={summary.rules} />
           {summary.global && (
-            <Badge variant="outline" className="text-[10px] gap-1">
+            <Badge variant="outline" className="text-xs gap-1">
               {t('applyDialog.global')} <span className="text-status-warning">●</span>
             </Badge>
           )}
           {summary.node && (
-            <Badge variant="outline" className="text-[10px] gap-1">
+            <Badge variant="outline" className="text-xs gap-1">
               {t('applyDialog.node')} <span className="text-status-warning">●</span>
             </Badge>
           )}
           {summary['rule-providers'] && (
-            <Badge variant="outline" className="text-[10px] gap-1">
+            <Badge variant="outline" className="text-xs gap-1">
               {t('applyDialog.ruleProviders')} <span className="text-status-warning">●</span>
             </Badge>
           )}
           {summary['rule-groups'] && (
-            <Badge variant="outline" className="text-[10px] gap-1">
+            <Badge variant="outline" className="text-xs gap-1">
               {t('applyDialog.ruleGroups')} <span className="text-status-warning">●</span>
             </Badge>
           )}
@@ -332,7 +332,7 @@ export const ConfigApplyConfirmationDialog: React.FC<ConfigApplyConfirmationDial
 
         {/* YAML diff viewer */}
         <div className="flex-1 overflow-auto rounded-md border bg-muted/20 min-h-[200px] max-h-[40vh]">
-          <pre className="text-[11px] font-mono leading-relaxed p-2">
+          <pre className="text-xs font-mono leading-relaxed p-2">
             {lineDiff.map((line, i) => (
               <div
                 key={i}
@@ -393,7 +393,7 @@ const ChangeBadge: React.FC<{
   if (total === 0) return null
 
   return (
-    <Badge variant="outline" className="text-[10px] gap-1.5">
+    <Badge variant="outline" className="text-xs gap-1.5">
       {label}
       {counts.added > 0 && <span className="text-status-running">+{counts.added}</span>}
       {counts.removed > 0 && <span className="text-status-error">-{counts.removed}</span>}

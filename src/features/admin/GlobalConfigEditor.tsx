@@ -73,7 +73,7 @@ const FieldRow: React.FC<FieldRowProps> = ({
         <RestartBadge show={restartRequired ?? false} label={t('globalConfig.restartRequired')} />
       </div>
       {children}
-      {help && <p className="text-[10px] text-muted-foreground leading-snug">{help}</p>}
+      {help && <p className="text-xs text-muted-foreground leading-snug">{help}</p>}
     </div>
   )
 }
@@ -129,7 +129,7 @@ export const GlobalConfigEditor: React.FC = () => {
             {dirty && (
               <Badge
                 variant="outline"
-                className="text-[9px] border-status-warning/40 text-status-warning"
+                className="text-xs border-status-warning/40 text-status-warning"
               >
                 {t('globalConfig.unsaved')}
               </Badge>
@@ -306,7 +306,7 @@ export const GlobalConfigEditor: React.FC = () => {
 
             {/* API timeouts (advanced) */}
             <details className="group">
-              <summary className="cursor-pointer text-[11px] text-muted-foreground hover:text-foreground flex items-center gap-1">
+              <summary className="cursor-pointer text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
                 <RotateCcw className="w-3 h-3 group-open:rotate-90 transition-transform" />
                 {t('globalConfig.apiTimeouts')}
               </summary>
@@ -333,7 +333,7 @@ export const GlobalConfigEditor: React.FC = () => {
 
             {/* API pprof (advanced) */}
             <details className="group">
-              <summary className="cursor-pointer text-[11px] text-muted-foreground hover:text-foreground flex items-center gap-1">
+              <summary className="cursor-pointer text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
                 <Bug className="w-3 h-3 group-open:rotate-90 transition-transform" />
                 {t('globalConfig.apiPprof')}
               </summary>

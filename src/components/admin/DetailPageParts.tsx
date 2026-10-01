@@ -43,7 +43,7 @@ export const RestartBadge: React.FC<{ show?: boolean; label: string }> = ({
   return (
     <Badge
       variant="outline"
-      className="text-[9px] px-1 py-0 border-status-warning/40 bg-status-warning/10 text-status-warning dark:text-status-warning"
+      className="text-xs px-1 py-0 border-status-warning/40 bg-status-warning/10 text-status-warning dark:text-status-warning"
     >
       <AlertTriangle className="w-2.5 h-2.5 mr-0.5" />
       {label}
@@ -77,7 +77,7 @@ export const StatCard: React.FC<{
         {icon}
       </div>
       <div className="min-w-0">
-        <div className="truncate text-[10px] uppercase tracking-wide text-muted-foreground">
+        <div className="truncate text-xs uppercase tracking-wide text-muted-foreground">
           {label}
         </div>
         <div className="font-mono text-lg font-bold leading-tight">{value}</div>
@@ -91,7 +91,7 @@ export const Param: React.FC<{ label: string; children: React.ReactNode }> = ({
   children,
 }) => (
   <div className="min-w-0 space-y-1">
-    <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
+    <div className="text-xs uppercase tracking-wide text-muted-foreground">{label}</div>
     <div className="break-all text-xs font-medium text-foreground">{children}</div>
   </div>
 )
@@ -191,7 +191,7 @@ export const EntityEditConfigCard: React.FC<EntityEditConfigCardProps> = ({
                 <div key={f.key} className="space-y-1.5">
                   <label
                     htmlFor={`${fieldIdPrefix}${f.key}`}
-                    className="text-[11px] font-medium text-muted-foreground"
+                    className="text-xs font-medium text-muted-foreground"
                   >
                     {labelFor(f)}
                   </label>
@@ -226,10 +226,8 @@ export const EntityEditConfigCard: React.FC<EntityEditConfigCardProps> = ({
             </div>
 
             <div className="space-y-1.5">
-              <div className="text-[11px] font-medium text-muted-foreground">
-                {yamlPreviewLabel}
-              </div>
-              <pre className="max-h-56 overflow-auto rounded-lg border border-border bg-muted/40 p-3 font-mono text-[11px] leading-relaxed whitespace-pre-wrap break-all text-foreground">
+              <div className="text-xs font-medium text-muted-foreground">{yamlPreviewLabel}</div>
+              <pre className="max-h-56 overflow-auto rounded-lg border border-border bg-muted/40 p-3 font-mono text-xs leading-relaxed whitespace-pre-wrap break-all text-foreground">
                 {yamlPreview}
               </pre>
             </div>

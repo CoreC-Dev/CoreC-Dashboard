@@ -99,7 +99,7 @@ const InlineRuleEditor: React.FC<InlineRuleEditorProps> = ({
     <div className="space-y-2 rounded-lg border border-primary/30 bg-primary/5 p-3">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         <div className="space-y-1">
-          <Label className="text-[10px] font-medium">
+          <Label className="text-xs font-medium">
             {t('ruleGroup.ruleName')}
             <span className="text-destructive"> *</span>
           </Label>
@@ -108,24 +108,24 @@ const InlineRuleEditor: React.FC<InlineRuleEditorProps> = ({
             onChange={(e) => setDraft({ ...draft, name: e.target.value })}
             placeholder="sub-filter-temp"
             disabled={!isNew}
-            className="h-7 text-[11px] font-mono"
+            className="h-7 text-xs font-mono"
           />
           {!nameUnique && (
-            <p className="text-[9px] text-destructive">{t('ruleGroup.ruleNameExists')}</p>
+            <p className="text-xs text-destructive">{t('ruleGroup.ruleNameExists')}</p>
           )}
         </div>
         <div className="space-y-1">
-          <Label className="text-[10px] font-medium">{t('ruleGroup.ruleAction')}</Label>
+          <Label className="text-xs font-medium">{t('ruleGroup.ruleAction')}</Label>
           <Select
             value={draft.action as string}
             onValueChange={(v) => setDraft({ ...draft, action: v as RuleAction })}
           >
-            <SelectTrigger className="h-7 text-[11px]">
+            <SelectTrigger className="h-7 text-xs">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               {RULE_ACTIONS.map((a) => (
-                <SelectItem key={a} value={a} className="text-[11px] font-mono">
+                <SelectItem key={a} value={a} className="text-xs font-mono">
                   {a}
                 </SelectItem>
               ))}
@@ -134,7 +134,7 @@ const InlineRuleEditor: React.FC<InlineRuleEditorProps> = ({
         </div>
       </div>
       <div className="space-y-1">
-        <Label className="text-[10px] font-medium">
+        <Label className="text-xs font-medium">
           {t('ruleGroup.ruleMatch')}
           <span className="text-destructive"> *</span>
         </Label>
@@ -142,15 +142,15 @@ const InlineRuleEditor: React.FC<InlineRuleEditorProps> = ({
           value={draft.match}
           onChange={(e) => setDraft({ ...draft, match: e.target.value })}
           placeholder='tag contains "temp" || value > 50'
-          className="h-7 text-[11px] font-mono"
+          className="h-7 text-xs font-mono"
         />
-        <p className="text-[9px] text-muted-foreground">{t('ruleGroup.ruleMatchHelp')}</p>
+        <p className="text-xs text-muted-foreground">{t('ruleGroup.ruleMatchHelp')}</p>
         {/* Live expression syntax validation */}
         <ExprValidationMessages result={validateRuleExpression(draft.match)} variant="prefix" />
         {/* SUB-RULE quick-fill: insert a reference to another group */}
         {otherGroupNames.length > 0 && (
           <div className="flex flex-wrap gap-1 pt-0.5">
-            <span className="text-[9px] text-muted-foreground self-center">
+            <span className="text-xs text-muted-foreground self-center">
               {t('ruleGroup.subRuleRef')}:
             </span>
             {otherGroupNames.map((gn) => (
@@ -158,7 +158,7 @@ const InlineRuleEditor: React.FC<InlineRuleEditorProps> = ({
                 type="button"
                 key={gn}
                 onClick={() => setDraft({ ...draft, match: `SUB-RULE:${gn}` })}
-                className="text-[9px] px-1.5 py-0.5 rounded border border-border bg-muted/30 hover:bg-muted/60 font-mono transition-colors"
+                className="text-xs px-1.5 py-0.5 rounded border border-border bg-muted/30 hover:bg-muted/60 font-mono transition-colors"
               >
                 SUB-RULE:{gn}
               </button>
@@ -168,28 +168,28 @@ const InlineRuleEditor: React.FC<InlineRuleEditorProps> = ({
       </div>
       <div className="grid grid-cols-2 gap-2">
         <div className="space-y-1">
-          <Label className="text-[10px] font-medium">{t('ruleGroup.ruleTarget')}</Label>
+          <Label className="text-xs font-medium">{t('ruleGroup.ruleTarget')}</Label>
           <Input
             value={draft.target ?? ''}
             onChange={(e) => setDraft({ ...draft, target: e.target.value || undefined })}
             placeholder="cloud-mqtt"
-            className="h-7 text-[11px] font-mono"
+            className="h-7 text-xs font-mono"
           />
         </div>
         <div className="space-y-1">
-          <Label className="text-[10px] font-medium">{t('ruleGroup.rulePriority')}</Label>
+          <Label className="text-xs font-medium">{t('ruleGroup.rulePriority')}</Label>
           <Input
             type="number"
             value={draft.priority ?? 100}
             onChange={(e) => setDraft({ ...draft, priority: Number(e.target.value) })}
             min={0}
-            className="h-7 text-[11px] font-mono w-20"
+            className="h-7 text-xs font-mono w-20"
           />
         </div>
       </div>
       {/* Multi-target (comma-separated) — used by mirror action */}
       <div className="space-y-1">
-        <Label className="text-[10px] font-medium">{t('ruleGroup.ruleTargets')}</Label>
+        <Label className="text-xs font-medium">{t('ruleGroup.ruleTargets')}</Label>
         <Input
           value={Array.isArray(draft.targets) ? draft.targets.join(', ') : ''}
           onChange={(e) => {
@@ -200,15 +200,15 @@ const InlineRuleEditor: React.FC<InlineRuleEditorProps> = ({
             setDraft({ ...draft, targets: targets.length > 0 ? targets : undefined })
           }}
           placeholder="mqtt-cloud, http-archive"
-          className="h-7 text-[11px] font-mono"
+          className="h-7 text-xs font-mono"
         />
-        <p className="text-[9px] text-muted-foreground">{t('ruleGroup.ruleTargetsHelp')}</p>
+        <p className="text-xs text-muted-foreground">{t('ruleGroup.ruleTargetsHelp')}</p>
       </div>
       {/* Transform config — used by transform action */}
       {draft.action === 'transform' && (
         <div className="space-y-2 rounded-md border border-primary/20 bg-primary/5 p-2">
           <div className="space-y-1">
-            <Label className="text-[10px] font-medium">
+            <Label className="text-xs font-medium">
               {t('ruleWizard.transformExpression')}
               <span className="text-destructive"> *</span>
             </Label>
@@ -226,16 +226,16 @@ const InlineRuleEditor: React.FC<InlineRuleEditorProps> = ({
                 })
               }
               placeholder="value * 1.8 + 32"
-              className="h-7 text-[11px] font-mono"
+              className="h-7 text-xs font-mono"
             />
-            <p className="text-[9px] text-muted-foreground">{t('ruleWizard.transformExprHelp')}</p>
+            <p className="text-xs text-muted-foreground">{t('ruleWizard.transformExprHelp')}</p>
             <ExprValidationMessages
               result={validateTransformExpression(draft.transform?.expression ?? '')}
               variant="prefix"
             />
           </div>
           <div className="space-y-1">
-            <Label className="text-[10px] font-medium">{t('ruleWizard.tagRename')}</Label>
+            <Label className="text-xs font-medium">{t('ruleWizard.tagRename')}</Label>
             <Input
               value={draft.transform?.['tag-rename'] ?? ''}
               onChange={(e) =>
@@ -248,14 +248,14 @@ const InlineRuleEditor: React.FC<InlineRuleEditorProps> = ({
                 })
               }
               placeholder="temperature_f"
-              className="h-7 text-[11px] font-mono"
+              className="h-7 text-xs font-mono"
             />
-            <p className="text-[9px] text-muted-foreground">{t('ruleWizard.tagRenameHelp')}</p>
+            <p className="text-xs text-muted-foreground">{t('ruleWizard.tagRenameHelp')}</p>
           </div>
         </div>
       )}
       <div className="flex justify-end gap-1.5 pt-1">
-        <Button variant="ghost" size="sm" onClick={onCancel} className="h-6 text-[10px]">
+        <Button variant="ghost" size="sm" onClick={onCancel} className="h-6 text-xs">
           {t('common.cancel')}
         </Button>
         <Button
@@ -263,7 +263,7 @@ const InlineRuleEditor: React.FC<InlineRuleEditorProps> = ({
           size="sm"
           onClick={() => canSave && onSave({ ...draft, name: draft.name.trim() })}
           disabled={!canSave}
-          className="h-6 text-[10px]"
+          className="h-6 text-xs"
         >
           {t('common.save')}
         </Button>
@@ -354,7 +354,7 @@ const GroupCard: React.FC<GroupCardProps> = ({
           ) : (
             <span className="text-xs font-semibold font-mono">{name}</span>
           )}
-          <Badge variant="outline" className="text-[9px] px-1 py-0">
+          <Badge variant="outline" className="text-xs px-1 py-0">
             {rules.length} {t('ruleGroup.rulesCount')}
           </Badge>
         </button>
@@ -385,7 +385,7 @@ const GroupCard: React.FC<GroupCardProps> = ({
       {expanded && (
         <div className="border-t border-border/40 p-3 space-y-2 bg-muted/10">
           {rules.length === 0 && !addingRule && (
-            <div className="py-4 text-center text-[11px] text-muted-foreground">
+            <div className="py-4 text-center text-xs text-muted-foreground">
               {t('ruleGroup.noRules')}
             </div>
           )}
@@ -405,30 +405,30 @@ const GroupCard: React.FC<GroupCardProps> = ({
                 />
               ) : (
                 <div className="flex items-center gap-2 rounded-md border border-border/40 bg-card p-2 hover:bg-muted/20 transition-colors">
-                  <Badge variant="outline" className="text-[9px] px-1 py-0 font-mono shrink-0">
+                  <Badge variant="outline" className="text-xs px-1 py-0 font-mono shrink-0">
                     {rl.priority ?? 100}
                   </Badge>
-                  <span className="text-[11px] font-medium font-mono shrink-0">{rl.name}</span>
-                  <Badge variant="secondary" className="text-[9px] px-1 py-0 shrink-0">
+                  <span className="text-xs font-medium font-mono shrink-0">{rl.name}</span>
+                  <Badge variant="secondary" className="text-xs px-1 py-0 shrink-0">
                     {rl.action}
                   </Badge>
-                  <span className="text-[10px] text-muted-foreground font-mono truncate flex-1">
+                  <span className="text-xs text-muted-foreground font-mono truncate flex-1">
                     {rl.match}
                   </span>
                   {rl.target && (
-                    <span className="text-[10px] text-muted-foreground font-mono shrink-0">
+                    <span className="text-xs text-muted-foreground font-mono shrink-0">
                       → {rl.target}
                     </span>
                   )}
                   {Array.isArray(rl.targets) && rl.targets.length > 0 && (
-                    <span className="text-[10px] text-muted-foreground font-mono shrink-0">
+                    <span className="text-xs text-muted-foreground font-mono shrink-0">
                       → [{rl.targets.join(', ')}]
                     </span>
                   )}
                   {rl.transform && (
                     <Badge
                       variant="outline"
-                      className="text-[9px] px-1 py-0 shrink-0 text-primary dark:text-primary"
+                      className="text-xs px-1 py-0 shrink-0 text-primary dark:text-primary"
                     >
                       transform
                     </Badge>
@@ -473,7 +473,7 @@ const GroupCard: React.FC<GroupCardProps> = ({
               variant="ghost"
               size="sm"
               onClick={() => setAddingRule(true)}
-              className="h-7 text-[11px] w-full border border-dashed"
+              className="h-7 text-xs w-full border border-dashed"
             >
               <Plus className="w-3 h-3 mr-1" />
               {t('ruleGroup.addRule')}
@@ -599,7 +599,7 @@ export const RuleGroupEditor: React.FC = () => {
             <span>{t('ruleGroup.title')}</span>
             <Badge
               variant="outline"
-              className="text-[9px] px-1 py-0 border-status-warning/40 bg-status-warning/10 text-status-warning dark:text-status-warning"
+              className="text-xs px-1 py-0 border-status-warning/40 bg-status-warning/10 text-status-warning dark:text-status-warning"
             >
               <AlertTriangle className="w-2.5 h-2.5 mr-0.5" />
               {t('ruleGroup.restartRequired')}
@@ -607,7 +607,7 @@ export const RuleGroupEditor: React.FC = () => {
             {dirty && (
               <Badge
                 variant="outline"
-                className="text-[9px] border-status-warning/40 text-status-warning"
+                className="text-xs border-status-warning/40 text-status-warning"
               >
                 {t('globalConfig.unsaved')}
               </Badge>
@@ -652,15 +652,13 @@ export const RuleGroupEditor: React.FC = () => {
               autoFocus
             />
             {newGroupName && !isRuleGroupNameUnique(newGroupName.trim()) && (
-              <span className="text-[10px] text-destructive shrink-0">
-                {t('ruleGroup.nameExists')}
-              </span>
+              <span className="text-xs text-destructive shrink-0">{t('ruleGroup.nameExists')}</span>
             )}
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setShowCreate(false)}
-              className="h-6 text-[10px]"
+              className="h-6 text-xs"
             >
               {t('common.cancel')}
             </Button>
@@ -669,7 +667,7 @@ export const RuleGroupEditor: React.FC = () => {
               size="sm"
               onClick={handleCreate}
               disabled={!canCreate}
-              className="h-6 text-[10px]"
+              className="h-6 text-xs"
             >
               {t('common.save')}
             </Button>
@@ -693,7 +691,7 @@ export const RuleGroupEditor: React.FC = () => {
 
         {/* Usage hint */}
         {groupEntries.length > 0 && (
-          <div className="rounded-md border border-status-queued/20 bg-status-queued/5 p-2.5 text-[10px] text-muted-foreground">
+          <div className="rounded-md border border-status-queued/20 bg-status-queued/5 p-2.5 text-xs text-muted-foreground">
             {t('ruleGroup.usageHint')}
           </div>
         )}

@@ -127,7 +127,7 @@ const SubscribeEditor: React.FC<SubscribeEditorProps> = ({ value, onChange }) =>
           {value.map((node, idx) => (
             <span
               key={`${node}-${idx}`}
-              className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/40 px-2 py-1 text-[11px] font-mono"
+              className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/40 px-2 py-1 text-xs font-mono"
             >
               {node}
               <button
@@ -142,7 +142,7 @@ const SubscribeEditor: React.FC<SubscribeEditorProps> = ({ value, onChange }) =>
         </div>
       )}
       {value.length === 0 && (
-        <p className="text-[10px] text-muted-foreground">{t('nodeConfig.subscribeEmpty')}</p>
+        <p className="text-xs text-muted-foreground">{t('nodeConfig.subscribeEmpty')}</p>
       )}
     </div>
   )
@@ -199,7 +199,7 @@ export const NodeConfigEditor: React.FC = () => {
             {dirty && (
               <Badge
                 variant="outline"
-                className="text-[9px] border-status-warning/40 text-status-warning"
+                className="text-xs border-status-warning/40 text-status-warning"
               >
                 {t('globalConfig.unsaved')}
               </Badge>
@@ -230,7 +230,7 @@ export const NodeConfigEditor: React.FC = () => {
               placeholder="e.g. factory-collector-01"
               className="h-8 text-xs font-mono"
             />
-            <p className="text-[10px] text-muted-foreground leading-snug">
+            <p className="text-xs text-muted-foreground leading-snug">
               {t('nodeConfig.nodeIdHelp')}
             </p>
           </div>
@@ -241,7 +241,7 @@ export const NodeConfigEditor: React.FC = () => {
               <Info className="w-4 h-4 shrink-0 mt-0.5" />
               <div>
                 <div className="font-medium">{t('nodeConfig.autoDiscoveryDisabled')}</div>
-                <p className="text-[11px] mt-0.5">{t('nodeConfig.autoDiscoveryDisabledDesc')}</p>
+                <p className="text-xs mt-0.5">{t('nodeConfig.autoDiscoveryDisabledDesc')}</p>
               </div>
             </div>
           )}
@@ -276,7 +276,7 @@ export const NodeConfigEditor: React.FC = () => {
                         />
                         <span className="text-xs font-medium">{t(meta.labelKey)}</span>
                       </div>
-                      <p className="text-[10px] text-muted-foreground leading-snug ml-5">
+                      <p className="text-xs text-muted-foreground leading-snug ml-5">
                         {t(meta.descKey)}
                       </p>
                     </label>
@@ -294,7 +294,7 @@ export const NodeConfigEditor: React.FC = () => {
                       updateNodeField('subscribe', val.length > 0 ? val : undefined)
                     }
                   />
-                  <p className="text-[10px] text-muted-foreground leading-snug">
+                  <p className="text-xs text-muted-foreground leading-snug">
                     {t('nodeConfig.subscribeHelp')}
                   </p>
                 </div>
@@ -309,7 +309,7 @@ export const NodeConfigEditor: React.FC = () => {
                   placeholder="topo"
                   className="h-8 text-xs font-mono"
                 />
-                <p className="text-[10px] text-muted-foreground leading-snug">
+                <p className="text-xs text-muted-foreground leading-snug">
                   {t('nodeConfig.topicPrefixHelp')}
                 </p>
               </div>
@@ -319,10 +319,10 @@ export const NodeConfigEditor: React.FC = () => {
           {/* ─── Topic format preview ───────────────────────────── */}
           {hasNodeId && (
             <div className="rounded-md border border-border bg-muted/20 p-3">
-              <div className="text-[10px] text-muted-foreground uppercase font-semibold mb-1">
+              <div className="text-xs text-muted-foreground uppercase font-semibold mb-1">
                 {t('nodeConfig.topicPreview')}
               </div>
-              <code className="text-[11px] font-mono text-primary break-all">
+              <code className="text-xs font-mono text-primary break-all">
                 {node['topic-prefix'] || 'topo'}/{node.id}/data/&#123;driver&#125;/&#123;tag&#125;
               </code>
             </div>

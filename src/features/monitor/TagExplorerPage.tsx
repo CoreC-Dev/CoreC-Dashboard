@@ -170,22 +170,22 @@ const TagRow = memo(function TagRow({ point, start, flashTick, onOpen, onWrite }
         </span>
       </td>
       <td className="px-4 py-2.5 shrink-0 min-w-0" style={{ width: COLS.type }}>
-        <Badge variant="outline" className="font-mono text-[10px] py-0 h-4">
+        <Badge variant="outline" className="font-mono text-xs py-0 h-5">
           {point.type}
         </Badge>
       </td>
       <td className="px-4 py-2.5 shrink-0 min-w-0" style={{ width: COLS.quality }}>
-        <Badge variant="outline" className={cn('text-[10px]', q.color)}>
+        <Badge variant="outline" className={cn('text-xs h-5', q.color)}>
           {t(q.key)}
         </Badge>
       </td>
       <td
-        className="px-4 py-2.5 shrink-0 min-w-0 truncate text-muted-foreground font-mono text-[11px]"
+        className="px-4 py-2.5 shrink-0 min-w-0 truncate text-muted-foreground font-mono text-xs"
         style={{ width: COLS.timestamp }}
       >
         {point.timestamp ? new Date(point.timestamp).toLocaleTimeString() : '-'}
         {point.is_stale && (
-          <span className="ml-1.5 text-[10px] text-status-warning border border-status-warning/30 px-1 rounded">
+          <span className="ml-1.5 text-xs text-status-warning border border-status-warning/30 px-1 rounded">
             {t('tags.stale')}
           </span>
         )}
@@ -198,7 +198,7 @@ const TagRow = memo(function TagRow({ point, start, flashTick, onOpen, onWrite }
             e.stopPropagation()
             onWrite(point)
           }}
-          className="h-7 px-2 text-xs text-primary hover:text-primary hover:bg-primary/10"
+          className="h-7 px-2 text-xs text-primary hover:bg-primary/10"
         >
           <Send className="w-3 h-3 mr-1" />
           <span>{t('tags.write')}</span>
@@ -607,7 +607,7 @@ export const TagExplorerPage: React.FC = () => {
   const showError = isError && filteredTags.length === 0
 
   return (
-    <div className={trendTag ? 'flex gap-4 items-start' : 'space-y-4'}>
+    <div className={trendTag ? 'flex flex-col md:flex-row gap-4 md:items-start' : 'space-y-4'}>
       <div className={trendTag ? 'flex-1 min-w-0 space-y-4' : 'space-y-4'}>
         {/* Search & Filter Bar */}
         <Card className="border-border bg-card">
@@ -681,7 +681,7 @@ export const TagExplorerPage: React.FC = () => {
         <Card className="border-border bg-card overflow-hidden">
           <div className="flex items-center justify-between border-b border-border px-4 py-2">
             <div className="text-xs font-semibold text-foreground">{t('tags.tagsLabel')}</div>
-            <div className="text-[11px] text-muted-foreground">{t('tags.clickToOpenTrend')}</div>
+            <div className="text-xs text-muted-foreground">{t('tags.clickToOpenTrend')}</div>
           </div>
           {showLoading ? (
             <div className="flex items-center justify-center gap-2 py-16 text-xs text-muted-foreground">
@@ -693,7 +693,7 @@ export const TagExplorerPage: React.FC = () => {
               <AlertCircle className="mx-auto h-8 w-8 text-status-error" />
               <div className="text-sm font-semibold">{t('common.error')}</div>
               {error instanceof Error && error.message && (
-                <div className="mx-auto max-w-md break-all font-mono text-[11px] text-status-error/80">
+                <div className="mx-auto max-w-md break-all font-mono text-xs text-status-error/80">
                   {error.message}
                 </div>
               )}
@@ -711,7 +711,7 @@ export const TagExplorerPage: React.FC = () => {
           ) : (
             <div ref={setScrollEl} className="overflow-auto max-h-[70vh]">
               <table className="w-full text-xs text-left">
-                <thead className="sticky top-0 z-10 block bg-muted/80 border-b border-border uppercase font-semibold text-[10px] text-muted-foreground tracking-wider">
+                <thead className="sticky top-0 z-10 block bg-muted/80 border-b border-border uppercase font-semibold text-xs text-muted-foreground tracking-wider">
                   <tr className="flex items-center">
                     <th
                       className="px-4 py-2.5 shrink-0 overflow-hidden"
@@ -833,7 +833,7 @@ export const TagExplorerPage: React.FC = () => {
        */}
       {trendTag && (
         <Card
-          className="w-[440px] shrink-0 flex flex-col self-stretch overflow-hidden border-border bg-card"
+          className="w-full md:w-[440px] shrink-0 flex flex-col self-stretch overflow-hidden border-border bg-card"
           onKeyDown={(e) => {
             if (e.key === 'Escape') closeTrend()
           }}
@@ -843,7 +843,7 @@ export const TagExplorerPage: React.FC = () => {
               <Activity className="w-4 h-4 text-primary shrink-0" />
               <div className="min-w-0">
                 <div className="text-sm font-semibold text-foreground truncate">{trendTag.tag}</div>
-                <div className="text-[11px] text-muted-foreground font-mono truncate">
+                <div className="text-xs text-muted-foreground font-mono truncate">
                   {trendTag.driver}
                   {trendTag.device ? ` · ${trendTag.device}` : ''}
                 </div>
@@ -857,7 +857,7 @@ export const TagExplorerPage: React.FC = () => {
           <div className="flex-1 overflow-auto p-4 space-y-3">
             {trendNumeric ? (
               <>
-                <div className="text-[11px] text-muted-foreground">
+                <div className="text-xs text-muted-foreground">
                   {t('tags.liveTrend', { count: trendSamples.length, max: MAX_TREND_SAMPLES })}
                 </div>
                 <div ref={chartContainerRef} className="w-full h-[320px] [&_canvas]:outline-none" />
@@ -958,7 +958,7 @@ export const TagExplorerPage: React.FC = () => {
                 />
               </div>
 
-              <div className="p-2.5 rounded bg-status-warning/10 border border-status-warning/20 text-[11px] text-status-warning">
+              <div className="p-3 rounded bg-status-warning/10 border border-status-warning/20 text-xs text-status-warning">
                 {t('write.confirmWarning')}
               </div>
 

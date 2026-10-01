@@ -100,7 +100,7 @@ export const InstancePanel: React.FC = () => {
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Top bar — brand bar with logo */}
-      <header className="h-14 border-b border-border bg-card px-4 flex items-center justify-between sticky top-0 z-30">
+      <header className="h-14 border-b border-border bg-card/80 backdrop-blur-md px-4 flex items-center justify-between sticky top-0 z-30">
         <div className="flex items-center space-x-2.5">
           <img src="/logo.svg" alt="CoreC" className="w-8 h-8 shrink-0" />
           <span className="font-extrabold text-lg tracking-tight">CoreC</span>
@@ -214,7 +214,7 @@ export const InstancePanel: React.FC = () => {
             </div>
 
             {/* Card grid — responsive: 1 col mobile, 2 col tablet, 3-4 col desktop */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 card-stagger">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 card-stagger">
               {instances.map((instance) => (
                 <div key={instance.id} className="card-enter">
                   <InstanceCard instance={instance} onEdit={handleEdit} />
@@ -225,9 +225,9 @@ export const InstancePanel: React.FC = () => {
               <button
                 type="button"
                 onClick={handleAdd}
-                className="rounded-lg border-2 border-dashed border-border hover:border-primary/40 hover:bg-muted/30 transition-all flex flex-col items-center justify-center min-h-[180px] gap-2 text-muted-foreground hover:text-foreground"
+                className="rounded-lg border-2 border-dashed border-border hover:border-primary/50 hover:bg-muted/40 transition-all flex flex-col items-center justify-center min-h-[180px] gap-2 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
-                <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center transition-colors group-hover:bg-primary/10">
                   <Plus className="w-5 h-5" />
                 </div>
                 <span className="text-sm font-medium">{t('instances.addNew')}</span>

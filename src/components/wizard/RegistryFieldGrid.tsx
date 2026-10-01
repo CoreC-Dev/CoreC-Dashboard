@@ -157,12 +157,12 @@ const RegistryFieldInput: React.FC<{
 
   return (
     <div className="space-y-1">
-      <label className="text-[11px] font-medium leading-none flex items-center gap-0.5">
+      <label className="text-xs font-medium leading-none flex items-center gap-0.5">
         {label}
         {field.required && <span className="text-destructive">*</span>}
       </label>
       {renderControl()}
-      {help && <p className="text-[10px] text-muted-foreground leading-tight">{help}</p>}
+      {help && <p className="text-xs text-muted-foreground leading-tight">{help}</p>}
     </div>
   )
 }

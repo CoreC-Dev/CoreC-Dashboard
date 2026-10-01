@@ -426,7 +426,7 @@ export const RulesPage: React.FC = () => {
             <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
               {t('rules.configSection')}
             </h2>
-            <Badge variant="outline" className="text-[10px]">
+            <Badge variant="outline" className="text-xs">
               {configRules.length}
             </Badge>
             {configRules.length > 6 && (
@@ -440,7 +440,7 @@ export const RulesPage: React.FC = () => {
           )}
           <div className="overflow-x-auto rounded-md border border-border">
             <table className="w-full text-xs text-left">
-              <thead className="bg-muted/40 border-b border-border uppercase font-semibold text-[10px] text-muted-foreground tracking-wider">
+              <thead className="bg-muted/40 border-b border-border uppercase font-semibold text-xs text-muted-foreground tracking-wider">
                 <tr>
                   <th className="px-3 py-2 w-12">{t('rules.colPriority')}</th>
                   <th className="px-3 py-2">{t('rules.colName')}</th>
@@ -455,11 +455,11 @@ export const RulesPage: React.FC = () => {
                   <tr key={rl.name} className="hover:bg-muted/20">
                     <td className="px-3 py-2 font-mono">{rl.priority ?? 100}</td>
                     <td className="px-3 py-2 font-semibold">{rl.name}</td>
-                    <td className="px-3 py-2 font-mono text-[10px] text-muted-foreground max-w-[200px] truncate">
+                    <td className="px-3 py-2 font-mono text-xs text-muted-foreground max-w-[200px] truncate">
                       {rl.match}
                     </td>
                     <td className="px-3 py-2">{getActionBadge(rl.action)}</td>
-                    <td className="px-3 py-2 font-mono text-[10px] text-muted-foreground">
+                    <td className="px-3 py-2 font-mono text-xs text-muted-foreground">
                       {rl.targets?.join(', ') || rl.target || '-'}
                     </td>
                     <td className="px-3 py-2 text-right">
@@ -496,7 +496,7 @@ export const RulesPage: React.FC = () => {
           <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
             {t('rules.runtimeSection')}
           </h2>
-          <Badge variant="outline" className="text-[10px]">
+          <Badge variant="outline" className="text-xs">
             {rules.length}
           </Badge>
         </div>
@@ -511,7 +511,7 @@ export const RulesPage: React.FC = () => {
               <AlertCircle className="mx-auto h-8 w-8 text-status-error" />
               <div className="text-sm font-semibold">{t('common.error')}</div>
               {error instanceof Error && error.message && (
-                <div className="mx-auto max-w-md break-all font-mono text-[11px] text-status-error/80">
+                <div className="mx-auto max-w-md break-all font-mono text-xs text-status-error/80">
                   {error.message}
                 </div>
               )}
@@ -533,7 +533,7 @@ export const RulesPage: React.FC = () => {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-xs text-left">
-                <thead className="bg-muted/50 border-b border-border uppercase font-semibold text-[10px] text-muted-foreground tracking-wider">
+                <thead className="bg-muted/50 border-b border-border uppercase font-semibold text-xs text-muted-foreground tracking-wider">
                   <tr>
                     <th className="px-4 py-3 w-16">{t('rules.colPriority')}</th>
                     <th className="px-4 py-3">{t('rules.colName')}</th>
@@ -559,12 +559,10 @@ export const RulesPage: React.FC = () => {
                         </td>
                         <td className="px-4 py-3">
                           <div className="font-semibold text-foreground">{rule.name}</div>
-                          <div className="text-[10px] text-muted-foreground font-mono">
-                            {rule.type}
-                          </div>
+                          <div className="text-xs text-muted-foreground font-mono">{rule.type}</div>
                         </td>
                         <td className="px-4 py-3">
-                          <code className="px-2 py-1 rounded bg-muted/60 text-[11px] font-mono text-primary border border-border">
+                          <code className="px-2 py-1 rounded bg-muted/60 text-xs font-mono text-primary border border-border">
                             {rule.match}
                           </code>
                         </td>
@@ -573,7 +571,7 @@ export const RulesPage: React.FC = () => {
                           {getTargetDisplay(rule)}
                         </td>
                         <td className="px-4 py-3">
-                          <div className="flex items-center space-x-2 text-[11px]">
+                          <div className="flex items-center space-x-2 text-xs">
                             <span className="text-status-running font-mono font-bold">
                               {formatNumber(rule.hit_count)} {t('common.hits')}
                             </span>
@@ -582,13 +580,13 @@ export const RulesPage: React.FC = () => {
                               {formatNumber(rule.miss_count)}
                             </span>
                           </div>
-                          <div className="text-[10px] text-muted-foreground">
+                          <div className="text-xs text-muted-foreground">
                             {t('rules.last')}:{' '}
                             {isZeroTime(rule.hit_at)
                               ? t('common.never')
                               : new Date(rule.hit_at).toLocaleTimeString()}
                           </div>
-                          <div className="text-[10px] text-muted-foreground">
+                          <div className="text-xs text-muted-foreground">
                             {t('rules.lastMiss')}:{' '}
                             {isZeroTime(rule.miss_at)
                               ? t('common.never')
@@ -608,7 +606,7 @@ export const RulesPage: React.FC = () => {
                               variant="outline"
                               size="sm"
                               onClick={() => openTest(rule)}
-                              className="h-7 text-[11px]"
+                              className="h-7 text-xs"
                             >
                               <Play className="w-3 h-3 mr-1" />
                               {t('rules.test')}
@@ -617,7 +615,7 @@ export const RulesPage: React.FC = () => {
                               variant="outline"
                               size="sm"
                               onClick={() => openEdit(rule)}
-                              className="h-7 text-[11px]"
+                              className="h-7 text-xs"
                             >
                               <Pencil className="w-3 h-3 mr-1" />
                               {t('common.edit')}
@@ -646,7 +644,7 @@ export const RulesPage: React.FC = () => {
               <div className="text-xs font-semibold text-muted-foreground">
                 {t('rules.matchExpression')}
               </div>
-              <code className="block px-3 py-2 rounded bg-muted/60 text-[11px] font-mono text-primary border border-border break-all">
+              <code className="block px-3 py-2 rounded bg-muted/60 text-xs font-mono text-primary border border-border break-all">
                 {testRule?.match || t('rules.emptyMatch')}
               </code>
             </div>
@@ -709,11 +707,11 @@ export const RulesPage: React.FC = () => {
                     <div className="text-xs font-bold text-status-running">
                       {t('rules.matched')}
                     </div>
-                    <div className="flex items-center gap-2 text-[11px]">
+                    <div className="flex items-center gap-2 text-xs">
                       <span className="text-muted-foreground">{t('common.action')}:</span>
                       {getActionBadge(testRule.action)}
                     </div>
-                    <div className="text-[11px] font-mono">
+                    <div className="text-xs font-mono">
                       <span className="text-muted-foreground">{t('common.target')}:</span>{' '}
                       <span className="text-foreground">{getTargetDisplay(testRule)}</span>
                     </div>
@@ -721,7 +719,7 @@ export const RulesPage: React.FC = () => {
                 ) : (
                   <div className="text-xs font-bold text-status-error">{t('rules.noMatch')}</div>
                 )}
-                <div className="text-[10px] text-muted-foreground pt-1 border-t border-border/40">
+                <div className="text-xs text-muted-foreground pt-1 border-t border-border/40">
                   {t('rules.testNote')}
                 </div>
               </div>
@@ -844,7 +842,7 @@ export const RulesPage: React.FC = () => {
                 <div className="text-xs font-semibold text-muted-foreground">
                   {t('config.yamlCode')}
                 </div>
-                <pre className="max-h-48 overflow-auto rounded-md border border-border bg-muted/60 p-3 text-[11px] font-mono text-primary whitespace-pre-wrap break-all">
+                <pre className="max-h-48 overflow-auto rounded-md border border-border bg-muted/60 p-3 text-xs font-mono text-primary whitespace-pre-wrap break-all">
                   {buildRuleYaml(editForm)}
                 </pre>
               </div>

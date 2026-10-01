@@ -22,6 +22,13 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { safePersist, safeRead } from '@/lib/storage'
 import type { LogEvent, WriteCommand } from '@/types/models'
 
@@ -205,9 +212,9 @@ export const AlertsPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Top Banner */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 card-stagger">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 card-stagger">
         <Card className="border-border bg-card card-enter">
           <CardHeader className="p-4 pb-1">
             <CardDescription className="text-xs flex items-center justify-between">
@@ -219,9 +226,7 @@ export const AlertsPage: React.FC = () => {
             <div className="text-2xl font-bold font-mono text-status-error">
               {deadLetters.length}
             </div>
-            <div className="text-[11px] text-muted-foreground mt-1">
-              {t('alerts.retriesExhausted')}
-            </div>
+            <div className="text-xs text-muted-foreground mt-1">{t('alerts.retriesExhausted')}</div>
           </CardContent>
         </Card>
 
@@ -236,7 +241,7 @@ export const AlertsPage: React.FC = () => {
             <div className="text-2xl font-bold font-mono text-status-warning">
               {alertRules.length}
             </div>
-            <div className="text-[11px] text-muted-foreground mt-1">
+            <div className="text-xs text-muted-foreground mt-1">
               {t('alerts.activeAlarmTriggers')}
             </div>
           </CardContent>
@@ -251,7 +256,7 @@ export const AlertsPage: React.FC = () => {
           </CardHeader>
           <CardContent className="p-4 pt-1">
             <div className="text-2xl font-bold font-mono text-foreground">{liveLogs.length}</div>
-            <div className="text-[11px] text-muted-foreground mt-1">
+            <div className="text-xs text-muted-foreground mt-1">
               {t('alerts.realtimeWarningDesc', { defaultValue: 'Warnings & errors received' })}
             </div>
           </CardContent>
@@ -259,7 +264,7 @@ export const AlertsPage: React.FC = () => {
       </div>
 
       {/* Dead Letters List */}
-      <Card className="border-border bg-card">
+      <Card className="border-border bg-card card-enter">
         <CardHeader className="p-4 flex flex-row items-center justify-between">
           <div>
             <CardTitle className="text-sm font-semibold flex items-center space-x-2 text-status-error">
@@ -307,17 +312,15 @@ export const AlertsPage: React.FC = () => {
                 return (
                   <div
                     key={retryKey}
-                    className="p-3 rounded-lg border border-status-error/20 bg-status-error/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+                    className="p-3 rounded-lg border border-status-error/20 bg-status-error/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sm transition-colors hover:bg-status-error/10"
                   >
                     <div className="space-y-1">
-                      <div className="font-mono font-semibold text-status-error">
+                      <div className="font-mono font-semibold text-status-error text-sm">
                         [{entry.command.driver}] {t('common.tag')}: {entry.command.tag} ={' '}
                         {String(entry.command.value)}
                       </div>
-                      <div className="text-muted-foreground font-mono text-[11px]">
-                        {entry.error}
-                      </div>
-                      <div className="text-[10px] text-muted-foreground flex items-center space-x-2">
+                      <div className="text-muted-foreground font-mono text-xs">{entry.error}</div>
+                      <div className="text-xs text-muted-foreground flex items-center space-x-2">
                         <Clock className="w-3 h-3" />
                         <span>{new Date(entry.failed_at).toLocaleString()}</span>
                         <span>•</span>
@@ -344,7 +347,7 @@ export const AlertsPage: React.FC = () => {
       </Card>
 
       {/* Live Warning / Error Feed */}
-      <Card className="border-border bg-card">
+      <Card className="border-border bg-card card-enter">
         <CardHeader className="p-4 flex flex-row items-start justify-between gap-2">
           <div>
             <CardTitle className="text-sm font-semibold flex items-center space-x-2">
@@ -398,18 +401,25 @@ export const AlertsPage: React.FC = () => {
                 className="pl-9 h-9 text-xs"
               />
             </div>
-            <select
+            <Select
               value={logLevel}
-              onChange={(e) => setLogLevel(e.target.value as 'all' | 'warning' | 'error')}
-              aria-label={t('alerts.logLevel', { defaultValue: 'Log level' })}
-              className="h-9 px-3 rounded-md border border-input bg-transparent text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring shrink-0"
+              onValueChange={(v) => setLogLevel(v as 'all' | 'warning' | 'error')}
             >
-              <option value="all">{t('alerts.levelAll', { defaultValue: 'All levels' })}</option>
-              <option value="warning">
-                {t('alerts.levelWarning', { defaultValue: 'Warning' })}
-              </option>
-              <option value="error">{t('alerts.levelError', { defaultValue: 'Error' })}</option>
-            </select>
+              <SelectTrigger className="w-[10rem] shrink-0">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">
+                  {t('alerts.levelAll', { defaultValue: 'All levels' })}
+                </SelectItem>
+                <SelectItem value="warning">
+                  {t('alerts.levelWarning', { defaultValue: 'Warning' })}
+                </SelectItem>
+                <SelectItem value="error">
+                  {t('alerts.levelError', { defaultValue: 'Error' })}
+                </SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {liveLogs.length === 0 ? (
@@ -425,20 +435,20 @@ export const AlertsPage: React.FC = () => {
               })}
             </div>
           ) : (
-            <div className="space-y-1.5 max-h-96 overflow-y-auto font-mono text-xs">
+            <div className="space-y-2 max-h-[60vh] overflow-y-auto font-mono text-xs">
               {filteredLogs.map((log) => (
                 <div
                   key={`${log.timestamp}-${log.level}-${log.type}-${log.payload.slice(0, 20)}`}
-                  className={`p-2 rounded border flex items-start space-x-2 ${
+                  className={`p-2.5 rounded border flex items-start space-x-2 transition-colors hover:bg-muted/30 ${
                     log.level >= 8
                       ? 'border-status-error/30 bg-status-error/10 text-status-error'
                       : 'border-status-warning/30 bg-status-warning/10 text-status-warning'
                   }`}
                 >
-                  <span className="text-[10px] opacity-75 shrink-0 mt-0.5">
+                  <span className="text-xs opacity-75 shrink-0 mt-0.5">
                     {new Date(log.timestamp).toLocaleTimeString()}
                   </span>
-                  <Badge variant="outline" className="text-[9px] py-0 h-4 uppercase">
+                  <Badge variant="outline" className="text-xs py-0 h-5 uppercase shrink-0">
                     {log.type ||
                       (log.level >= 8 ? t('alerts.logLevelError') : t('alerts.logLevelWarn'))}
                   </Badge>
