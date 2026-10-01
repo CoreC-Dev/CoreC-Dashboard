@@ -165,9 +165,7 @@ export const AppShell: React.FC = () => {
       >
         <Icon className="w-[18px] h-[18px] shrink-0 transition-transform duration-200 group-hover:scale-110" />
         {!eff && (
-          <span className="text-sm font-medium truncate text-left flex-1">
-            {item.label}
-          </span>
+          <span className="text-sm font-medium truncate text-left flex-1">{item.label}</span>
         )}
       </NavLink>
     )
