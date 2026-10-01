@@ -20,7 +20,6 @@ import {
   Tag,
   TerminalSquare,
   Unplug,
-  X,
 } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
@@ -211,7 +210,7 @@ export const AppShell: React.FC = () => {
   // Shared sidebar content
   const sidebarContent = (
     <>
-      {/* Brand mark — animated logo centered, no text */}
+      {/* Brand mark — animated logo centered */}
       <div className={cn('flex items-center shrink-0', eff ? 'justify-center' : 'justify-center')}>
         <Link
           to="/"
@@ -224,21 +223,15 @@ export const AppShell: React.FC = () => {
             className={cn('shrink-0 transition-all duration-300', eff ? 'w-9 h-9' : 'w-28 h-28')}
           />
         </Link>
-        {!eff && isMobile && (
-          <button
-            type="button"
-            onClick={() => setMobileOpen(false)}
-            className="w-9 h-9 rounded-lg grid place-items-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200 shrink-0 ml-auto"
-            aria-label={t('aria.closeSidebar')}
-          >
-            <X className="w-4 h-4" />
-          </button>
-        )}
       </div>
 
       {/* ===== Centered navigation area — white bubble card ===== */}
       <div
-        className={cn('flex-1 flex flex-col justify-center relative', eff ? 'items-center' : '')}
+        className={cn(
+          'flex flex-col relative',
+          isMobile ? '' : 'flex-1 justify-center',
+          eff ? 'items-center' : '',
+        )}
       >
         <div
           className={cn(
@@ -481,7 +474,9 @@ export const AppShell: React.FC = () => {
             style={{ boxShadow: 'var(--shadow-panel)' }}
           >
             <SheetTitle>{t('aria.navigation')}</SheetTitle>
-            {sidebarContent}
+            <div className="flex flex-col gap-3 overflow-y-auto flex-1 min-h-0">
+              {sidebarContent}
+            </div>
           </SheetContent>
         </Sheet>
       )}
