@@ -8,6 +8,7 @@ import {
   Gauge,
   Globe,
   LayoutDashboard,
+  Menu,
   Moon,
   Network,
   Palette,
@@ -20,6 +21,7 @@ import {
   Tag,
   TerminalSquare,
   Unplug,
+  X,
 } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useState } from 'react'
@@ -46,6 +48,19 @@ type RailItem = {
 }
 
 const SIDEBAR_KEY = 'corec_sidebar_collapsed'
+const MOBILE_BP = 768
+
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window === 'undefined' ? false : window.innerWidth < MOBILE_BP,
+  )
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < MOBILE_BP)
+    window.addEventListener('resize', handler)
+    return () => window.removeEventListener('resize', handler)
+  }, [])
+  return isMobile
+}
 
 export const AppShell: React.FC = () => {
   const { t } = useTranslation()
@@ -56,16 +71,30 @@ export const AppShell: React.FC = () => {
   const { instance, isConnected, isConnecting } = useConnection()
   const instances = useInstanceStore((s) => s.instances)
   const { theme, resolvedTheme, setTheme } = useThemeStore()
+  const isMobile = useIsMobile()
 
-  // Sidebar collapse state — persisted in localStorage
+  // Sidebar collapse state (desktop) — persisted in localStorage
   const [collapsed, setCollapsed] = useState(() => {
     if (typeof localStorage === 'undefined') return true
     return localStorage.getItem(SIDEBAR_KEY) !== 'expanded'
   })
 
+  // Mobile drawer open/close
+  const [mobileOpen, setMobileOpen] = useState(false)
+
   useEffect(() => {
     localStorage.setItem(SIDEBAR_KEY, collapsed ? 'collapsed' : 'expanded')
   }, [collapsed])
+
+  // Close mobile drawer on route change
+  useEffect(() => {
+    setMobileOpen(false)
+  }, [])
+
+  // Close mobile drawer when resizing to desktop
+  useEffect(() => {
+    if (!isMobile) setMobileOpen(false)
+  }, [isMobile])
 
   const base = instanceId ? `/corec/${instanceId}` : ''
 
@@ -99,6 +128,9 @@ export const AppShell: React.FC = () => {
   const isMonitor = location.pathname.includes('/monitor')
   const isAdmin = location.pathname.includes('/admin')
 
+  // On mobile, sidebar is always expanded (drawer shows full text)
+  const eff = isMobile ? false : collapsed
+
   const renderItem = (item: RailItem) => {
     const Icon = item.icon
     return (
@@ -108,18 +140,16 @@ export const AppShell: React.FC = () => {
         className={({ isActive }) =>
           cn(
             'relative grid place-items-center transition-all duration-200 group',
-            collapsed
-              ? 'w-9 h-9 rounded-full'
-              : 'w-full h-9 rounded-lg flex items-center px-2.5 gap-2.5',
+            eff ? 'w-9 h-9 rounded-full' : 'w-full h-9 rounded-lg flex items-center px-2.5 gap-2.5',
             isActive
               ? 'bg-foreground text-background shadow-md'
               : 'text-muted-foreground hover:text-foreground hover:bg-muted hover:translate-x-0.5',
           )
         }
-        title={collapsed ? item.label : undefined}
+        title={eff ? item.label : undefined}
       >
         <Icon className="w-[18px] h-[18px] shrink-0" />
-        {!collapsed && (
+        {!eff && (
           <span className="text-sm font-medium truncate text-left flex-1">{item.label}</span>
         )}
       </NavLink>
@@ -127,7 +157,7 @@ export const AppShell: React.FC = () => {
   }
 
   const renderGroupLabel = (label: string) => {
-    if (collapsed) return null
+    if (eff) return null
     return (
       <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70 px-2.5 pt-1 pb-0.5">
         {label}
@@ -135,258 +165,304 @@ export const AppShell: React.FC = () => {
     )
   }
 
-  return (
-    <div className="h-screen w-full flex bg-background text-foreground overflow-hidden p-4 gap-4">
-      {/* ===== Floating sidebar ===== */}
-      <aside
+  // Shared sidebar content
+  const sidebarContent = (
+    <>
+      {/* Brand mark + collapse toggle */}
+      <div
         className={cn(
-          'sidebar-transition shrink-0 flex flex-col py-4 bg-card rounded-[20px] overflow-hidden',
-          collapsed ? 'w-[72px] px-2 gap-1 items-center' : 'w-[220px] px-3 gap-1',
+          'flex items-center shrink-0',
+          eff ? 'flex-col gap-2' : 'justify-between px-0.5',
         )}
-        style={{ boxShadow: 'var(--shadow-card)' }}
       >
-        {/* Brand mark + collapse toggle */}
-        <div
-          className={cn(
-            'flex items-center shrink-0',
-            collapsed ? 'flex-col gap-2' : 'justify-between px-0.5',
+        <Link to="/" className="flex items-center gap-2.5 shrink-0" aria-label="CoreC home">
+          <img src="/logo.svg" alt="CoreC" className="w-8 h-8 shrink-0" />
+          {!eff && (
+            <span className="font-extrabold text-base tracking-tight whitespace-nowrap">CoreC</span>
           )}
-        >
-          <Link to="/" className="flex items-center gap-2.5 shrink-0" aria-label="CoreC home">
-            <img src="/logo.svg" alt="CoreC" className="w-8 h-8 shrink-0" />
-            {!collapsed && (
-              <span className="font-extrabold text-base tracking-tight whitespace-nowrap">
-                CoreC
-              </span>
-            )}
-          </Link>
-          {!collapsed && (
-            <button
-              type="button"
-              onClick={() => setCollapsed(true)}
-              className="w-7 h-7 rounded-lg grid place-items-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200 shrink-0"
-              aria-label="Collapse sidebar"
-            >
-              <PanelLeftClose className="w-4 h-4" />
-            </button>
-          )}
-        </div>
-
-        {/* Expand button (collapsed state) */}
-        {collapsed && (
+        </Link>
+        {!eff && !isMobile && (
           <button
             type="button"
-            onClick={() => setCollapsed(false)}
-            className="w-9 h-9 rounded-full grid place-items-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200 shrink-0"
-            aria-label="Expand sidebar"
+            onClick={() => setCollapsed(true)}
+            className="w-7 h-7 rounded-lg grid place-items-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200 shrink-0"
+            aria-label="Collapse sidebar"
           >
-            <PanelLeftOpen className="w-[18px] h-[18px]" />
+            <PanelLeftClose className="w-4 h-4" />
           </button>
         )}
-
-        {/* Monitor group label */}
-        {renderGroupLabel(t('nav.monitor'))}
-
-        {/* Monitor nav group */}
-        <nav className={cn('flex flex-col w-full', collapsed ? 'gap-1.5 items-center' : 'gap-1')}>
-          {monitorItems.map(renderItem)}
-        </nav>
-
-        {/* Admin group label */}
-        {renderGroupLabel(t('nav.admin'))}
-
-        {/* Admin nav group */}
-        <nav className={cn('flex flex-col w-full', collapsed ? 'gap-1.5 items-center' : 'gap-1')}>
-          {adminItems.map(renderItem)}
-        </nav>
-
-        {/* ===== Bottom fixed function area ===== */}
-        <div className={cn('mt-auto', collapsed ? 'pt-3' : 'pt-2')}>
-          <div
-            className={cn('h-px bg-border mb-2 shrink-0', collapsed ? 'w-8 mx-auto' : 'w-full')}
-          />
-          <div
-            className={cn(
-              'flex w-full',
-              collapsed ? 'flex-col items-center gap-1.5' : 'flex-col gap-1',
-            )}
+        {!eff && isMobile && (
+          <button
+            type="button"
+            onClick={() => setMobileOpen(false)}
+            className="w-7 h-7 rounded-lg grid place-items-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200 shrink-0"
+            aria-label="Close sidebar"
           >
-            {/* Instance switcher */}
-            {instance && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    type="button"
-                    className={cn(
-                      'grid place-items-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200',
-                      collapsed
-                        ? 'w-9 h-9 rounded-full'
-                        : 'w-full h-9 rounded-lg flex items-center px-2.5 gap-2.5',
-                    )}
-                    aria-label={t('instances.switchInstance')}
-                  >
-                    <Server className="w-[18px] h-[18px] shrink-0" />
-                    {!collapsed && (
-                      <span className="text-sm font-medium truncate text-left flex-1">
-                        {instance.name}
-                      </span>
-                    )}
-                    {!collapsed && (
-                      <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                    )}
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent side="right" align="end" className="w-56">
-                  <DropdownMenuLabel>{t('instances.switchInstance')}</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  {instances.map((inst) => (
-                    <DropdownMenuItem
-                      key={inst.id}
-                      onClick={() => {
-                        const space = isMonitor
-                          ? 'monitor/dashboard'
-                          : isAdmin
-                            ? 'admin/drivers'
-                            : 'monitor/dashboard'
-                        navigate(`/corec/${inst.id}/${space}`)
-                      }}
-                      className={inst.id === instance.id ? 'bg-accent' : ''}
-                    >
-                      <span
-                        className={cn(
-                          'w-1.5 h-1.5 rounded-full mr-2 shrink-0',
-                          inst.lastConnectedAt ? 'bg-status-running' : 'bg-status-idle',
-                        )}
-                      />
-                      <span className="truncate">{inst.name}</span>
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
+            <X className="w-4 h-4" />
+          </button>
+        )}
+      </div>
 
-            {/* Language toggle */}
-            <button
-              type="button"
-              onClick={toggleLanguage}
-              className={cn(
-                'grid place-items-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200',
-                collapsed
-                  ? 'w-9 h-9 rounded-full'
-                  : 'w-full h-9 rounded-lg flex items-center px-2.5 gap-2.5',
-              )}
-              aria-label={t('common.toggleLanguage')}
-            >
-              <Globe className="w-[18px] h-[18px] shrink-0" />
-              {!collapsed && (
-                <span className="text-sm font-medium truncate text-left flex-1">
-                  {i18nInst.language.startsWith('zh') ? '中文' : 'English'}
-                </span>
-              )}
-            </button>
+      {/* Expand button (desktop collapsed state) */}
+      {eff && !isMobile && (
+        <button
+          type="button"
+          onClick={() => setCollapsed(false)}
+          className="w-9 h-9 rounded-full grid place-items-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200 shrink-0"
+          aria-label="Expand sidebar"
+        >
+          <PanelLeftOpen className="w-[18px] h-[18px]" />
+        </button>
+      )}
 
-            {/* Theme selector */}
+      {/* Monitor group label */}
+      {renderGroupLabel(t('nav.monitor'))}
+
+      {/* Monitor nav group */}
+      <nav className={cn('flex flex-col w-full', eff ? 'gap-1.5 items-center' : 'gap-1')}>
+        {monitorItems.map(renderItem)}
+      </nav>
+
+      {/* Admin group label */}
+      {renderGroupLabel(t('nav.admin'))}
+
+      {/* Admin nav group */}
+      <nav className={cn('flex flex-col w-full', eff ? 'gap-1.5 items-center' : 'gap-1')}>
+        {adminItems.map(renderItem)}
+      </nav>
+
+      {/* ===== Bottom fixed function area ===== */}
+      <div className={cn('mt-auto', eff ? 'pt-3' : 'pt-2')}>
+        <div className={cn('h-px bg-border mb-2 shrink-0', eff ? 'w-8 mx-auto' : 'w-full')} />
+        <div
+          className={cn('flex w-full', eff ? 'flex-col items-center gap-1.5' : 'flex-col gap-1')}
+        >
+          {/* Instance switcher */}
+          {instance && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
                   className={cn(
                     'grid place-items-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200',
-                    collapsed
+                    eff
                       ? 'w-9 h-9 rounded-full'
                       : 'w-full h-9 rounded-lg flex items-center px-2.5 gap-2.5',
                   )}
-                  aria-label="Select theme"
+                  aria-label={t('instances.switchInstance')}
                 >
-                  {resolvedTheme === 'dark' ? (
-                    <Moon className="w-[18px] h-[18px] shrink-0" />
-                  ) : (
-                    <Sun className="w-[18px] h-[18px] shrink-0" />
-                  )}
-                  {!collapsed && (
+                  <Server className="w-[18px] h-[18px] shrink-0" />
+                  {!eff && (
                     <span className="text-sm font-medium truncate text-left flex-1">
-                      {THEME_LABELS[theme]}
+                      {instance.name}
                     </span>
                   )}
+                  {!eff && <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />}
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent side="right" align="end" className="w-40">
-                <DropdownMenuLabel className="flex items-center gap-2">
-                  <Palette className="w-3.5 h-3.5" />
-                  {t('settings.theme', { defaultValue: 'Theme' })}
-                </DropdownMenuLabel>
+              <DropdownMenuContent side="right" align="end" className="w-56">
+                <DropdownMenuLabel>{t('instances.switchInstance')}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => setTheme('system')}
-                  className="flex items-center justify-between"
-                >
-                  <span>{THEME_LABELS.system}</span>
-                  {theme === 'system' && <Check className="w-3.5 h-3.5" />}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                {THEME_VARIANTS.map((variant) => (
+                {instances.map((inst) => (
                   <DropdownMenuItem
-                    key={variant}
-                    onClick={() => setTheme(variant)}
-                    className="flex items-center justify-between"
+                    key={inst.id}
+                    onClick={() => {
+                      const space = isMonitor
+                        ? 'monitor/dashboard'
+                        : isAdmin
+                          ? 'admin/drivers'
+                          : 'monitor/dashboard'
+                      navigate(`/corec/${inst.id}/${space}`)
+                    }}
+                    className={inst.id === instance.id ? 'bg-accent' : ''}
                   >
-                    <span>{THEME_LABELS[variant]}</span>
-                    {theme === variant && <Check className="w-3.5 h-3.5" />}
+                    <span
+                      className={cn(
+                        'w-1.5 h-1.5 rounded-full mr-2 shrink-0',
+                        inst.lastConnectedAt ? 'bg-status-running' : 'bg-status-idle',
+                      )}
+                    />
+                    <span className="truncate">{inst.name}</span>
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
+          )}
 
-            {/* Disconnect */}
-            <button
-              type="button"
-              onClick={() => navigate('/')}
-              className={cn(
-                'grid place-items-center text-muted-foreground hover:text-status-error hover:bg-status-error/10 transition-all duration-200',
-                collapsed
-                  ? 'w-9 h-9 rounded-full'
-                  : 'w-full h-9 rounded-lg flex items-center px-2.5 gap-2.5',
-              )}
-              title={collapsed ? t('connection.disconnect') : undefined}
-              aria-label="Disconnect"
-            >
-              <Unplug className="w-[18px] h-[18px] shrink-0" />
-              {!collapsed && (
-                <span className="text-sm font-medium truncate text-left flex-1">
-                  {t('connection.disconnect')}
-                </span>
-              )}
-            </button>
-          </div>
+          {/* Language toggle */}
+          <button
+            type="button"
+            onClick={toggleLanguage}
+            className={cn(
+              'grid place-items-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200',
+              eff
+                ? 'w-9 h-9 rounded-full'
+                : 'w-full h-9 rounded-lg flex items-center px-2.5 gap-2.5',
+            )}
+            aria-label={t('common.toggleLanguage')}
+          >
+            <Globe className="w-[18px] h-[18px] shrink-0" />
+            {!eff && (
+              <span className="text-sm font-medium truncate text-left flex-1">
+                {i18nInst.language.startsWith('zh') ? '中文' : 'English'}
+              </span>
+            )}
+          </button>
+
+          {/* Theme selector */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className={cn(
+                  'grid place-items-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200',
+                  eff
+                    ? 'w-9 h-9 rounded-full'
+                    : 'w-full h-9 rounded-lg flex items-center px-2.5 gap-2.5',
+                )}
+                aria-label="Select theme"
+              >
+                {resolvedTheme === 'dark' ? (
+                  <Moon className="w-[18px] h-[18px] shrink-0" />
+                ) : (
+                  <Sun className="w-[18px] h-[18px] shrink-0" />
+                )}
+                {!eff && (
+                  <span className="text-sm font-medium truncate text-left flex-1">
+                    {THEME_LABELS[theme]}
+                  </span>
+                )}
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent side="right" align="end" className="w-40">
+              <DropdownMenuLabel className="flex items-center gap-2">
+                <Palette className="w-3.5 h-3.5" />
+                {t('settings.theme', { defaultValue: 'Theme' })}
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => setTheme('system')}
+                className="flex items-center justify-between"
+              >
+                <span>{THEME_LABELS.system}</span>
+                {theme === 'system' && <Check className="w-3.5 h-3.5" />}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              {THEME_VARIANTS.map((variant) => (
+                <DropdownMenuItem
+                  key={variant}
+                  onClick={() => setTheme(variant)}
+                  className="flex items-center justify-between"
+                >
+                  <span>{THEME_LABELS[variant]}</span>
+                  {theme === variant && <Check className="w-3.5 h-3.5" />}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Disconnect */}
+          <button
+            type="button"
+            onClick={() => navigate('/')}
+            className={cn(
+              'grid place-items-center text-muted-foreground hover:text-status-error hover:bg-status-error/10 transition-all duration-200',
+              eff
+                ? 'w-9 h-9 rounded-full'
+                : 'w-full h-9 rounded-lg flex items-center px-2.5 gap-2.5',
+            )}
+            title={eff ? t('connection.disconnect') : undefined}
+            aria-label="Disconnect"
+          >
+            <Unplug className="w-[18px] h-[18px] shrink-0" />
+            {!eff && (
+              <span className="text-sm font-medium truncate text-left flex-1">
+                {t('connection.disconnect')}
+              </span>
+            )}
+          </button>
         </div>
-      </aside>
+      </div>
+    </>
+  )
+
+  return (
+    <div className="h-screen w-full bg-background text-foreground overflow-hidden md:flex md:p-4 md:gap-4">
+      {/* ===== Mobile backdrop ===== */}
+      {isMobile && mobileOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm transition-opacity"
+          onClick={() => setMobileOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* ===== Mobile sidebar (overlay drawer) ===== */}
+      {isMobile && (
+        <aside
+          className={cn(
+            'fixed inset-y-4 left-4 z-50 w-[280px] flex flex-col py-4 px-3 gap-1 bg-card rounded-[20px] overflow-hidden transition-transform duration-300',
+            mobileOpen ? 'translate-x-0' : '-translate-x-[110%]',
+          )}
+          style={{ boxShadow: 'var(--shadow-panel)' }}
+        >
+          {sidebarContent}
+        </aside>
+      )}
+
+      {/* ===== Desktop sidebar (floating panel in flex layout) ===== */}
+      {!isMobile && (
+        <aside
+          className={cn(
+            'sidebar-transition shrink-0 flex flex-col py-4 bg-card rounded-[20px] overflow-hidden',
+            collapsed ? 'w-[72px] px-2 gap-1 items-center' : 'w-[220px] px-3 gap-1',
+          )}
+          style={{ boxShadow: 'var(--shadow-card)' }}
+        >
+          {sidebarContent}
+        </aside>
+      )}
 
       {/* ===== Main content area ===== */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Topbar — back button + live indicator */}
-        <header className="flex items-center gap-2.5 px-5 py-3 shrink-0">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden h-full">
+        {/* Topbar */}
+        <header className="flex items-center gap-2 px-3 py-2.5 md:px-5 md:py-3 shrink-0">
+          {/* Hamburger (mobile only) */}
+          {isMobile && (
+            <button
+              type="button"
+              onClick={() => setMobileOpen(true)}
+              className="flex items-center justify-center w-9 h-9 rounded-lg bg-card border border-border shadow-sm text-muted-foreground hover:text-foreground hover:shadow-md transition-all duration-200 shrink-0"
+              aria-label="Open menu"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+          )}
+
           {/* Back button */}
           <button
             type="button"
             onClick={() => navigate('/')}
-            className="flex items-center justify-center w-8 h-8 rounded-full bg-card border border-border shadow-sm text-muted-foreground hover:text-foreground hover:shadow-md transition-all duration-200 shrink-0"
+            className="flex items-center justify-center w-9 h-9 md:w-8 md:h-8 rounded-full bg-card border border-border shadow-sm text-muted-foreground hover:text-foreground hover:shadow-md transition-all duration-200 shrink-0"
             aria-label={t('instances.backHome')}
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
 
           {/* Right: live indicator */}
-          <div className="ml-auto flex items-center gap-2.5">
+          <div className="ml-auto flex items-center gap-2 md:gap-2.5">
             {instance && (
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-card border border-border shadow-sm">
+              <div className="flex items-center gap-2 px-2.5 py-1.5 md:px-3 rounded-full bg-card border border-border shadow-sm">
                 <span className={cn('w-2 h-2 rounded-full shrink-0', statusColor)} />
-                <span className="text-xs font-semibold text-muted-foreground">{instance.name}</span>
+                <span className="text-xs font-semibold text-muted-foreground truncate max-w-[120px]">
+                  {instance.name}
+                </span>
               </div>
             )}
             {isMonitor && (
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-card border border-border shadow-sm">
+              <div className="flex items-center gap-1.5 px-2.5 py-1.5 md:px-3 rounded-full bg-card border border-border shadow-sm">
                 <span className="w-2 h-2 rounded-full bg-status-running glow-running" />
-                <span className="text-xs font-semibold text-status-running">
+                <span className="text-xs font-semibold text-status-running hidden sm:inline">
                   {t('monitor.realtimeStreamConnected')}
                 </span>
               </div>
@@ -396,7 +472,7 @@ export const AppShell: React.FC = () => {
 
         {/* Content — centered with max-width + page transition */}
         <main className="flex-1 overflow-y-auto">
-          <div className="max-w-[1600px] mx-auto w-full px-8 pb-6">
+          <div className="w-full px-4 pb-4 md:px-8 md:pb-6 lg:max-w-[1600px] lg:mx-auto">
             <div key={location.pathname} className="page-enter">
               <Outlet />
             </div>
