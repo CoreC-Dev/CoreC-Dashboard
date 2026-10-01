@@ -134,5 +134,26 @@ Ordered by risk (lowest first). Each batch is independently shippable and verifi
 - **W2b-2:** `applyError?: string` prop + destructive banner on `ConfigApplyConfirmationDialog`; wired `applyError` state + `onError` + clear-on-open/close in all 4 callers (Drivers/Transports/Rules/ConfigCenter). Added `applyDialog.applyError` i18n key to both locales.
 - **W2b-3:** Extracted shared `RestartBadge` to `DetailPageParts.tsx` (props `{ show?: boolean; label: string }`); replaced local defs in `GlobalConfigEditor` (4 usages) + `NodeConfigEditor` (1 usage); removed orphaned `AlertTriangle` imports. **`EmptyConfigCard` extraction SKIPPED** — only 2 sites share the pattern (not 4 as audit estimated), marginal value (~4 LOC).
 
-### Deferred (unchanged from §2)
-God-component splits, `useHomepageProbe`→TanStack Query, entity-list/edit extractions, recharts-on-homepage root cause, recharts→lightweight-charts, `configStore` deep-equal, "Cancel"→"Discard"+AlertDialog, topbar WS-health badge, mobile drawer→Radix Dialog.
+### Deferred → second pass (implemented)
+
+A second optimization pass tackled the deferred items from §2. Items were prioritized by risk (lowest first); high-risk items were investigated and explicitly deferred with documented rationale.
+
+| Item | Status | Details |
+|------|--------|---------|
+| **P1** recharts-on-homepage | ✅ Resolved (no code change needed) | Verified via build analysis: `vendor-recharts` chunk only loaded by `DashboardPage` (monitor route), NOT by entry or homepage chunks. The existing `React.lazy` route splitting + W2-F `manualChunks` already keep recharts off the homepage. Original audit finding was based on pre-optimization state. |
+| **P4** configStore deep-equal | ✅ Implemented | Replaced per-keystroke `JSON.stringify(a) === JSON.stringify(b)` with a recursive `deepEqual()` in `configStore.ts`. No new dependency. Fixes a latent correctness bug (JSON.stringify is not canonical for different key orders) and eliminates string allocation on every keystroke. |
+| **U3** Cancel→Discard+AlertDialog | ✅ Implemented | New `DiscardChangesDialog` (shared AlertDialog confirmation) + `UnsavedChangesBanner` (shared banner component). All 4 pages (Drivers/Transports/Rules/ConfigCenter) now show "Discard changes" (not "Cancel") and confirm before reverting. New i18n keys: `common.discard`, `common.discardChanges`, `applyDialog.discardTitle`, `applyDialog.discardDesc`. |
+| **A4/P2** useHomepageProbe | ✅ Partial (AbortController) | Added parent `AbortController` to `useHomepageProbe` — in-flight fetches are now aborted on unmount (previously continued consuming bandwidth for up to 8s each). Full TanStack Query conversion **deferred**: requires root-level `QueryClientProvider` (architectural change), cadence semantics change (fixed-interval → completion-relative), and creates double source of truth with Zustand store. |
+| **A2** Entity list page dedup | ✅ Partial (banner) | Extracted `UnsavedChangesBanner` shared component (banner + discard dialog + apply button) used by all 4 pages. Full `useEntityListPage` hook extraction **deferred**: entity rendering (cards vs tables) can't be shared, i18n label passing is verbose, and RulesPage has significant divergences (query invalidation, toggle, test/edit dialogs). |
+| **U5** Topbar realtime badge | ✅ Implemented (REST) | Replaced hardcoded green "Real-time Stream Connected" badge with a badge driven by real `isConnected`/`isConnecting` state from `ConnectionContext`. Shows yellow (connecting), green (connected), or red (disconnected) with appropriate labels. Full WS-health registry **deferred**: requires central WS-status aggregation infrastructure (touches shared `websocket.ts` with 5 consumers). |
+| **U6** Mobile drawer → Radix | ✅ Implemented | New `sheet.tsx` primitive (Radix Dialog-based, side-anchored). Replaced custom `<aside>` + backdrop `<div>` with `<Sheet>`/`<SheetContent>`. Fixes real WCAG violations: focus trapping, Escape key, scroll lock, focus return, `role="dialog"`/`aria-modal`, and off-screen-focusable-elements bug (Radix mounts on open, unmounts on close). |
+
+### Deferred (remaining — high risk, needs dedicated PR)
+
+| Item | Rationale |
+|------|-----------|
+| **A3** God-component splits | `ConfigCenterPage` (1024 LOC) and `TagExplorerPage` (1003 LOC) already have key sub-components extracted (`GlobalConfigEditor`, `RuleGroupEditor`, `TagRow`). Further splitting requires heavy prop drilling with marginal readability benefit and high bug risk. |
+| **A5** `useEntityEditConfig` + `EntityDetailHeader` | Dominant duplication (`EntityEditConfigCard`, 129 LOC) already extracted. Only 2 consumers remain with real divergences (field-aware `valueToString`, group-based read source). Net ~55–75 LOC saved doesn't justify the churn and med-risk callback-heavy interface. |
+| **P5** recharts→lightweight-charts | Simple chart usage (AreaChart + LineChart, ~200 LOC) but migration would cause significant visual appearance changes (different tooltip, axis, grid rendering). High risk without visual regression testing. recharts is already lazy-loaded (only on monitor route). |
+| **DUP-8/RED-3** settingsRegistry derivation | Deriving `connectionInfo` + detail fields from `settingsRegistry` is a large refactor with two sources of truth to reconcile. High risk, needs dedicated design pass. |
+| **A4/P2** Full TanStack Query conversion | Requires root `QueryClientProvider`, cadence semantics change, and store-vs-cache data-source decision. See A4/P2 partial above. |

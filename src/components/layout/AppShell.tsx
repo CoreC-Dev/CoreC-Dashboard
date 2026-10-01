@@ -35,6 +35,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { useConnection } from '@/contexts/ConnectionContext'
 import { setLocale } from '@/i18n'
 import { cn } from '@/lib/utils'
@@ -419,26 +420,18 @@ export const AppShell: React.FC = () => {
         </div>
       )}
 
-      {/* ===== Mobile backdrop ===== */}
-      {isMobile && mobileOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm transition-opacity"
-          onClick={() => setMobileOpen(false)}
-          aria-hidden="true"
-        />
-      )}
-
-      {/* ===== Mobile sidebar (overlay drawer) ===== */}
+      {/* ===== Mobile sidebar (Radix Dialog-based sheet for a11y) ===== */}
       {isMobile && (
-        <aside
-          className={cn(
-            'fixed inset-y-4 left-4 z-50 w-[280px] flex flex-col py-4 px-3 gap-1 bg-card rounded-[20px] overflow-hidden transition-transform duration-300',
-            mobileOpen ? 'translate-x-0' : '-translate-x-[110%]',
-          )}
-          style={{ boxShadow: 'var(--shadow-panel)' }}
-        >
-          {sidebarContent}
-        </aside>
+        <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+          <SheetContent
+            side="left"
+            className="py-4 px-3"
+            style={{ boxShadow: 'var(--shadow-panel)' }}
+          >
+            <SheetTitle>{t('aria.navigation')}</SheetTitle>
+            {sidebarContent}
+          </SheetContent>
+        </Sheet>
       )}
 
       {/* ===== Desktop sidebar (floating panel in flex layout) ===== */}
@@ -492,9 +485,31 @@ export const AppShell: React.FC = () => {
             )}
             {isMonitor && (
               <div className="flex items-center gap-1.5 px-2.5 py-1.5 md:px-3 rounded-full bg-card border border-border shadow-sm">
-                <span className="w-2 h-2 rounded-full bg-status-running glow-running" />
-                <span className="text-xs font-semibold text-status-running hidden sm:inline">
-                  {t('monitor.realtimeStreamConnected')}
+                <span
+                  className={cn(
+                    'w-2 h-2 rounded-full shrink-0',
+                    isConnecting
+                      ? 'bg-status-warning'
+                      : isConnected
+                        ? 'bg-status-running glow-running'
+                        : 'bg-status-error glow-error',
+                  )}
+                />
+                <span
+                  className={cn(
+                    'text-xs font-semibold hidden sm:inline',
+                    isConnecting
+                      ? 'text-status-warning'
+                      : isConnected
+                        ? 'text-status-running'
+                        : 'text-status-error',
+                  )}
+                >
+                  {isConnecting
+                    ? t('monitor.realtimeStreamConnecting')
+                    : isConnected
+                      ? t('monitor.realtimeStreamConnected')
+                      : t('monitor.realtimeStreamDisconnected')}
                 </span>
               </div>
             )}

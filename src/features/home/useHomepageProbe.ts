@@ -56,9 +56,15 @@ async function fetchWithTimeout(
   url: string,
   opts: RequestInit = {},
   timeoutMs = REQUEST_TIMEOUT,
+  parentSignal?: AbortSignal,
 ): Promise<Response> {
   const ctrl = new AbortController()
   const timeoutId = setTimeout(() => ctrl.abort(), timeoutMs)
+  // Propagate parent abort (e.g. unmount) to this individual request
+  if (parentSignal) {
+    if (parentSignal.aborted) ctrl.abort()
+    else parentSignal.addEventListener('abort', () => ctrl.abort(), { once: true })
+  }
   try {
     return await fetch(url, { ...opts, signal: ctrl.signal })
   } finally {
@@ -66,17 +72,20 @@ async function fetchWithTimeout(
   }
 }
 
-async function probeInstance(instance: CoreCInstance): Promise<CoreCInstance['lastKnownInfo']> {
+async function probeInstance(
+  instance: CoreCInstance,
+  signal?: AbortSignal,
+): Promise<CoreCInstance['lastKnownInfo']> {
   const base = instance.baseUrl.trim().replace(/\/+$/, '')
   const headers = { Authorization: `Bearer ${instance.secret}` }
 
   // Fetch GET / and GET /stats and GET /tags and GET /rules and GET /configs/raw in parallel
   const [infoRes, statsRes, tagsRes, rulesRes, rawCfgRes] = await Promise.allSettled([
-    fetchWithTimeout(`${base}/`),
-    fetchWithTimeout(`${base}/stats`, { headers }),
-    fetchWithTimeout(`${base}/tags`, { headers }),
-    fetchWithTimeout(`${base}/rules`, { headers }),
-    fetchWithTimeout(`${base}/configs/raw`, { headers }),
+    fetchWithTimeout(`${base}/`, {}, REQUEST_TIMEOUT, signal),
+    fetchWithTimeout(`${base}/stats`, { headers }, REQUEST_TIMEOUT, signal),
+    fetchWithTimeout(`${base}/tags`, { headers }, REQUEST_TIMEOUT, signal),
+    fetchWithTimeout(`${base}/rules`, { headers }, REQUEST_TIMEOUT, signal),
+    fetchWithTimeout(`${base}/configs/raw`, { headers }, REQUEST_TIMEOUT, signal),
   ])
 
   // GET / must succeed — otherwise the instance is unreachable
@@ -189,6 +198,8 @@ export function useHomepageProbe(): void {
 
   useEffect(() => {
     let active = true
+    const abortController = new AbortController()
+    const { signal } = abortController
 
     const probeAll = async () => {
       const list = instancesRef.current
@@ -203,7 +214,7 @@ export function useHomepageProbe(): void {
       await Promise.allSettled(
         list.map(async (inst) => {
           try {
-            const info = await probeInstance(inst)
+            const info = await probeInstance(inst, signal)
             if (!active) return
             setProbeResultRef.current(inst.id, true, info)
           } catch {
@@ -222,6 +233,7 @@ export function useHomepageProbe(): void {
 
     return () => {
       active = false
+      abortController.abort()
       clearInterval(intervalId)
     }
   }, []) // Empty deps — runs once on mount, refs keep data fresh

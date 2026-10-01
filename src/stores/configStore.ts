@@ -147,15 +147,29 @@ export interface ConfigStoreState {
   isRuleGroupNameUnique: (name: string) => boolean
 }
 
-/** Deep equality check for config objects (structural, not reference). */
-function configEqual(a: CoreCConfig | null, b: CoreCConfig | null): boolean {
+/**
+ * Structural deep-equality for plain JSON-serializable config objects.
+ * Replaces the previous `JSON.stringify(a) === JSON.stringify(b)` approach,
+ * which (a) allocated two strings on every keystroke and (b) was technically
+ * incorrect for objects with different key-insertion orders. This recursive
+ * check is order-independent and allocation-free for equal objects.
+ */
+function deepEqual(a: unknown, b: unknown): boolean {
   if (a === b) return true
-  if (!a || !b) return false
-  try {
-    return JSON.stringify(a) === JSON.stringify(b)
-  } catch {
-    return false
+  if (a === null || b === null) return false
+  if (typeof a !== 'object' || typeof b !== 'object') return false
+  const ka = Object.keys(a)
+  const kb = Object.keys(b)
+  if (ka.length !== kb.length) return false
+  for (const k of ka) {
+    if (!deepEqual((a as Record<string, unknown>)[k], (b as Record<string, unknown>)[k]))
+      return false
   }
+  return true
+}
+
+function configEqual(a: CoreCConfig | null, b: CoreCConfig | null): boolean {
+  return deepEqual(a, b)
 }
 
 export const useConfigStore = create<ConfigStoreState>((set, get) => {

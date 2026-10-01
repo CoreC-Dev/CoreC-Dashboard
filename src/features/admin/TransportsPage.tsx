@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { ConfigApplyConfirmationDialog } from '@/components/wizard/ConfigApplyConfirmationDialog'
 import { EntitySearchBar, filterEntities } from '@/components/wizard/EntitySearchBar'
+import { UnsavedChangesBanner } from '@/components/wizard/UnsavedChangesBanner'
 import { ValidationBanner } from '@/components/wizard/ValidationBanner'
 import { TransportWizard } from '@/features/admin/TransportWizard'
 import { formatValidationErrors, useConfigValidation } from '@/hooks/useConfigValidation'
@@ -130,33 +131,17 @@ export const TransportsPage: React.FC = () => {
       </div>
 
       {/* Unsaved changes banner */}
-      {dirty && (
-        <div className="rounded-md border border-status-warning/30 bg-status-warning/10 p-3 text-xs text-status-warning dark:text-status-warning flex items-center justify-between">
-          <span>{t('transports.unsavedChanges')}</span>
-          <div className="flex gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 text-xs"
-              onClick={() => useConfigStore.getState().revert()}
-            >
-              {t('common.cancel')}
-            </Button>
-            <Button
-              variant="default"
-              size="sm"
-              className="h-7 text-xs"
-              disabled={!!validationErrors}
-              onClick={() => {
-                setApplyError(null)
-                setApplyDialogOpen(true)
-              }}
-            >
-              {t('transports.applyChanges')}
-            </Button>
-          </div>
-        </div>
-      )}
+      <UnsavedChangesBanner
+        dirty={dirty}
+        unsavedChangesLabel={t('transports.unsavedChanges')}
+        applyChangesLabel={t('transports.applyChanges')}
+        hasValidationErrors={!!validationErrors}
+        onApply={() => {
+          setApplyError(null)
+          setApplyDialogOpen(true)
+        }}
+        onDiscard={() => useConfigStore.getState().revert()}
+      />
 
       {/* Live validation errors */}
       <ValidationBanner />

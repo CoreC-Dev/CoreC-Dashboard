@@ -21,6 +21,7 @@
   },
   "aria": {
     "corecHome": "CoreC home",
+    "navigation": "Navigation",
     "collapseSidebar": "Collapse sidebar",
     "closeSidebar": "Close sidebar",
     "expandSidebar": "Expand sidebar",
@@ -82,6 +83,8 @@
     "delete": "Delete",
     "save": "Save",
     "cancel": "Cancel",
+    "discard": "Discard",
+    "discardChanges": "Discard changes",
     "confirm": "Confirm",
     "search": "Search...",
     "filter": "Filter",
@@ -184,6 +187,8 @@
     "engineSuspendWarning": "Warning: Applying config suspends the ENTIRE engine for a brief reload. All data collection and publishing pause during the reload. Non-atomic — there is no automatic rollback if the new config fails.",
     "validationErrors": "Validation errors — fix these before applying:",
     "applyError": "Apply failed — the config was not reloaded:",
+    "discardTitle": "Discard unsaved changes?",
+    "discardDesc": "All unsaved edits will be lost. This cannot be undone.",
     "applying": "Applying...",
     "confirmApply": "Apply Changes",
     "drivers": "Drivers",
@@ -1045,7 +1050,9 @@
     "removeCard": "Remove card"
   },
   "monitor": {
-    "realtimeStreamConnected": "Real-time Stream Connected"
+    "realtimeStreamConnected": "Real-time Stream Connected",
+    "realtimeStreamConnecting": "Real-time Stream Connecting…",
+    "realtimeStreamDisconnected": "Real-time Stream Disconnected"
   },
   "error": {
     "boundary": {

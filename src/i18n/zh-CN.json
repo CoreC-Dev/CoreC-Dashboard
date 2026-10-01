@@ -21,6 +21,7 @@
   },
   "aria": {
     "corecHome": "CoreC 首页",
+    "navigation": "导航",
     "collapseSidebar": "折叠侧边栏",
     "closeSidebar": "关闭侧边栏",
     "expandSidebar": "展开侧边栏",
@@ -82,6 +83,8 @@
     "delete": "删除",
     "save": "保存",
     "cancel": "取消",
+    "discard": "放弃",
+    "discardChanges": "放弃更改",
     "confirm": "确认",
     "search": "搜索...",
     "filter": "筛选",
@@ -184,6 +187,8 @@
     "engineSuspendWarning": "警告：应用配置会暂停整个引擎进行短暂重载。重载期间所有数据采集和发布暂停。此操作非原子性——如果新配置加载失败，不会自动回滚。",
     "validationErrors": "校验错误——请在应用前修正：",
     "applyError": "应用失败——配置未重载：",
+    "discardTitle": "放弃未保存的更改？",
+    "discardDesc": "所有未保存的编辑都将丢失。此操作无法撤销。",
     "applying": "应用中...",
     "confirmApply": "应用变更",
     "drivers": "驱动",
@@ -1045,7 +1050,9 @@
     "removeCard": "移除卡片"
   },
   "monitor": {
-    "realtimeStreamConnected": "实时流已连接"
+    "realtimeStreamConnected": "实时流已连接",
+    "realtimeStreamConnecting": "实时流连接中…",
+    "realtimeStreamDisconnected": "实时流已断开"
   },
   "error": {
     "boundary": {

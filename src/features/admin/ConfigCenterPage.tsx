@@ -37,6 +37,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { ConfigApplyConfirmationDialog } from '@/components/wizard/ConfigApplyConfirmationDialog'
+import { UnsavedChangesBanner } from '@/components/wizard/UnsavedChangesBanner'
 import { ValidationBanner } from '@/components/wizard/ValidationBanner'
 import { GlobalConfigEditor } from '@/features/admin/GlobalConfigEditor'
 import { NodeConfigEditor } from '@/features/admin/NodeConfigEditor'
@@ -803,33 +804,17 @@ export const ConfigCenterPage: React.FC = () => {
           </Card>
 
           {/* Dirty banner for configStore-managed edits */}
-          {configDirty && (
-            <div className="rounded-md border border-status-warning/30 bg-status-warning/10 p-3 text-xs text-status-warning dark:text-status-warning flex items-center justify-between">
-              <span>{t('config.unsavedChanges')}</span>
-              <div className="flex gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 text-xs"
-                  onClick={() => useConfigStore.getState().revert()}
-                >
-                  {t('common.cancel')}
-                </Button>
-                <Button
-                  variant="default"
-                  size="sm"
-                  className="h-7 text-xs"
-                  disabled={hasValidationErrors}
-                  onClick={() => {
-                    setApplyError(null)
-                    setGlobalApplyOpen(true)
-                  }}
-                >
-                  {t('config.applyChanges')}
-                </Button>
-              </div>
-            </div>
-          )}
+          <UnsavedChangesBanner
+            dirty={configDirty}
+            unsavedChangesLabel={t('config.unsavedChanges')}
+            applyChangesLabel={t('config.applyChanges')}
+            hasValidationErrors={hasValidationErrors}
+            onApply={() => {
+              setApplyError(null)
+              setGlobalApplyOpen(true)
+            }}
+            onDiscard={() => useConfigStore.getState().revert()}
+          />
 
           {/* Live validation errors banner */}
           <ValidationBanner />
