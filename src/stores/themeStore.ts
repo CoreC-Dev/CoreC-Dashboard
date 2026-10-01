@@ -1,6 +1,37 @@
 import { create } from 'zustand'
 
-export type ThemeMode = 'system' | 'dark' | 'light'
+export type ThemeMode =
+  | 'system'
+  | 'light'
+  | 'dark'
+  | 'light-sepia'
+  | 'light-nord'
+  | 'dark-midnight'
+  | 'dark-forest'
+
+/** All selectable theme variants (excluding "system" which resolves to light/dark). */
+export const THEME_VARIANTS: ThemeMode[] = [
+  'light',
+  'dark',
+  'light-sepia',
+  'light-nord',
+  'dark-midnight',
+  'dark-forest',
+]
+
+/** Human-readable labels for each variant. */
+export const THEME_LABELS: Record<ThemeMode, string> = {
+  system: 'System',
+  light: 'Light',
+  dark: 'Dark',
+  'light-sepia': 'Sepia',
+  'light-nord': 'Nord',
+  'dark-midnight': 'Midnight',
+  'dark-forest': 'Forest',
+}
+
+/** Whether a variant is a dark theme (needs `.dark` class for Tailwind). */
+const DARK_VARIANTS: ThemeMode[] = ['dark', 'dark-midnight', 'dark-forest']
 
 interface ThemeState {
   theme: ThemeMode
@@ -15,10 +46,25 @@ function getSystemTheme(): 'dark' | 'light' {
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
 }
 
-function applyThemeToDOM(resolved: 'dark' | 'light') {
+/** Determine whether a theme mode is dark. */
+function isDarkTheme(theme: ThemeMode): boolean {
+  if (theme === 'system') return getSystemTheme() === 'dark'
+  return DARK_VARIANTS.includes(theme)
+}
+
+/** Apply theme to the DOM: set data-theme attribute and .dark class. */
+function applyThemeToDOM(theme: ThemeMode) {
   if (typeof document === 'undefined') return
   const root = document.documentElement
-  if (resolved === 'dark') {
+  const dark = isDarkTheme(theme)
+
+  // data-theme attribute selects the CSS variable block.
+  // For "system", resolve to light/dark.
+  const dataTheme = theme === 'system' ? (dark ? 'dark' : 'light') : theme
+  root.setAttribute('data-theme', dataTheme)
+
+  // .dark class for Tailwind dark: utilities
+  if (dark) {
     root.classList.add('dark')
   } else {
     root.classList.remove('dark')
@@ -29,29 +75,29 @@ const savedTheme =
   (typeof localStorage !== 'undefined' ? (localStorage.getItem(STORAGE_KEY) as ThemeMode) : null) ||
   'system'
 
-const initialResolved = savedTheme === 'system' ? getSystemTheme() : savedTheme
-applyThemeToDOM(initialResolved)
+// Validate saved theme — if it's not a known variant, fall back to system.
+const validTheme =
+  THEME_VARIANTS.includes(savedTheme) || savedTheme === 'system' ? savedTheme : 'system'
+applyThemeToDOM(validTheme)
 
 export const useThemeStore = create<ThemeState>((set, get) => {
   // Listen for system changes
   if (typeof window !== 'undefined') {
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
       if (get().theme === 'system') {
-        const sys = getSystemTheme()
-        applyThemeToDOM(sys)
-        set({ resolvedTheme: sys })
+        applyThemeToDOM('system')
+        set({ resolvedTheme: getSystemTheme() })
       }
     })
   }
 
   return {
-    theme: savedTheme,
-    resolvedTheme: initialResolved,
+    theme: validTheme,
+    resolvedTheme: isDarkTheme(validTheme) ? 'dark' : 'light',
     setTheme: (theme: ThemeMode) => {
-      const resolved = theme === 'system' ? getSystemTheme() : theme
       localStorage.setItem(STORAGE_KEY, theme)
-      applyThemeToDOM(resolved)
-      set({ theme, resolvedTheme: resolved })
+      applyThemeToDOM(theme)
+      set({ theme, resolvedTheme: isDarkTheme(theme) ? 'dark' : 'light' })
     },
   }
 })

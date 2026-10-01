@@ -2,6 +2,7 @@ import {
   Activity,
   ArrowLeft,
   Bell,
+  Check,
   ChevronDown,
   Cpu,
   FileCode2,
@@ -10,6 +11,7 @@ import {
   LayoutDashboard,
   Moon,
   Network,
+  Palette,
   Send,
   Settings,
   Sliders,
@@ -33,7 +35,7 @@ import { useConnection } from '@/contexts/ConnectionContext'
 import { setLocale } from '@/i18n'
 import { cn } from '@/lib/utils'
 import { useInstanceStore } from '@/stores/instanceStore'
-import { useThemeStore } from '@/stores/themeStore'
+import { THEME_LABELS, THEME_VARIANTS, useThemeStore } from '@/stores/themeStore'
 
 type RailItem = {
   path: string
@@ -69,12 +71,6 @@ export const AppShell: React.FC = () => {
     { path: `${base}/admin/diagnostics`, label: t('nav.diagnostics'), icon: Gauge },
   ]
 
-  const cycleTheme = () => {
-    if (theme === 'system') setTheme('dark')
-    else if (theme === 'dark') setTheme('light')
-    else setTheme('system')
-  }
-
   const toggleLanguage = () => {
     const nextLang = i18nInst.language.startsWith('zh') ? 'en' : 'zh-CN'
     setLocale(nextLang)
@@ -98,14 +94,10 @@ export const AppShell: React.FC = () => {
         {/* Brand mark */}
         <Link
           to="/"
-          className="w-9 h-9 rounded-full grid place-items-center shrink-0 text-white"
-          style={{
-            background: 'linear-gradient(135deg, #baf34d 0%, #54bb47 58%, #16824b 100%)',
-            boxShadow: 'inset 0 1px 1px rgba(255,255,255,.35), 0 5px 12px rgba(74,179,67,.22)',
-          }}
+          className="w-9 h-9 rounded-full grid place-items-center shrink-0 overflow-hidden"
           aria-label="CoreC home"
         >
-          <Activity className="w-4 h-4" strokeWidth={2.4} />
+          <img src="/logo.svg" alt="CoreC" className="w-8 h-8" />
         </Link>
 
         {/* Monitor nav group */}
@@ -161,19 +153,46 @@ export const AppShell: React.FC = () => {
 
         {/* Bottom: theme + disconnect */}
         <div className="mt-auto flex flex-col items-center gap-1.5 w-full">
-          <button
-            type="button"
-            onClick={cycleTheme}
-            className="w-9 h-9 rounded-full grid place-items-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-150"
-            title={t('topbar.themeTooltip', { theme: t(`settings.${theme}`) })}
-            aria-label="Toggle theme"
-          >
-            {resolvedTheme === 'dark' ? (
-              <Moon className="w-[18px] h-[18px]" />
-            ) : (
-              <Sun className="w-[18px] h-[18px]" />
-            )}
-          </button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="w-9 h-9 rounded-full grid place-items-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-150"
+                aria-label="Select theme"
+              >
+                {resolvedTheme === 'dark' ? (
+                  <Moon className="w-[18px] h-[18px]" />
+                ) : (
+                  <Sun className="w-[18px] h-[18px]" />
+                )}
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent side="right" align="end" className="w-40">
+              <DropdownMenuLabel className="flex items-center gap-2">
+                <Palette className="w-3.5 h-3.5" />
+                {t('settings.theme', { defaultValue: 'Theme' })}
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => setTheme('system')}
+                className="flex items-center justify-between"
+              >
+                <span>{THEME_LABELS.system}</span>
+                {theme === 'system' && <Check className="w-3.5 h-3.5" />}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              {THEME_VARIANTS.map((variant) => (
+                <DropdownMenuItem
+                  key={variant}
+                  onClick={() => setTheme(variant)}
+                  className="flex items-center justify-between"
+                >
+                  <span>{THEME_LABELS[variant]}</span>
+                  {theme === variant && <Check className="w-3.5 h-3.5" />}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
           <button
             type="button"
             onClick={() => navigate('/')}

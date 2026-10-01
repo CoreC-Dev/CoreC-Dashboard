@@ -1,4 +1,4 @@
-import { Activity, Download, Plus, Settings, Upload } from 'lucide-react'
+import { Check, Download, Moon, Palette, Plus, Settings, Sun, Upload } from 'lucide-react'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
@@ -11,10 +11,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import i18n, { setLocale } from '@/i18n'
 import type { CoreCInstance } from '@/stores/instanceStore'
 import { useInstanceStore } from '@/stores/instanceStore'
-import { useThemeStore } from '@/stores/themeStore'
+import { THEME_LABELS, THEME_VARIANTS, useThemeStore } from '@/stores/themeStore'
 import { InstanceCard } from './InstanceCard'
 import { InstanceDialog } from './InstanceDialog'
 import { useHomepageProbe } from './useHomepageProbe'
@@ -84,12 +92,6 @@ export const InstancePanel: React.FC = () => {
     }
   }
 
-  const cycleTheme = () => {
-    if (theme === 'system') setTheme('dark')
-    else if (theme === 'dark') setTheme('light')
-    else setTheme('system')
-  }
-
   const toggleLanguage = () => {
     const nextLang = i18n.language.startsWith('zh') ? 'en' : 'zh-CN'
     setLocale(nextLang)
@@ -97,33 +99,57 @@ export const InstancePanel: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* Top bar — brand bar with gradient mark */}
+      {/* Top bar — brand bar with logo */}
       <header className="h-14 border-b border-border bg-card px-4 flex items-center justify-between sticky top-0 z-30">
         <div className="flex items-center space-x-2.5">
-          <span
-            className="w-8 h-8 rounded-full grid place-items-center text-white shrink-0"
-            style={{
-              background: 'linear-gradient(135deg, #baf34d 0%, #54bb47 58%, #16824b 100%)',
-              boxShadow: 'inset 0 1px 1px rgba(255,255,255,.35), 0 5px 12px rgba(74,179,67,.22)',
-            }}
-          >
-            <Activity className="w-4 h-4" strokeWidth={2.4} />
-          </span>
+          <img src="/logo.svg" alt="CoreC" className="w-8 h-8 shrink-0" />
           <span className="font-extrabold text-lg tracking-tight">CoreC</span>
           <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">
             Dashboard
           </span>
         </div>
         <div className="flex items-center space-x-1 sm:space-x-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={cycleTheme}
-            aria-label={t('topbar.themeTooltip', { theme: t(`settings.${theme}`) })}
-            className="h-8 w-8 text-muted-foreground hover:text-foreground"
-          >
-            {resolvedTheme === 'dark' ? '🌙' : '☀️'}
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={t('settings.theme', { defaultValue: 'Theme' })}
+                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+              >
+                {resolvedTheme === 'dark' ? (
+                  <Moon className="w-4 h-4" />
+                ) : (
+                  <Sun className="w-4 h-4" />
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-40">
+              <DropdownMenuLabel className="flex items-center gap-2">
+                <Palette className="w-3.5 h-3.5" />
+                {t('settings.theme', { defaultValue: 'Theme' })}
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => setTheme('system')}
+                className="flex items-center justify-between"
+              >
+                <span>{THEME_LABELS.system}</span>
+                {theme === 'system' && <Check className="w-3.5 h-3.5" />}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              {THEME_VARIANTS.map((variant) => (
+                <DropdownMenuItem
+                  key={variant}
+                  onClick={() => setTheme(variant)}
+                  className="flex items-center justify-between"
+                >
+                  <span>{THEME_LABELS[variant]}</span>
+                  {theme === variant && <Check className="w-3.5 h-3.5" />}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button
             variant="ghost"
             size="sm"

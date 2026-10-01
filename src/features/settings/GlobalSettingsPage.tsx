@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/select'
 import i18n, { setLocale } from '@/i18n'
 import { useInstanceStore } from '@/stores/instanceStore'
-import { useThemeStore } from '@/stores/themeStore'
+import { THEME_LABELS, THEME_VARIANTS, type ThemeMode, useThemeStore } from '@/stores/themeStore'
 
 export const GlobalSettingsPage: React.FC = () => {
   const { t } = useTranslation()
@@ -89,14 +89,17 @@ export const GlobalSettingsPage: React.FC = () => {
           {/* Theme */}
           <div className="space-y-2">
             <Label>{t('settings.themeMode')}</Label>
-            <Select value={theme} onValueChange={(v) => setTheme(v as 'system' | 'dark' | 'light')}>
+            <Select value={theme} onValueChange={(v) => setTheme(v as ThemeMode)}>
               <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="system">{t('settings.system')}</SelectItem>
-                <SelectItem value="light">{t('settings.light')}</SelectItem>
-                <SelectItem value="dark">{t('settings.dark')}</SelectItem>
+                <SelectItem value="system">{THEME_LABELS.system}</SelectItem>
+                {THEME_VARIANTS.map((variant) => (
+                  <SelectItem key={variant} value={variant}>
+                    {THEME_LABELS[variant]}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground">{t('settings.themeModeDesc')}</p>
