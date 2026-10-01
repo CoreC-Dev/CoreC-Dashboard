@@ -10,6 +10,7 @@ import {
   TrendingUp,
 } from 'lucide-react'
 import type React from 'react'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router-dom'
 import { useDeadLetters, useDrivers, useStats, useTransports } from '@/api/hooks'
@@ -39,12 +40,15 @@ export const DashboardPage: React.FC = () => {
   const { data: transportsData } = useTransports()
   const { data: deadLettersData } = useDeadLetters()
 
-  const drivers = driversData?.drivers || []
-  const transports = transportsData?.transports || []
-  const deadLetters = deadLettersData?.failed_writes || []
+  const drivers = useMemo(() => driversData?.drivers || [], [driversData])
+  const transports = useMemo(() => transportsData?.transports || [], [transportsData])
+  const deadLetters = useMemo(() => deadLettersData?.failed_writes || [], [deadLettersData])
 
-  const connectedDrivers = drivers.filter((d) => d.state === 2).length
-  const connectedTransports = transports.filter((tr) => tr.state === 2).length
+  const connectedDrivers = useMemo(() => drivers.filter((d) => d.state === 2).length, [drivers])
+  const connectedTransports = useMemo(
+    () => transports.filter((tr) => tr.state === 2).length,
+    [transports],
+  )
 
   // Engine status dot — reflect the actual stats.status instead of a hardcoded
   // green. "running"/"ok" (and the loading state with no status yet) are

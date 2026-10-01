@@ -127,7 +127,23 @@
     "none": "None",
     "collapse": "Collapse",
     "expand": "Expand",
-    "noResults": "No results for \"{{query}}\""
+    "noResults": "No results for \"{{query}}\"",
+    "justNow": "just now",
+    "minutesAgo": "{{count}}m ago",
+    "hoursAgo": "{{count}}h ago",
+    "daysAgo": "{{count}}d ago",
+    "moreActions": "More actions",
+    "toggleLanguage": "Toggle language",
+    "lightMode": "Switch to light mode",
+    "darkMode": "Switch to dark mode"
+  },
+  "instanceCard": {
+    "throughput": "Throughput",
+    "reads": "Reads",
+    "publishes": "Publishes",
+    "dropped": "Dropped",
+    "points": "{{count}} points",
+    "errors": "{{count}} errors"
   },
   "wizard": {
     "step": "Step {{current}} of {{total}}",

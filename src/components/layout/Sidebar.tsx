@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { NavLink, useParams } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 
-export const Sidebar: React.FC = () => {
+export const Sidebar: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) => {
   const { t } = useTranslation()
   const { id } = useParams<{ id: string }>()
 
@@ -39,7 +39,10 @@ export const Sidebar: React.FC = () => {
   ]
 
   return (
-    <aside className="w-56 shrink-0 border-r border-border bg-card/40 backdrop-blur-sm flex flex-col justify-between p-3 select-none">
+    <aside
+      aria-label={t('nav.admin')}
+      className="w-56 shrink-0 border-r border-border bg-card/40 backdrop-blur-sm flex flex-col justify-between p-3 select-none"
+    >
       <div className="space-y-6">
         {navGroups.map((group) => (
           <div key={group.id} className="space-y-1">
@@ -53,6 +56,7 @@ export const Sidebar: React.FC = () => {
                   <NavLink
                     key={item.path}
                     to={item.path}
+                    onClick={onNavigate}
                     className={({ isActive }) =>
                       cn(
                         'flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-all group',

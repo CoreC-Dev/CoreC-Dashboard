@@ -1,14 +1,14 @@
 import { AlertCircle, Download, Gauge, RefreshCw } from 'lucide-react'
 import type React from 'react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { getActiveConnection } from '@/api/activeConnection'
-import { getMetricsText } from '@/api/endpoints'
+import { useMetrics } from '@/api/hooks'
 import { EventLogTerminal } from '@/components/admin/EventLogTerminal'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Switch } from '@/components/ui/switch'
-import { type MetricEntry, parsePrometheusMetrics } from '@/lib/prometheus'
+import { parsePrometheusMetrics } from '@/lib/prometheus'
 import { formatNumber } from '@/lib/utils'
 
 const METRICS_AUTO_REFRESH_MS = 12_000
@@ -56,41 +56,23 @@ const HistTile: React.FC<{
 export const DiagnosticsPage: React.FC = () => {
   const { t } = useTranslation()
 
-  // Metrics state
-  const [metrics, setMetrics] = useState<MetricEntry[]>([])
-  const [loadingMetrics, setLoadingMetrics] = useState(false)
+  // Auto-refresh toggle — when off, refetchInterval is disabled (false).
   const [autoRefresh, setAutoRefresh] = useState(true)
+
+  // Metrics via TanStack Query — replaces manual setInterval polling.
+  const {
+    data: metricsRaw,
+    refetch,
+    isFetching: loadingMetrics,
+  } = useMetrics(autoRefresh ? METRICS_AUTO_REFRESH_MS : false)
+  const metrics = useMemo(
+    () => (metricsRaw ? parsePrometheusMetrics(metricsRaw) : []),
+    [metricsRaw],
+  )
 
   // pprof download state
   const [pprofLoading, setPprofLoading] = useState<string | null>(null)
   const [pprofError, setPprofError] = useState<string | null>(null)
-
-  const fetchMetrics = useCallback(async () => {
-    setLoadingMetrics(true)
-    try {
-      const raw = await getMetricsText()
-      const parsed = parsePrometheusMetrics(raw)
-      setMetrics(parsed)
-    } catch (e) {
-      console.error('Failed to load metrics', e)
-    } finally {
-      setLoadingMetrics(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    fetchMetrics()
-  }, [fetchMetrics])
-
-  // Auto-refresh metrics on a fixed interval. Re-creates the timer whenever the
-  // toggle flips so turning it off immediately stops polling.
-  useEffect(() => {
-    if (!autoRefresh) return
-    const id = setInterval(() => {
-      fetchMetrics()
-    }, METRICS_AUTO_REFRESH_MS)
-    return () => clearInterval(id)
-  }, [autoRefresh, fetchMetrics])
 
   // Fetch a pprof profile with the Bearer auth header and trigger a local
   // download. Direct <a href> links would receive a 401 because pprof is
@@ -196,7 +178,7 @@ export const DiagnosticsPage: React.FC = () => {
             <Button
               variant="outline"
               size="sm"
-              onClick={fetchMetrics}
+              onClick={() => refetch()}
               disabled={loadingMetrics}
               className="h-8 text-xs"
             >

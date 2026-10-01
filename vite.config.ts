@@ -43,6 +43,10 @@ export default defineConfig({
               return 'vendor-react'
             if (id.includes('@tanstack/react-query')) return 'vendor-query'
             if (id.includes('@radix-ui/')) return 'vendor-radix'
+            if (id.includes('lightweight-charts')) return 'vendor-charts'
+            if (id.includes('@xterm/')) return 'vendor-xterm'
+            if (id.includes('js-yaml') || id.includes('zod')) return 'vendor-config'
+            if (id.includes('@monaco-editor/')) return 'vendor-monaco'
           }
           return undefined
         },

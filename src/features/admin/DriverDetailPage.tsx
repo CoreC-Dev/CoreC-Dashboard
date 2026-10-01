@@ -675,7 +675,7 @@ export const DriverDetailPage: React.FC = () => {
               {t('drivers.noTagValues', { driver: driver.name })}
             </div>
           ) : (
-            <div className="overflow-hidden rounded-lg border border-border">
+            <div className="overflow-x-auto rounded-lg border border-border">
               <table className="w-full text-left text-xs">
                 <thead className="border-b border-border bg-muted/60 text-[10px] uppercase font-semibold text-muted-foreground">
                   <tr>

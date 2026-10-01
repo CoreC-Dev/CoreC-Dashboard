@@ -40,6 +40,8 @@ import { ValidationBanner } from '@/components/wizard/ValidationBanner'
 import { RuleWizard } from '@/features/admin/RuleWizard'
 import { useConfigValidation } from '@/hooks/useConfigValidation'
 import { parseConfigYaml } from '@/lib/configYaml'
+import { evaluateMatch, type SimDataPoint } from '@/lib/ruleMatchEvaluator'
+import { buildRuleYaml, type EditFormData } from '@/lib/ruleYaml'
 import { formatNumber, formatRelativeTime, isZeroTime } from '@/lib/utils'
 import { useConfigStore } from '@/stores/configStore'
 import { DATA_TYPES, type RuleConfig } from '@/types/config'
@@ -52,16 +54,6 @@ const getTargetDisplay = (rule: RuleStat): string => {
     return rule.targets.join(', ')
   }
   return rule.target || '-'
-}
-
-interface SimDataPoint {
-  driver: string
-  device: string
-  group: string
-  tag: string
-  value: string
-  type: string
-  quality: string
 }
 
 const EMPTY_TEST_DP: SimDataPoint = {
@@ -78,97 +70,6 @@ const TEST_TYPE_OPTIONS: { value: string; label: string }[] = DATA_TYPES.map((v)
   value: v,
   label: v,
 }))
-
-const getFieldValue = (dp: SimDataPoint, field: string): string | undefined => {
-  switch (field) {
-    case 'driver':
-      return dp.driver
-    case 'device':
-      return dp.device
-    case 'group':
-      return dp.group
-    case 'tag':
-      return dp.tag
-    case 'value':
-      return dp.value
-    case 'type':
-      return dp.type
-    case 'quality':
-      return dp.quality
-    default:
-      return undefined
-  }
-}
-
-// Naive client-side evaluator for simple match-DSL fragments.
-// Supports: field == "lit" | field != "lit" | field >=|<=|>|< num |
-// `field contains "lit"`, plus bare field names (truthy check), joined by
-// `&&` / `||` (`&&` binds tighter). Anything unparseable is treated as a
-// non-match so operators never get false positives. The dialog clearly labels
-// the result as an estimate — full evaluation requires the CoreC engine.
-const evaluateClause = (clause: string, dp: SimDataPoint): boolean => {
-  const c = clause.trim()
-  if (!c) return true
-
-  const contains = c.match(/^(\w+)\s+contains\s+"([^"]*)"$/)
-  if (contains) {
-    const field = contains[1]!
-    const lit = contains[2]!
-    const v = getFieldValue(dp, field)
-    if (v == null) return false
-    return v.includes(lit)
-  }
-
-  const cmp = c.match(/^(\w+)\s*(==|!=|>=|<=|>|<)\s*("[^"]*"|[\w.-]+)$/)
-  if (cmp) {
-    const field = cmp[1]!
-    const op = cmp[2]!
-    const raw = cmp[3]!
-    const fv = getFieldValue(dp, field)
-    if (fv === undefined) return false
-
-    if (raw.startsWith('"')) {
-      const lit = raw.slice(1, -1)
-      if (op === '==') return fv === lit
-      if (op === '!=') return fv !== lit
-      return false
-    }
-
-    const lhs = Number(fv)
-    const rhs = Number(raw)
-    if (Number.isNaN(lhs) || Number.isNaN(rhs)) return false
-    switch (op) {
-      case '==':
-        return lhs === rhs
-      case '!=':
-        return lhs !== rhs
-      case '>':
-        return lhs > rhs
-      case '>=':
-        return lhs >= rhs
-      case '<':
-        return lhs < rhs
-      case '<=':
-        return lhs <= rhs
-      default:
-        return false
-    }
-  }
-
-  if (/^\w+$/.test(c)) {
-    const v = getFieldValue(dp, c)
-    return v != null && v !== ''
-  }
-  return false
-}
-
-const evaluateMatch = (match: string, dp: SimDataPoint): boolean => {
-  const expr = match.trim()
-  if (!expr) return true
-  return expr
-    .split('||')
-    .some((orPart) => orPart.split('&&').every((andPart) => evaluateClause(andPart, dp)))
-}
 
 const LabeledInput: React.FC<{
   label: string
@@ -213,20 +114,6 @@ const LabeledSelect: React.FC<{
 // binds to. Pre-filled from the selected rule on open. Transform fields are
 // only relevant when action === 'transform'; `targets` (comma-separated) is
 // only relevant when action === 'mirror'.
-interface EditFormData {
-  name: string
-  match: string
-  action: RuleStat['action']
-  target: string
-  /** Comma-separated target list for mirror rules. */
-  targets: string
-  priority: number
-  /** Transform expression (action === 'transform' only). */
-  transformExpression: string
-  /** Optional tag-rename (action === 'transform' only). */
-  transformTagRename: string
-}
-
 // Action options for the editor's Select dropdown. The value is the wire
 // format CoreC expects; the label is resolved via i18n at render time.
 const EDIT_ACTION_OPTIONS: { value: RuleStat['action']; labelKey: string }[] = [
@@ -236,52 +123,6 @@ const EDIT_ACTION_OPTIONS: { value: RuleStat['action']; labelKey: string }[] = [
   { value: 'transform', labelKey: 'rules.edit.actionTransform' },
   { value: 'mirror', labelKey: 'rules.edit.actionMirror' },
 ]
-
-// Wrap a string as a YAML single-quoted scalar — internal single quotes are
-// doubled. The match DSL may contain `&&`, `||`, comparisons and embedded
-// quotes, none of which are safe as a bare YAML scalar.
-const yamlScalar = (s: string): string => `'${s.replace(/'/g, "''")}'`
-
-// Build the CoreC config YAML payload for the edited rule, in the format
-// expected by PUT /configs (hot-reload). Mirror rules emit a `targets:` array
-// (parsed from the comma-separated form field); transform rules emit a
-// `transform:` block with expression and optional tag-rename. All other
-// actions use the single `target:` field.
-const buildRuleYaml = (data: EditFormData): string => {
-  const lines: string[] = [
-    'rules:',
-    `  - name: ${yamlScalar(data.name)}`,
-    `    match: ${yamlScalar(data.match)}`,
-    `    action: ${data.action}`,
-  ]
-
-  if (data.action === 'mirror') {
-    const targets = data.targets
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean)
-    if (targets.length > 0) {
-      lines.push('    targets:')
-      for (const t of targets) lines.push(`      - ${yamlScalar(t)}`)
-    } else {
-      lines.push(`    target: ${yamlScalar('')}`)
-    }
-  } else {
-    lines.push(`    target: ${yamlScalar(data.target)}`)
-  }
-
-  lines.push(`    priority: ${data.priority}`)
-
-  if (data.action === 'transform') {
-    lines.push('    transform:')
-    lines.push(`      expression: ${yamlScalar(data.transformExpression)}`)
-    if (data.transformTagRename.trim()) {
-      lines.push(`      tag-rename: ${yamlScalar(data.transformTagRename.trim())}`)
-    }
-  }
-
-  return lines.join('\n')
-}
 
 export const RulesPage: React.FC = () => {
   const { t } = useTranslation()

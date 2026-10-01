@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type React from 'react'
-import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { setActiveConnection } from '@/api/activeConnection'
 import { getServerInfo } from '@/api/endpoints'
 import type { CoreCInstance } from '@/stores/instanceStore'
@@ -156,16 +156,19 @@ export const ConnectionProvider: React.FC<{
     }
   }, [instance?.id, instance?.baseUrl, instance?.secret, probeNonce, setProbeResult, setProbing])
 
-  const reconnect = () => setProbeNonce((n) => n + 1)
+  const reconnect = useCallback(() => setProbeNonce((n) => n + 1), [])
 
-  const ctxValue: ConnectionContextValue = {
-    instance: instance ?? null,
-    isConnected,
-    isConnecting,
-    error,
-    serverInfo,
-    reconnect,
-  }
+  const ctxValue = useMemo<ConnectionContextValue>(
+    () => ({
+      instance: instance ?? null,
+      isConnected,
+      isConnecting,
+      error,
+      serverInfo,
+      reconnect,
+    }),
+    [instance, isConnected, isConnecting, error, serverInfo, reconnect],
+  )
 
   return (
     <ConnectionContext.Provider value={ctxValue}>

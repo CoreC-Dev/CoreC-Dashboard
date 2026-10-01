@@ -4,6 +4,7 @@ import {
   ChevronDown,
   Globe,
   Maximize2,
+  Menu,
   Minimize2,
   Moon,
   Settings,
@@ -28,7 +29,7 @@ import { setLocale } from '@/i18n'
 import { useInstanceStore } from '@/stores/instanceStore'
 import { useThemeStore } from '@/stores/themeStore'
 
-export const TopBar: React.FC = () => {
+export const TopBar: React.FC<{ onMenuClick?: () => void }> = ({ onMenuClick }) => {
   const { t } = useTranslation()
   const { i18n: i18nInst } = useTranslation()
   const location = useLocation()
@@ -107,12 +108,24 @@ export const TopBar: React.FC = () => {
     <header className="h-14 border-b border-border bg-card/60 backdrop-blur-md px-4 flex items-center justify-between z-30 sticky top-0">
       {/* Left: back + instance name + switcher */}
       <div className="flex items-center space-x-3 min-w-0">
+        {onMenuClick && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onMenuClick}
+            aria-label={t('nav.admin')}
+            className="h-8 w-8 text-muted-foreground hover:text-foreground shrink-0 md:hidden"
+          >
+            <Menu className="w-4 h-4" />
+          </Button>
+        )}
         <Button
           variant="ghost"
           size="icon"
           onClick={() => navigate('/')}
           className="h-8 w-8 text-muted-foreground hover:text-foreground shrink-0"
           title={t('instances.backHome')}
+          aria-label={t('instances.backHome')}
         >
           <ArrowLeft className="w-4 h-4" />
         </Button>
@@ -174,25 +187,25 @@ export const TopBar: React.FC = () => {
       <div className="flex items-center bg-muted/70 p-1 rounded-lg border border-border/50 text-xs shrink-0">
         <Link
           to={monitorLink}
-          className={`flex items-center space-x-1.5 px-3 py-1 rounded-md transition-all ${
+          className={`flex items-center space-x-1.5 px-2 sm:px-3 py-1 rounded-md transition-all ${
             isMonitor
               ? 'bg-background text-foreground shadow-sm font-medium'
               : 'text-muted-foreground hover:text-foreground'
           }`}
         >
           <Activity className="w-3.5 h-3.5" />
-          <span>{t('nav.monitor')}</span>
+          <span className="hidden sm:inline">{t('nav.monitor')}</span>
         </Link>
         <Link
           to={adminLink}
-          className={`flex items-center space-x-1.5 px-3 py-1 rounded-md transition-all ${
+          className={`flex items-center space-x-1.5 px-2 sm:px-3 py-1 rounded-md transition-all ${
             isAdmin
               ? 'bg-background text-foreground shadow-sm font-medium'
               : 'text-muted-foreground hover:text-foreground'
           }`}
         >
           <Settings className="w-3.5 h-3.5" />
-          <span>{t('nav.admin')}</span>
+          <span className="hidden sm:inline">{t('nav.admin')}</span>
         </Link>
       </div>
 
@@ -203,6 +216,7 @@ export const TopBar: React.FC = () => {
           size="icon"
           onClick={toggleFullscreen}
           title={isFullscreen ? t('dashboard.exitFullscreen') : t('dashboard.enterFullscreen')}
+          aria-label={isFullscreen ? t('dashboard.exitFullscreen') : t('dashboard.enterFullscreen')}
           className="h-8 w-8 text-muted-foreground hover:text-foreground"
         >
           {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
@@ -213,6 +227,7 @@ export const TopBar: React.FC = () => {
           size="icon"
           onClick={cycleTheme}
           title={t('topbar.themeTooltip', { theme: t(`settings.${theme}`) })}
+          aria-label={t('topbar.themeTooltip', { theme: t(`settings.${theme}`) })}
           className="h-8 w-8 text-muted-foreground hover:text-foreground"
         >
           {resolvedTheme === 'dark' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
@@ -222,6 +237,7 @@ export const TopBar: React.FC = () => {
           variant="ghost"
           size="sm"
           onClick={toggleLanguage}
+          aria-label={t('common.toggleLanguage')}
           className="h-8 px-2 text-xs font-mono text-muted-foreground hover:text-foreground flex items-center space-x-1"
         >
           <Globe className="w-3.5 h-3.5" />
@@ -233,6 +249,7 @@ export const TopBar: React.FC = () => {
           size="icon"
           onClick={handleDisconnect}
           title={t('connection.disconnect')}
+          aria-label={t('connection.disconnect')}
           className="h-8 w-8 text-rose-400 hover:text-rose-500 hover:bg-rose-500/10"
         >
           <Unplug className="w-4 h-4" />

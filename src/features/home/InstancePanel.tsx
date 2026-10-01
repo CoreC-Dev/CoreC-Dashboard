@@ -43,10 +43,10 @@ export const InstancePanel: React.FC = () => {
     setDialogOpen(true)
   }
 
-  const handleEdit = (instance: CoreCInstance) => {
+  const handleEdit = React.useCallback((instance: CoreCInstance) => {
     setEditingInstance(instance)
     setDialogOpen(true)
-  }
+  }, [])
 
   const handleSubmit = (data: {
     name: string

@@ -53,7 +53,7 @@ export function useDriverTags(name: string) {
     queryKey: ['driverTags', name],
     queryFn: () => api.getDriverTags(name),
     enabled: !!name,
-    refetchInterval: 3000,
+    refetchInterval: 5000,
   })
 }
 
@@ -198,5 +198,18 @@ export function useUpdateConfig() {
 export function useValidateConfig() {
   return useMutation({
     mutationFn: (payload: string) => api.validateConfigs(payload),
+  })
+}
+
+/**
+ * Prometheus /metrics text. Used by the Diagnostics page with a configurable
+ * refetchInterval (default 12s) so polling is managed by TanStack Query
+ * instead of a manual setInterval.
+ */
+export function useMetrics(refetchInterval = 12_000) {
+  return useConnectedQuery({
+    queryKey: ['metrics'],
+    queryFn: api.getMetricsText,
+    refetchInterval,
   })
 }

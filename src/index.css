@@ -66,6 +66,8 @@
     --radius: 0.625rem;
     --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     --font-mono: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
+    --chart-1: 258 90% 66%;
+    --chart-2: 189 94% 43%;
   }
 
   .dark {
@@ -88,6 +90,8 @@
     --border: 200 20% 17%;
     --input: 200 20% 17%;
     --ring: 164 48% 50%;
+    --chart-1: 258 90% 66%;
+    --chart-2: 189 94% 43%;
   }
 }
 
@@ -131,11 +135,11 @@ body {
 
 /* Glass & Neon industrial indicators */
 .glow-success {
-  box-shadow: 0 0 10px rgba(34, 197, 94, 0.45);
+  box-shadow: 0 0 10px hsl(142 71% 45% / 0.45);
 }
 .glow-danger {
-  box-shadow: 0 0 10px rgba(239, 68, 68, 0.45);
+  box-shadow: 0 0 10px hsl(var(--destructive) / 0.45);
 }
 .glow-primary {
-  box-shadow: 0 0 12px rgba(84, 184, 156, 0.45);
+  box-shadow: 0 0 12px hsl(var(--ring) / 0.45);
 }

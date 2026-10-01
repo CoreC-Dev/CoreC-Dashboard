@@ -12,7 +12,7 @@ import {
   Trash2,
   Zap,
 } from 'lucide-react'
-import React from 'react'
+import React, { memo, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
@@ -40,7 +40,7 @@ export interface InstanceCardProps {
   onEdit: (instance: CoreCInstance) => void
 }
 
-export const InstanceCard: React.FC<InstanceCardProps> = ({ instance, onEdit }) => {
+export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: InstanceCardProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const deleteInstance = useInstanceStore((s) => s.deleteInstance)
@@ -70,73 +70,79 @@ export const InstanceCard: React.FC<InstanceCardProps> = ({ instance, onEdit }) 
 
   const handleEnter = () => navigate(`/corec/${instance.id}/monitor/dashboard`)
 
-  // Driver stats for display
-  const driverList = stats?.driver_stats ? Object.values(stats.driver_stats) : []
-  const transportList = stats?.transport_stats ? Object.values(stats.transport_stats) : []
-  const ruleList = stats?.rule_list ?? []
+  // Driver stats for display — memoized so probe updates that don't change
+  // this card's stats don't recompute the topology arrays.
+  const { allInputs, allOutputs, ruleList, hasTopology } = useMemo(() => {
+    const driverList = stats?.driver_stats ? Object.values(stats.driver_stats) : []
+    const transportList = stats?.transport_stats ? Object.values(stats.transport_stats) : []
+    const ruleList = stats?.rule_list ?? []
 
-  // Classify transports as input or output based on published/received counts
-  const inputTransports = transportList.filter((tr) => tr.received > 0 && tr.published === 0)
-  const outputTransports = transportList.filter((tr) => tr.published > 0 && tr.received === 0)
-  const bidirTransports = transportList.filter((tr) => tr.published > 0 && tr.received > 0)
-  // Ambiguous (both 0) — use name heuristic
-  const ambiguousTransports = transportList.filter((tr) => tr.published === 0 && tr.received === 0)
-  for (const tr of ambiguousTransports) {
-    if (/sub|in|from/i.test(tr.name)) {
-      inputTransports.push(tr)
-    } else {
-      outputTransports.push(tr)
+    // Classify transports as input or output based on published/received counts
+    const inputTransports = transportList.filter((tr) => tr.received > 0 && tr.published === 0)
+    const outputTransports = transportList.filter((tr) => tr.published > 0 && tr.received === 0)
+    const bidirTransports = transportList.filter((tr) => tr.published > 0 && tr.received > 0)
+    // Ambiguous (both 0) — use name heuristic
+    const ambiguousTransports = transportList.filter(
+      (tr) => tr.published === 0 && tr.received === 0,
+    )
+    for (const tr of ambiguousTransports) {
+      if (/sub|in|from/i.test(tr.name)) {
+        inputTransports.push(tr)
+      } else {
+        outputTransports.push(tr)
+      }
     }
-  }
 
-  // All inputs: drivers + input transports + bidirectional
-  const allInputs = [
-    ...driverList.map((d) => ({
-      name: d.name,
-      type: d.type,
-      state: d.state,
-      detail:
-        d.error_count > 0 ? `${d.error_count} err` : d.tag_count > 0 ? `${d.tag_count} tags` : '',
-      conn: stats?.driver_conn?.[d.name] ?? '',
-      isDriver: true,
-    })),
-    ...inputTransports.map((tr) => ({
-      name: tr.name,
-      type: tr.type,
-      state: tr.state,
-      detail: tr.received > 0 ? `${tr.received} rx` : '',
-      conn: stats?.transport_conn?.[tr.name] ?? '',
-      isDriver: false,
-    })),
-    ...bidirTransports.map((tr) => ({
-      name: tr.name,
-      type: tr.type,
-      state: tr.state,
-      detail: `${tr.received} rx`,
-      conn: stats?.transport_conn?.[tr.name] ?? '',
-      isDriver: false,
-    })),
-  ]
+    // All inputs: drivers + input transports + bidirectional
+    const allInputs = [
+      ...driverList.map((d) => ({
+        name: d.name,
+        type: d.type,
+        state: d.state,
+        detail:
+          d.error_count > 0 ? `${d.error_count} err` : d.tag_count > 0 ? `${d.tag_count} tags` : '',
+        conn: stats?.driver_conn?.[d.name] ?? '',
+        isDriver: true,
+      })),
+      ...inputTransports.map((tr) => ({
+        name: tr.name,
+        type: tr.type,
+        state: tr.state,
+        detail: tr.received > 0 ? `${tr.received} rx` : '',
+        conn: stats?.transport_conn?.[tr.name] ?? '',
+        isDriver: false,
+      })),
+      ...bidirTransports.map((tr) => ({
+        name: tr.name,
+        type: tr.type,
+        state: tr.state,
+        detail: `${tr.received} rx`,
+        conn: stats?.transport_conn?.[tr.name] ?? '',
+        isDriver: false,
+      })),
+    ]
 
-  // All outputs: output transports + bidirectional (published side)
-  const allOutputs = [
-    ...outputTransports.map((tr) => ({
-      name: tr.name,
-      type: tr.type,
-      state: tr.state,
-      detail: tr.published > 0 ? `${tr.published} pub` : '',
-      conn: stats?.transport_conn?.[tr.name] ?? '',
-    })),
-    ...bidirTransports.map((tr) => ({
-      name: tr.name,
-      type: tr.type,
-      state: tr.state,
-      detail: `${tr.published} pub`,
-      conn: stats?.transport_conn?.[tr.name] ?? '',
-    })),
-  ]
+    // All outputs: output transports + bidirectional (published side)
+    const allOutputs = [
+      ...outputTransports.map((tr) => ({
+        name: tr.name,
+        type: tr.type,
+        state: tr.state,
+        detail: tr.published > 0 ? `${tr.published} pub` : '',
+        conn: stats?.transport_conn?.[tr.name] ?? '',
+      })),
+      ...bidirTransports.map((tr) => ({
+        name: tr.name,
+        type: tr.type,
+        state: tr.state,
+        detail: `${tr.published} pub`,
+        conn: stats?.transport_conn?.[tr.name] ?? '',
+      })),
+    ]
 
-  const hasTopology = allInputs.length > 0 || ruleList.length > 0 || allOutputs.length > 0
+    const hasTopology = allInputs.length > 0 || ruleList.length > 0 || allOutputs.length > 0
+    return { allInputs, allOutputs, ruleList, hasTopology }
+  }, [stats])
 
   return (
     <>
@@ -156,7 +162,8 @@ export const InstanceCard: React.FC<InstanceCardProps> = ({ instance, onEdit }) 
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="h-7 w-7 shrink-0 opacity-60 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
+                  aria-label={t('common.moreActions')}
                 >
                   <MoreVertical className="w-3.5 h-3.5" />
                 </Button>
@@ -216,7 +223,7 @@ export const InstanceCard: React.FC<InstanceCardProps> = ({ instance, onEdit }) 
               <div className="rounded-md bg-muted/50 px-2 py-1.5">
                 <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
                   <Activity className="w-3 h-3" />
-                  <span>吞吐</span>
+                  <span>{t('instanceCard.throughput')}</span>
                 </div>
                 <div className="text-sm font-semibold font-mono">
                   {stats.points_per_sec.toFixed(1)}
@@ -227,7 +234,7 @@ export const InstanceCard: React.FC<InstanceCardProps> = ({ instance, onEdit }) 
               <div className="rounded-md bg-muted/50 px-2 py-1.5">
                 <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
                   <Cpu className="w-3 h-3" />
-                  <span>读取</span>
+                  <span>{t('instanceCard.reads')}</span>
                 </div>
                 <div className="text-sm font-semibold font-mono">
                   {formatCompact(stats.total_read)}
@@ -237,7 +244,7 @@ export const InstanceCard: React.FC<InstanceCardProps> = ({ instance, onEdit }) 
               <div className="rounded-md bg-muted/50 px-2 py-1.5">
                 <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
                   <Send className="w-3 h-3" />
-                  <span>发布</span>
+                  <span>{t('instanceCard.publishes')}</span>
                 </div>
                 <div className="text-sm font-semibold font-mono">
                   {formatCompact(stats.total_publish)}
@@ -247,7 +254,7 @@ export const InstanceCard: React.FC<InstanceCardProps> = ({ instance, onEdit }) 
               <div className="rounded-md bg-muted/50 px-2 py-1.5">
                 <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
                   <Ban className="w-3 h-3" />
-                  <span>丢弃</span>
+                  <span>{t('instanceCard.dropped')}</span>
                 </div>
                 <div
                   className={`text-sm font-semibold font-mono ${
@@ -368,15 +375,17 @@ export const InstanceCard: React.FC<InstanceCardProps> = ({ instance, onEdit }) 
           {/* Summary line: tags · errors */}
           {stats && !probeError && (
             <div className="flex items-center gap-2 text-[10px] text-muted-foreground pt-0.5">
-              {stats.tag_count !== undefined && <span>{stats.tag_count} 测点</span>}
+              {stats.tag_count !== undefined && (
+                <span>{t('instanceCard.points', { count: stats.tag_count })}</span>
+              )}
               {stats.tag_count !== undefined && <span>·</span>}
               {stats.total_errors > 0 ? (
                 <span className="text-rose-500 flex items-center gap-0.5">
                   <AlertTriangle className="w-2.5 h-2.5" />
-                  {stats.total_errors} 错误
+                  {t('instanceCard.errors', { count: stats.total_errors })}
                 </span>
               ) : (
-                <span>0 错误</span>
+                <span>{t('instanceCard.errors', { count: 0 })}</span>
               )}
             </div>
           )}
@@ -452,4 +461,4 @@ export const InstanceCard: React.FC<InstanceCardProps> = ({ instance, onEdit }) 
       </Dialog>
     </>
   )
-}
+})

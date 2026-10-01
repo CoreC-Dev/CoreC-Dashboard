@@ -127,7 +127,23 @@
     "none": "无",
     "collapse": "收起",
     "expand": "展开",
-    "noResults": "未找到匹配 \"{{query}}\" 的结果"
+    "noResults": "未找到匹配 \"{{query}}\" 的结果",
+    "justNow": "刚刚",
+    "minutesAgo": "{{count}}分钟前",
+    "hoursAgo": "{{count}}小时前",
+    "daysAgo": "{{count}}天前",
+    "moreActions": "更多操作",
+    "toggleLanguage": "切换语言",
+    "lightMode": "切换到浅色模式",
+    "darkMode": "切换到深色模式"
+  },
+  "instanceCard": {
+    "throughput": "吞吐",
+    "reads": "读取",
+    "publishes": "发布",
+    "dropped": "丢弃",
+    "points": "{{count}} 测点",
+    "errors": "{{count}} 错误"
   },
   "wizard": {
     "step": "第 {{current}} / {{total}} 步",

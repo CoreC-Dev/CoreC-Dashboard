@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
+import i18n from '@/i18n'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -79,20 +80,21 @@ export function isZeroTime(ts: string | null | undefined): boolean {
 }
 
 /**
- * Format a timestamp as a compact Chinese relative-time label
+ * Format a timestamp as a compact relative-time label
  * (e.g. "刚刚", "3分钟前", "2小时前", "5天前"). Returns '' for a missing
  * timestamp. Mirrors the helper used by InstanceCard so rule stat cells and
- * instance cards share one presentation style.
+ * instance cards share one presentation style. Uses i18n so the label
+ * respects the current locale.
  */
 export function formatRelativeTime(ts: string | null | undefined): string {
   if (!ts) return ''
   const t = new Date(ts).getTime()
   if (Number.isNaN(t)) return ''
   const diff = Date.now() - t
-  if (diff < 60_000) return '刚刚'
-  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}分钟前`
-  if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}小时前`
-  return `${Math.floor(diff / 86_400_000)}天前`
+  if (diff < 60_000) return i18n.t('common.justNow')
+  if (diff < 3_600_000) return i18n.t('common.minutesAgo', { count: Math.floor(diff / 60_000) })
+  if (diff < 86_400_000) return i18n.t('common.hoursAgo', { count: Math.floor(diff / 3_600_000) })
+  return i18n.t('common.daysAgo', { count: Math.floor(diff / 86_400_000) })
 }
 
 /**

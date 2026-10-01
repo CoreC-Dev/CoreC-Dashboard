@@ -93,6 +93,10 @@ export const AlertsPage: React.FC = () => {
   const soundRef = useRef(soundEnabled)
   const notifRef = useRef(notifEnabled)
   const tRef = useRef(t)
+  // rAF batching buffers for the live-log WebSocket stream — avoids a
+  // setLiveLogs call (and re-render) per incoming message at high frequency.
+  const pendingLogsRef = useRef<LogEvent[]>([])
+  const rafIdRef = useRef<number | null>(null)
   // Sync refs in an effect, not during render (StrictMode double-invokes render).
   useEffect(() => {
     soundRef.current = soundEnabled
@@ -122,12 +126,32 @@ export const AlertsPage: React.FC = () => {
     }
   }
 
-  // Subscribe to /logs WebSocket for warn/error
+  // Subscribe to /logs WebSocket for warn/error.
+  // Incoming events are buffered and flushed once per animation frame to
+  // avoid a state update (and re-render) on every single WS message.
   useEffect(() => {
+    const flushLogs = () => {
+      rafIdRef.current = null
+      const batch = pendingLogsRef.current
+      if (batch.length === 0) return
+      pendingLogsRef.current = []
+      setLiveLogs((prev) => {
+        const merged = [...batch, ...prev]
+        return merged.length > 50 ? merged.slice(0, 50) : merged
+      })
+    }
+
+    const scheduleFlush = () => {
+      if (rafIdRef.current === null) {
+        rafIdRef.current = requestAnimationFrame(flushLogs)
+      }
+    }
+
     const ws = new CoreCWebSocket<LogEvent>('/logs', {}, (evt) => {
       // level >= 4 are warnings and errors
       if (evt.level >= 4) {
-        setLiveLogs((prev) => [evt, ...prev.slice(0, 49)])
+        pendingLogsRef.current.push(evt)
+        scheduleFlush()
       }
       // level >= 8 are errors — fire audible + visual alerts when enabled
       if (evt.level >= 8) {
@@ -139,11 +163,18 @@ export const AlertsPage: React.FC = () => {
         }
       }
     })
-    return () => ws.destroy()
+    return () => {
+      ws.destroy()
+      if (rafIdRef.current !== null) cancelAnimationFrame(rafIdRef.current)
+      rafIdRef.current = null
+    }
   }, [])
 
-  const deadLetters = deadLettersData?.failed_writes || []
-  const alertRules = (rulesData?.rules || []).filter((r) => r.action === 'alert')
+  const deadLetters = useMemo(() => deadLettersData?.failed_writes || [], [deadLettersData])
+  const alertRules = useMemo(
+    () => (rulesData?.rules || []).filter((r) => r.action === 'alert'),
+    [rulesData],
+  )
 
   // Filter the live warning/error feed by text content and severity level.
   // The WS handler already keeps only level >= 4 (warnings + errors); the level

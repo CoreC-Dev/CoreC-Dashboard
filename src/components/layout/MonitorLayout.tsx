@@ -18,12 +18,12 @@ export const MonitorLayout: React.FC = () => {
   ]
 
   return (
-    <div className="min-h-screen flex flex-col bg-background text-foreground">
+    <div className="h-screen flex flex-col bg-background text-foreground overflow-hidden">
       <TopBar />
 
       {/* Monitor Sub-Nav Strip */}
-      <div className="h-10 border-b border-border bg-card/30 px-4 flex items-center justify-between">
-        <div className="flex items-center space-x-2 text-xs">
+      <div className="h-10 border-b border-border bg-card/30 px-4 flex items-center justify-between shrink-0">
+        <div className="flex items-center space-x-2 text-xs overflow-x-auto scrollbar-none">
           {tabs.map((tab) => {
             const Icon = tab.icon
             return (
@@ -32,7 +32,7 @@ export const MonitorLayout: React.FC = () => {
                 to={tab.path}
                 className={({ isActive }) =>
                   cn(
-                    'flex items-center space-x-1.5 px-3 py-1 rounded-md transition-colors',
+                    'flex items-center space-x-1.5 px-3 py-1 rounded-md transition-colors shrink-0',
                     isActive
                       ? 'bg-primary/10 text-primary font-semibold border border-primary/20'
                       : 'text-muted-foreground hover:text-foreground hover:bg-muted/40',
@@ -45,7 +45,7 @@ export const MonitorLayout: React.FC = () => {
             )
           })}
         </div>
-        <div className="text-[11px] text-muted-foreground flex items-center space-x-1.5">
+        <div className="text-[11px] text-muted-foreground flex items-center space-x-1.5 shrink-0 ml-2">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
           <span>{t('monitor.realtimeStreamConnected')}</span>
         </div>
