@@ -219,7 +219,7 @@ export const AppShell: React.FC = () => {
           <img
             src="/logo-animated.svg"
             alt="CoreC"
-            className={cn('shrink-0 transition-all duration-300', eff ? 'w-9 h-9' : 'w-14 h-14')}
+            className={cn('shrink-0 transition-all duration-300', eff ? 'w-9 h-9' : 'w-28 h-28')}
           />
         </Link>
         {!eff && isMobile && (
