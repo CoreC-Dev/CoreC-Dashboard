@@ -19,15 +19,7 @@ import {
   X,
 } from 'lucide-react'
 import type React from 'react'
-import {
-  memo,
-  useCallback,
-  useDeferredValue,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react'
+import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useDrivers, useTags, useWriteTag } from '@/api/hooks'
 import { CoreCWebSocket } from '@/api/websocket'

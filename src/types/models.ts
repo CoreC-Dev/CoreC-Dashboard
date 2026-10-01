@@ -1,5 +1,5 @@
-import type { RuleAction } from '@/types/config'
 import type { DataTypeString } from '@/lib/constants'
+import type { RuleAction } from '@/types/config'
 
 export interface DataPoint {
   driver: string

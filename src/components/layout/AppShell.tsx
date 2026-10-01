@@ -181,7 +181,9 @@ export const AppShell: React.FC = () => {
         className={({ isActive }) =>
           cn(
             'relative grid place-items-center transition-all duration-200 group',
-            eff ? 'w-9 h-9 rounded-full' : 'w-full h-11 rounded-lg flex items-center px-2.5 gap-2.5',
+            eff
+              ? 'w-9 h-9 rounded-full'
+              : 'w-full h-11 rounded-lg flex items-center px-2.5 gap-2.5',
             isActive
               ? 'nav-indicator bg-foreground text-background shadow-md'
               : 'text-muted-foreground hover:text-foreground hover:bg-muted hover:translate-x-0.5',
@@ -514,6 +516,7 @@ export const AppShell: React.FC = () => {
             </Link>
             {isMonitor && (
               <span
+                role="status"
                 className={cn(
                   'w-2.5 h-2.5 rounded-full shrink-0 ml-auto',
                   isConnecting

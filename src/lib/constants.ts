@@ -1,4 +1,4 @@
-import { type DataType } from '@/types/config'
+import type { DataType } from '@/types/config'
 
 // Unified with the canonical DataType from @/types/config (derived from
 // DATA_TYPES) so the two can never drift.
