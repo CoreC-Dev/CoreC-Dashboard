@@ -1,4 +1,4 @@
-import { Download, Plus, Settings, Upload } from 'lucide-react'
+import { Activity, Download, Plus, Settings, Upload } from 'lucide-react'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
@@ -97,14 +97,20 @@ export const InstancePanel: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* Top bar — brand bar with static logo */}
-      <header className="h-14 border-b border-border bg-card/60 backdrop-blur-md px-4 flex items-center justify-between sticky top-0 z-30">
-        <div className="flex items-center space-x-2 font-bold text-lg tracking-tight">
-          <img src="/logo.svg" alt="CoreC" className="w-8 h-8" />
-          <span className="font-extrabold bg-gradient-to-r from-primary to-emerald-400 bg-clip-text text-transparent">
-            CoreC
+      {/* Top bar — brand bar with gradient mark */}
+      <header className="h-14 border-b border-border bg-card px-4 flex items-center justify-between sticky top-0 z-30">
+        <div className="flex items-center space-x-2.5">
+          <span
+            className="w-8 h-8 rounded-full grid place-items-center text-white shrink-0"
+            style={{
+              background: 'linear-gradient(135deg, #baf34d 0%, #54bb47 58%, #16824b 100%)',
+              boxShadow: 'inset 0 1px 1px rgba(255,255,255,.35), 0 5px 12px rgba(74,179,67,.22)',
+            }}
+          >
+            <Activity className="w-4 h-4" strokeWidth={2.4} />
           </span>
-          <span className="text-xs px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono font-normal">
+          <span className="font-extrabold text-lg tracking-tight">CoreC</span>
+          <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">
             Dashboard
           </span>
         </div>
@@ -160,8 +166,8 @@ export const InstancePanel: React.FC = () => {
             {/* Header row */}
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h1 className="text-lg font-semibold">{t('instances.myInstances')}</h1>
-                <p className="text-xs text-muted-foreground">
+                <h1 className="text-2xl font-bold tracking-tight">{t('instances.myInstances')}</h1>
+                <p className="text-sm text-muted-foreground mt-0.5">
                   {t('instances.instanceCount', { count: instances.length })}
                 </p>
               </div>
@@ -191,7 +197,7 @@ export const InstancePanel: React.FC = () => {
               <button
                 type="button"
                 onClick={handleAdd}
-                className="rounded-xl border-2 border-dashed border-border hover:border-primary/40 hover:bg-muted/30 transition-all flex flex-col items-center justify-center min-h-[180px] gap-2 text-muted-foreground hover:text-foreground"
+                className="rounded-lg border-2 border-dashed border-border hover:border-primary/40 hover:bg-muted/30 transition-all flex flex-col items-center justify-center min-h-[180px] gap-2 text-muted-foreground hover:text-foreground"
               >
                 <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
                   <Plus className="w-5 h-5" />

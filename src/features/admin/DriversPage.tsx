@@ -145,7 +145,7 @@ export const DriversPage: React.FC = () => {
 
       {/* Config editing banner — shows when there are unsaved config changes */}
       {dirty && (
-        <div className="rounded-md border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-700 dark:text-amber-400 flex items-center justify-between">
+        <div className="rounded-md border border-status-warning/30 bg-status-warning/10 p-3 text-xs text-status-warning dark:text-status-warning flex items-center justify-between">
           <span>{t('drivers.unsavedChanges')}</span>
           <div className="flex gap-2">
             <Button
@@ -193,7 +193,7 @@ export const DriversPage: React.FC = () => {
           )}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredConfigDrivers.map((drv) => (
-              <Card key={drv.name} className="border-border/80 bg-card/60">
+              <Card key={drv.name} className="border-border bg-card">
                 <CardHeader className="p-4 pb-2">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center space-x-2.5">
@@ -280,7 +280,7 @@ export const DriversPage: React.FC = () => {
                   tabIndex={0}
                   role="button"
                   aria-label={`${drv.name} — ${st}`}
-                  className="border-border/80 bg-card/60 hover:border-primary/40 transition-all cursor-pointer group focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  className="border-border bg-card hover:border-primary/40 transition-all cursor-pointer group focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   onClick={() => navigate(`${adminBase}/drivers/${encodeURIComponent(drv.name)}`)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
@@ -319,7 +319,7 @@ export const DriversPage: React.FC = () => {
                   </CardHeader>
 
                   <CardContent className="p-4 pt-2 space-y-3">
-                    <div className="grid grid-cols-3 gap-2 text-center p-2 rounded-lg bg-muted/40 border border-border/50 text-[11px]">
+                    <div className="grid grid-cols-3 gap-2 text-center p-2 rounded-lg bg-muted/40 border border-border text-[11px]">
                       <div>
                         <div className="text-muted-foreground text-[10px]">{t('drivers.tags')}</div>
                         <div className="font-mono font-bold">{drv.tag_count}</div>
@@ -328,7 +328,7 @@ export const DriversPage: React.FC = () => {
                         <div className="text-muted-foreground text-[10px]">
                           {t('drivers.reads')}
                         </div>
-                        <div className="font-mono font-bold text-emerald-400">
+                        <div className="font-mono font-bold text-status-running">
                           {formatNumber(drv.read_count)}
                         </div>
                       </div>
@@ -336,7 +336,9 @@ export const DriversPage: React.FC = () => {
                         <div className="text-muted-foreground text-[10px]">
                           {t('drivers.errors')}
                         </div>
-                        <div className="font-mono font-bold text-rose-400">{drv.error_count}</div>
+                        <div className="font-mono font-bold text-status-error">
+                          {drv.error_count}
+                        </div>
                       </div>
                     </div>
 
@@ -358,7 +360,7 @@ export const DriversPage: React.FC = () => {
                     </div>
 
                     {drv.last_error && (
-                      <div className="p-2 rounded bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[11px] truncate flex items-center space-x-1.5">
+                      <div className="p-2 rounded bg-status-error/10 border border-status-error/20 text-status-error text-[11px] truncate flex items-center space-x-1.5">
                         <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                         <span className="truncate">{drv.last_error}</span>
                       </div>

@@ -59,7 +59,7 @@ export const TopologyPage: React.FC = () => {
 
       {/* Node Identity */}
       {configsData?.global && (
-        <Card className="border-border/80 bg-card/60 p-4">
+        <Card className="border-border bg-card p-4">
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs">
             <div className="flex items-center gap-1.5">
               <span className="text-muted-foreground">{t('topology.nodeId')}:</span>
@@ -84,7 +84,7 @@ export const TopologyPage: React.FC = () => {
       )}
 
       {/* Visual Interactive Architecture Diagram */}
-      <Card className="border-border/80 bg-card/60 p-6 overflow-hidden">
+      <Card className="border-border bg-card p-6 overflow-hidden">
         <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
           {/* Southbound Layer */}
           <div className="flex-1 w-full space-y-3">
@@ -105,7 +105,7 @@ export const TopologyPage: React.FC = () => {
                   return (
                     <div
                       key={d.name}
-                      className="p-3 rounded-lg border border-border/80 bg-card/40 flex items-center justify-between text-xs"
+                      className="p-3 rounded-lg border border-border bg-card flex items-center justify-between text-xs"
                     >
                       <div className="flex items-center gap-2 min-w-0">
                         <span className={`w-2 h-2 rounded-full shrink-0 ${st.dotColor}`} />
@@ -138,7 +138,7 @@ export const TopologyPage: React.FC = () => {
 
           {/* CoreC Engine Node */}
           <div className="shrink-0 flex flex-col items-center justify-center p-6 rounded-2xl bg-primary/5 border-2 border-primary/30 shadow-xl glow-primary text-center max-w-xs w-full">
-            <div className="w-12 h-12 rounded-xl bg-primary text-primary-foreground flex items-center justify-center mb-3 shadow-lg">
+            <div className="w-12 h-12 rounded-lg bg-primary text-primary-foreground flex items-center justify-center mb-3 shadow-lg">
               <Radio className="w-6 h-6 animate-pulse" />
             </div>
             <div className="font-bold text-base text-foreground">
@@ -150,7 +150,7 @@ export const TopologyPage: React.FC = () => {
             <div className="text-[10px] text-muted-foreground mt-1">
               {t('topology.uptime')}: {formatUptime(stats?.uptime || 0)}
             </div>
-            <div className="text-[10px] text-muted-foreground mt-2 border-t border-border/60 pt-2 w-full space-y-1">
+            <div className="text-[10px] text-muted-foreground mt-2 border-t border-border pt-2 w-full space-y-1">
               <div>
                 {t('topology.throughput')}: {stats?.points_per_sec?.toFixed(1) || '0.0'}{' '}
                 {t('topology.throughputUnit')}
@@ -166,7 +166,7 @@ export const TopologyPage: React.FC = () => {
           {/* Northbound Layer */}
           <div className="flex-1 w-full space-y-3">
             <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center space-x-1.5">
-              <Send className="w-3.5 h-3.5 text-indigo-400" />
+              <Send className="w-3.5 h-3.5 text-primary" />
               <span>{t('topology.northboundSinks', { count: transports.length })}</span>
             </div>
 
@@ -184,7 +184,7 @@ export const TopologyPage: React.FC = () => {
                   return (
                     <div
                       key={transport.name}
-                      className="p-3 rounded-lg border border-border/80 bg-card/40 text-xs"
+                      className="p-3 rounded-lg border border-border bg-card text-xs"
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 min-w-0">
@@ -223,7 +223,7 @@ export const TopologyPage: React.FC = () => {
                               {t('topology.received', { defaultValue: 'rcv' })}:
                               {formatNumber(transport.received)}
                             </span>
-                            <span className="text-rose-400">
+                            <span className="text-status-error">
                               {t('topology.failed', { defaultValue: 'fail' })}:
                               {formatNumber(transport.failed)}
                             </span>
@@ -231,7 +231,7 @@ export const TopologyPage: React.FC = () => {
                               {t('topology.queueSize', { defaultValue: 'q' })}:
                               {transport.queue_size}
                             </span>
-                            <span className="text-amber-400">
+                            <span className="text-status-warning">
                               {t('topology.droppedCmds', { defaultValue: 'drop' })}:
                               {formatNumber(transport.dropped_commands)}
                             </span>
@@ -249,9 +249,9 @@ export const TopologyPage: React.FC = () => {
 
       {/* Rule Pipeline */}
       {rules.length > 0 && (
-        <Card className="border-border/80 bg-card/60 p-4">
+        <Card className="border-border bg-card p-4">
           <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center space-x-1.5 mb-3">
-            <GitBranch className="w-3.5 h-3.5 text-amber-400" />
+            <GitBranch className="w-3.5 h-3.5 text-status-warning" />
             <span>
               {t('topology.rulePipelineActive', {
                 active: activeRules.length,
@@ -266,7 +266,7 @@ export const TopologyPage: React.FC = () => {
                 className={`px-3 py-1.5 rounded-lg border text-xs flex items-center gap-2 ${
                   rule.disabled
                     ? 'border-border/40 bg-muted/20 opacity-50'
-                    : 'border-amber-500/30 bg-amber-500/5'
+                    : 'border-status-warning/30 bg-status-warning/5'
                 }`}
               >
                 <span className="font-mono text-[10px] text-muted-foreground">

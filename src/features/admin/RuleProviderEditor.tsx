@@ -72,7 +72,7 @@ export const RuleProviderEditor: React.FC = () => {
 
   if (!workingConfig) {
     return (
-      <Card className="border-border/80 bg-card/60">
+      <Card className="border-border bg-card">
         <CardHeader className="p-4 pb-2">
           <CardTitle className="text-sm font-semibold flex items-center gap-2">
             <FileInput className="w-4 h-4 text-primary" />
@@ -99,7 +99,7 @@ export const RuleProviderEditor: React.FC = () => {
     (!isNew || isRuleProviderNameUnique(editing.name.trim()))
 
   return (
-    <Card className="border-border/80 bg-card/60">
+    <Card className="border-border bg-card">
       <CardHeader className="p-4 pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm font-semibold flex items-center gap-2">
@@ -107,13 +107,16 @@ export const RuleProviderEditor: React.FC = () => {
             <span>{t('ruleProvider.title')}</span>
             <Badge
               variant="outline"
-              className="text-[9px] px-1 py-0 border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400"
+              className="text-[9px] px-1 py-0 border-status-warning/40 bg-status-warning/10 text-status-warning dark:text-status-warning"
             >
               <AlertTriangle className="w-2.5 h-2.5 mr-0.5" />
               {t('ruleProvider.restartRequired')}
             </Badge>
             {dirty && (
-              <Badge variant="outline" className="text-[9px] border-amber-500/40 text-amber-600">
+              <Badge
+                variant="outline"
+                className="text-[9px] border-status-warning/40 text-status-warning"
+              >
                 {t('globalConfig.unsaved')}
               </Badge>
             )}
@@ -139,7 +142,7 @@ export const RuleProviderEditor: React.FC = () => {
             {providers.map((p) => (
               <div
                 key={p.name}
-                className="flex items-center gap-3 rounded-lg border border-border/60 bg-muted/20 p-3 hover:bg-muted/30 transition-colors"
+                className="flex items-center gap-3 rounded-lg border border-border bg-muted/20 p-3 hover:bg-muted/30 transition-colors"
               >
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">

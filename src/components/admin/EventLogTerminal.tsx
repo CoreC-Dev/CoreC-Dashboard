@@ -193,8 +193,8 @@ export const EventLogTerminal: React.FC<{
   }
 
   return (
-    <Card className="border-border/80 bg-card/60 overflow-hidden">
-      <CardHeader className="p-3 bg-muted/40 border-b border-border/60 flex flex-row items-center justify-between">
+    <Card className="border-border bg-card overflow-hidden">
+      <CardHeader className="p-3 bg-muted/40 border-b border-border flex flex-row items-center justify-between">
         <div className="flex items-center space-x-2">
           <TerminalIcon className="w-4 h-4 text-primary" />
           <CardTitle className="text-xs font-semibold">{t('diagnostics.terminalTitle')}</CardTitle>
@@ -204,12 +204,12 @@ export const EventLogTerminal: React.FC<{
           <Button variant="outline" size="sm" onClick={togglePause} className="h-7 px-2 text-xs">
             {isPaused ? (
               <>
-                <Play className="w-3 h-3 mr-1 text-emerald-400" />
+                <Play className="w-3 h-3 mr-1 text-status-running" />
                 <span>{t('diagnostics.resume')}</span>
               </>
             ) : (
               <>
-                <Pause className="w-3 h-3 mr-1 text-amber-400" />
+                <Pause className="w-3 h-3 mr-1 text-status-warning" />
                 <span>{t('diagnostics.pause')}</span>
               </>
             )}

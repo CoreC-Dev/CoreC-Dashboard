@@ -130,7 +130,7 @@ export const TransportsPage: React.FC = () => {
 
       {/* Unsaved changes banner */}
       {dirty && (
-        <div className="rounded-md border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-700 dark:text-amber-400 flex items-center justify-between">
+        <div className="rounded-md border border-status-warning/30 bg-status-warning/10 p-3 text-xs text-status-warning dark:text-status-warning flex items-center justify-between">
           <span>{t('transports.unsavedChanges')}</span>
           <div className="flex gap-2">
             <Button
@@ -178,11 +178,11 @@ export const TransportsPage: React.FC = () => {
           )}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredConfigTransports.map((tp) => (
-              <Card key={tp.name} className="border-border/80 bg-card/60">
+              <Card key={tp.name} className="border-border bg-card">
                 <CardHeader className="p-4 pb-2">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center space-x-2.5">
-                      <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+                      <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
                         <Send className="w-4 h-4" />
                       </div>
                       <div>
@@ -275,7 +275,7 @@ export const TransportsPage: React.FC = () => {
                   tabIndex={0}
                   role="button"
                   aria-label={`${tr.name} — ${st}`}
-                  className="border-border/80 bg-card/60 hover:border-primary/40 transition-all cursor-pointer group focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  className="border-border bg-card hover:border-primary/40 transition-all cursor-pointer group focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   onClick={goDetail}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
@@ -287,7 +287,7 @@ export const TransportsPage: React.FC = () => {
                   <CardHeader className="p-4 pb-2">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center space-x-2.5">
-                        <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 group-hover:scale-105 transition-transform">
+                        <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary group-hover:scale-105 transition-transform">
                           <Send className="w-4 h-4" />
                         </div>
                         <div>
@@ -314,12 +314,12 @@ export const TransportsPage: React.FC = () => {
                   </CardHeader>
 
                   <CardContent className="p-4 pt-2 space-y-3">
-                    <div className="grid grid-cols-3 gap-2 text-center p-2 rounded-lg bg-muted/40 border border-border/50 text-[11px]">
+                    <div className="grid grid-cols-3 gap-2 text-center p-2 rounded-lg bg-muted/40 border border-border text-[11px]">
                       <div>
                         <div className="text-muted-foreground text-[10px]">
                           {t('transports.published')}
                         </div>
-                        <div className="font-mono font-bold text-emerald-400">
+                        <div className="font-mono font-bold text-status-running">
                           {formatNumber(tr.published)}
                         </div>
                       </div>
@@ -327,7 +327,7 @@ export const TransportsPage: React.FC = () => {
                         <div className="text-muted-foreground text-[10px]">
                           {t('transports.failed')}
                         </div>
-                        <div className="font-mono font-bold text-rose-400">{tr.failed}</div>
+                        <div className="font-mono font-bold text-status-error">{tr.failed}</div>
                       </div>
                       <div>
                         <div className="text-muted-foreground text-[10px]">
@@ -346,7 +346,7 @@ export const TransportsPage: React.FC = () => {
                       </div>
                       <div className="flex items-center justify-between">
                         <span>{t('transports.droppedCommands')}</span>
-                        <span className="font-mono font-medium text-rose-400">
+                        <span className="font-mono font-medium text-status-error">
                           {tr.dropped_commands}
                         </span>
                       </div>

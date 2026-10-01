@@ -126,7 +126,7 @@ const TagRow = memo(function TagRow({ point, start, flashTick, onOpen, onWrite }
       }}
       tabIndex={0}
       aria-label={`${point.driver}:${point.tag} — ${point.value}`}
-      className="flex items-center cursor-pointer border-b border-border/60 hover:bg-muted/30 transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+      className="flex items-center cursor-pointer border-b border-border hover:bg-muted/30 transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
       onClick={() => onOpen(point)}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -178,7 +178,7 @@ const TagRow = memo(function TagRow({ point, start, flashTick, onOpen, onWrite }
       >
         {point.timestamp ? new Date(point.timestamp).toLocaleTimeString() : '-'}
         {point.is_stale && (
-          <span className="ml-1.5 text-[10px] text-amber-400 border border-amber-500/30 px-1 rounded">
+          <span className="ml-1.5 text-[10px] text-status-warning border border-status-warning/30 px-1 rounded">
             {t('tags.stale')}
           </span>
         )}
@@ -615,7 +615,7 @@ export const TagExplorerPage: React.FC = () => {
   return (
     <div className="space-y-4">
       {/* Search & Filter Bar */}
-      <Card className="border-border/80 bg-card/60 backdrop-blur-sm">
+      <Card className="border-border bg-card">
         <CardContent className="p-4 flex flex-col md:flex-row items-center justify-between gap-3">
           <div className="flex flex-1 items-center space-x-2 w-full">
             <div className="relative flex-1">
@@ -678,8 +678,8 @@ export const TagExplorerPage: React.FC = () => {
       </Card>
 
       {/* Tags Data Table (virtualized rows via @tanstack/react-virtual) */}
-      <Card className="border-border/80 bg-card/60 overflow-hidden">
-        <div className="flex items-center justify-between border-b border-border/80 px-4 py-2">
+      <Card className="border-border bg-card overflow-hidden">
+        <div className="flex items-center justify-between border-b border-border px-4 py-2">
           <div className="text-xs font-semibold text-foreground">{t('tags.tagsLabel')}</div>
           <div className="text-[11px] text-muted-foreground">{t('tags.clickToOpenTrend')}</div>
         </div>
@@ -690,10 +690,10 @@ export const TagExplorerPage: React.FC = () => {
           </div>
         ) : showError ? (
           <div className="space-y-3 py-10 text-center">
-            <AlertCircle className="mx-auto h-8 w-8 text-rose-400" />
+            <AlertCircle className="mx-auto h-8 w-8 text-status-error" />
             <div className="text-sm font-semibold">{t('common.error')}</div>
             {error instanceof Error && error.message && (
-              <div className="mx-auto max-w-md break-all font-mono text-[11px] text-rose-400/80">
+              <div className="mx-auto max-w-md break-all font-mono text-[11px] text-status-error/80">
                 {error.message}
               </div>
             )}
@@ -711,7 +711,7 @@ export const TagExplorerPage: React.FC = () => {
         ) : (
           <div ref={setScrollEl} className="overflow-auto max-h-[70vh]">
             <table className="w-full text-xs text-left">
-              <thead className="sticky top-0 z-10 block bg-muted/80 backdrop-blur-sm border-b border-border/80 uppercase font-semibold text-[10px] text-muted-foreground tracking-wider">
+              <thead className="sticky top-0 z-10 block bg-muted/80 border-b border-border uppercase font-semibold text-[10px] text-muted-foreground tracking-wider">
                 <tr className="flex items-center">
                   <th className="px-4 py-2.5 shrink-0 overflow-hidden" style={{ width: COLS.tag }}>
                     <button
@@ -935,7 +935,7 @@ export const TagExplorerPage: React.FC = () => {
           {selectedTagForWrite && (
             <form onSubmit={handleWriteSubmit} className="space-y-4 pt-2">
               {writeError && (
-                <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-500 text-xs flex items-center space-x-2">
+                <div className="p-3 rounded-lg bg-status-error/10 border border-status-error/20 text-status-error text-xs flex items-center space-x-2">
                   <AlertCircle className="w-4 h-4 shrink-0" />
                   <span>{writeError}</span>
                 </div>
@@ -972,7 +972,7 @@ export const TagExplorerPage: React.FC = () => {
                 />
               </div>
 
-              <div className="p-2.5 rounded bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-500">
+              <div className="p-2.5 rounded bg-status-warning/10 border border-status-warning/20 text-[11px] text-status-warning">
                 {t('write.confirmWarning')}
               </div>
 

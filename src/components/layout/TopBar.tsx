@@ -95,17 +95,17 @@ export const TopBar: React.FC<{ onMenuClick?: () => void }> = ({ onMenuClick }) 
   }
 
   const statusDot = isConnecting
-    ? 'bg-amber-400 animate-pulse'
+    ? 'bg-status-warning animate-pulse'
     : isConnected
-      ? 'bg-emerald-400'
-      : 'bg-rose-500'
+      ? 'bg-status-running'
+      : 'bg-status-error'
 
   // Build the Monitor/Admin switch links based on current instance
   const monitorLink = instanceId ? `/corec/${instanceId}/monitor/dashboard` : '/'
   const adminLink = instanceId ? `/corec/${instanceId}/admin/drivers` : '/'
 
   return (
-    <header className="h-14 border-b border-border bg-card/60 backdrop-blur-md px-4 flex items-center justify-between z-30 sticky top-0">
+    <header className="h-14 border-b border-border bg-card px-4 flex items-center justify-between z-30 sticky top-0">
       {/* Left: back + instance name + switcher */}
       <div className="flex items-center space-x-3 min-w-0">
         {onMenuClick && (
@@ -163,7 +163,7 @@ export const TopBar: React.FC<{ onMenuClick?: () => void }> = ({ onMenuClick }) 
                 >
                   <span
                     className={`w-1.5 h-1.5 rounded-full mr-2 shrink-0 ${
-                      inst.lastConnectedAt ? 'bg-emerald-400' : 'bg-zinc-400'
+                      inst.lastConnectedAt ? 'bg-status-running' : 'bg-status-idle'
                     }`}
                   />
                   <span className="truncate">{inst.name}</span>
@@ -184,7 +184,7 @@ export const TopBar: React.FC<{ onMenuClick?: () => void }> = ({ onMenuClick }) 
       </div>
 
       {/* Center: Monitor / Admin switcher */}
-      <div className="flex items-center bg-muted/70 p-1 rounded-lg border border-border/50 text-xs shrink-0">
+      <div className="flex items-center bg-muted/70 p-1 rounded-lg border border-border text-xs shrink-0">
         <Link
           to={monitorLink}
           className={`flex items-center space-x-1.5 px-2 sm:px-3 py-1 rounded-md transition-all ${
@@ -250,7 +250,7 @@ export const TopBar: React.FC<{ onMenuClick?: () => void }> = ({ onMenuClick }) 
           onClick={handleDisconnect}
           title={t('connection.disconnect')}
           aria-label={t('connection.disconnect')}
-          className="h-8 w-8 text-rose-400 hover:text-rose-500 hover:bg-rose-500/10"
+          className="h-8 w-8 text-status-error hover:text-status-error hover:bg-status-error/10"
         >
           <Unplug className="w-4 h-4" />
         </Button>

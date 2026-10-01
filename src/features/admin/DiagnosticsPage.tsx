@@ -42,7 +42,7 @@ const HistTile: React.FC<{
   const { t } = useTranslation()
   const na = t('diagnostics.notAvailable')
   return (
-    <div className="p-3 rounded-lg bg-muted/40 border border-border/50">
+    <div className="p-3 rounded-lg bg-muted/40 border border-border">
       <div className="text-[10px] text-muted-foreground uppercase font-semibold">{label}</div>
       <div className={`text-xl font-bold font-mono mt-1 ${accent}`}>{fmtSec(avg, na)}</div>
       <div className="text-[10px] text-muted-foreground mt-1 font-mono">
@@ -157,7 +157,7 @@ export const DiagnosticsPage: React.FC = () => {
       <EventLogTerminal />
 
       {/* Prometheus Native Metrics */}
-      <Card className="border-border/80 bg-card/60">
+      <Card className="border-border bg-card">
         <CardHeader className="p-4 flex flex-row items-center justify-between">
           <div>
             <CardTitle className="text-sm font-semibold flex items-center space-x-2">
@@ -190,46 +190,48 @@ export const DiagnosticsPage: React.FC = () => {
 
         <CardContent className="p-4 pt-0">
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-            <div className="p-3 rounded-lg bg-muted/40 border border-border/50 text-center">
+            <div className="p-3 rounded-lg bg-muted/40 border border-border text-center">
               <div className="text-[10px] text-muted-foreground uppercase font-semibold">
                 {t('diagnostics.goroutines')}
               </div>
               <div className="text-xl font-bold font-mono text-primary mt-1">{goroutines}</div>
             </div>
-            <div className="p-3 rounded-lg bg-muted/40 border border-border/50 text-center">
+            <div className="p-3 rounded-lg bg-muted/40 border border-border text-center">
               <div className="text-[10px] text-muted-foreground uppercase font-semibold">
                 {t('diagnostics.heapAllocated')}
               </div>
-              <div className="text-xl font-bold font-mono text-purple-400 mt-1">
+              <div className="text-xl font-bold font-mono text-primary mt-1">
                 {(heapAllocBytes / (1024 * 1024)).toFixed(1)} MB
               </div>
             </div>
-            <div className="p-3 rounded-lg bg-muted/40 border border-border/50 text-center">
+            <div className="p-3 rounded-lg bg-muted/40 border border-border text-center">
               <div className="text-[10px] text-muted-foreground uppercase font-semibold">
                 {t('diagnostics.gcCycles')}
               </div>
-              <div className="text-xl font-bold font-mono text-cyan-400 mt-1">{gcCount}</div>
+              <div className="text-xl font-bold font-mono text-primary mt-1">{gcCount}</div>
             </div>
-            <div className="p-3 rounded-lg bg-muted/40 border border-border/50 text-center">
+            <div className="p-3 rounded-lg bg-muted/40 border border-border text-center">
               <div className="text-[10px] text-muted-foreground uppercase font-semibold">
                 {t('diagnostics.offlineBuffer')}
               </div>
-              <div className="text-xl font-bold font-mono text-emerald-400 mt-1">
+              <div className="text-xl font-bold font-mono text-status-running mt-1">
                 {offlinePending} {t('diagnostics.batches')}
               </div>
             </div>
-            <div className="p-3 rounded-lg bg-muted/40 border border-border/50 text-center">
+            <div className="p-3 rounded-lg bg-muted/40 border border-border text-center">
               <div className="text-[10px] text-muted-foreground uppercase font-semibold">
                 {t('diagnostics.busDropped')}
               </div>
-              <div className="text-xl font-bold font-mono text-rose-400 mt-1">{totalDropped}</div>
+              <div className="text-xl font-bold font-mono text-status-error mt-1">
+                {totalDropped}
+              </div>
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Latency & Data Age Histograms */}
-      <Card className="border-border/80 bg-card/60">
+      <Card className="border-border bg-card">
         <CardHeader className="p-4 pb-2">
           <CardTitle className="text-sm font-semibold">{t('diagnostics.latencyDataAge')}</CardTitle>
           <CardDescription className="text-xs">{t('diagnostics.histogramDesc')}</CardDescription>
@@ -242,7 +244,7 @@ export const DiagnosticsPage: React.FC = () => {
               avg={readLatency.avg}
               count={readLatency.count}
               sum={readLatency.sum}
-              accent="text-cyan-400"
+              accent="text-primary"
             />
             <HistTile
               label={t('diagnostics.publishLatency')}
@@ -250,7 +252,7 @@ export const DiagnosticsPage: React.FC = () => {
               avg={publishLatency.avg}
               count={publishLatency.count}
               sum={publishLatency.sum}
-              accent="text-emerald-400"
+              accent="text-status-running"
             />
             <HistTile
               label={t('diagnostics.httpRequests')}
@@ -258,13 +260,13 @@ export const DiagnosticsPage: React.FC = () => {
               avg={httpReq.avg}
               count={httpReq.count}
               sum={httpReq.sum}
-              accent="text-blue-400"
+              accent="text-status-queued"
             />
-            <div className="p-3 rounded-lg bg-muted/40 border border-border/50">
+            <div className="p-3 rounded-lg bg-muted/40 border border-border">
               <div className="text-[10px] text-muted-foreground uppercase font-semibold">
                 {t('diagnostics.dataAge')}
               </div>
-              <div className="text-xl font-bold font-mono text-amber-400 mt-1">
+              <div className="text-xl font-bold font-mono text-status-warning mt-1">
                 {fmtSec(dataAge, t('diagnostics.notAvailable'))}
               </div>
               <div className="text-[10px] text-muted-foreground mt-1 font-mono">
@@ -279,7 +281,7 @@ export const DiagnosticsPage: React.FC = () => {
       </Card>
 
       {/* Per-Driver Read Counts */}
-      <Card className="border-border/80 bg-card/60 overflow-hidden">
+      <Card className="border-border bg-card overflow-hidden">
         <CardHeader className="p-4 pb-2">
           <CardTitle className="text-sm font-semibold">
             {t('diagnostics.perDriverReadCounts')}
@@ -291,7 +293,7 @@ export const DiagnosticsPage: React.FC = () => {
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-left">
-              <thead className="bg-muted/50 border-b border-border/80 uppercase font-semibold text-[10px] text-muted-foreground tracking-wider">
+              <thead className="bg-muted/50 border-b border-border uppercase font-semibold text-[10px] text-muted-foreground tracking-wider">
                 <tr>
                   <th className="px-4 py-2">{t('common.driver')}</th>
                   <th className="px-4 py-2">{t('common.type')}</th>
@@ -317,7 +319,7 @@ export const DiagnosticsPage: React.FC = () => {
                       <td className="px-4 py-2 font-mono text-muted-foreground">
                         {m.labels.type || '—'}
                       </td>
-                      <td className="px-4 py-2 text-right font-mono font-bold text-cyan-400">
+                      <td className="px-4 py-2 text-right font-mono font-bold text-primary">
                         {formatNumber(m.value)}
                       </td>
                     </tr>
@@ -330,7 +332,7 @@ export const DiagnosticsPage: React.FC = () => {
       </Card>
 
       {/* Per-Transport Publish Counts */}
-      <Card className="border-border/80 bg-card/60 overflow-hidden">
+      <Card className="border-border bg-card overflow-hidden">
         <CardHeader className="p-4 pb-2">
           <CardTitle className="text-sm font-semibold">
             {t('diagnostics.perTransportPublishCounts')}
@@ -342,7 +344,7 @@ export const DiagnosticsPage: React.FC = () => {
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-left">
-              <thead className="bg-muted/50 border-b border-border/80 uppercase font-semibold text-[10px] text-muted-foreground tracking-wider">
+              <thead className="bg-muted/50 border-b border-border uppercase font-semibold text-[10px] text-muted-foreground tracking-wider">
                 <tr>
                   <th className="px-4 py-2">{t('transports.colTransport')}</th>
                   <th className="px-4 py-2">{t('common.type')}</th>
@@ -368,7 +370,7 @@ export const DiagnosticsPage: React.FC = () => {
                       <td className="px-4 py-2 font-mono text-muted-foreground">
                         {m.labels.type || '—'}
                       </td>
-                      <td className="px-4 py-2 text-right font-mono font-bold text-emerald-400">
+                      <td className="px-4 py-2 text-right font-mono font-bold text-status-running">
                         {formatNumber(m.value)}
                       </td>
                     </tr>
@@ -381,14 +383,14 @@ export const DiagnosticsPage: React.FC = () => {
       </Card>
 
       {/* pprof Debugging Downloads */}
-      <Card className="border-border/80 bg-card/60">
+      <Card className="border-border bg-card">
         <CardHeader className="p-4">
           <CardTitle className="text-sm font-semibold">{t('diagnostics.pprofEndpoints')}</CardTitle>
           <CardDescription className="text-xs">{t('diagnostics.pprofDesc')}</CardDescription>
         </CardHeader>
         <CardContent className="p-4 pt-0">
           {pprofError && (
-            <div className="mb-3 p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-start space-x-2">
+            <div className="mb-3 p-2.5 rounded-lg bg-status-error/10 border border-status-error/20 text-status-error text-xs flex items-start space-x-2">
               <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
               <span className="break-all">{pprofError}</span>
             </div>

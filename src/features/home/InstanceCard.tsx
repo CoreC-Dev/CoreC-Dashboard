@@ -60,10 +60,10 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
         : 'unknown'
 
   const statusColor = {
-    connected: 'bg-emerald-400',
-    error: 'bg-rose-500',
-    connecting: 'bg-amber-400 animate-pulse',
-    unknown: 'bg-zinc-400',
+    connected: 'bg-status-running',
+    error: 'bg-status-error',
+    connecting: 'bg-status-warning animate-pulse',
+    unknown: 'bg-status-idle',
   }[status]
 
   const accentColor = instance.color || undefined
@@ -147,7 +147,7 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
   return (
     <>
       <div
-        className="group relative rounded-xl border border-border bg-card hover:border-primary/40 hover:shadow-lg transition-all overflow-hidden flex flex-col"
+        className="group relative rounded-lg border border-border bg-card hover:border-primary/40 hover:shadow-lg transition-all overflow-hidden flex flex-col"
         style={accentColor ? { borderTopColor: accentColor, borderTopWidth: '3px' } : undefined}
       >
         {/* Header: status dot + name */}
@@ -175,7 +175,7 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => setConfirmDelete(true)}
-                  className="text-rose-500 focus:text-rose-500"
+                  className="text-status-error focus:text-status-error"
                 >
                   <Trash2 className="w-3.5 h-3.5 mr-2" />
                   {t('common.delete')}
@@ -197,7 +197,7 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
 
           {/* Error message */}
           {probeError && (
-            <div className="text-xs text-rose-500 break-words" title={probeError}>
+            <div className="text-xs text-status-error break-words" title={probeError}>
               {probeError}
             </div>
           )}
@@ -258,7 +258,7 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
                 </div>
                 <div
                   className={`text-sm font-semibold font-mono ${
-                    stats.total_dropped > 0 ? 'text-amber-500' : ''
+                    stats.total_dropped > 0 ? 'text-status-warning' : ''
                   }`}
                 >
                   {formatCompact(stats.total_dropped)}
@@ -277,7 +277,7 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
                     <div key={`in-${item.name}`} className="text-[11px] space-y-0.5">
                       <div className="flex items-center gap-1.5">
                         <span
-                          className={`w-1.5 h-1.5 rounded-full shrink-0 ${ConnStateLabel[item.state]?.dotColor ?? 'bg-zinc-400'}`}
+                          className={`w-1.5 h-1.5 rounded-full shrink-0 ${ConnStateLabel[item.state]?.dotColor ?? 'bg-status-idle'}`}
                         />
                         <span className="font-mono break-words">{item.name}</span>
                         <span className="ml-auto shrink-0 text-[9px] px-1 py-0.5 rounded bg-muted text-muted-foreground font-mono">
@@ -291,7 +291,7 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
                       )}
                       {item.detail && (
                         <div
-                          className={`pl-4 ${item.detail.includes('err') ? 'text-rose-500' : 'text-muted-foreground/60'}`}
+                          className={`pl-4 ${item.detail.includes('err') ? 'text-status-error' : 'text-muted-foreground/60'}`}
                         >
                           {item.detail}
                         </div>
@@ -315,7 +315,7 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
                     <div key={rule.name} className="text-[11px] space-y-0.5">
                       <div className="flex items-center gap-1.5">
                         <Zap
-                          className={`w-3 h-3 shrink-0 ${rule.disabled ? 'text-muted-foreground/40' : 'text-amber-500'}`}
+                          className={`w-3 h-3 shrink-0 ${rule.disabled ? 'text-muted-foreground/40' : 'text-status-warning'}`}
                         />
                         <span
                           className={`font-mono break-words ${rule.disabled ? 'line-through text-muted-foreground/50' : ''}`}
@@ -350,7 +350,7 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
                     <div key={`out-${item.name}`} className="text-[11px] space-y-0.5">
                       <div className="flex items-center gap-1.5">
                         <span
-                          className={`w-1.5 h-1.5 rounded-full shrink-0 ${ConnStateLabel[item.state]?.dotColor ?? 'bg-zinc-400'}`}
+                          className={`w-1.5 h-1.5 rounded-full shrink-0 ${ConnStateLabel[item.state]?.dotColor ?? 'bg-status-idle'}`}
                         />
                         <span className="font-mono break-words">{item.name}</span>
                         <span className="ml-auto shrink-0 text-[9px] px-1 py-0.5 rounded bg-muted text-muted-foreground font-mono">
@@ -380,7 +380,7 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
               )}
               {stats.tag_count !== undefined && <span>·</span>}
               {stats.total_errors > 0 ? (
-                <span className="text-rose-500 flex items-center gap-0.5">
+                <span className="text-status-error flex items-center gap-0.5">
                   <AlertTriangle className="w-2.5 h-2.5" />
                   {t('instanceCard.errors', { count: stats.total_errors })}
                 </span>
@@ -425,7 +425,7 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
             <Button
               size="sm"
               variant="outline"
-              className="h-8 text-amber-500"
+              className="h-8 text-status-warning"
               onClick={handleEnter}
             >
               <RefreshCw className="w-3.5 h-3.5" />

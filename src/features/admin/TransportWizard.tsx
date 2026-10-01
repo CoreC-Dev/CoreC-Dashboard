@@ -218,7 +218,7 @@ export const TransportWizard: React.FC<TransportWizardProps> = ({
       render: () => (
         <div className="space-y-3">
           {isEdit && (
-            <div className="rounded-md border border-amber-500/30 bg-amber-500/10 p-2 text-xs text-amber-600 dark:text-amber-400">
+            <div className="rounded-md border border-status-warning/30 bg-status-warning/10 p-2 text-xs text-status-warning dark:text-status-warning">
               {t('transportWizard.typeLockedInEdit')}
             </div>
           )}

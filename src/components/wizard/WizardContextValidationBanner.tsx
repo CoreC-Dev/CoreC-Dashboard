@@ -35,8 +35,8 @@ export const WizardContextValidationBanner: React.FC<{
     <div
       className={`rounded-md border p-2.5 text-xs space-y-1 ${
         hasContextErrors
-          ? 'border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-400'
-          : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+          ? 'border-status-error/30 bg-status-error/10 text-status-error dark:text-status-error'
+          : 'border-status-running/30 bg-status-running/10 text-status-running dark:text-status-running'
       }`}
     >
       {hasContextErrors ? (

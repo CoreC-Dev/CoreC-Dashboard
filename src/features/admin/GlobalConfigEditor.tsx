@@ -52,7 +52,7 @@ const RestartBadge: React.FC<{ show: boolean }> = ({ show }) => {
   return (
     <Badge
       variant="outline"
-      className="text-[9px] px-1 py-0 border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400"
+      className="text-[9px] px-1 py-0 border-status-warning/40 bg-status-warning/10 text-status-warning dark:text-status-warning"
     >
       <AlertTriangle className="w-2.5 h-2.5 mr-0.5" />
       {t('globalConfig.restartRequired')}
@@ -103,7 +103,7 @@ export const GlobalConfigEditor: React.FC = () => {
 
   if (!workingConfig) {
     return (
-      <Card className="border-border/80 bg-card/60">
+      <Card className="border-border bg-card">
         <CardHeader className="p-4 pb-2">
           <CardTitle className="text-sm font-semibold flex items-center gap-2">
             <Sliders className="w-4 h-4 text-primary" />
@@ -132,14 +132,17 @@ export const GlobalConfigEditor: React.FC = () => {
   const buffer = global.buffer ?? {}
 
   return (
-    <Card className="border-border/80 bg-card/60">
+    <Card className="border-border bg-card">
       <CardHeader className="p-4 pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm font-semibold flex items-center gap-2">
             <Sliders className="w-4 h-4 text-primary" />
             <span>{t('globalConfig.title')}</span>
             {dirty && (
-              <Badge variant="outline" className="text-[9px] border-amber-500/40 text-amber-600">
+              <Badge
+                variant="outline"
+                className="text-[9px] border-status-warning/40 text-status-warning"
+              >
                 {t('globalConfig.unsaved')}
               </Badge>
             )}
@@ -164,7 +167,7 @@ export const GlobalConfigEditor: React.FC = () => {
               <Gauge className="w-3.5 h-3.5" />
               {t('globalConfig.sectionLogging')}
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-lg bg-muted/30 border border-border/50">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-lg bg-muted/30 border border-border">
               <FieldRow label={t('globalConfig.logLevel')} help={t('globalConfig.logLevelHelp')}>
                 <Select
                   value={(global['log-level'] as string) ?? 'info'}
@@ -214,7 +217,7 @@ export const GlobalConfigEditor: React.FC = () => {
               {t('globalConfig.sectionApi')}
               <RestartBadge show={true} />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-lg bg-muted/30 border border-border/50">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-lg bg-muted/30 border border-border">
               <FieldRow
                 label={t('globalConfig.apiListen')}
                 help={t('globalConfig.apiListenHelp')}
@@ -384,7 +387,7 @@ export const GlobalConfigEditor: React.FC = () => {
               {t('globalConfig.sectionEngine')}
               <RestartBadge show={true} />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-lg bg-muted/30 border border-border/50">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-lg bg-muted/30 border border-border">
               <FieldRow
                 label={t('globalConfig.engineDataBusSize')}
                 help={t('globalConfig.engineDataBusSizeHelp')}
@@ -541,7 +544,7 @@ export const GlobalConfigEditor: React.FC = () => {
               {t('globalConfig.sectionBuffer')}
               <RestartBadge show={true} />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-lg bg-muted/30 border border-border/50">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-lg bg-muted/30 border border-border">
               <FieldRow
                 label={t('globalConfig.bufferEnabled')}
                 help={t('globalConfig.bufferEnabledHelp')}

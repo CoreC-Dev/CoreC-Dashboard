@@ -443,15 +443,15 @@ export const TransportDetailPage: React.FC = () => {
         <BackLink to={`${adminBase}/transports`}>
           {t('transports.transportList', { defaultValue: 'Back to Transports' })}
         </BackLink>
-        <Card className="border-dashed bg-card/40">
+        <Card className="border-dashed bg-card">
           <CardContent className="space-y-2 p-10 text-center">
-            <AlertCircle className="mx-auto h-8 w-8 text-rose-400" />
+            <AlertCircle className="mx-auto h-8 w-8 text-status-error" />
             <div className="text-sm font-semibold">{t('transports.detailNotFound')}</div>
             <div className="text-xs text-muted-foreground">
               {name ? t('transports.notRegistered', { name }) : t('transports.noNameProvided')}
             </div>
             {error instanceof Error && error.message && (
-              <div className="break-all font-mono text-[11px] text-rose-400/80">
+              <div className="break-all font-mono text-[11px] text-status-error/80">
                 {error.message}
               </div>
             )}
@@ -484,10 +484,10 @@ export const TransportDetailPage: React.FC = () => {
       </div>
 
       {/* Header */}
-      <Card className="bg-card/60">
+      <Card className="bg-card">
         <CardHeader className="flex-row items-start justify-between space-y-0">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-lg border border-indigo-500/20 bg-indigo-500/10 text-indigo-400">
+            <div className="flex h-11 w-11 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary">
               <Send className="h-5 w-5" />
             </div>
             <div>
@@ -507,31 +507,31 @@ export const TransportDetailPage: React.FC = () => {
         <StatCard
           label={t('transports.published')}
           value={formatNumber(transport.published)}
-          icon={<TrendingUp className="h-5 w-5 text-emerald-400" />}
-          accent="border border-emerald-500/20 bg-emerald-500/10"
+          icon={<TrendingUp className="h-5 w-5 text-status-running" />}
+          accent="border border-status-running/20 bg-status-running/10"
         />
         <StatCard
           label={t('transports.failed')}
           value={formatNumber(transport.failed)}
-          icon={<XCircle className="h-5 w-5 text-rose-400" />}
-          accent="border border-rose-500/20 bg-rose-500/10"
+          icon={<XCircle className="h-5 w-5 text-status-error" />}
+          accent="border border-status-error/20 bg-status-error/10"
         />
         <StatCard
           label={t('transports.received')}
           value={formatNumber(transport.received)}
-          icon={<Inbox className="h-5 w-5 text-sky-400" />}
-          accent="border border-sky-500/20 bg-sky-500/10"
+          icon={<Inbox className="h-5 w-5 text-primary" />}
+          accent="border border-primary/20 bg-primary/10"
         />
         <StatCard
           label={t('transports.droppedCommands')}
           value={formatNumber(transport.dropped_commands)}
-          icon={<Archive className="h-5 w-5 text-amber-400" />}
-          accent="border border-amber-500/20 bg-amber-500/10"
+          icon={<Archive className="h-5 w-5 text-status-warning" />}
+          accent="border border-status-warning/20 bg-status-warning/10"
         />
       </div>
 
       {/* Queue depth indicator */}
-      <Card className={`bg-card/60 ${queueActive ? 'border-amber-500/40' : ''}`}>
+      <Card className={`bg-card ${queueActive ? 'border-status-warning/40' : ''}`}>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center justify-between text-sm font-semibold">
             <span className="flex items-center gap-2">
@@ -541,14 +541,14 @@ export const TransportDetailPage: React.FC = () => {
             {queueActive ? (
               <Badge
                 variant="outline"
-                className="text-[10px] border-amber-500/30 bg-amber-500/10 text-amber-400"
+                className="text-[10px] border-status-warning/30 bg-status-warning/10 text-status-warning"
               >
                 {t('transports.backpressure')}
               </Badge>
             ) : (
               <Badge
                 variant="outline"
-                className="text-[10px] border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
+                className="text-[10px] border-status-running/30 bg-status-running/10 text-status-running"
               >
                 {t('transports.drained')}
               </Badge>
@@ -562,7 +562,7 @@ export const TransportDetailPage: React.FC = () => {
               {t('transports.queueSize')}
             </span>
             <span
-              className={`font-mono text-xl font-bold ${queueActive ? 'text-amber-400' : 'text-foreground'}`}
+              className={`font-mono text-xl font-bold ${queueActive ? 'text-status-warning' : 'text-foreground'}`}
             >
               {formatNumber(transport.queue_size)}
             </span>
@@ -570,13 +570,13 @@ export const TransportDetailPage: React.FC = () => {
           <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
             <div
               className={`h-full rounded-full transition-all ${
-                queueActive ? 'bg-amber-400' : 'bg-emerald-400'
+                queueActive ? 'bg-status-warning' : 'bg-status-running'
               }`}
               style={{ width: `${queuePct}%` }}
             />
           </div>
           {queueActive && (
-            <div className="flex items-start gap-2 rounded-lg border border-amber-500/20 bg-amber-500/10 p-2.5 text-amber-400">
+            <div className="flex items-start gap-2 rounded-lg border border-status-warning/20 bg-status-warning/10 p-2.5 text-status-warning">
               <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               <span className="text-[11px]">
                 {t('transports.commandsQueued', { count: formatNumber(transport.queue_size) })}
@@ -587,7 +587,7 @@ export const TransportDetailPage: React.FC = () => {
       </Card>
 
       {/* Connection & publishing parameters */}
-      <Card className="bg-card/60">
+      <Card className="bg-card">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-sm font-semibold">
             <Send className="h-4 w-4 text-primary" />
@@ -610,17 +610,17 @@ export const TransportDetailPage: React.FC = () => {
               </Badge>
             </Param>
             <Param label={t('transports.published')}>
-              <span className="font-mono text-emerald-400">
+              <span className="font-mono text-status-running">
                 {formatNumber(transport.published)}
               </span>
             </Param>
             <Param label={t('transports.failed')}>
-              <span className={`font-mono ${transport.failed > 0 ? 'text-rose-400' : ''}`}>
+              <span className={`font-mono ${transport.failed > 0 ? 'text-status-error' : ''}`}>
                 {formatNumber(transport.failed)}
               </span>
             </Param>
             <Param label={t('transports.received')}>
-              <span className="font-mono text-sky-400">{formatNumber(transport.received)}</span>
+              <span className="font-mono text-primary">{formatNumber(transport.received)}</span>
             </Param>
             <Param label={t('transports.lastPublish')}>
               <span className="font-mono">
@@ -628,13 +628,13 @@ export const TransportDetailPage: React.FC = () => {
               </span>
             </Param>
             <Param label={t('transports.queueSize')}>
-              <span className={`font-mono ${queueActive ? 'text-amber-400' : ''}`}>
+              <span className={`font-mono ${queueActive ? 'text-status-warning' : ''}`}>
                 {formatNumber(transport.queue_size)}
               </span>
             </Param>
             <Param label={t('transports.droppedCommands')}>
               <span
-                className={`font-mono ${transport.dropped_commands > 0 ? 'text-amber-400' : ''}`}
+                className={`font-mono ${transport.dropped_commands > 0 ? 'text-status-warning' : ''}`}
               >
                 {formatNumber(transport.dropped_commands)}
               </span>
@@ -644,7 +644,7 @@ export const TransportDetailPage: React.FC = () => {
       </Card>
 
       {/* Connection Info (read-only, from /configs/raw) */}
-      <Card className="bg-card/60">
+      <Card className="bg-card">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-sm font-semibold">
             <Send className="h-4 w-4 text-primary" />
@@ -681,7 +681,7 @@ export const TransportDetailPage: React.FC = () => {
       </Card>
 
       {/* Current YAML config snippet (collapsible, collapsed by default) */}
-      <Card className="bg-card/60">
+      <Card className="bg-card">
         <CardHeader className="flex-row items-center justify-between space-y-0 pb-3">
           <CardTitle className="flex items-center gap-2 text-sm font-semibold">
             <Layers className="h-4 w-4 text-primary" />
@@ -703,7 +703,7 @@ export const TransportDetailPage: React.FC = () => {
         {yamlOpen && (
           <CardContent>
             {yamlSnippet.trim() ? (
-              <pre className="max-h-72 overflow-auto rounded-lg border border-border/60 bg-zinc-950 p-3 font-mono text-[11px] leading-relaxed whitespace-pre-wrap break-all text-zinc-200">
+              <pre className="max-h-72 overflow-auto rounded-lg border border-border bg-status-idle p-3 font-mono text-[11px] leading-relaxed whitespace-pre-wrap break-all text-status-idle">
                 {yamlSnippet}
               </pre>
             ) : (

@@ -231,7 +231,7 @@ export const WriteControlPage: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left: Command Form */}
-        <Card className="lg:col-span-2 border-border/80 bg-card/60">
+        <Card className="lg:col-span-2 border-border bg-card">
           <CardHeader className="p-4 pb-2">
             <CardTitle className="text-sm font-semibold flex items-center space-x-2">
               <Terminal className="w-4 h-4 text-primary" />
@@ -243,14 +243,14 @@ export const WriteControlPage: React.FC = () => {
           <form onSubmit={handleWriteSubmit}>
             <CardContent className="p-4 space-y-4">
               {successMsg && (
-                <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs flex items-center space-x-2">
+                <div className="p-3 rounded-lg bg-status-running/10 border border-status-running/20 text-status-running text-xs flex items-center space-x-2">
                   <CheckCircle2 className="w-4 h-4 shrink-0" />
                   <span>{successMsg}</span>
                 </div>
               )}
 
               {errorMsg && (
-                <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-500 text-xs flex items-center space-x-2">
+                <div className="p-3 rounded-lg bg-status-error/10 border border-status-error/20 text-status-error text-xs flex items-center space-x-2">
                   <AlertCircle className="w-4 h-4 shrink-0" />
                   <span>{errorMsg}</span>
                 </div>
@@ -336,7 +336,7 @@ export const WriteControlPage: React.FC = () => {
                 />
               </div>
 
-              <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-500">
+              <div className="p-3 rounded-lg bg-status-warning/10 border border-status-warning/20 text-[11px] text-status-warning">
                 {t('write.confirmWarning')}
               </div>
             </CardContent>
@@ -355,7 +355,7 @@ export const WriteControlPage: React.FC = () => {
         </Card>
 
         {/* Right: Info Card */}
-        <Card className="border-border/80 bg-card/60">
+        <Card className="border-border bg-card">
           <CardHeader className="p-4">
             <CardTitle className="text-sm font-semibold">{t('write.concurrencyRetries')}</CardTitle>
             <CardDescription className="text-xs">
@@ -363,11 +363,11 @@ export const WriteControlPage: React.FC = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="p-4 pt-0 space-y-3 text-xs text-muted-foreground">
-            <div className="p-3 rounded-lg bg-muted/40 border border-border/50 space-y-2">
+            <div className="p-3 rounded-lg bg-muted/40 border border-border space-y-2">
               <div className="font-semibold text-foreground">{t('write.commandConcurrency')}</div>
               <p>{t('write.commandConcurrencyDesc')}</p>
             </div>
-            <div className="p-3 rounded-lg bg-muted/40 border border-border/50 space-y-2">
+            <div className="p-3 rounded-lg bg-muted/40 border border-border space-y-2">
               <div className="font-semibold text-foreground">{t('write.writeRetryCount')}</div>
               <p>{t('write.writeRetryCountDesc')}</p>
             </div>
@@ -380,14 +380,14 @@ export const WriteControlPage: React.FC = () => {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <ShieldAlert className="w-4 h-4 text-amber-500" />
+              <ShieldAlert className="w-4 h-4 text-status-warning" />
               <span>{t('write.confirmWriteTitle')}</span>
             </DialogTitle>
             <DialogDescription>{t('write.confirmWriteDesc')}</DialogDescription>
           </DialogHeader>
 
           {pendingCmd && (
-            <div className="rounded-lg border border-border/80 bg-muted/40 p-3">
+            <div className="rounded-lg border border-border bg-muted/40 p-3">
               <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 text-xs font-mono">
                 <span className="text-muted-foreground">{t('common.driver')}</span>
                 <span className="text-foreground break-all">{pendingCmd.driver}</span>
@@ -405,7 +405,7 @@ export const WriteControlPage: React.FC = () => {
             </div>
           )}
 
-          <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-500">
+          <div className="p-3 rounded-lg bg-status-warning/10 border border-status-warning/20 text-[11px] text-status-warning">
             {t('write.confirmWarning')}
           </div>
 
@@ -439,10 +439,10 @@ export const WriteControlPage: React.FC = () => {
       </Dialog>
 
       {/* Dead Letter Queue Section */}
-      <Card className="border-border/80 bg-card/60">
+      <Card className="border-border bg-card">
         <CardHeader className="p-4 flex flex-row items-center justify-between">
           <div>
-            <CardTitle className="text-sm font-semibold flex items-center space-x-2 text-rose-400">
+            <CardTitle className="text-sm font-semibold flex items-center space-x-2 text-status-error">
               <AlertOctagon className="w-4 h-4" />
               <span>{t('write.deadLetterTitle')}</span>
             </CardTitle>
@@ -477,13 +477,13 @@ export const WriteControlPage: React.FC = () => {
 
         <CardContent className="p-4 pt-0">
           {dlqClearedMsg && (
-            <div className="mb-3 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs flex items-center space-x-2">
+            <div className="mb-3 p-3 rounded-lg bg-status-running/10 border border-status-running/20 text-status-running text-xs flex items-center space-x-2">
               <CheckCircle2 className="w-4 h-4 shrink-0" />
               <span>{dlqClearedMsg}</span>
             </div>
           )}
           {replayError && (
-            <div className="mb-3 p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-500 text-xs flex items-center space-x-2">
+            <div className="mb-3 p-3 rounded-lg bg-status-error/10 border border-status-error/20 text-status-error text-xs flex items-center space-x-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{t('write.replayFailed', { error: replayError })}</span>
             </div>
@@ -496,10 +496,10 @@ export const WriteControlPage: React.FC = () => {
             </div>
           ) : errorDlq ? (
             <div className="space-y-3 py-8 text-center">
-              <AlertCircle className="mx-auto h-8 w-8 text-rose-400" />
+              <AlertCircle className="mx-auto h-8 w-8 text-status-error" />
               <div className="text-sm font-semibold">{t('common.error')}</div>
               {dlqError instanceof Error && dlqError.message && (
-                <div className="mx-auto max-w-md break-all font-mono text-[11px] text-rose-400/80">
+                <div className="mx-auto max-w-md break-all font-mono text-[11px] text-status-error/80">
                   {dlqError.message}
                 </div>
               )}
@@ -516,7 +516,7 @@ export const WriteControlPage: React.FC = () => {
             </div>
           ) : visibleDeadLetters.length === 0 ? (
             <div className="py-8 text-center text-xs text-muted-foreground flex flex-col items-center space-y-1">
-              <CheckCircle2 className="w-6 h-6 text-emerald-400 mb-1" />
+              <CheckCircle2 className="w-6 h-6 text-status-running mb-1" />
               <span>{t('write.noDeadLetters')}</span>
             </div>
           ) : (
@@ -524,10 +524,10 @@ export const WriteControlPage: React.FC = () => {
               {visibleDeadLetters.map((dl) => (
                 <div
                   key={`${dl.command.driver}-${dl.command.tag}-${dl.failed_at}-${dl.attempts}`}
-                  className="p-3 rounded-lg border border-rose-500/20 bg-rose-500/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+                  className="p-3 rounded-lg border border-status-error/20 bg-status-error/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
                 >
                   <div className="space-y-1 font-mono">
-                    <div className="text-rose-400 font-semibold">
+                    <div className="text-status-error font-semibold">
                       [{dl.command.driver}] {t('common.tag')}: {dl.command.tag} ={' '}
                       {String(dl.command.value)} ({dl.command.type})
                     </div>
@@ -545,7 +545,7 @@ export const WriteControlPage: React.FC = () => {
                     size="sm"
                     onClick={() => handleReplay(dl.command)}
                     disabled={writeMutation.isPending}
-                    className="shrink-0 text-xs border-rose-500/30 text-rose-400 hover:bg-rose-500/10"
+                    className="shrink-0 text-xs border-status-error/30 text-status-error hover:bg-status-error/10"
                   >
                     <RotateCcw className="w-3 h-3 mr-1" />
                     <span>{t('write.retry')}</span>
@@ -562,7 +562,7 @@ export const WriteControlPage: React.FC = () => {
         <AlertDialogContent className="max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
-              <AlertOctagon className="w-4 h-4 text-rose-400" />
+              <AlertOctagon className="w-4 h-4 text-status-error" />
               <span>{t('write.clearAllConfirm')}</span>
             </AlertDialogTitle>
             <AlertDialogDescription>{t('write.clearAllDesc')}</AlertDialogDescription>
@@ -571,7 +571,7 @@ export const WriteControlPage: React.FC = () => {
             <AlertDialogCancel>{t('write.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleClearDeadLetters}
-              className="bg-rose-600 text-white shadow hover:bg-rose-600/90"
+              className="bg-status-error text-white shadow hover:bg-status-error/90"
             >
               {t('write.confirm')}
             </AlertDialogAction>

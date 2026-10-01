@@ -307,34 +307,40 @@ export const RulesPage: React.FC = () => {
     switch (action) {
       case 'alert':
         return (
-          <Badge variant="outline" className="border-amber-500/30 bg-amber-500/10 text-amber-400">
+          <Badge
+            variant="outline"
+            className="border-status-warning/30 bg-status-warning/10 text-status-warning"
+          >
             {t('rules.actionAlert')}
           </Badge>
         )
       case 'drop':
         return (
-          <Badge variant="outline" className="border-rose-500/30 bg-rose-500/10 text-rose-400">
+          <Badge
+            variant="outline"
+            className="border-status-error/30 bg-status-error/10 text-status-error"
+          >
             {t('rules.actionDrop')}
           </Badge>
         )
       case 'transform':
         return (
-          <Badge
-            variant="outline"
-            className="border-purple-500/30 bg-purple-500/10 text-purple-400"
-          >
+          <Badge variant="outline" className="border-primary/30 bg-primary/10 text-primary">
             {t('rules.actionTransform')}
           </Badge>
         )
       case 'mirror':
         return (
-          <Badge variant="outline" className="border-cyan-500/30 bg-cyan-500/10 text-cyan-400">
+          <Badge variant="outline" className="border-primary/30 bg-primary/10 text-primary">
             {t('rules.actionMirror')}
           </Badge>
         )
       default:
         return (
-          <Badge variant="outline" className="border-blue-500/30 bg-blue-500/10 text-blue-400">
+          <Badge
+            variant="outline"
+            className="border-status-queued/30 bg-status-queued/10 text-status-queued"
+          >
             {t('rules.actionForward')}
           </Badge>
         )
@@ -344,13 +350,13 @@ export const RulesPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {toggleError && (
-        <div className="flex items-center gap-2 rounded-md border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs text-rose-400">
+        <div className="flex items-center gap-2 rounded-md border border-status-error/30 bg-status-error/10 px-3 py-2 text-xs text-status-error">
           <AlertCircle className="h-4 w-4 shrink-0" />
           <span>{toggleError}</span>
           <button
             type="button"
             onClick={() => setToggleError(null)}
-            className="ml-auto text-rose-400/60 hover:text-rose-400"
+            className="ml-auto text-status-error/60 hover:text-status-error"
           >
             ×
           </button>
@@ -397,7 +403,7 @@ export const RulesPage: React.FC = () => {
 
       {/* Unsaved changes banner */}
       {dirty && (
-        <div className="rounded-md border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-700 dark:text-amber-400 flex items-center justify-between">
+        <div className="rounded-md border border-status-warning/30 bg-status-warning/10 p-3 text-xs text-status-warning dark:text-status-warning flex items-center justify-between">
           <span>{t('rules.unsavedChanges')}</span>
           <div className="flex gap-2">
             <Button
@@ -443,9 +449,9 @@ export const RulesPage: React.FC = () => {
               {t('common.noResults', { query: searchQuery }) || `No results for "${searchQuery}"`}
             </p>
           )}
-          <div className="overflow-x-auto rounded-md border border-border/80">
+          <div className="overflow-x-auto rounded-md border border-border">
             <table className="w-full text-xs text-left">
-              <thead className="bg-muted/40 border-b border-border/80 uppercase font-semibold text-[10px] text-muted-foreground tracking-wider">
+              <thead className="bg-muted/40 border-b border-border uppercase font-semibold text-[10px] text-muted-foreground tracking-wider">
                 <tr>
                   <th className="px-3 py-2 w-12">{t('rules.colPriority')}</th>
                   <th className="px-3 py-2">{t('rules.colName')}</th>
@@ -505,7 +511,7 @@ export const RulesPage: React.FC = () => {
             {rules.length}
           </Badge>
         </div>
-        <Card className="border-border/80 bg-card/60 overflow-hidden">
+        <Card className="border-border bg-card overflow-hidden">
           {isLoading ? (
             <div className="flex items-center justify-center gap-2 py-16 text-xs text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -513,10 +519,10 @@ export const RulesPage: React.FC = () => {
             </div>
           ) : isError ? (
             <div className="space-y-3 py-10 text-center">
-              <AlertCircle className="mx-auto h-8 w-8 text-rose-400" />
+              <AlertCircle className="mx-auto h-8 w-8 text-status-error" />
               <div className="text-sm font-semibold">{t('common.error')}</div>
               {error instanceof Error && error.message && (
-                <div className="mx-auto max-w-md break-all font-mono text-[11px] text-rose-400/80">
+                <div className="mx-auto max-w-md break-all font-mono text-[11px] text-status-error/80">
                   {error.message}
                 </div>
               )}
@@ -538,7 +544,7 @@ export const RulesPage: React.FC = () => {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-xs text-left">
-                <thead className="bg-muted/50 border-b border-border/80 uppercase font-semibold text-[10px] text-muted-foreground tracking-wider">
+                <thead className="bg-muted/50 border-b border-border uppercase font-semibold text-[10px] text-muted-foreground tracking-wider">
                   <tr>
                     <th className="px-4 py-3 w-16">{t('rules.colPriority')}</th>
                     <th className="px-4 py-3">{t('rules.colName')}</th>
@@ -569,7 +575,7 @@ export const RulesPage: React.FC = () => {
                           </div>
                         </td>
                         <td className="px-4 py-3">
-                          <code className="px-2 py-1 rounded bg-muted/60 text-[11px] font-mono text-primary border border-border/50">
+                          <code className="px-2 py-1 rounded bg-muted/60 text-[11px] font-mono text-primary border border-border">
                             {rule.match}
                           </code>
                         </td>
@@ -579,7 +585,7 @@ export const RulesPage: React.FC = () => {
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center space-x-2 text-[11px]">
-                            <span className="text-emerald-400 font-mono font-bold">
+                            <span className="text-status-running font-mono font-bold">
                               {formatNumber(rule.hit_count)} {t('common.hits')}
                             </span>
                             <span className="text-muted-foreground">/</span>
@@ -651,7 +657,7 @@ export const RulesPage: React.FC = () => {
               <div className="text-xs font-semibold text-muted-foreground">
                 {t('rules.matchExpression')}
               </div>
-              <code className="block px-3 py-2 rounded bg-muted/60 text-[11px] font-mono text-primary border border-border/50 break-all">
+              <code className="block px-3 py-2 rounded bg-muted/60 text-[11px] font-mono text-primary border border-border break-all">
                 {testRule?.match || t('rules.emptyMatch')}
               </code>
             </div>
@@ -705,13 +711,15 @@ export const RulesPage: React.FC = () => {
               <div
                 className={`rounded-lg border p-3 space-y-2 ${
                   testResult
-                    ? 'border-emerald-500/30 bg-emerald-500/10'
-                    : 'border-rose-500/30 bg-rose-500/10'
+                    ? 'border-status-running/30 bg-status-running/10'
+                    : 'border-status-error/30 bg-status-error/10'
                 }`}
               >
                 {testResult ? (
                   <div className="space-y-1.5">
-                    <div className="text-xs font-bold text-emerald-400">{t('rules.matched')}</div>
+                    <div className="text-xs font-bold text-status-running">
+                      {t('rules.matched')}
+                    </div>
                     <div className="flex items-center gap-2 text-[11px]">
                       <span className="text-muted-foreground">{t('common.action')}:</span>
                       {getActionBadge(testRule.action)}
@@ -722,7 +730,7 @@ export const RulesPage: React.FC = () => {
                     </div>
                   </div>
                 ) : (
-                  <div className="text-xs font-bold text-rose-400">{t('rules.noMatch')}</div>
+                  <div className="text-xs font-bold text-status-error">{t('rules.noMatch')}</div>
                 )}
                 <div className="text-[10px] text-muted-foreground pt-1 border-t border-border/40">
                   {t('rules.testNote')}
@@ -827,7 +835,7 @@ export const RulesPage: React.FC = () => {
               </div>
 
               {editForm.action === 'transform' && (
-                <div className="space-y-3 rounded-md border border-purple-500/20 bg-purple-500/5 p-3">
+                <div className="space-y-3 rounded-md border border-primary/20 bg-primary/5 p-3">
                   <LabeledInput
                     label={t('rules.edit.transformExpression')}
                     value={editForm.transformExpression}
@@ -847,7 +855,7 @@ export const RulesPage: React.FC = () => {
                 <div className="text-xs font-semibold text-muted-foreground">
                   {t('config.yamlCode')}
                 </div>
-                <pre className="max-h-48 overflow-auto rounded-md border border-border/50 bg-muted/60 p-3 text-[11px] font-mono text-primary whitespace-pre-wrap break-all">
+                <pre className="max-h-48 overflow-auto rounded-md border border-border bg-muted/60 p-3 text-[11px] font-mono text-primary whitespace-pre-wrap break-all">
                   {buildRuleYaml(editForm)}
                 </pre>
               </div>
@@ -856,8 +864,8 @@ export const RulesPage: React.FC = () => {
                 <div
                   className={`flex items-center gap-2 rounded-md border px-3 py-2 text-xs ${
                     editStatus.type === 'success'
-                      ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
-                      : 'border-rose-500/30 bg-rose-500/10 text-rose-400'
+                      ? 'border-status-running/30 bg-status-running/10 text-status-running'
+                      : 'border-status-error/30 bg-status-error/10 text-status-error'
                   }`}
                 >
                   {editStatus.type === 'error' ? (

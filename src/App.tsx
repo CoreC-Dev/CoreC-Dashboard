@@ -105,7 +105,7 @@ const ConnectionGate: React.FC<{ children: React.ReactNode }> = ({ children }) =
   if (!isConnected && error) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
-        <div className="text-rose-500 text-lg font-semibold">{error}</div>
+        <div className="text-status-error text-lg font-semibold">{error}</div>
         <button
           type="button"
           onClick={reconnect}

@@ -203,37 +203,41 @@ export const AlertsPage: React.FC = () => {
     <div className="space-y-6">
       {/* Top Banner */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <Card className="border-border/80 bg-card/60">
+        <Card className="border-border bg-card">
           <CardHeader className="p-4 pb-1">
             <CardDescription className="text-xs flex items-center justify-between">
               <span>{t('alerts.deadLetterQueue')}</span>
-              <AlertOctagon className="w-4 h-4 text-rose-500" />
+              <AlertOctagon className="w-4 h-4 text-status-error" />
             </CardDescription>
           </CardHeader>
           <CardContent className="p-4 pt-1">
-            <div className="text-2xl font-bold font-mono text-rose-400">{deadLetters.length}</div>
+            <div className="text-2xl font-bold font-mono text-status-error">
+              {deadLetters.length}
+            </div>
             <div className="text-[11px] text-muted-foreground mt-1">
               {t('alerts.retriesExhausted')}
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-border/80 bg-card/60">
+        <Card className="border-border bg-card">
           <CardHeader className="p-4 pb-1">
             <CardDescription className="text-xs flex items-center justify-between">
               <span>{t('alerts.alertRulesConfigured')}</span>
-              <Bell className="w-4 h-4 text-amber-500" />
+              <Bell className="w-4 h-4 text-status-warning" />
             </CardDescription>
           </CardHeader>
           <CardContent className="p-4 pt-1">
-            <div className="text-2xl font-bold font-mono text-amber-400">{alertRules.length}</div>
+            <div className="text-2xl font-bold font-mono text-status-warning">
+              {alertRules.length}
+            </div>
             <div className="text-[11px] text-muted-foreground mt-1">
               {t('alerts.activeAlarmTriggers')}
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-border/80 bg-card/60">
+        <Card className="border-border bg-card">
           <CardHeader className="p-4 pb-1">
             <CardDescription className="text-xs flex items-center justify-between">
               <span>{t('alerts.systemErrorStream')}</span>
@@ -250,10 +254,10 @@ export const AlertsPage: React.FC = () => {
       </div>
 
       {/* Dead Letters List */}
-      <Card className="border-border/80 bg-card/60">
+      <Card className="border-border bg-card">
         <CardHeader className="p-4 flex flex-row items-center justify-between">
           <div>
-            <CardTitle className="text-sm font-semibold flex items-center space-x-2 text-rose-400">
+            <CardTitle className="text-sm font-semibold flex items-center space-x-2 text-status-error">
               <AlertOctagon className="w-4 h-4" />
               <span>{t('alerts.deadLetterControlQueue')}</span>
             </CardTitle>
@@ -272,14 +276,14 @@ export const AlertsPage: React.FC = () => {
         </CardHeader>
         <CardContent className="p-4 pt-0">
           {retryError && (
-            <div className="mb-3 p-2 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-center space-x-2">
+            <div className="mb-3 p-2 rounded-lg bg-status-error/10 border border-status-error/20 text-status-error text-xs flex items-center space-x-2">
               <AlertCircle className="w-3.5 h-3.5 shrink-0" />
               <span>{retryError}</span>
             </div>
           )}
           {deadLetters.length === 0 ? (
             <div className="py-8 text-center text-xs text-muted-foreground flex flex-col items-center space-y-1">
-              <CheckCircle2 className="w-6 h-6 text-emerald-400 mb-1" />
+              <CheckCircle2 className="w-6 h-6 text-status-running mb-1" />
               <span>
                 {t('alerts.noDeadLetters', {
                   defaultValue: 'No failed dead letter commands recorded.',
@@ -291,10 +295,10 @@ export const AlertsPage: React.FC = () => {
               {deadLetters.map((entry) => (
                 <div
                   key={`${entry.command.driver}-${entry.command.tag}-${entry.failed_at}-${entry.attempts}`}
-                  className="p-3 rounded-lg border border-rose-500/20 bg-rose-500/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+                  className="p-3 rounded-lg border border-status-error/20 bg-status-error/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
                 >
                   <div className="space-y-1">
-                    <div className="font-mono font-semibold text-rose-400">
+                    <div className="font-mono font-semibold text-status-error">
                       [{entry.command.driver}] {t('common.tag')}: {entry.command.tag} ={' '}
                       {String(entry.command.value)}
                     </div>
@@ -312,7 +316,7 @@ export const AlertsPage: React.FC = () => {
                     size="sm"
                     onClick={() => handleRetryDeadLetter(entry.command)}
                     disabled={writeMutation.isPending}
-                    className="shrink-0 text-xs border-rose-500/30 text-rose-400 hover:bg-rose-500/10"
+                    className="shrink-0 text-xs border-status-error/30 text-status-error hover:bg-status-error/10"
                   >
                     <RotateCcw className="w-3.5 h-3.5 mr-1" />
                     <span>{t('write.retry')}</span>
@@ -325,11 +329,11 @@ export const AlertsPage: React.FC = () => {
       </Card>
 
       {/* Live Warning / Error Feed */}
-      <Card className="border-border/80 bg-card/60">
+      <Card className="border-border bg-card">
         <CardHeader className="p-4 flex flex-row items-start justify-between gap-2">
           <div>
             <CardTitle className="text-sm font-semibold flex items-center space-x-2">
-              <AlertTriangle className="w-4 h-4 text-amber-400" />
+              <AlertTriangle className="w-4 h-4 text-status-warning" />
               <span>{t('alerts.realtimeWarning')}</span>
             </CardTitle>
             <CardDescription className="text-xs">{t('alerts.realtimeWarningDesc')}</CardDescription>
@@ -412,8 +416,8 @@ export const AlertsPage: React.FC = () => {
                   key={`${log.timestamp}-${log.level}-${log.type}-${log.payload.slice(0, 20)}`}
                   className={`p-2 rounded border flex items-start space-x-2 ${
                     log.level >= 8
-                      ? 'border-rose-500/30 bg-rose-500/10 text-rose-400'
-                      : 'border-amber-500/30 bg-amber-500/10 text-amber-400'
+                      ? 'border-status-error/30 bg-status-error/10 text-status-error'
+                      : 'border-status-warning/30 bg-status-warning/10 text-status-warning'
                   }`}
                 >
                   <span className="text-[10px] opacity-75 shrink-0 mt-0.5">

@@ -445,15 +445,15 @@ export const DriverDetailPage: React.FC = () => {
         <BackLink to={`${adminBase}/drivers`}>
           {t('drivers.driverList', { defaultValue: 'Back to Drivers' })}
         </BackLink>
-        <Card className="border-dashed bg-card/40">
+        <Card className="border-dashed bg-card">
           <CardContent className="space-y-2 p-10 text-center">
-            <AlertCircle className="mx-auto h-8 w-8 text-rose-400" />
+            <AlertCircle className="mx-auto h-8 w-8 text-status-error" />
             <div className="text-sm font-semibold">{t('drivers.detailNotFound')}</div>
             <div className="text-xs text-muted-foreground">
               {name ? t('drivers.notRegistered', { name }) : t('drivers.noNameProvided')}
             </div>
             {error instanceof Error && error.message && (
-              <div className="break-all font-mono text-[11px] text-rose-400/80">
+              <div className="break-all font-mono text-[11px] text-status-error/80">
                 {error.message}
               </div>
             )}
@@ -486,7 +486,7 @@ export const DriverDetailPage: React.FC = () => {
       </div>
 
       {/* Header */}
-      <Card className="bg-card/60">
+      <Card className="bg-card">
         <CardHeader className="flex-row items-start justify-between space-y-0">
           <div className="flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary">
@@ -509,25 +509,25 @@ export const DriverDetailPage: React.FC = () => {
         <StatCard
           label={t('drivers.totalErrors')}
           value={formatNumber(driver.error_count)}
-          icon={<AlertCircle className="h-5 w-5 text-rose-400" />}
-          accent="border border-rose-500/20 bg-rose-500/10"
+          icon={<AlertCircle className="h-5 w-5 text-status-error" />}
+          accent="border border-status-error/20 bg-status-error/10"
         />
         <StatCard
           label={t('drivers.reconnectFailures')}
           value={formatNumber(driver.reconnect_count)}
-          icon={<RotateCcw className="h-5 w-5 text-amber-400" />}
-          accent="border border-amber-500/20 bg-amber-500/10"
+          icon={<RotateCcw className="h-5 w-5 text-status-warning" />}
+          accent="border border-status-warning/20 bg-status-warning/10"
         />
         <StatCard
           label={t('drivers.totalReads')}
           value={formatNumber(driver.read_count)}
-          icon={<Database className="h-5 w-5 text-sky-400" />}
-          accent="border border-sky-500/20 bg-sky-500/10"
+          icon={<Database className="h-5 w-5 text-primary" />}
+          accent="border border-primary/20 bg-primary/10"
         />
       </div>
 
       {/* Connection & runtime parameters */}
-      <Card className="bg-card/60">
+      <Card className="bg-card">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-sm font-semibold">
             <Cpu className="h-4 w-4 text-primary" />
@@ -561,19 +561,21 @@ export const DriverDetailPage: React.FC = () => {
               <span className="font-mono">{formatNumber(driver.read_count)}</span>
             </Param>
             <Param label={t('drivers.errorCount')}>
-              <span className={`font-mono ${driver.error_count > 0 ? 'text-rose-400' : ''}`}>
+              <span className={`font-mono ${driver.error_count > 0 ? 'text-status-error' : ''}`}>
                 {formatNumber(driver.error_count)}
               </span>
             </Param>
             <Param label={t('drivers.reconnectCount')}>
-              <span className={`font-mono ${driver.reconnect_count > 0 ? 'text-amber-400' : ''}`}>
+              <span
+                className={`font-mono ${driver.reconnect_count > 0 ? 'text-status-warning' : ''}`}
+              >
                 {formatNumber(driver.reconnect_count)}
               </span>
             </Param>
           </div>
 
           {driver.last_error ? (
-            <div className="flex items-start gap-2 rounded-lg border border-rose-500/20 bg-rose-500/10 p-3 text-rose-400">
+            <div className="flex items-start gap-2 rounded-lg border border-status-error/20 bg-status-error/10 p-3 text-status-error">
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
               <div className="min-w-0">
                 <div className="mb-0.5 text-xs font-semibold">{t('drivers.lastError')}</div>
@@ -587,7 +589,7 @@ export const DriverDetailPage: React.FC = () => {
       </Card>
 
       {/* Connection Info (read-only, from current config) */}
-      <Card className="bg-card/60">
+      <Card className="bg-card">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-sm font-semibold">
             <Cpu className="h-4 w-4 text-primary" />
@@ -618,7 +620,7 @@ export const DriverDetailPage: React.FC = () => {
       </Card>
 
       {/* Current YAML snippet (read-only, collapsible) */}
-      <Card className="bg-card/60">
+      <Card className="bg-card">
         <CardHeader className="flex-row items-center justify-between space-y-0 pb-3">
           <div className="flex items-center gap-2">
             <FileCode2 className="h-4 w-4 text-primary" />
@@ -643,7 +645,7 @@ export const DriverDetailPage: React.FC = () => {
         {yamlOpen && (
           <CardContent>
             {yamlSnippet.trim() ? (
-              <pre className="max-h-96 overflow-auto rounded-lg border border-border/60 bg-zinc-950 p-3 font-mono text-[11px] leading-relaxed whitespace-pre-wrap break-all text-zinc-100">
+              <pre className="max-h-96 overflow-auto rounded-lg border border-border bg-status-idle p-3 font-mono text-[11px] leading-relaxed whitespace-pre-wrap break-all text-status-idle">
                 {yamlSnippet}
               </pre>
             ) : (
@@ -657,7 +659,7 @@ export const DriverDetailPage: React.FC = () => {
       <DriverEditConfigSection driver={driver} key={driver.name} />
 
       {/* Tag values table */}
-      <Card className="bg-card/60">
+      <Card className="bg-card">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-sm font-semibold">
             <Database className="h-4 w-4 text-primary" />
@@ -714,14 +716,14 @@ export const DriverDetailPage: React.FC = () => {
                           {tag.is_stale ? (
                             <Badge
                               variant="outline"
-                              className="h-4 py-0 text-[9px] border-amber-500/30 bg-amber-500/10 text-amber-400"
+                              className="h-4 py-0 text-[9px] border-status-warning/30 bg-status-warning/10 text-status-warning"
                             >
                               {t('common.stale')}
                             </Badge>
                           ) : (
                             <Badge
                               variant="outline"
-                              className="h-4 py-0 text-[9px] border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
+                              className="h-4 py-0 text-[9px] border-status-running/30 bg-status-running/10 text-status-running"
                             >
                               {t('common.fresh')}
                             </Badge>

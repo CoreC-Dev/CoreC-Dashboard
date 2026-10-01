@@ -37,7 +37,7 @@ export const ExprValidationMessages: React.FC<{
           </p>
         ))}
         {result.warnings.map((warn, i) => (
-          <p key={`w-${i}`} className="text-[9px] text-amber-600 dark:text-amber-400">
+          <p key={`w-${i}`} className="text-[9px] text-status-warning dark:text-status-warning">
             ⚠ {warn}
           </p>
         ))}
@@ -56,7 +56,7 @@ export const ExprValidationMessages: React.FC<{
       {result.warnings.map((warn, i) => (
         <p
           key={`w-${i}`}
-          className="text-[10px] text-amber-600 dark:text-amber-400 flex items-start gap-1"
+          className="text-[10px] text-status-warning dark:text-status-warning flex items-start gap-1"
         >
           <AlertCircle className="w-3 h-3 mt-0.5 shrink-0" />
           {warn}

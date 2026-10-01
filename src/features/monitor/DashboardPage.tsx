@@ -64,10 +64,10 @@ export const DashboardPage: React.FC = () => {
     statusLower === 'down' ||
     statusLower === 'crashed'
   const statusDotClass = isStatusHealthy
-    ? 'bg-emerald-400 glow-success'
+    ? 'bg-status-running glow-success'
     : isStatusError
-      ? 'bg-rose-400'
-      : 'bg-amber-400'
+      ? 'bg-status-error'
+      : 'bg-status-warning'
 
   const adminBase = id ? `/corec/${id}/admin` : '/admin'
   const alertsLink = id ? `/corec/${id}/monitor/alerts` : '/monitor/alerts'
@@ -87,7 +87,7 @@ export const DashboardPage: React.FC = () => {
   // KPI row needs a visible error indicator.
   if (statsError) {
     return (
-      <div className="flex items-center justify-center py-20 text-rose-500">
+      <div className="flex items-center justify-center py-20 text-status-error">
         <AlertCircle className="w-5 h-5 mr-2" />
         <span className="text-sm">
           {t('dashboard.loadFailed', { defaultValue: 'Failed to load dashboard data' })}
@@ -98,10 +98,21 @@ export const DashboardPage: React.FC = () => {
 
   return (
     <div className="space-y-4">
+      {/* Greeting */}
+      <div className="pt-1">
+        <h1 className="text-2xl font-bold tracking-tight">{t('nav.dashboard')}</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">
+          {t('dashboard.realtimeMonitor', { defaultValue: 'Real-time monitoring & control' })}
+        </p>
+      </div>
+
       {/* Row 1 — KPI indicators */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {/* Engine Status */}
-        <div className="rounded-lg border border-border/60 bg-card/50 p-2.5">
+        <div
+          className="rounded-lg border border-border bg-card p-2.5"
+          style={{ boxShadow: 'var(--shadow-card)' }}
+        >
           <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1">
             <span>{t('dashboard.engineStatus')}</span>
             <Activity className="w-3 h-3 text-primary" />
@@ -118,10 +129,10 @@ export const DashboardPage: React.FC = () => {
           </div>
         </div>
         {/* Sample Rate */}
-        <div className="rounded-lg border border-border/60 bg-card/50 p-2.5">
+        <div className="rounded-lg border border-border bg-card p-2.5">
           <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1">
             <span>{t('dashboard.sampleRate')}</span>
-            <TrendingUp className="w-3 h-3 text-emerald-400" />
+            <TrendingUp className="w-3 h-3 text-status-running" />
           </div>
           <div className="text-base font-bold font-mono">
             {stats?.points_per_sec?.toFixed(1) || '0.0'}
@@ -131,10 +142,10 @@ export const DashboardPage: React.FC = () => {
           </div>
         </div>
         {/* Drivers */}
-        <div className="rounded-lg border border-border/60 bg-card/50 p-2.5">
+        <div className="rounded-lg border border-border bg-card p-2.5">
           <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1">
             <span>{t('dashboard.drivers')}</span>
-            <Cpu className="w-3 h-3 text-blue-400" />
+            <Cpu className="w-3 h-3 text-status-queued" />
           </div>
           <div className="text-base font-bold font-mono">
             {connectedDrivers}{' '}
@@ -142,17 +153,17 @@ export const DashboardPage: React.FC = () => {
               / {drivers.length}
             </span>
           </div>
-          <div className="text-[9px] text-emerald-400">
+          <div className="text-[9px] text-status-running">
             {drivers.length === 0
               ? t('dashboard.notAvailable', { defaultValue: 'N/A' })
               : `${Math.round((connectedDrivers / drivers.length) * 100)}%${t('dashboard.onlineSuffix')}`}
           </div>
         </div>
         {/* Transports */}
-        <div className="rounded-lg border border-border/60 bg-card/50 p-2.5">
+        <div className="rounded-lg border border-border bg-card p-2.5">
           <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1">
             <span>{t('dashboard.sinks')}</span>
-            <Send className="w-3 h-3 text-indigo-400" />
+            <Send className="w-3 h-3 text-primary" />
           </div>
           <div className="text-base font-bold font-mono">
             {connectedTransports}{' '}
@@ -160,17 +171,17 @@ export const DashboardPage: React.FC = () => {
               / {transports.length}
             </span>
           </div>
-          <div className="text-[9px] text-emerald-400">
+          <div className="text-[9px] text-status-running">
             {transports.length === 0
               ? t('dashboard.notAvailable', { defaultValue: 'N/A' })
               : `${Math.round((connectedTransports / transports.length) * 100)}% ${t('dashboard.connected')}`}
           </div>
         </div>
         {/* Total Read */}
-        <div className="rounded-lg border border-border/60 bg-card/50 p-2.5">
+        <div className="rounded-lg border border-border bg-card p-2.5">
           <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1">
             <span>{t('dashboard.totalRead')}</span>
-            <Database className="w-3 h-3 text-amber-400" />
+            <Database className="w-3 h-3 text-status-warning" />
           </div>
           <div className="text-base font-bold font-mono">
             {formatNumber(stats?.total_read || 0)}
@@ -180,12 +191,12 @@ export const DashboardPage: React.FC = () => {
           </div>
         </div>
         {/* Dropped */}
-        <div className="rounded-lg border border-border/60 bg-card/50 p-2.5">
+        <div className="rounded-lg border border-border bg-card p-2.5">
           <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1">
             <span>{t('dashboard.dropped')}</span>
-            <TrendingDown className="w-3 h-3 text-rose-400" />
+            <TrendingDown className="w-3 h-3 text-status-error" />
           </div>
-          <div className="text-base font-bold font-mono text-rose-400">
+          <div className="text-base font-bold font-mono text-status-error">
             {formatNumber(stats?.total_dropped || 0)}
           </div>
           <div className="text-[9px] text-muted-foreground">
@@ -196,7 +207,7 @@ export const DashboardPage: React.FC = () => {
 
       {/* Row 2 — Real-time charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card className="border-border/80 bg-card/60 backdrop-blur-sm">
+        <Card className="border-border bg-card">
           <CardHeader className="p-3 pb-1">
             <CardTitle className="text-xs font-semibold">{t('dashboard.trafficChart')}</CardTitle>
           </CardHeader>
@@ -204,7 +215,7 @@ export const DashboardPage: React.FC = () => {
             <TrafficChart />
           </CardContent>
         </Card>
-        <Card className="border-border/80 bg-card/60 backdrop-blur-sm">
+        <Card className="border-border bg-card">
           <CardHeader className="p-3 pb-1">
             <CardTitle className="text-xs font-semibold">{t('dashboard.memoryChart')}</CardTitle>
           </CardHeader>
@@ -215,7 +226,7 @@ export const DashboardPage: React.FC = () => {
       </div>
 
       {/* Row 3 — Driver matrix */}
-      <Card className="border-border/80 bg-card/60 backdrop-blur-sm">
+      <Card className="border-border bg-card">
         <CardHeader className="p-3 pb-1 flex flex-row items-center justify-between">
           <CardTitle className="text-xs font-semibold">{t('dashboard.driverList')}</CardTitle>
           <Link
@@ -238,7 +249,7 @@ export const DashboardPage: React.FC = () => {
                 return (
                   <div
                     key={drv.name}
-                    className="p-2 rounded-lg border border-border/60 bg-card/40 text-xs"
+                    className="p-2 rounded-lg border border-border bg-card text-xs"
                   >
                     <div className="flex items-center space-x-1.5 mb-1">
                       <span className={`w-1.5 h-1.5 rounded-full ${st.dotColor}`} />
@@ -249,7 +260,7 @@ export const DashboardPage: React.FC = () => {
                       <span className="text-muted-foreground">
                         R:{formatNumber(drv.read_count)}
                       </span>
-                      <span className="text-rose-400">E:{drv.error_count}</span>
+                      <span className="text-status-error">E:{drv.error_count}</span>
                     </div>
                   </div>
                 )
@@ -260,7 +271,7 @@ export const DashboardPage: React.FC = () => {
       </Card>
 
       {/* Row 4 — Transport matrix */}
-      <Card className="border-border/80 bg-card/60 backdrop-blur-sm">
+      <Card className="border-border bg-card">
         <CardHeader className="p-3 pb-1 flex flex-row items-center justify-between">
           <CardTitle className="text-xs font-semibold">{t('dashboard.transportList')}</CardTitle>
           <Link
@@ -283,7 +294,7 @@ export const DashboardPage: React.FC = () => {
                 return (
                   <div
                     key={tr.name}
-                    className="p-2 rounded-lg border border-border/60 bg-card/40 text-xs"
+                    className="p-2 rounded-lg border border-border bg-card text-xs"
                   >
                     <div className="flex items-center space-x-1.5 mb-1">
                       <span className={`w-1.5 h-1.5 rounded-full ${st.dotColor}`} />
@@ -292,7 +303,7 @@ export const DashboardPage: React.FC = () => {
                     <div className="text-[10px] text-muted-foreground font-mono">{tr.type}</div>
                     <div className="flex items-center justify-between mt-1 text-[10px]">
                       <span className="text-muted-foreground">P:{formatNumber(tr.published)}</span>
-                      <span className="text-amber-400">Q:{tr.queue_size}</span>
+                      <span className="text-status-warning">Q:{tr.queue_size}</span>
                     </div>
                   </div>
                 )
@@ -303,7 +314,7 @@ export const DashboardPage: React.FC = () => {
       </Card>
 
       {/* Row 5 — Recent alerts / dead letters */}
-      <Card className="border-border/80 bg-card/60 backdrop-blur-sm">
+      <Card className="border-border bg-card">
         <CardHeader className="p-3 pb-1 flex flex-row items-center justify-between">
           <CardTitle className="text-xs font-semibold">{t('dashboard.recentAlerts')}</CardTitle>
           <Link
@@ -317,7 +328,7 @@ export const DashboardPage: React.FC = () => {
         <CardContent className="p-3 pt-0">
           {deadLetters.length === 0 ? (
             <div className="py-4 text-center text-xs text-muted-foreground flex flex-col items-center space-y-1">
-              <ShieldCheck className="w-5 h-5 text-emerald-400 mb-1" />
+              <ShieldCheck className="w-5 h-5 text-status-running mb-1" />
               <span>
                 {t('dashboard.allHealthy', {
                   defaultValue: 'All systems healthy. No dead letter write failures.',
@@ -329,10 +340,10 @@ export const DashboardPage: React.FC = () => {
               {deadLetters.slice(0, 8).map((item) => (
                 <div
                   key={`${item.command.driver}-${item.command.tag}-${item.failed_at}-${item.attempts}`}
-                  className="p-2.5 rounded-lg border border-rose-500/20 bg-rose-500/5 flex items-center justify-between text-xs"
+                  className="p-2.5 rounded-lg border border-status-error/20 bg-status-error/5 flex items-center justify-between text-xs"
                 >
                   <div className="space-y-0.5 min-w-0">
-                    <div className="font-mono font-semibold text-rose-400 truncate">
+                    <div className="font-mono font-semibold text-status-error truncate">
                       [{item.command.driver}] {item.command.tag} = {String(item.command.value)}
                     </div>
                     <div className="text-[10px] text-muted-foreground truncate">{item.error}</div>
@@ -340,7 +351,7 @@ export const DashboardPage: React.FC = () => {
                   <div className="text-right shrink-0 ml-2">
                     <Badge
                       variant="outline"
-                      className="border-rose-500/30 text-rose-400 text-[9px]"
+                      className="border-status-error/30 text-status-error text-[9px]"
                     >
                       {t('dashboard.retries', { count: item.attempts })}
                     </Badge>

@@ -58,7 +58,7 @@ export class ErrorBoundary extends Component<Props, State> {
               <p className="text-sm text-muted-foreground">
                 {i18n.t('error.boundary.description')}
               </p>
-              <pre className="text-xs font-mono bg-muted/50 rounded-lg p-3 overflow-auto max-h-40 border border-border/60">
+              <pre className="text-xs font-mono bg-muted/50 rounded-lg p-3 overflow-auto max-h-40 border border-border">
                 {this.state.error.message}
                 {this.state.error.stack ? `\n\n${this.state.error.stack}` : ''}
               </pre>

@@ -47,7 +47,7 @@ export const StatCard: React.FC<{
   icon: React.ReactNode
   accent: string
 }> = ({ label, value, icon, accent }) => (
-  <Card className="bg-card/60">
+  <Card className="bg-card">
     <CardContent className="flex items-center gap-3 p-4">
       <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${accent}`}>
         {icon}
@@ -134,7 +134,7 @@ export const EntityEditConfigCard: React.FC<EntityEditConfigCardProps> = ({
   isReloading,
   onReload,
 }) => (
-  <Card className="bg-card/60">
+  <Card className="bg-card">
     <CardHeader className="flex-row items-center justify-between space-y-0 pb-3">
       <div className="flex items-center gap-2">
         <Sliders className="h-4 w-4 text-primary" />
@@ -157,7 +157,7 @@ export const EntityEditConfigCard: React.FC<EntityEditConfigCardProps> = ({
     {open && (
       <CardContent className="space-y-4">
         {fields.length === 0 ? (
-          <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-3 text-xs text-amber-400">
+          <div className="rounded-lg border border-status-warning/20 bg-status-warning/10 p-3 text-xs text-status-warning">
             {unsupportedMessage}
           </div>
         ) : (
@@ -205,7 +205,7 @@ export const EntityEditConfigCard: React.FC<EntityEditConfigCardProps> = ({
               <div className="text-[11px] font-medium text-muted-foreground">
                 {yamlPreviewLabel}
               </div>
-              <pre className="max-h-56 overflow-auto rounded-lg border border-border/60 bg-muted/40 p-3 font-mono text-[11px] leading-relaxed whitespace-pre-wrap break-all text-foreground">
+              <pre className="max-h-56 overflow-auto rounded-lg border border-border bg-muted/40 p-3 font-mono text-[11px] leading-relaxed whitespace-pre-wrap break-all text-foreground">
                 {yamlPreview}
               </pre>
             </div>
@@ -214,8 +214,8 @@ export const EntityEditConfigCard: React.FC<EntityEditConfigCardProps> = ({
               <div
                 className={`flex items-center gap-2 rounded-lg border p-3 text-xs ${
                   statusMsg.type === 'success'
-                    ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400'
-                    : 'border-rose-500/20 bg-rose-500/10 text-rose-500'
+                    ? 'border-status-running/20 bg-status-running/10 text-status-running'
+                    : 'border-status-error/20 bg-status-error/10 text-status-error'
                 }`}
               >
                 {statusMsg.type === 'success' ? (
@@ -232,7 +232,7 @@ export const EntityEditConfigCard: React.FC<EntityEditConfigCardProps> = ({
                 {isReloading ? (
                   <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
                 ) : (
-                  <Flame className="mr-1.5 h-3.5 w-3.5 text-amber-400" />
+                  <Flame className="mr-1.5 h-3.5 w-3.5 text-status-warning" />
                 )}
                 <span>{isReloading ? reloadingLabel : reloadButtonLabel}</span>
               </Button>

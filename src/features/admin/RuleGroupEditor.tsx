@@ -206,7 +206,7 @@ const InlineRuleEditor: React.FC<InlineRuleEditorProps> = ({
       </div>
       {/* Transform config — used by transform action */}
       {draft.action === 'transform' && (
-        <div className="space-y-2 rounded-md border border-purple-500/20 bg-purple-500/5 p-2">
+        <div className="space-y-2 rounded-md border border-primary/20 bg-primary/5 p-2">
           <div className="space-y-1">
             <Label className="text-[10px] font-medium">
               {t('ruleWizard.transformExpression')}
@@ -319,7 +319,7 @@ const GroupCard: React.FC<GroupCardProps> = ({
   }
 
   return (
-    <div className="rounded-lg border border-border/60 overflow-hidden">
+    <div className="rounded-lg border border-border overflow-hidden">
       {/* Header */}
       <div className="flex items-center gap-2 p-3 hover:bg-muted/20 transition-colors">
         <button
@@ -404,7 +404,7 @@ const GroupCard: React.FC<GroupCardProps> = ({
                   onCancel={() => setEditingRule(null)}
                 />
               ) : (
-                <div className="flex items-center gap-2 rounded-md border border-border/40 bg-card/40 p-2 hover:bg-muted/20 transition-colors">
+                <div className="flex items-center gap-2 rounded-md border border-border/40 bg-card p-2 hover:bg-muted/20 transition-colors">
                   <Badge variant="outline" className="text-[9px] px-1 py-0 font-mono shrink-0">
                     {rl.priority ?? 100}
                   </Badge>
@@ -428,7 +428,7 @@ const GroupCard: React.FC<GroupCardProps> = ({
                   {rl.transform && (
                     <Badge
                       variant="outline"
-                      className="text-[9px] px-1 py-0 shrink-0 text-purple-600 dark:text-purple-400"
+                      className="text-[9px] px-1 py-0 shrink-0 text-primary dark:text-primary"
                     >
                       transform
                     </Badge>
@@ -567,7 +567,7 @@ export const RuleGroupEditor: React.FC = () => {
 
   if (!workingConfig) {
     return (
-      <Card className="border-border/80 bg-card/60">
+      <Card className="border-border bg-card">
         <CardHeader className="p-4 pb-2">
           <CardTitle className="text-sm font-semibold flex items-center gap-2">
             <FolderTree className="w-4 h-4 text-primary" />
@@ -591,7 +591,7 @@ export const RuleGroupEditor: React.FC = () => {
   const canCreate = newGroupName.trim() && isRuleGroupNameUnique(newGroupName.trim())
 
   return (
-    <Card className="border-border/80 bg-card/60">
+    <Card className="border-border bg-card">
       <CardHeader className="p-4 pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm font-semibold flex items-center gap-2">
@@ -599,13 +599,16 @@ export const RuleGroupEditor: React.FC = () => {
             <span>{t('ruleGroup.title')}</span>
             <Badge
               variant="outline"
-              className="text-[9px] px-1 py-0 border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400"
+              className="text-[9px] px-1 py-0 border-status-warning/40 bg-status-warning/10 text-status-warning dark:text-status-warning"
             >
               <AlertTriangle className="w-2.5 h-2.5 mr-0.5" />
               {t('ruleGroup.restartRequired')}
             </Badge>
             {dirty && (
-              <Badge variant="outline" className="text-[9px] border-amber-500/40 text-amber-600">
+              <Badge
+                variant="outline"
+                className="text-[9px] border-status-warning/40 text-status-warning"
+              >
                 {t('globalConfig.unsaved')}
               </Badge>
             )}
@@ -690,7 +693,7 @@ export const RuleGroupEditor: React.FC = () => {
 
         {/* Usage hint */}
         {groupEntries.length > 0 && (
-          <div className="rounded-md border border-blue-500/20 bg-blue-500/5 p-2.5 text-[10px] text-muted-foreground">
+          <div className="rounded-md border border-status-queued/20 bg-status-queued/5 p-2.5 text-[10px] text-muted-foreground">
             {t('ruleGroup.usageHint')}
           </div>
         )}

@@ -255,7 +255,7 @@ export const ConfigApplyConfirmationDialog: React.FC<ConfigApplyConfirmationDial
       <AlertDialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
         <AlertDialogHeader>
           <AlertDialogTitle className="text-base flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4 text-amber-500" />
+            <AlertTriangle className="h-4 w-4 text-status-warning" />
             {t('applyDialog.title')}
           </AlertDialogTitle>
           <AlertDialogDescription className="text-xs">
@@ -264,7 +264,7 @@ export const ConfigApplyConfirmationDialog: React.FC<ConfigApplyConfirmationDial
         </AlertDialogHeader>
 
         {/* Warning banner */}
-        <div className="rounded-md border border-amber-500/30 bg-amber-500/10 p-2.5 text-xs text-amber-600 dark:text-amber-400 flex items-start gap-2">
+        <div className="rounded-md border border-status-warning/30 bg-status-warning/10 p-2.5 text-xs text-status-warning dark:text-status-warning flex items-start gap-2">
           <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
           <span>{t('applyDialog.engineSuspendWarning')}</span>
         </div>
@@ -288,29 +288,29 @@ export const ConfigApplyConfirmationDialog: React.FC<ConfigApplyConfirmationDial
           <ChangeBadge label={t('applyDialog.rules')} counts={summary.rules} />
           {summary.global && (
             <Badge variant="outline" className="text-[10px] gap-1">
-              {t('applyDialog.global')} <span className="text-amber-500">●</span>
+              {t('applyDialog.global')} <span className="text-status-warning">●</span>
             </Badge>
           )}
           {summary.node && (
             <Badge variant="outline" className="text-[10px] gap-1">
-              {t('applyDialog.node')} <span className="text-amber-500">●</span>
+              {t('applyDialog.node')} <span className="text-status-warning">●</span>
             </Badge>
           )}
           {summary['rule-providers'] && (
             <Badge variant="outline" className="text-[10px] gap-1">
-              {t('applyDialog.ruleProviders')} <span className="text-amber-500">●</span>
+              {t('applyDialog.ruleProviders')} <span className="text-status-warning">●</span>
             </Badge>
           )}
           {summary['rule-groups'] && (
             <Badge variant="outline" className="text-[10px] gap-1">
-              {t('applyDialog.ruleGroups')} <span className="text-amber-500">●</span>
+              {t('applyDialog.ruleGroups')} <span className="text-status-warning">●</span>
             </Badge>
           )}
         </div>
 
         {/* Restart warning — shown when changes include restart-required sections */}
         {summary.requiresRestart && (
-          <div className="rounded-md border border-orange-500/30 bg-orange-500/10 p-2.5 text-xs text-orange-600 dark:text-orange-400 flex items-start gap-2">
+          <div className="rounded-md border border-status-warning/30 bg-status-warning/10 p-2.5 text-xs text-status-warning dark:text-status-warning flex items-start gap-2">
             <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
             <span>{t('applyDialog.restartRequiredWarning')}</span>
           </div>
@@ -325,9 +325,9 @@ export const ConfigApplyConfirmationDialog: React.FC<ConfigApplyConfirmationDial
                 className={cn(
                   'px-1',
                   line.type === 'added' &&
-                    'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
+                    'bg-status-running/10 text-status-running dark:text-status-running',
                   line.type === 'removed' &&
-                    'bg-rose-500/10 text-rose-600 dark:text-rose-400 line-through',
+                    'bg-status-error/10 text-status-error dark:text-status-error line-through',
                 )}
               >
                 <span className="select-none inline-block w-4 text-muted-foreground/50">
@@ -381,9 +381,9 @@ const ChangeBadge: React.FC<{
   return (
     <Badge variant="outline" className="text-[10px] gap-1.5">
       {label}
-      {counts.added > 0 && <span className="text-emerald-500">+{counts.added}</span>}
-      {counts.removed > 0 && <span className="text-rose-500">-{counts.removed}</span>}
-      {counts.modified > 0 && <span className="text-amber-500">~{counts.modified}</span>}
+      {counts.added > 0 && <span className="text-status-running">+{counts.added}</span>}
+      {counts.removed > 0 && <span className="text-status-error">-{counts.removed}</span>}
+      {counts.modified > 0 && <span className="text-status-warning">~{counts.modified}</span>}
     </Badge>
   )
 }

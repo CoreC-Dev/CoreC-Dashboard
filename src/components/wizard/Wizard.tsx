@@ -170,7 +170,7 @@ export const Wizard: React.FC<WizardProps> = ({
                   className={cn(
                     'flex h-4 w-4 items-center justify-center rounded-full text-[10px] border',
                     active && 'border-primary text-primary',
-                    done && !active && 'border-emerald-500/40 text-emerald-500',
+                    done && !active && 'border-status-running/40 text-status-running',
                     !done && !active && 'border-muted-foreground/30',
                   )}
                 >
@@ -179,7 +179,9 @@ export const Wizard: React.FC<WizardProps> = ({
                 <span>{s.title}</span>
               </button>
               {i < steps.length - 1 && (
-                <div className={cn('h-px w-4 sm:w-8', done ? 'bg-emerald-500/40' : 'bg-border')} />
+                <div
+                  className={cn('h-px w-4 sm:w-8', done ? 'bg-status-running/40' : 'bg-border')}
+                />
               )}
             </Fragment>
           )
@@ -209,8 +211,8 @@ export const Wizard: React.FC<WizardProps> = ({
 
       {/* Gate hint */}
       {!gate.ok && (
-        <p className="text-xs text-amber-500 flex items-center gap-1.5">
-          <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-500" />
+        <p className="text-xs text-status-warning flex items-center gap-1.5">
+          <span className="inline-block h-1.5 w-1.5 rounded-full bg-status-warning" />
           {gate.reason}
         </p>
       )}

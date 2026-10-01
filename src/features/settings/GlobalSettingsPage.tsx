@@ -61,7 +61,7 @@ export const GlobalSettingsPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Top bar */}
-      <header className="h-14 border-b border-border bg-card/60 backdrop-blur-md px-4 flex items-center justify-between sticky top-0 z-30">
+      <header className="h-14 border-b border-border bg-card px-4 flex items-center justify-between sticky top-0 z-30">
         <div className="flex items-center space-x-3">
           <Button
             variant="ghost"
@@ -80,7 +80,7 @@ export const GlobalSettingsPage: React.FC = () => {
 
       <main className="max-w-2xl mx-auto p-4 md:p-8 space-y-6">
         {/* Appearance */}
-        <section className="rounded-xl border border-border bg-card p-6 space-y-4">
+        <section className="rounded-lg border border-border bg-card p-6 space-y-4">
           <div className="flex items-center gap-2">
             <Palette className="w-4 h-4 text-muted-foreground" />
             <h2 className="font-semibold">{t('settings.preferences')}</h2>
@@ -122,7 +122,7 @@ export const GlobalSettingsPage: React.FC = () => {
         </section>
 
         {/* Data Management */}
-        <section className="rounded-xl border border-border bg-card p-6 space-y-4">
+        <section className="rounded-lg border border-border bg-card p-6 space-y-4">
           <div className="flex items-center gap-2">
             <Globe className="w-4 h-4 text-muted-foreground" />
             <h2 className="font-semibold">{t('instances.dataManagement')}</h2>
@@ -148,7 +148,7 @@ export const GlobalSettingsPage: React.FC = () => {
 
             <Button
               variant="outline"
-              className="w-full justify-start text-rose-500 hover:text-rose-600 hover:bg-rose-500/10"
+              className="w-full justify-start text-status-error hover:text-status-error hover:bg-status-error/10"
               onClick={() => setClearOpen(true)}
             >
               <Trash2 className="w-4 h-4 mr-2" />

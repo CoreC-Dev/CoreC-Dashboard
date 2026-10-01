@@ -41,7 +41,7 @@ export const Sidebar: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
   return (
     <aside
       aria-label={t('nav.admin')}
-      className="w-56 shrink-0 border-r border-border bg-card/40 backdrop-blur-sm flex flex-col justify-between p-3 select-none"
+      className="w-56 shrink-0 border-r border-border bg-card flex flex-col justify-between p-3 select-none"
     >
       <div className="space-y-6">
         {navGroups.map((group) => (
