@@ -54,7 +54,7 @@ export const MemoryChart = memo(function MemoryChart() {
               backgroundColor: 'hsl(var(--card))',
               borderColor: 'hsl(var(--border))',
               borderRadius: '8px',
-              fontSize: "13px",
+              fontSize: '13px',
             }}
           />
           <Line

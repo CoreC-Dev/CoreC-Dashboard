@@ -27,6 +27,7 @@ import { useEffect, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { Link, NavLink, Outlet, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { AnimatedLogo } from '@/components/layout/AnimatedLogo'
 import { Select, SelectContent, SelectItem } from '@/components/ui/select'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { useConnection } from '@/contexts/ConnectionContext'
@@ -209,17 +210,14 @@ export const AppShell: React.FC = () => {
   // Shared sidebar content
   const sidebarContent = (
     <>
-      {/* Brand mark */}
-      <div className={cn('flex items-center shrink-0', eff ? 'justify-center' : 'px-0.5')}>
+      {/* Brand mark — logo centered, no text */}
+      <div className={cn('flex items-center shrink-0', eff ? 'justify-center' : 'justify-center')}>
         <Link
           to="/"
-          className="flex items-center gap-2.5 shrink-0"
+          className="flex items-center justify-center shrink-0 text-primary"
           aria-label={t('aria.corecHome')}
         >
-          <img src="/logo.svg" alt="CoreC" className="w-8 h-8 shrink-0" />
-          {!eff && (
-            <span className="font-extrabold text-base tracking-tight whitespace-nowrap">CoreC</span>
-          )}
+          <AnimatedLogo className="w-9 h-9 shrink-0" />
         </Link>
         {!eff && isMobile && (
           <button
@@ -443,10 +441,9 @@ export const AppShell: React.FC = () => {
       {!isMobile && (
         <aside
           className={cn(
-            'sidebar-transition shrink-0 flex flex-col py-4 bg-card rounded-[20px] relative',
+            'sidebar-transition shrink-0 flex flex-col py-4 relative',
             collapsed ? 'w-[72px] px-2 gap-1 items-center' : 'w-[220px] px-3 gap-1',
           )}
-          style={{ boxShadow: 'var(--shadow-card)' }}
         >
           {sidebarContent}
           {/* Floating collapse/expand toggle — sits on the sidebar's right edge */}
@@ -522,17 +519,22 @@ export const AppShell: React.FC = () => {
           )}
         </header>
 
-        {/* Content — centered with max-width + page transition */}
-        <main className="flex-1 overflow-y-auto">
-          <div className="w-full max-w-[1400px] mx-auto px-5 pb-5 md:px-8 md:pb-8">
-            <div key={location.pathname} className="page-enter">
-              <Outlet />
+        {/* Content — floating white rounded card with page transition */}
+        <main className="flex-1 overflow-y-auto flex flex-col">
+          <div className="w-full max-w-[1400px] mx-auto p-2 md:p-3 flex-1 flex flex-col">
+            <div
+              className="bg-card rounded-[20px] px-5 py-5 md:px-8 md:py-8 flex-1 border border-border/40"
+              style={{ boxShadow: 'var(--shadow-card)' }}
+            >
+              <div key={location.pathname} className="page-enter">
+                <Outlet />
+              </div>
             </div>
           </div>
         </main>
 
-        {/* Footer — pinned to the bottom, does not scroll with content */}
-        <footer className="shrink-0 py-3 border-t border-border flex items-center justify-center gap-2 text-sm text-muted-foreground">
+        {/* Footer — pinned to the bottom, transparent */}
+        <footer className="shrink-0 py-3 flex items-center justify-center gap-2 text-sm text-muted-foreground">
           <span>{t('common.footerText')}</span>
           <a
             href="https://github.com/CoreC-Dev/CoreC-Dashboard"

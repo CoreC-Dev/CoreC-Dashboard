@@ -90,7 +90,7 @@ export const TrafficChart = memo(function TrafficChart() {
               backgroundColor: 'hsl(var(--card))',
               borderColor: 'hsl(var(--border))',
               borderRadius: '8px',
-              fontSize: "13px",
+              fontSize: '13px',
             }}
           />
           <Area

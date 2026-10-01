@@ -2,6 +2,7 @@ import { Check, Download, Moon, Palette, Plus, Settings, Sun, Upload } from 'luc
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
+import { AnimatedLogo } from '@/components/layout/AnimatedLogo'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -110,7 +111,7 @@ export const InstancePanel: React.FC = () => {
       {/* Top bar — brand bar with logo */}
       <header className="h-14 border-b border-border bg-card/80 backdrop-blur-md px-4 flex items-center justify-between sticky top-0 z-30">
         <div className="flex items-center space-x-2.5">
-          <img src="/logo.svg" alt="CoreC" className="w-8 h-8 shrink-0" />
+          <AnimatedLogo className="w-8 h-8 shrink-0 text-primary" />
           <span className="font-extrabold text-lg tracking-tight">CoreC</span>
           <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">
             {t('nav.dashboard')}
@@ -185,7 +186,7 @@ export const InstancePanel: React.FC = () => {
         {instances.length === 0 ? (
           /* Empty state */
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <img src="/logo-animated.svg" alt="CoreC" className="w-16 h-16 mb-4" />
+            <AnimatedLogo className="w-16 h-16 mb-4 text-primary" />
             <h2 className="text-xl font-semibold mb-2">{t('instances.emptyTitle')}</h2>
             <p className="text-sm text-muted-foreground mb-6 max-w-md">
               {t('instances.emptyDesc')}
