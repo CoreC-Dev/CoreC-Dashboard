@@ -27,6 +27,7 @@ import type React from 'react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, NavLink, Outlet, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { useConnection } from '@/contexts/ConnectionContext'
 import { setLocale } from '@/i18n'
@@ -482,13 +483,23 @@ export const AppShell: React.FC = () => {
 
       {/* Instance switcher — drawer (Sheet) */}
       <Sheet open={instanceSheetOpen} onOpenChange={setInstanceSheetOpen}>
-        <SheetContent side="left" className="w-[300px]">
+        <SheetContent side="left">
           <SheetTitle>{t('instances.switchInstance')}</SheetTitle>
-          <div className="flex items-center gap-2 px-5 py-4 border-b border-border shrink-0">
-            <Server className="w-4 h-4 text-primary" />
-            <span className="text-sm font-semibold text-foreground">
-              {t('instances.switchInstance')}
-            </span>
+          <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
+            <div className="flex items-center gap-2">
+              <Server className="w-4 h-4 text-primary" />
+              <span className="text-sm font-semibold text-foreground">
+                {t('instances.switchInstance')}
+              </span>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setInstanceSheetOpen(false)}
+              className="h-8 w-8 p-0 shrink-0"
+            >
+              <X className="h-4 w-4" />
+            </Button>
           </div>
           <div className="flex-1 overflow-y-auto p-2">
             {instances.map((inst) => (
@@ -529,13 +540,23 @@ export const AppShell: React.FC = () => {
 
       {/* Theme selector — drawer (Sheet) */}
       <Sheet open={themeSheetOpen} onOpenChange={setThemeSheetOpen}>
-        <SheetContent side="left" className="w-[260px]">
+        <SheetContent side="left" className="w-[300px]">
           <SheetTitle>{t('settings.theme', { defaultValue: 'Theme' })}</SheetTitle>
-          <div className="flex items-center gap-2 px-5 py-4 border-b border-border shrink-0">
-            <Palette className="w-4 h-4 text-primary" />
-            <span className="text-sm font-semibold text-foreground">
-              {t('settings.theme', { defaultValue: 'Theme' })}
-            </span>
+          <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
+            <div className="flex items-center gap-2">
+              <Palette className="w-4 h-4 text-primary" />
+              <span className="text-sm font-semibold text-foreground">
+                {t('settings.theme', { defaultValue: 'Theme' })}
+              </span>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setThemeSheetOpen(false)}
+              className="h-8 w-8 p-0 shrink-0"
+            >
+              <X className="h-4 w-4" />
+            </Button>
           </div>
           <div className="flex-1 overflow-y-auto p-2">
             <button
