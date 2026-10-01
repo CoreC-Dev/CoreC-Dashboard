@@ -157,34 +157,17 @@ export const AppShell: React.FC = () => {
             'relative grid place-items-center transition-all duration-200 group',
             eff ? 'w-9 h-9 rounded-full' : 'w-full h-9 rounded-lg flex items-center px-2.5 gap-2.5',
             isActive
-              ? 'text-foreground'
+              ? 'nav-indicator bg-foreground text-background shadow-md'
               : 'text-muted-foreground hover:text-foreground hover:bg-muted hover:translate-x-0.5',
           )
         }
         title={eff ? item.label : undefined}
       >
-        {({ isActive }) => (
-          <>
-            {isActive && (
-              <span
-                className={cn(
-                  'nav-indicator absolute inset-0 rounded-lg bg-foreground -z-10',
-                  eff && 'rounded-full',
-                )}
-              />
-            )}
-            <Icon className="w-[18px] h-[18px] shrink-0 transition-transform duration-200 group-hover:scale-110" />
-            {!eff && (
-              <span
-                className={cn(
-                  'text-sm font-medium truncate text-left flex-1 transition-colors duration-200',
-                  isActive && 'text-background',
-                )}
-              >
-                {item.label}
-              </span>
-            )}
-          </>
+        <Icon className="w-[18px] h-[18px] shrink-0 transition-transform duration-200 group-hover:scale-110" />
+        {!eff && (
+          <span className="text-sm font-medium truncate text-left flex-1">
+            {item.label}
+          </span>
         )}
       </NavLink>
     )
