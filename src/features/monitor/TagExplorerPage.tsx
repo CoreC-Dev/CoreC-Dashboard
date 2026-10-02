@@ -42,8 +42,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { cn } from '@/lib/cn'
 import { QualityLabel } from '@/lib/constants'
-import { cn } from '@/lib/utils'
 import { validateValue } from '@/lib/writeValidation'
 import { useThemeStore } from '@/stores/themeStore'
 import type { DataPoint } from '@/types/models'

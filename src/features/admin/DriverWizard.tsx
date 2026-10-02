@@ -39,10 +39,10 @@ import {
 import { RegistryFieldGrid } from '@/components/wizard/RegistryFieldGrid'
 import { WizardDialog, type WizardStep } from '@/components/wizard/Wizard'
 import { WizardContextValidationBanner } from '@/components/wizard/WizardContextValidationBanner'
+import { cn } from '@/lib/cn'
 import { dumpConfigYaml } from '@/lib/configYaml'
 import { validateDriverInContext } from '@/lib/entityValidation'
 import { buildDefaultSettings, getDriverFieldRegistry } from '@/lib/settingsRegistry'
-import { cn } from '@/lib/utils'
 import { useConfigStore } from '@/stores/configStore'
 import { DATA_TYPES, type DriverConfig, type DriverType } from '@/types/config'
 

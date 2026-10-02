@@ -34,8 +34,8 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
+import { cn } from '@/lib/cn'
 import { parseConfigYaml } from '@/lib/configYaml'
-import { cn } from '@/lib/utils'
 import { computeLcsDiff } from '@/lib/yamlDiff'
 
 // ─── Diff computation ────────────────────────────────────────────────

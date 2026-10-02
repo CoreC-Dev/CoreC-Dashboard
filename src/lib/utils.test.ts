@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { cn, formatNumber, formatUptime, isZeroTime } from './utils'
+import { cn } from './cn'
+import { formatNumber, formatUptime, isZeroTime } from './utils'
 
 describe('cn', () => {
   it('merges class names', () => {

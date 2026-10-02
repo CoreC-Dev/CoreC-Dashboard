@@ -1,6 +1,6 @@
 import * as DialogPrimitive from '@radix-ui/react-dialog'
 import * as React from 'react'
-import { cn } from '@/lib/utils'
+import { cn } from '@/lib/cn'
 
 const Sheet = DialogPrimitive.Root
 const SheetTrigger = DialogPrimitive.Trigger

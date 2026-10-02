@@ -43,11 +43,11 @@ import { ExprValidationMessages } from '@/components/wizard/ExprValidationMessag
 import { WizardDialog, type WizardStep } from '@/components/wizard/Wizard'
 import { WizardContextValidationBanner } from '@/components/wizard/WizardContextValidationBanner'
 import { useTransportNames } from '@/hooks/useConfigValidation'
+import { cn } from '@/lib/cn'
 import { dumpConfigYaml } from '@/lib/configYaml'
 import { validateRuleInContext } from '@/lib/entityValidation'
 import { validateRuleExpression } from '@/lib/ruleExprValidator'
 import { validateTransformExpression } from '@/lib/transformExprValidator'
-import { cn } from '@/lib/utils'
 import { useConfigStore } from '@/stores/configStore'
 import type { RuleAction, RuleConfig } from '@/types/config'
 
