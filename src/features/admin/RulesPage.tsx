@@ -49,6 +49,30 @@ import { useConfigStore } from '@/stores/configStore'
 import { DATA_TYPES, type RuleConfig } from '@/types/config'
 import type { RuleStat } from '@/types/models'
 
+/** Action badge metadata: CSS classes + i18n key per rule action. */
+const ACTION_BADGE_META: Record<string, { cls: string; key: string }> = {
+  alert: {
+    cls: 'border-status-warning/30 bg-status-warning/10 text-status-warning',
+    key: 'rules.actionAlert',
+  },
+  drop: {
+    cls: 'border-status-error/30 bg-status-error/10 text-status-error',
+    key: 'rules.actionDrop',
+  },
+  transform: {
+    cls: 'border-primary/30 bg-primary/10 text-primary',
+    key: 'rules.actionTransform',
+  },
+  mirror: {
+    cls: 'border-primary/30 bg-primary/10 text-primary',
+    key: 'rules.actionMirror',
+  },
+  default: {
+    cls: 'border-status-queued/30 bg-status-queued/10 text-status-queued',
+    key: 'rules.actionForward',
+  },
+}
+
 // Targets serialize as `null` (not `[]`) when empty; prefer the multi-target
 // list when present, otherwise fall back to the single `target` field.
 const getTargetDisplay = (rule: RuleStat): string => {
@@ -305,47 +329,12 @@ export const RulesPage: React.FC = () => {
   }
 
   const getActionBadge = (action: string) => {
-    switch (action) {
-      case 'alert':
-        return (
-          <Badge
-            variant="outline"
-            className="border-status-warning/30 bg-status-warning/10 text-status-warning"
-          >
-            {t('rules.actionAlert')}
-          </Badge>
-        )
-      case 'drop':
-        return (
-          <Badge
-            variant="outline"
-            className="border-status-error/30 bg-status-error/10 text-status-error"
-          >
-            {t('rules.actionDrop')}
-          </Badge>
-        )
-      case 'transform':
-        return (
-          <Badge variant="outline" className="border-primary/30 bg-primary/10 text-primary">
-            {t('rules.actionTransform')}
-          </Badge>
-        )
-      case 'mirror':
-        return (
-          <Badge variant="outline" className="border-primary/30 bg-primary/10 text-primary">
-            {t('rules.actionMirror')}
-          </Badge>
-        )
-      default:
-        return (
-          <Badge
-            variant="outline"
-            className="border-status-queued/30 bg-status-queued/10 text-status-queued"
-          >
-            {t('rules.actionForward')}
-          </Badge>
-        )
-    }
+    const meta = ACTION_BADGE_META[action] ?? ACTION_BADGE_META.default
+    return (
+      <Badge variant="outline" className={meta.cls}>
+        {t(meta.key)}
+      </Badge>
+    )
   }
 
   return (
