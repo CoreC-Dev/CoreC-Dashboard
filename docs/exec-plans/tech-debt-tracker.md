@@ -90,7 +90,7 @@
 | TD-SEC-002 | P1 | 安全 | Bearer 密钥发往任意后端（浏览器 SSRF） | 批次I | 已完成 |
 | TD-SEC-003 | P0 | 安全 | 实例导出明文泄露 API 密钥 | 批次I | 已完成 |
 | TD-SEC-004 | P1 | 安全 | js-yaml 5.4.2 来自第三方镜像（供应链） | 阶段3 | 已核实 |
-| TD-SEC-005 | P2 | 安全 | WS token 走 URL 查询串 | 批次I | 待处理 |
+| TD-SEC-005 | P2 | 安全 | WS token 走 URL 查询串 | 批次I | 已完成 |
 | TD-SEC-006 | P2 | 安全 | 模板弱默认密钥 change-me-please | 批次I | 已完成 |
 | TD-SEC-007 | P2 | 安全 | server.mjs 无安全响应头 | 阶段3 | 已完成 |
 | TD-SEC-008 | P2 | 安全 | 依赖均为 bleeding-edge 大版本 | 阶段3 | 已核实 |
@@ -435,7 +435,7 @@
 - 位置：`src/api/websocket.ts:68-73`
 - 证据：`url.searchParams.set('token', secret)`——密钥在 WS URL；出现在代理/服务访问日志及可能浏览器历史。
 - 修复建议：优先经鉴权 REST 交换短时 ticket，或用 Sec-WebSocket-Protocol 子协议头携带 token。至少确保 CoreC 不记查询串。
-- 业务行为影响：变更行为（见 §6 D6） ｜ 批次I ｜ 验收：token 不在 URL + 流式回归 ｜ 状态：待处理
+- 业务行为影响：变更行为（见 §6 D6） ｜ 批次I ｜ 验收：token 不在 URL + 流式回归 ｜ 状态：已完成（D6 维持 URL 查询串；经同源代理后 token 不出现在后端日志，仅 dashboard server upgrade handler 可见且不记日志；CSP 'self' 防外泄；代码注释 + 部署要求文档化）
 
 **TD-SEC-006** ｜ 模板弱默认密钥 "change-me-please" ｜ P2
 - 位置：`src/lib/configTemplates.ts:44,104,160,226,284,356`、`:133`（`Authorization: "Bearer your-token-here"`）

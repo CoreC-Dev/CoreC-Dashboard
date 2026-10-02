@@ -76,6 +76,16 @@ export class CoreCWebSocket<T = unknown> {
     proxyUrl.searchParams.set('target', targetUrl.toString())
 
     if (secret) {
+      // SECURITY NOTE (TD-SEC-005, D6): The token travels in the WS URL query
+      // string. This is maintained by product decision D6 — switching to a
+      // short-lived ticket exchange or Sec-WebSocket-Protocol header would
+      // require CoreC backend cooperation. Mitigations in place:
+      // 1. The URL is same-origin (ws://<dashboard>/corec-ws), so the token
+      //    does NOT appear in backend access logs — only in the dashboard
+      //    server's upgrade handler (server.mjs), which does not log URLs.
+      // 2. CSP connect-src 'self' prevents exfiltration to external origins.
+      // 3. Deployments MUST ensure the dashboard server does not log query
+      //    strings (server.mjs does not; verify any reverse proxy in front).
       proxyUrl.searchParams.set('token', secret)
     }
 
