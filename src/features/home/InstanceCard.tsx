@@ -33,8 +33,8 @@ import {
 import { ConnStateLabel } from '@/lib/constants'
 import { formatRelativeTime } from '@/lib/formatters'
 import { formatCompact, formatUptime } from '@/lib/utils'
-import type { CoreCInstance } from '@/stores/instanceStore'
 import { useInstanceStore } from '@/stores/instanceStore'
+import type { CoreCInstance } from '@/types/models'
 
 export interface InstanceCardProps {
   instance: CoreCInstance

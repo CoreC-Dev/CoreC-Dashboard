@@ -20,9 +20,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import i18n, { setLocale } from '@/i18n'
-import type { CoreCInstance } from '@/stores/instanceStore'
 import { useInstanceStore } from '@/stores/instanceStore'
 import { THEME_I18N_KEYS, THEME_VARIANTS, useThemeStore } from '@/stores/themeStore'
+import type { CoreCInstance } from '@/types/models'
 import { InstanceCard } from './InstanceCard'
 import { InstanceDialog } from './InstanceDialog'
 import { useHomepageProbe } from './useHomepageProbe'

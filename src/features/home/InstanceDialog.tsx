@@ -24,7 +24,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { DEFAULT_COREC_URL } from '@/lib/constants'
-import type { CoreCInstance } from '@/stores/instanceStore'
+import type { CoreCInstance } from '@/types/models'
 
 const instanceSchema = (t: (k: string) => string) =>
   z.object({

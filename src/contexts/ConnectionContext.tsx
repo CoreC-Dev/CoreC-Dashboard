@@ -5,8 +5,8 @@ import { setActiveConnection } from '@/api/activeConnection'
 import { getServerInfo } from '@/api/endpoints'
 import { useConfigStore } from '@/stores/configStore'
 import { useConnectionStore } from '@/stores/connectionStore'
-import type { CoreCInstance } from '@/stores/instanceStore'
 import { useInstanceStore } from '@/stores/instanceStore'
+import type { CoreCInstance } from '@/types/models'
 
 export interface ConnectionContextValue {
   /** The active instance (null if not found). */

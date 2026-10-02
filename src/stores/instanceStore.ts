@@ -1,84 +1,10 @@
 import { create } from 'zustand'
 import { safePersist, safePersistSession, safeReadSession } from '@/lib/storage'
 
-/**
- * A saved CoreC instance — a persistent identity for a gateway/edge node
- * the operator manages from the dashboard.
- */
-export interface CoreCInstance {
-  /** Auto-generated unique identifier (used in routes /corec/:id/*). */
-  id: string
-  /** User-defined display name (e.g. "1号车间 PLC网关"). */
-  name: string
-  /** Connection base URL (REST & WebSocket). */
-  baseUrl: string
-  /** API Bearer secret. */
-  secret: string
-  /** Optional color accent for the card / status dot. */
-  color?: string
-  /** Optional free-form notes. */
-  notes?: string
-  /** Optional grouping tags (e.g. ["车间A"]). */
-  tags?: string[]
-  /** Last successful connection timestamp (ISO 8601). */
-  lastConnectedAt?: string
-  /** Last known server info (cached from GET / + GET /stats). */
-  lastKnownInfo?: {
-    name?: string
-    version?: string
-    status?: string
-    uptime?: string
-    /** Stats from GET /stats — fetched by the homepage probe for card display. */
-    stats?: {
-      drivers: number
-      transports: number
-      rules: number
-      total_read: number
-      total_publish: number
-      total_errors: number
-      total_dropped: number
-      points_per_sec: number
-      tag_count?: number
-      driver_stats?: Record<
-        string,
-        {
-          name: string
-          type: string
-          state: number
-          tag_count: number
-          read_count: number
-          error_count: number
-        }
-      >
-      transport_stats?: Record<
-        string,
-        {
-          name: string
-          type: string
-          state: number
-          published: number
-          received: number
-          failed: number
-        }
-      >
-      /** Compact connection-target summaries (e.g. "192.168.1.1:502", "mqtt://broker:1883") keyed by driver/transport name. Derived from GET /configs/raw by the homepage probe so topology rows can show the address without a ConnectionProvider. */
-      driver_conn?: Record<string, string>
-      transport_conn?: Record<string, string>
-      rule_list?: {
-        name: string
-        match: string
-        action: string
-        target: string
-        disabled: boolean
-        hit_count: number
-      }[]
-    }
-  }
-  /** Creation timestamp (ISO 8601). */
-  createdAt: string
-  /** Sort order for card display. */
-  sortOrder: number
-}
+import type { CoreCInstance } from '@/types/models'
+
+// Re-export for backward compat (TD-ARCH-006 — canonical location is types/models.ts).
+export type { CoreCInstance }
 
 interface InstanceState {
   instances: CoreCInstance[]
