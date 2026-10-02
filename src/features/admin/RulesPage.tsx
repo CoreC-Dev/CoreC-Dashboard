@@ -39,6 +39,7 @@ import { EntitySearchBar, filterEntities } from '@/components/wizard/EntitySearc
 import { UnsavedChangesBanner } from '@/components/wizard/UnsavedChangesBanner'
 import { ValidationBanner } from '@/components/wizard/ValidationBanner'
 import { RuleWizard } from '@/features/admin/RuleWizard'
+import { useApplyConfig } from '@/hooks/useApplyConfig'
 import { formatValidationErrors, useConfigValidation } from '@/hooks/useConfigValidation'
 import { parseConfigYaml } from '@/lib/configYaml'
 import { formatRelativeTime } from '@/lib/formatters'
@@ -178,9 +179,15 @@ export const RulesPage: React.FC = () => {
   const [wizardOpen, setWizardOpen] = useState(false)
   const [editingRule, setEditingRule] = useState<RuleConfig | undefined>(undefined)
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
-  const [applyDialogOpen, setApplyDialogOpen] = useState(false)
-  const [applyError, setApplyError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+
+  const { openDialog: openApplyDialog, dialogProps: applyDialogProps } = useApplyConfig({
+    getWorkingYaml,
+    getSavedYaml,
+    markSaved,
+    validationErrors,
+    onApplySuccess: () => queryClient.invalidateQueries({ queryKey: ['rules'] }),
+  })
 
   const configRules = workingConfig?.rules ?? []
   const filteredConfigRules = filterEntities(configRules, searchQuery)
@@ -363,10 +370,7 @@ export const RulesPage: React.FC = () => {
             <Button
               variant="default"
               size="sm"
-              onClick={() => {
-                setApplyError(null)
-                setApplyDialogOpen(true)
-              }}
+              onClick={() => openApplyDialog()}
               disabled={!!validationErrors}
               className="h-8 text-xs shrink-0"
             >
@@ -401,10 +405,7 @@ export const RulesPage: React.FC = () => {
         unsavedChangesLabel={t('rules.unsavedChanges')}
         applyChangesLabel={t('rules.applyChanges')}
         hasValidationErrors={!!validationErrors}
-        onApply={() => {
-          setApplyError(null)
-          setApplyDialogOpen(true)
-        }}
+        onApply={() => openApplyDialog()}
         onDiscard={() => useConfigStore.getState().revert()}
       />
 
@@ -904,34 +905,7 @@ export const RulesPage: React.FC = () => {
       </AlertDialog>
 
       {/* Apply changes confirmation */}
-      <ConfigApplyConfirmationDialog
-        open={applyDialogOpen}
-        onOpenChange={(v) => {
-          setApplyDialogOpen(v)
-          if (!v) setApplyError(null)
-        }}
-        beforeYaml={getSavedYaml() ?? ''}
-        afterYaml={getWorkingYaml() ?? ''}
-        applying={updateMutation.isPending}
-        validationErrors={validationErrors}
-        applyError={applyError ?? undefined}
-        onConfirm={() => {
-          if (validationErrors) return
-          const yaml = getWorkingYaml() ?? ''
-          setApplyError(null)
-          updateMutation.mutate(
-            { payload: yaml },
-            {
-              onSuccess: () => {
-                markSaved()
-                setApplyDialogOpen(false)
-                queryClient.invalidateQueries({ queryKey: ['rules'] })
-              },
-              onError: (err) => setApplyError(err instanceof Error ? err.message : String(err)),
-            },
-          )
-        }}
-      />
+      <ConfigApplyConfirmationDialog {...applyDialogProps} />
     </div>
   )
 }

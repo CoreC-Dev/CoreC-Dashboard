@@ -44,6 +44,7 @@ import { GlobalConfigEditor } from '@/features/admin/GlobalConfigEditor'
 import { NodeConfigEditor } from '@/features/admin/NodeConfigEditor'
 import { RuleGroupEditor } from '@/features/admin/RuleGroupEditor'
 import { RuleProviderEditor } from '@/features/admin/RuleProviderEditor'
+import { useApplyConfig } from '@/hooks/useApplyConfig'
 import { type ConfigSnapshot, useConfigHistory } from '@/hooks/useConfigHistory'
 import { formatValidationErrors, useConfigValidation } from '@/hooks/useConfigValidation'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
@@ -190,8 +191,14 @@ export const ConfigCenterPage: React.FC = () => {
   const validation = useConfigValidation()
   const validationErrors = formatValidationErrors(validation)
   const hasValidationErrors = validationErrors !== undefined
-  const [globalApplyOpen, setGlobalApplyOpen] = useState(false)
-  const [applyError, setApplyError] = useState<string | null>(null)
+
+  const { openDialog: openApplyDialog, dialogProps: applyDialogProps } = useApplyConfig({
+    getWorkingYaml,
+    getSavedYaml,
+    markSaved,
+    validationErrors,
+    onApplySuccess: () => refetch(),
+  })
 
   const [mode, setMode] = useState<'form' | 'yaml'>('form')
   const [yamlContent, setYamlContent] = useState(DEFAULT_SAMPLE_YAML)
@@ -841,10 +848,7 @@ export const ConfigCenterPage: React.FC = () => {
             unsavedChangesLabel={t('config.unsavedChanges')}
             applyChangesLabel={t('config.applyChanges')}
             hasValidationErrors={hasValidationErrors}
-            onApply={() => {
-              setApplyError(null)
-              setGlobalApplyOpen(true)
-            }}
+            onApply={() => openApplyDialog()}
             onDiscard={() => useConfigStore.getState().revert()}
           />
 
@@ -864,36 +868,7 @@ export const ConfigCenterPage: React.FC = () => {
           <RuleGroupEditor />
 
           {/* Apply confirmation for configStore edits */}
-          <ConfigApplyConfirmationDialog
-            open={globalApplyOpen}
-            onOpenChange={(v) => {
-              setGlobalApplyOpen(v)
-              if (!v) setApplyError(null)
-            }}
-            beforeYaml={getSavedYaml() ?? ''}
-            afterYaml={getWorkingYaml() ?? ''}
-            applying={updateMutation.isPending}
-            validationErrors={validationErrors}
-            applyError={applyError ?? undefined}
-            onConfirm={() => {
-              // Guard: never apply if validation failed. The apply button
-              // is also disabled, but this is a belt-and-suspenders check.
-              if (hasValidationErrors) return
-              const yaml = getWorkingYaml() ?? ''
-              setApplyError(null)
-              updateMutation.mutate(
-                { payload: yaml },
-                {
-                  onSuccess: () => {
-                    markSaved()
-                    setGlobalApplyOpen(false)
-                    refetch()
-                  },
-                  onError: (err) => setApplyError(err instanceof Error ? err.message : String(err)),
-                },
-              )
-            }}
-          />
+          <ConfigApplyConfirmationDialog {...applyDialogProps} />
         </div>
       ) : (
         <div className="space-y-4">

@@ -12,7 +12,7 @@ import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
-import { useConfigRaw, useDrivers, useDriverTags, useUpdateConfig } from '@/api/hooks'
+import { useConfigRaw, useDrivers, useDriverTags } from '@/api/hooks'
 import { ConnectionSummary } from '@/components/admin/DetailPageParts'
 import {
   AlertDialog,
@@ -39,6 +39,7 @@ import { EntitySearchBar, filterEntities } from '@/components/wizard/EntitySearc
 import { UnsavedChangesBanner } from '@/components/wizard/UnsavedChangesBanner'
 import { ValidationBanner } from '@/components/wizard/ValidationBanner'
 import { DriverWizard } from '@/features/admin/DriverWizard'
+import { useApplyConfig } from '@/hooks/useApplyConfig'
 import { formatValidationErrors, useConfigValidation } from '@/hooks/useConfigValidation'
 import { useParsedConfig } from '@/hooks/useParsedConfig'
 import { getDriverConnectionSummary } from '@/lib/connectionInfo'
@@ -70,14 +71,17 @@ export const DriversPage: React.FC = () => {
   const validation = useConfigValidation()
   const validationErrors = formatValidationErrors(validation)
 
-  const updateConfig = useUpdateConfig()
-
   const [wizardOpen, setWizardOpen] = useState(false)
   const [editingDriver, setEditingDriver] = useState<DriverConfig | undefined>(undefined)
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
-  const [applyDialogOpen, setApplyDialogOpen] = useState(false)
-  const [applyError, setApplyError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+
+  const { openDialog: openApplyDialog, dialogProps: applyDialogProps } = useApplyConfig({
+    getWorkingYaml,
+    getSavedYaml,
+    markSaved,
+    validationErrors,
+  })
 
   const drivers = data?.drivers || []
 
@@ -123,10 +127,7 @@ export const DriversPage: React.FC = () => {
             <Button
               variant="default"
               size="sm"
-              onClick={() => {
-                setApplyError(null)
-                setApplyDialogOpen(true)
-              }}
+              onClick={() => openApplyDialog()}
               disabled={!!validationErrors}
               className="h-8 text-xs shrink-0"
             >
@@ -161,10 +162,7 @@ export const DriversPage: React.FC = () => {
         unsavedChangesLabel={t('drivers.unsavedChanges')}
         applyChangesLabel={t('drivers.applyChanges')}
         hasValidationErrors={!!validationErrors}
-        onApply={() => {
-          setApplyError(null)
-          setApplyDialogOpen(true)
-        }}
+        onApply={() => openApplyDialog()}
         onDiscard={() => useConfigStore.getState().revert()}
       />
 
@@ -428,34 +426,7 @@ export const DriversPage: React.FC = () => {
       </AlertDialog>
 
       {/* Apply Config Confirmation */}
-      <ConfigApplyConfirmationDialog
-        open={applyDialogOpen}
-        onOpenChange={(v) => {
-          setApplyDialogOpen(v)
-          if (!v) setApplyError(null)
-        }}
-        beforeYaml={getSavedYaml()}
-        afterYaml={getWorkingYaml() ?? ''}
-        applying={updateConfig.isPending}
-        validationErrors={validationErrors}
-        applyError={applyError ?? undefined}
-        onConfirm={() => {
-          if (validationErrors) return
-          const yaml = getWorkingYaml()
-          if (!yaml) return
-          setApplyError(null)
-          updateConfig.mutate(
-            { payload: yaml },
-            {
-              onSuccess: () => {
-                markSaved()
-                setApplyDialogOpen(false)
-              },
-              onError: (err) => setApplyError(err instanceof Error ? err.message : String(err)),
-            },
-          )
-        }}
-      />
+      <ConfigApplyConfirmationDialog {...applyDialogProps} />
     </div>
   )
 }
