@@ -1,8 +1,7 @@
-import type { DataType } from '@/types/config'
+import type { DataTypeString } from '@/types/config'
 
-// Unified with the canonical DataType from @/types/config (derived from
-// DATA_TYPES) so the two can never drift.
-export type DataTypeString = DataType
+// Re-exported for backward compat; canonical definition is in @/types/config (TD-ARCH-001).
+export type { DataTypeString }
 
 export const Quality = {
   Good: 0,
