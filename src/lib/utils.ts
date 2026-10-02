@@ -71,3 +71,13 @@ export function formatCompact(num: number): string {
   if (num < 1_000_000) return `${(num / 1000).toFixed(1)}k`
   return `${(num / 1_000_000).toFixed(1)}M`
 }
+
+/**
+ * Generate a cryptographically secure random secret (32 hex chars = 128 bits).
+ * Used to replace weak placeholder secrets in config templates (TD-SEC-006, D5).
+ */
+export function generateRandomSecret(): string {
+  const bytes = new Uint8Array(16)
+  crypto.getRandomValues(bytes)
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
+}

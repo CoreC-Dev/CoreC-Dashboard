@@ -22,6 +22,7 @@ import { formatValidationErrors, useConfigValidation } from '@/hooks/useConfigVa
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { useStatusMessage } from '@/hooks/useStatusMessage'
 import type { ConfigTemplate } from '@/lib/configTemplates'
+import { generateRandomSecret } from '@/lib/utils'
 import { computeLcsDiff, type DiffLine } from '@/lib/yamlDiff'
 import { useConfigStore } from '@/stores/configStore'
 
@@ -228,9 +229,11 @@ export function useConfigCenter() {
   }
 
   // Load a pre-built configuration template into the working config.
+  // Replaces the weak placeholder secret with a random one (TD-SEC-006, D5).
   const handleLoadTemplate = (template: ConfigTemplate) => {
-    setYamlContent(template.yaml)
-    const err = loadFromYaml(template.yaml)
+    const yamlWithSecret = template.yaml.replace('change-me-please', generateRandomSecret())
+    setYamlContent(yamlWithSecret)
+    const err = loadFromYaml(yamlWithSecret)
     if (err) {
       setStatusMsg({ type: 'error', text: t('config.importYamlFailed', { error: err }) })
     } else {

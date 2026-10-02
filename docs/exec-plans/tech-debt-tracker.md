@@ -91,7 +91,7 @@
 | TD-SEC-003 | P0 | 安全 | 实例导出明文泄露 API 密钥 | 批次I | 已完成 |
 | TD-SEC-004 | P1 | 安全 | js-yaml 5.4.2 来自第三方镜像（供应链） | 阶段3 | 已核实 |
 | TD-SEC-005 | P2 | 安全 | WS token 走 URL 查询串 | 批次I | 待处理 |
-| TD-SEC-006 | P2 | 安全 | 模板弱默认密钥 change-me-please | 批次I | 待处理 |
+| TD-SEC-006 | P2 | 安全 | 模板弱默认密钥 change-me-please | 批次I | 已完成 |
 | TD-SEC-007 | P2 | 安全 | server.mjs 无安全响应头 | 阶段3 | 已完成 |
 | TD-SEC-008 | P2 | 安全 | 依赖均为 bleeding-edge 大版本 | 阶段3 | 已核实 |
 | TD-SEC-013 | P2 | 安全 | dompurify 3.4.13-15 DOM XSS（经 monaco-editor 传递） | 阶段3 | 待处理 |
@@ -441,7 +441,7 @@
 - 位置：`src/lib/configTemplates.ts:44,104,160,226,284,356`、`:133`（`Authorization: "Bearer your-token-here"`）
 - 证据：模板含 `secret: "change-me-please"`；schema 要求 min 8 字符，该值满足，校验不拦。
 - 修复建议：模板加载时生成随机密钥，或 apply 前阻止直到操作者替换占位。
-- 业务行为影响：变更行为（见 §6 D5） ｜ 批次I ｜ 验收：模板不含已知弱密钥 ｜ 状态：待处理
+- 业务行为影响：变更行为（见 §6 D5） ｜ 批次I ｜ 验收：模板不含已知弱密钥 ｜ 状态：已完成（加载模板时生成 128-bit 随机密钥替换 change-me-please）
 
 **TD-SEC-007** ｜ server.mjs 未设安全响应头 ｜ P2
 - 位置：`server.mjs:223-258`（serveStatic）、`server.mjs:79-114`（proxyToCoreC）
