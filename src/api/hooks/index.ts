@@ -1,7 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useEffect, useRef } from 'react'
 import { useConnectionStore } from '@/stores/connectionStore'
 import type { WriteCommand } from '@/types/models'
 import * as api from '../endpoints'
+import { CoreCWebSocket, type WSStatus } from '../websocket'
 
 function useConnectedQuery<T>({
   queryKey,
@@ -217,3 +219,40 @@ export function useMetrics(refetchInterval: number | false = 12_000) {
 // Re-export ApiError so features don't reach into the raw HTTP client (TD-ARCH-008).
 // api/client is an internal transport detail; consumers should catch ApiError via this surface.
 export { ApiError } from '../client'
+
+// Re-export CoreCWebSocket + WSStatus for consumers that need direct lifecycle control
+// (complex useEffect with intertwined local state). Simple consumers should use
+// useCoreCWebSocket below instead (TD-ARCH-007).
+export { CoreCWebSocket, type WSStatus }
+
+/**
+ * React hook that manages a CoreCWebSocket lifecycle.
+ * Creates the socket on mount (or when path/params change), destroys on cleanup.
+ * Callbacks are stored in refs so they can change without triggering reconnects.
+ *
+ * (TD-ARCH-007 — consumers no longer import @/api/websocket directly.)
+ */
+export function useCoreCWebSocket<T>(
+  path: string,
+  params: Record<string, string>,
+  onMessage: (data: T) => void,
+  onStatus?: (status: WSStatus) => void,
+): void {
+  const msgRef = useRef(onMessage)
+  const statusRef = useRef(onStatus)
+  msgRef.current = onMessage
+  statusRef.current = onStatus
+
+  const paramsKey = JSON.stringify(params)
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: paramsKey (JSON.stringify of params) is an intentional stable dep — reconnect only when path or serialized params change, not on every render with a new params object.
+  useEffect(() => {
+    const ws = new CoreCWebSocket<T>(
+      path,
+      params,
+      (data) => msgRef.current(data),
+      (status) => statusRef.current?.(status),
+    )
+    return () => ws.destroy()
+  }, [path, paramsKey])
+}

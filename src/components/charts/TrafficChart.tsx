@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef, useState } from 'react'
+import { memo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   Area,
@@ -9,7 +9,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { CoreCWebSocket } from '@/api/websocket'
+import { useCoreCWebSocket } from '@/api/hooks'
 import type { TrafficFrame } from '@/types/models'
 
 /**
@@ -36,32 +36,28 @@ export const TrafficChart = memo(function TrafficChart() {
   >([])
   const prevRef = useRef<TrafficFrame | null>(null)
 
-  useEffect(() => {
-    const ws = new CoreCWebSocket<TrafficFrame>('/traffic', { interval: '1s' }, (frame) => {
-      const prev = prevRef.current
-      prevRef.current = frame
-      // First frame establishes the baseline; no rate to compute yet.
-      if (!prev) return
+  useCoreCWebSocket<TrafficFrame>('/traffic', { interval: '1s' }, (frame) => {
+    const prev = prevRef.current
+    prevRef.current = frame
+    // First frame establishes the baseline; no rate to compute yet.
+    if (!prev) return
 
-      const delta = (cur: number, old: number) => (cur >= old ? cur - old : cur)
-      const timeStr = new Date().toLocaleTimeString()
-      setData((old) => {
-        const next = [
-          ...old,
-          {
-            time: timeStr,
-            read: delta(frame.read, prev.read),
-            publish: delta(frame.publish, prev.publish),
-            dropped: delta(frame.dropped, prev.dropped),
-          },
-        ]
-        if (next.length > 25) next.shift() // keep last 25 points
-        return next
-      })
+    const delta = (cur: number, old: number) => (cur >= old ? cur - old : cur)
+    const timeStr = new Date().toLocaleTimeString()
+    setData((old) => {
+      const next = [
+        ...old,
+        {
+          time: timeStr,
+          read: delta(frame.read, prev.read),
+          publish: delta(frame.publish, prev.publish),
+          dropped: delta(frame.dropped, prev.dropped),
+        },
+      ]
+      if (next.length > 25) next.shift() // keep last 25 points
+      return next
     })
-
-    return () => ws.destroy()
-  }, [])
+  })
 
   return (
     <div className="w-full h-56 pt-2 [&_*]:outline-none">

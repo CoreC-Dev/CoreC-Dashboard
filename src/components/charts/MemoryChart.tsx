@@ -1,4 +1,4 @@
-import { memo, useEffect, useState } from 'react'
+import { memo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   CartesianGrid,
@@ -9,7 +9,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { CoreCWebSocket } from '@/api/websocket'
+import { useCoreCWebSocket } from '@/api/hooks'
 import type { MemoryFrame } from '@/types/models'
 
 // memo'd so a parent re-render (e.g. DashboardPage polling useStats) doesn't
@@ -22,20 +22,16 @@ export const MemoryChart = memo(function MemoryChart() {
     { time: string; allocMb: number; sysMb: number; goroutines: number }[]
   >([])
 
-  useEffect(() => {
-    const ws = new CoreCWebSocket<MemoryFrame>('/memory', { interval: '1s' }, (frame) => {
-      const timeStr = new Date().toLocaleTimeString()
-      setData((prev) => {
-        const allocMb = Number((frame.alloc / (1024 * 1024)).toFixed(2))
-        const sysMb = Number((frame.sys / (1024 * 1024)).toFixed(2))
-        const next = [...prev, { time: timeStr, allocMb, sysMb, goroutines: frame.goroutines }]
-        if (next.length > 25) next.shift()
-        return next
-      })
+  useCoreCWebSocket<MemoryFrame>('/memory', { interval: '1s' }, (frame) => {
+    const timeStr = new Date().toLocaleTimeString()
+    setData((prev) => {
+      const allocMb = Number((frame.alloc / (1024 * 1024)).toFixed(2))
+      const sysMb = Number((frame.sys / (1024 * 1024)).toFixed(2))
+      const next = [...prev, { time: timeStr, allocMb, sysMb, goroutines: frame.goroutines }]
+      if (next.length > 25) next.shift()
+      return next
     })
-
-    return () => ws.destroy()
-  }, [])
+  })
 
   return (
     <div className="w-full h-56 pt-2 [&_*]:outline-none">
