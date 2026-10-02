@@ -16,8 +16,6 @@ const MAX_LINES = 500;
 
 // 已登记豁免：当前超标文件（阶段 4 拆分后从本表删除以收紧门禁）
 const SIZE_EXEMPTIONS = [
-  { file: 'features/admin/ConfigCenterPage.tsx', td: 'TD-CPLX-001', batch: 'F' },
-  { file: 'features/monitor/TagExplorerPage.tsx', td: 'TD-CPLX-002', batch: 'F' },
   { file: 'features/admin/RulesPage.tsx', td: 'TD-CPLX-003', batch: 'F' },
   { file: 'features/admin/DriverDetailPage.tsx', td: 'TD-CPLX-006', batch: 'D' },
   { file: 'features/admin/TransportDetailPage.tsx', td: 'TD-CPLX-006', batch: 'D' },
