@@ -445,8 +445,98 @@ export const AppShell: React.FC = () => {
     </>
   )
 
+  // Main content area — shared by mobile (full-width) and desktop (inside the centered group)
+  const mainArea = (
+    <div className="flex-1 flex flex-col min-w-0 overflow-hidden h-full">
+      {/* Mobile-only topbar with hamburger, brand, and connection status */}
+      {isMobile && (
+        <header className="flex items-center justify-between px-4 py-3 shrink-0 gap-3">
+          <button
+            type="button"
+            onClick={() => setMobileOpen(true)}
+            className="flex items-center justify-center w-11 h-11 rounded-xl bg-card border border-border shadow-sm text-muted-foreground hover:text-foreground hover:shadow-md transition-all duration-200 shrink-0"
+            aria-label={t('aria.openMenu')}
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+          <Link to="/" className="flex items-center shrink-0" aria-label={t('aria.corecHome')}>
+            <img src="/logo-animated.svg" alt="CoreC" className="w-8 h-8 shrink-0" />
+          </Link>
+          {isMonitor && (
+            <span
+              role="status"
+              className={cn(
+                'w-2.5 h-2.5 rounded-full shrink-0 ml-auto',
+                isConnecting
+                  ? 'bg-status-warning'
+                  : isConnected
+                    ? 'bg-status-running glow-running'
+                    : 'bg-status-error glow-error',
+              )}
+              aria-label={
+                isConnecting
+                  ? t('monitor.realtimeStreamConnecting')
+                  : isConnected
+                    ? t('monitor.realtimeStreamConnected')
+                    : t('monitor.realtimeStreamDisconnected')
+              }
+            />
+          )}
+        </header>
+      )}
+
+      {/* Content — floating white rounded card, aligned with sidebar */}
+      <main className="flex-1 overflow-y-auto flex flex-col">
+        <div className="w-full p-2 md:py-4 md:px-0 flex-1 flex flex-col">
+          <div
+            className="bg-card rounded-2xl px-5 py-5 md:px-8 md:py-8 flex-1 border border-border/40 relative"
+            style={{ boxShadow: 'var(--shadow-card)' }}
+          >
+            {/* Real-time stream indicator — floating top-right inside the card (desktop only; mobile uses the topbar dot) */}
+            {isMonitor && (
+              <div className="hidden md:block absolute top-7 right-8 z-10">
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50 border border-border/60">
+                  <span
+                    className={cn(
+                      'w-2.5 h-2.5 rounded-full shrink-0',
+                      isConnecting
+                        ? 'bg-status-warning'
+                        : isConnected
+                          ? 'bg-status-running glow-running'
+                          : 'bg-status-error glow-error',
+                    )}
+                  />
+                  <span
+                    className={cn(
+                      'text-sm font-semibold',
+                      isConnecting
+                        ? 'text-status-warning'
+                        : isConnected
+                          ? 'text-status-running'
+                          : 'text-status-error',
+                    )}
+                  >
+                    {isConnecting
+                      ? t('monitor.realtimeStreamConnecting')
+                      : isConnected
+                        ? t('monitor.realtimeStreamConnected')
+                        : t('monitor.realtimeStreamDisconnected')}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            <div key={location.pathname} className="page-enter">
+              <Outlet />
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  )
+
   return (
-    <div className="h-screen w-full bg-background text-foreground overflow-hidden md:flex md:p-4 md:gap-4 relative">
+    <div className="h-screen w-full bg-background text-foreground overflow-hidden relative">
       {/* Subtle decorative gradient orb */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden="true">
         <div
@@ -481,105 +571,25 @@ export const AppShell: React.FC = () => {
         </Sheet>
       )}
 
-      {/* ===== Desktop sidebar (floating panel in flex layout) ===== */}
-      {!isMobile && (
-        <aside
-          className={cn(
-            'sidebar-transition shrink-0 flex flex-col py-4',
-            collapsed ? 'w-[72px] px-2 gap-2.5 items-center' : 'w-[220px] px-3 gap-2.5',
-          )}
+      {/* ===== Desktop: centered group — sidebar hugs the content card, symmetric blank on both sides ===== */}
+      {!isMobile ? (
+        <div
+          className="h-full mx-auto flex gap-4 py-4 px-4"
+          style={{ maxWidth: `calc(${collapsed ? 72 : 220}px + 1448px)` }}
         >
-          {sidebarContent}
-        </aside>
-      )}
-
-      {/* ===== Main content area ===== */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden h-full">
-        {/* Mobile-only topbar with hamburger, brand, and connection status */}
-        {isMobile && (
-          <header className="flex items-center justify-between px-4 py-3 shrink-0 gap-3">
-            <button
-              type="button"
-              onClick={() => setMobileOpen(true)}
-              className="flex items-center justify-center w-11 h-11 rounded-xl bg-card border border-border shadow-sm text-muted-foreground hover:text-foreground hover:shadow-md transition-all duration-200 shrink-0"
-              aria-label={t('aria.openMenu')}
-            >
-              <Menu className="w-5 h-5" />
-            </button>
-            <Link to="/" className="flex items-center shrink-0" aria-label={t('aria.corecHome')}>
-              <img src="/logo-animated.svg" alt="CoreC" className="w-8 h-8 shrink-0" />
-            </Link>
-            {isMonitor && (
-              <span
-                role="status"
-                className={cn(
-                  'w-2.5 h-2.5 rounded-full shrink-0 ml-auto',
-                  isConnecting
-                    ? 'bg-status-warning'
-                    : isConnected
-                      ? 'bg-status-running glow-running'
-                      : 'bg-status-error glow-error',
-                )}
-                aria-label={
-                  isConnecting
-                    ? t('monitor.realtimeStreamConnecting')
-                    : isConnected
-                      ? t('monitor.realtimeStreamConnected')
-                      : t('monitor.realtimeStreamDisconnected')
-                }
-              />
+          <aside
+            className={cn(
+              'sidebar-transition shrink-0 flex flex-col py-4',
+              collapsed ? 'w-[72px] px-2 gap-2.5 items-center' : 'w-[220px] px-3 gap-2.5',
             )}
-          </header>
-        )}
-
-        {/* Content — floating white rounded card, aligned with sidebar */}
-        <main className="flex-1 overflow-y-auto flex flex-col">
-          <div className="w-full max-w-[1400px] mx-auto p-2 md:py-4 md:px-3 flex-1 flex flex-col">
-            <div
-              className="bg-card rounded-2xl px-5 py-5 md:px-8 md:py-8 flex-1 border border-border/40 relative"
-              style={{ boxShadow: 'var(--shadow-card)' }}
-            >
-              {/* Real-time stream indicator — floating top-right inside the card (desktop only; mobile uses the topbar dot) */}
-              {isMonitor && (
-                <div className="hidden md:block absolute top-7 right-8 z-10">
-                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50 border border-border/60">
-                    <span
-                      className={cn(
-                        'w-2.5 h-2.5 rounded-full shrink-0',
-                        isConnecting
-                          ? 'bg-status-warning'
-                          : isConnected
-                            ? 'bg-status-running glow-running'
-                            : 'bg-status-error glow-error',
-                      )}
-                    />
-                    <span
-                      className={cn(
-                        'text-sm font-semibold',
-                        isConnecting
-                          ? 'text-status-warning'
-                          : isConnected
-                            ? 'text-status-running'
-                            : 'text-status-error',
-                      )}
-                    >
-                      {isConnecting
-                        ? t('monitor.realtimeStreamConnecting')
-                        : isConnected
-                          ? t('monitor.realtimeStreamConnected')
-                          : t('monitor.realtimeStreamDisconnected')}
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              <div key={location.pathname} className="page-enter">
-                <Outlet />
-              </div>
-            </div>
-          </div>
-        </main>
-      </div>
+          >
+            {sidebarContent}
+          </aside>
+          {mainArea}
+        </div>
+      ) : (
+        mainArea
+      )}
     </div>
   )
 }
