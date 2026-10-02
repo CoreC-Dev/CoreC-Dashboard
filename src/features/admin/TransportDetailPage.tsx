@@ -11,10 +11,10 @@ import {
   XCircle,
 } from 'lucide-react'
 import type React from 'react'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useParams } from 'react-router-dom'
-import { useConfigRaw, useTransport, useUpdateConfig } from '@/api/hooks'
+import { useConfigRaw, useTransport } from '@/api/hooks'
 import {
   BackLink,
   EntityEditConfigCard,
@@ -25,12 +25,13 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { useEntityEditConfig } from '@/hooks/useEntityEditConfig'
 import { useParsedConfig } from '@/hooks/useParsedConfig'
 import { dumpConfigYaml, parseConfigYaml, upsertTransport } from '@/lib/configYaml'
 import { extractTransportYaml, getTransportConnectionFields } from '@/lib/connectionInfo'
 import { ConnStateLabel } from '@/lib/constants'
 import { formatNumber } from '@/lib/utils'
-import type { TransportConfig } from '@/types/config'
+import type { CoreCConfig, TransportConfig } from '@/types/config'
 import type { TransportStatus } from '@/types/models'
 
 // --- Transport Configuration Edit Section ---
@@ -336,55 +337,33 @@ function buildTransportYaml(
 
 const TransportEditConfigSection: React.FC<{ transport: TransportStatus }> = ({ transport }) => {
   const { t } = useTranslation()
-  const updateConfig = useUpdateConfig()
-  const { data: rawYaml } = useConfigRaw()
-  const [open, setOpen] = useState(false)
   const fields = useMemo(() => getTransportFields(transport.type), [transport.type])
-  const [values, setValues] = useState<Record<string, string>>(() => {
-    const init: Record<string, string> = {}
-    for (const f of fields) init[f.key] = ''
-    return init
-  })
-  const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(
-    null,
-  )
 
-  // Pre-fill form from the existing server config so the operator can see and
-  // preserve current settings instead of starting from empty inputs. [C-2]
-  // Secrets come back redacted as "***" and must be re-entered — that is an
-  // inherent limitation of the redacted raw view.
-  useEffect(() => {
-    if (!rawYaml) return
-    try {
-      const cfg = parseConfigYaml(rawYaml)
+  const prefillValues = useCallback(
+    (cfg: CoreCConfig): Record<string, string> | null => {
       const me = cfg.transports?.find((tp) => tp.name === transport.name)
-      if (!me) return
+      if (!me) return null
       const init: Record<string, string> = {}
       for (const f of fields) {
         const src = f.group === 'settings' ? me.settings?.[f.key] : me[f.key as keyof typeof me]
         init[f.key] = configValueToString(f, src)
       }
-      setValues(init)
-    } catch {
-      // If YAML parse fails, leave the form empty — don't crash the page.
-    }
-  }, [rawYaml, transport.name, fields])
-
-  // Preview: just the transport section (readable for the operator).
-  const previewYaml = useMemo(
-    () => buildTransportYaml(transport, fields, values),
-    [transport, fields, values],
+      return init
+    },
+    [transport.name, fields],
   )
 
-  // Apply: merge the edited transport into the FULL config so PUT /configs
-  // doesn't wipe every other section. Falls back to the single-transport doc
-  // only if the raw config can't be parsed.
-  const applyYaml = useMemo(() => {
-    if (!rawYaml) return previewYaml
-    try {
-      const fullConfig = parseConfigYaml(rawYaml)
+  const buildPreviewYaml = useCallback(
+    (flds: readonly TransportEditField[], vals: Record<string, string>) =>
+      buildTransportYaml(transport, flds, vals),
+    [transport],
+  )
+
+  const buildApplyYaml = useCallback(
+    (raw: string, flds: readonly TransportEditField[], vals: Record<string, string>): string => {
+      const fullConfig = parseConfigYaml(raw)
       const existing = fullConfig.transports?.find((tp) => tp.name === transport.name)
-      const entry = buildTransportEntry(transport, fields, values)
+      const entry = buildTransportEntry(transport, flds, vals)
       const base: TransportConfig = existing ?? {
         name: transport.name,
         type: transport.type,
@@ -392,26 +371,20 @@ const TransportEditConfigSection: React.FC<{ transport: TransportStatus }> = ({ 
       }
       const updatedTransport = { ...base, ...entry } as TransportConfig
       return dumpConfigYaml(upsertTransport(fullConfig, updatedTransport))
-    } catch {
-      return previewYaml
-    }
-  }, [rawYaml, transport, fields, values, previewYaml])
+    },
+    [transport],
+  )
 
-  const setField = (key: string, v: string) => setValues((prev) => ({ ...prev, [key]: v }))
-
-  const handleGenerateAndReload = async () => {
-    setStatusMsg(null)
-    try {
-      await updateConfig.mutateAsync({ payload: applyYaml })
-      setStatusMsg({ type: 'success', text: t('transports.editConfig.reloadSuccess') })
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : ''
-      setStatusMsg({
-        type: 'error',
-        text: msg || t('transports.editConfig.reloadFailed'),
-      })
-    }
-  }
+  const { open, setOpen, values, setField, previewYaml, statusMsg, handleReload, isReloading } =
+    useEntityEditConfig<TransportEditField>({
+      entityName: transport.name,
+      fields,
+      prefillValues,
+      buildPreviewYaml,
+      buildApplyYaml,
+      successKey: 'transports.editConfig.reloadSuccess',
+      failureKey: 'transports.editConfig.reloadFailed',
+    })
 
   return (
     <EntityEditConfigCard
@@ -431,8 +404,8 @@ const TransportEditConfigSection: React.FC<{ transport: TransportStatus }> = ({ 
       statusMsg={statusMsg}
       reloadingLabel={t('transports.editConfig.reloading')}
       reloadButtonLabel={t('transports.editConfig.generateAndReload')}
-      isReloading={updateConfig.isPending}
-      onReload={handleGenerateAndReload}
+      isReloading={isReloading}
+      onReload={handleReload}
     />
   )
 }

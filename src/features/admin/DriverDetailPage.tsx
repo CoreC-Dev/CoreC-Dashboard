@@ -9,10 +9,10 @@ import {
   RotateCcw,
 } from 'lucide-react'
 import type React from 'react'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useParams } from 'react-router-dom'
-import { useConfigRaw, useDriver, useDriverTags, useUpdateConfig } from '@/api/hooks'
+import { useConfigRaw, useDriver, useDriverTags } from '@/api/hooks'
 import {
   BackLink,
   EntityEditConfigCard,
@@ -23,12 +23,13 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { useEntityEditConfig } from '@/hooks/useEntityEditConfig'
 import { useParsedConfig } from '@/hooks/useParsedConfig'
 import { dumpConfigYaml, parseConfigYaml, upsertDriver } from '@/lib/configYaml'
 import { extractDriverYaml, getDriverConnectionFields } from '@/lib/connectionInfo'
 import { ConnStateLabel, QualityLabel } from '@/lib/constants'
 import { formatNumber } from '@/lib/utils'
-import type { DriverConfig } from '@/types/config'
+import type { CoreCConfig, DriverConfig } from '@/types/config'
 import type { DriverStatus } from '@/types/models'
 
 // --- Driver Configuration Edit Section ---
@@ -328,82 +329,51 @@ function buildDriverYaml(
 
 const DriverEditConfigSection: React.FC<{ driver: DriverStatus }> = ({ driver }) => {
   const { t } = useTranslation()
-  const updateConfig = useUpdateConfig()
-  const { data: rawYaml } = useConfigRaw()
-  const [open, setOpen] = useState(false)
   const fields = useMemo(() => getDriverFields(driver.type), [driver.type])
-  const [values, setValues] = useState<Record<string, string>>(() => {
-    const init: Record<string, string> = {}
-    for (const f of fields) init[f.key] = ''
-    return init
-  })
-  const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(
-    null,
-  )
 
-  // Pre-fill form from the existing server config so the operator can see and
-  // preserve current settings instead of starting from empty inputs. [C-2]
-  // Secrets come back redacted as "***" and must be re-entered — that is an
-  // inherent limitation of the redacted raw view.
-  useEffect(() => {
-    if (!rawYaml) return
-    try {
-      const cfg = parseConfigYaml(rawYaml)
+  const prefillValues = useCallback(
+    (cfg: CoreCConfig): Record<string, string> | null => {
       const me = cfg.drivers?.find((d) => d.name === driver.name)
-      if (!me?.settings) return
-      setValues((prev) => {
-        const init = { ...prev }
-        for (const f of fields) {
-          const src = me.settings?.[f.key]
-          init[f.key] = driverConfigValueToString(src)
-        }
-        return init
-      })
-    } catch {
-      // If YAML parse fails, leave the form empty — don't crash the page.
-    }
-  }, [rawYaml, driver.name, fields])
-
-  // Preview: just the driver section (readable for the operator).
-  const previewYaml = useMemo(
-    () => buildDriverYaml(driver, fields, values),
-    [driver, fields, values],
+      if (!me?.settings) return null
+      const init: Record<string, string> = {}
+      for (const f of fields) {
+        const src = me.settings?.[f.key]
+        init[f.key] = driverConfigValueToString(src)
+      }
+      return init
+    },
+    [driver.name, fields],
   )
 
-  // Apply: merge the edited driver into the FULL config so PUT /configs
-  // doesn't wipe every other section (other drivers, transports, rules,
-  // global, node). Falls back to the single-driver doc only if the raw
-  // config can't be parsed.
-  const applyYaml = useMemo(() => {
-    if (!rawYaml) return previewYaml
-    try {
-      const fullConfig = parseConfigYaml(rawYaml)
+  const buildPreviewYaml = useCallback(
+    (flds: readonly DriverEditField[], vals: Record<string, string>) =>
+      buildDriverYaml(driver, flds, vals),
+    [driver],
+  )
+
+  const buildApplyYaml = useCallback(
+    (raw: string, flds: readonly DriverEditField[], vals: Record<string, string>): string => {
+      const fullConfig = parseConfigYaml(raw)
       const existing = fullConfig.drivers?.find((d) => d.name === driver.name)
-      const settings = buildDriverSettings(fields, values)
+      const settings = buildDriverSettings(flds, vals)
       const updatedDriver: DriverConfig = existing
         ? { ...existing, settings }
         : { name: driver.name, type: driver.type, settings, tags: [] }
       return dumpConfigYaml(upsertDriver(fullConfig, updatedDriver))
-    } catch {
-      return previewYaml
-    }
-  }, [rawYaml, driver, fields, values, previewYaml])
+    },
+    [driver],
+  )
 
-  const setField = (key: string, v: string) => setValues((prev) => ({ ...prev, [key]: v }))
-
-  const handleGenerateAndReload = async () => {
-    setStatusMsg(null)
-    try {
-      await updateConfig.mutateAsync({ payload: applyYaml })
-      setStatusMsg({ type: 'success', text: t('drivers.editConfig.reloadSuccess') })
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : ''
-      setStatusMsg({
-        type: 'error',
-        text: msg || t('drivers.editConfig.reloadFailed'),
-      })
-    }
-  }
+  const { open, setOpen, values, setField, previewYaml, statusMsg, handleReload, isReloading } =
+    useEntityEditConfig<DriverEditField>({
+      entityName: driver.name,
+      fields,
+      prefillValues,
+      buildPreviewYaml,
+      buildApplyYaml,
+      successKey: 'drivers.editConfig.reloadSuccess',
+      failureKey: 'drivers.editConfig.reloadFailed',
+    })
 
   return (
     <EntityEditConfigCard
@@ -423,8 +393,8 @@ const DriverEditConfigSection: React.FC<{ driver: DriverStatus }> = ({ driver })
       statusMsg={statusMsg}
       reloadingLabel={t('drivers.editConfig.reloading')}
       reloadButtonLabel={t('drivers.editConfig.generateAndReload')}
-      isReloading={updateConfig.isPending}
-      onReload={handleGenerateAndReload}
+      isReloading={isReloading}
+      onReload={handleReload}
     />
   )
 }
