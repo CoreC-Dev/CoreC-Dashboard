@@ -104,12 +104,8 @@ function isForbidden(importerLayer, importeeLayer) {
 // --- 已登记豁免（已知技术债，阶段 4 移除） ---
 // 每条：importer 子串 + importee 子串 + TD ID
 const EXEMPTIONS = [
-  { importer: 'types/models.ts', importee: 'lib/constants', td: 'TD-ARCH-001', batch: 'A' },
-  { importer: 'lib/utils.ts', importee: 'i18n', td: 'TD-ARCH-004', batch: 'A' },
-  { importer: 'lib/writeValidation.ts', importee: 'i18n', td: 'TD-ARCH-009', batch: 'A' },
   { importer: 'api/hooks', importee: 'contexts/ConnectionContext', td: 'TD-ARCH-002', batch: 'B' },
   { importer: 'contexts/ConnectionContext', importee: 'api/hooks', td: 'TD-ARCH-002', batch: 'B' },
-  { importer: 'components/ui/count-up-number', importee: 'hooks/', td: 'TD-ARCH-005', batch: 'A' },
 ];
 
 function isExempt(importerRel, importeeRel) {

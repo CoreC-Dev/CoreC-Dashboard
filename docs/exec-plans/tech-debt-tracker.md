@@ -41,15 +41,15 @@
 
 | ID | 严重度 | 类别 | 标题（简） | 批次 | 状态 |
 |---|---|---|---|---|---|
-| TD-ARCH-001 | P1 | 架构 | types 层反向依赖 lib | 批次A | 待处理 |
+| TD-ARCH-001 | P1 | 架构 | types 层反向依赖 lib | 批次A | 已完成 |
 | TD-ARCH-002 | P1 | 架构 | api ↔ contexts 层级环 | 批次B | 待处理 |
 | TD-ARCH-003 | P1 | 架构 | configStore God Object（29 方法） | 批次C | 待处理 |
-| TD-ARCH-004 | P1 | 架构 | lib/utils 耦合 16 个 UI 原语到 i18n | 批次A | 待处理 |
-| TD-ARCH-005 | P2 | 架构 | UI 原语反向依赖 hooks | 批次A | 待处理 |
+| TD-ARCH-004 | P1 | 架构 | lib/utils 耦合 16 个 UI 原语到 i18n | 批次A | 已完成 |
+| TD-ARCH-005 | P2 | 架构 | UI 原语反向依赖 hooks | 批次A | 已完成 |
 | TD-ARCH-006 | P2 | 架构 | CoreCInstance 类型定义在 store | 批次C | 待处理 |
 | TD-ARCH-007 | P2 | 架构 | 无 WebSocket hook 抽象 | 批次B | 待处理 |
 | TD-ARCH-008 | P2 | 架构 | feature 越过 hooks 直引 api/client | 批次B | 待处理 |
-| TD-ARCH-009 | P2 | 架构 | lib 依赖 i18n 单例 | 批次A | 待处理 |
+| TD-ARCH-009 | P2 | 架构 | lib 依赖 i18n 单例 | 批次A | 已完成 |
 | TD-ARCH-010 | P2 | 架构 | @/ 别名与相对导入混用 | 阶段3 | 待处理 |
 | TD-ARCH-011 | P1 | 架构 | 字段元数据三处真相源 | 批次D | 待处理 |
 | TD-ARCH-012 | P2 | 架构 | EntityEditConfigCard 17 props 透传 | 批次D | 待处理 |
@@ -129,7 +129,7 @@
 - 位置：`src/types/models.ts:1`
 - 证据：`import type { DataTypeString } from '@/lib/constants'`。链路 types/models → lib/constants:1（`import type { DataType } from '@/types/config'`）→ types/config，形成 types↔lib 概念环。
 - 修复建议：将 `DataTypeString`（必要时含 `DataType`）移入 `types/config.ts` 或 `types/models.ts`，使 types 自洽；`lib/constants.ts` 改为从 types 导入（正向）。
-- 业务行为影响：无（type-only，运行时擦除） ｜ 批次A ｜ 验收：结构测试断言 `types/**` 不导入 `@/lib/**` ｜ 状态：待处理
+- 业务行为影响：无（type-only，运行时擦除） ｜ 批次A ｜ 验收：结构测试断言 `types/**` 不导入 `@/lib/**` ｜ 状态：已完成（批次 A：DataTypeString 移入 types/config，structure-lint 豁免已删）
 
 **TD-ARCH-002** ｜ api 与 contexts 层互相依赖（层级环） ｜ P1
 - 位置：`src/api/hooks/index.ts:2` ↔ `src/contexts/ConnectionContext.tsx:4-5`
@@ -147,13 +147,13 @@
 - 位置：`src/lib/utils.ts:3`（i18n 导入）、`:5`（cn）、`:80`（formatRelativeTime 用 i18n）
 - 证据：`import i18n from '@/i18n'` 在模块顶层。`cn`（纯 className 合并）被 16/17 个 `components/ui/*` 原语导入；模块级 i18n 导入使每个原语传递拉入 i18next 单例。仅 `formatRelativeTime`（:80-89）用到 `i18n.t`。共 34 个导入者。
 - 修复建议：将 `cn` 抽到独立 `lib/cn.ts`（零 src 导入）；i18n 相关格式化器留在 `lib/utils.ts` 或 `lib/formatters.ts`。解耦 16 个展示原语与 i18n 运行时。
-- 业务行为影响：无 ｜ 批次A ｜ 验收：结构测试断言 `components/ui/**` 不传递依赖 `@/i18n` ｜ 状态：待处理
+- 业务行为影响：无 ｜ 批次A ｜ 验收：结构测试断言 `components/ui/**` 不传递依赖 `@/i18n` ｜ 状态：已完成（批次 A：cn 抽离 lib/cn.ts，24 导入者改引，structure-lint 豁免已删）
 
 **TD-ARCH-005** ｜ UI 原语反向依赖 hooks 层 ｜ P2
 - 位置：`src/components/ui/count-up-number.tsx:1`
 - 证据：`import { useCountUp } from '@/hooks/useCountUp'`——`components/ui` 原语依赖 hooks 层。其余 16 个 ui 原语无此问题。
 - 修复建议：将 count-up 动画逻辑内联进组件，或将 `count-up-number.tsx` 移出 `components/ui` 到 `components/`。
-- 业务行为影响：无 ｜ 批次A ｜ 验收：结构测试断言 `components/ui/**` 不导入 `@/hooks/**` ｜ 状态：待处理
+- 业务行为影响：无 ｜ 批次A ｜ 验收：结构测试断言 `components/ui/**` 不导入 `@/hooks/**` ｜ 状态：已完成（批次 A：useCountUp 内联进 CountUpNumber，hook 删除，structure-lint 豁免已删）
 
 **TD-ARCH-006** ｜ 领域类型 CoreCInstance 定义在 store 而非 types/ ｜ P2
 - 位置：`src/stores/instanceStore.ts:8`；导入者 5 个（ConnectionContext:7、InstanceCard:35、InstanceDialog:27、InstancePanel:23、useHomepageProbe:3）
@@ -177,7 +177,7 @@
 - 位置：`src/lib/utils.ts:3`、`src/lib/writeValidation.ts:1`
 - 证据：两处 `import i18n from '@/i18n'`。使 lib 函数非纯（依赖 i18n 单例状态/locale），增加单测难度。
 - 修复建议：i18n 作为显式依赖传入（向格式化器传 `t`），或隔离到 `lib/i18nFormatters.ts`；至少在架构文档将 `i18n` 标为 lib 的 peer 层。
-- 业务行为影响：无 ｜ 批次A ｜ 验收：lib 纯模块无 `@/i18n` 导入 ｜ 状态：待处理
+- 业务行为影响：无 ｜ 批次A ｜ 验收：lib 纯模块无 `@/i18n` 导入 ｜ 状态：已完成（批次 A：formatRelativeTime 移 lib/formatters.ts + validateValue 改传 t 参数，lib 零 i18n 导入，structure-lint 豁免已删）
 
 **TD-ARCH-010** ｜ @/ 别名与相对导入在同一文件混用 ｜ P2
 - 位置：`src/api/endpoints/index.ts:14`（`from '../client'` + `from '@/types/api'` :12）、`src/api/hooks/index.ts:4`、`src/features/home/InstancePanel.tsx:26-28`
@@ -615,3 +615,4 @@
 |---|---|---|
 | 2026-10-02 | 初建。登记 76 条（ARCH 13 / CPLX 10 / DUP 6 / TEST 16 / SEC 12 / GATE 4 / DOC 3 / PERF 12），5 域并行审计完成 | Phase 1 全量扫描 |
 | 2026-10-02 | 阶段 3：TD-SEC-004 已核实（js-yaml integrity 匹配官方）、TD-SEC-007 已完成（server 安全头）、TD-SEC-008 已核实（audit 跑通）、TD-DOC-001..003 已完成；新增 TD-SEC-013（dompurify via monaco，P2） | Phase 3 门禁 |
+| 2026-10-02 | 批次 A 完成：TD-ARCH-001（DataTypeString→types）、TD-ARCH-004（cn→lib/cn.ts）、TD-ARCH-005（useCountUp 内联）、TD-ARCH-009（lib 纯化传 t）。structure-lint 4 豁免删除，门禁收紧 | Phase 4 批次 A |
