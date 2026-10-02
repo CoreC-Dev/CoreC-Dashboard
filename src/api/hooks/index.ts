@@ -213,3 +213,7 @@ export function useMetrics(refetchInterval: number | false = 12_000) {
     refetchInterval,
   })
 }
+
+// Re-export ApiError so features don't reach into the raw HTTP client (TD-ARCH-008).
+// api/client is an internal transport detail; consumers should catch ApiError via this surface.
+export { ApiError } from '../client'

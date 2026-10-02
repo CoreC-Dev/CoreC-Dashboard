@@ -14,8 +14,7 @@ import {
 import type React from 'react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ApiError } from '@/api/client'
-import { useDeadLetters, useDrivers, useWriteTag } from '@/api/hooks'
+import { ApiError, useDeadLetters, useDrivers, useWriteTag } from '@/api/hooks'
 import {
   AlertDialog,
   AlertDialogAction,
