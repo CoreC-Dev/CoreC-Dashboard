@@ -54,8 +54,8 @@
 | TD-ARCH-011 | P1 | 架构 | 字段元数据三处真相源 | 批次D | 基础完成 |
 | TD-ARCH-012 | P2 | 架构 | EntityEditConfigCard 17 props 透传 | 批次D | 已完成 |
 | TD-ARCH-013 | P2 | 架构 | settingsRegistry 878 行数据 God Object | 批次D | 已完成 |
-| TD-CPLX-001 | P1 | 复杂度 | ConfigCenterPage God 组件（~886 行） | 批次F | 待处理 |
-| TD-CPLX-002 | P1 | 复杂度 | TagExplorerPage God 组件（~800 行） | 批次F | 待处理 |
+| TD-CPLX-001 | P1 | 复杂度 | ConfigCenterPage God 组件（~886 行） | 批次F | 已完成 |
+| TD-CPLX-002 | P1 | 复杂度 | TagExplorerPage God 组件（~800 行） | 批次F | 已完成 |
 | TD-CPLX-003 | P1 | 复杂度 | RulesPage God 组件（~818 行） | 批次F | 已完成 |
 | TD-CPLX-004 | P2 | 复杂度 | configSchema.validateConfig 165 行高圈复杂度 | 批次G | 待处理 |
 | TD-CPLX-005 | P2 | 复杂度 | AppShell 混杂 7 类关注点 | 批次F | 已完成 |
@@ -209,13 +209,13 @@
 - 位置：`src/features/admin/ConfigCenterPage.tsx:163-1049`
 - 证据：单组件 ~886 行；9 useState（193-213）、3 useEffect。混杂 Monaco 编辑器 IO、loadFromYaml/getWorkingYaml store 桥接（235-260）、FileReader 文件上传、YAML↔表单同步、校验、useConfigHistory 快照、LCS diff、模板选择、apply 确认弹窗。
 - 修复建议：拆为 `<ConfigToolbar>`、`<YamlEditorPane>`、`<ConfigFormPane>`、`<ConfigDiffPreview>`、`<ConfigHistoryPanel>` + `useConfigCenterState()` hook。页面退为薄组合根。
-- 业务行为影响：无 ｜ 批次F ｜ 验收：单组件 <300 行 + 行为守恒（对拍 YAML 导入导出） ｜ 状态：待处理
+- 业务行为影响：无 ｜ 批次F ｜ 验收：单组件 <300 行 + 行为守恒（对拍 YAML 导入导出） ｜ 状态：已完成（1024→200 行；ConfigCenterParts+Form+Yaml + useConfigCenter）
 
 **TD-CPLX-002** ｜ TagExplorerPage God 组件（流式+虚拟化+图表+写入） ｜ P1
 - 位置：`src/features/monitor/TagExplorerPage.tsx:219-1019`
 - 证据：~800 行；14 useState（226-255）、7 useEffect、4 useMemo。管理 WS 订阅 + rAF 批处理（302-359）、REST 种子（276-291）、react-virtual、lightweight-charts 创建/销毁、写入弹窗、趋势抽屉。WS effect（365+）60+ 行、4 refs。
 - 修复建议：抽 `useTagStream(selectedDriver)`、`useTrendChart(containerRef, samples, theme)`、`<TagWriteDialog>`、`<TrendDrawer>`。页面 = 组合 + filteredTags memo。
-- 业务行为影响：无 ｜ 批次F ｜ 验收：单组件 <300 行 + 流式行为守恒 ｜ 状态：待处理
+- 业务行为影响：无 ｜ 批次F ｜ 验收：单组件 <300 行 + 流式行为守恒 ｜ 状态：已完成（1018→232 行；TagRow/Table/Toolbar/TrendPanel/WriteDialog + useTagExplorerStream/useTrendChart/useTagWrite + tagExplorer.ts）
 
 **TD-CPLX-003** ｜ RulesPage God 组件（15 useState + 内联测试模拟器） ｜ P1
 - 位置：`src/features/admin/RulesPage.tsx:129-947`
