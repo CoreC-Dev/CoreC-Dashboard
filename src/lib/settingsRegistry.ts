@@ -6,7 +6,7 @@
  */
 
 // Registries
-export { DRIVER_SETTINGS_REGISTRY } from './settingsRegistryDriver'
+export { DRIVER_SETTINGS_REGISTRY, DRIVER_TOPLEVEL_FIELDS } from './settingsRegistryDriver'
 export { TRANSPORT_SETTINGS_REGISTRY, TRANSPORT_TOPLEVEL_FIELDS } from './settingsRegistryTransport'
 // Types & shared fragments
 export type {

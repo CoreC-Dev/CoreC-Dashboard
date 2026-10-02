@@ -1,0 +1,127 @@
+import { describe, expect, it } from 'vitest'
+import { registryToEditFields } from './registryAdapter'
+import {
+  DRIVER_TOPLEVEL_FIELDS,
+  getDriverFieldRegistry,
+  getTransportFieldRegistry,
+  TRANSPORT_TOPLEVEL_FIELDS,
+} from './settingsRegistry'
+
+describe('registryToEditFields', () => {
+  it('returns empty array for undefined registry', () => {
+    expect(registryToEditFields(undefined)).toEqual([])
+  })
+
+  it('flattens groups into a flat field list', () => {
+    const registry = getDriverFieldRegistry('modbus-tcp')
+    expect(registry).toBeDefined()
+    const fields = registryToEditFields(registry)
+    // Should have multiple fields from multiple groups
+    expect(fields.length).toBeGreaterThan(5)
+    // Every field should have key, labelKey, kind
+    for (const f of fields) {
+      expect(f.key).toBeTruthy()
+      expect(f.labelKey).toBeTruthy()
+      expect(['text', 'number', 'select']).toContain(f.kind)
+    }
+  })
+
+  it('appends top-level fields after settings fields', () => {
+    const registry = getDriverFieldRegistry('modbus-tcp')
+    const fields = registryToEditFields(registry, DRIVER_TOPLEVEL_FIELDS)
+    const keys = fields.map((f) => f.key)
+    // Top-level fields should be at the end
+    expect(keys).toContain('tags-file')
+    expect(keys).toContain('tags-interval')
+    const tagsFileIdx = keys.indexOf('tags-file')
+    const tagsIntervalIdx = keys.indexOf('tags-interval')
+    // Settings fields should come before top-level fields
+    const lastSettingsIdx = Math.max(
+      ...keys
+        .map((k, i) => (k !== 'tags-file' && k !== 'tags-interval' ? i : -1))
+        .filter((i) => i >= 0),
+    )
+    expect(tagsFileIdx).toBeGreaterThan(lastSettingsIdx)
+    expect(tagsIntervalIdx).toBeGreaterThan(lastSettingsIdx)
+  })
+
+  it('maps FieldType → kind correctly', () => {
+    const registry = getDriverFieldRegistry('modbus-tcp')!
+    const fields = registryToEditFields(registry)
+    // host is type 'text' → kind 'text'
+    const host = fields.find((f) => f.key === 'host')
+    expect(host?.kind).toBe('text')
+    // port is type 'number' → kind 'number'
+    const port = fields.find((f) => f.key === 'port')
+    expect(port?.kind).toBe('number')
+  })
+
+  it('maps enum type to select kind with options', () => {
+    const registry = getDriverFieldRegistry('opcua')!
+    const fields = registryToEditFields(registry)
+    const securityPolicy = fields.find((f) => f.key === 'security-policy')
+    expect(securityPolicy?.kind).toBe('select')
+    expect(securityPolicy?.options).toBeDefined()
+    expect(securityPolicy!.options!.length).toBeGreaterThan(0)
+  })
+
+  it('derives placeholder from default when placeholder is absent', () => {
+    const registry = getDriverFieldRegistry('modbus-tcp')!
+    const fields = registryToEditFields(registry)
+    // port has default 502 → placeholder '502'
+    const port = fields.find((f) => f.key === 'port')
+    expect(port?.placeholder).toBe('502')
+  })
+
+  it('maps duration type to text kind', () => {
+    const registry = getDriverFieldRegistry('modbus-tcp')!
+    const fields = registryToEditFields(registry)
+    // timeout is type 'duration' → kind 'text'
+    const timeout = fields.find((f) => f.key === 'timeout')
+    expect(timeout?.kind).toBe('text')
+  })
+
+  it('works for transports with top-level fields', () => {
+    const registry = getTransportFieldRegistry('mqtt')!
+    const fields = registryToEditFields(registry, TRANSPORT_TOPLEVEL_FIELDS)
+    expect(fields.length).toBeGreaterThan(5)
+    // Should include transport top-level fields
+    const keys = fields.map((f) => f.key)
+    expect(keys).toContain('batch-size')
+    expect(keys).toContain('flush-interval')
+  })
+
+  // ─── Known divergences (documented for Batch I migration) ──────────
+
+  it('DOCUMENTED: registry has reconnect fields that detail arrays lack for some drivers', () => {
+    // The registry includes reconnect-interval, reconnect-max-interval,
+    // max-reconnect-failures for every driver. The detail page arrays only
+    // include them for modbus-tcp. Full migration will ADD these fields
+    // to modbus-tls, modbus-rtu, s7, opcua edit forms (behavior change).
+    for (const type of ['modbus-tls', 'modbus-rtu', 's7', 'opcua']) {
+      const registry = getDriverFieldRegistry(type)!
+      const fields = registryToEditFields(registry)
+      expect(fields.some((f) => f.key === 'reconnect-interval')).toBe(true)
+    }
+  })
+
+  it('DOCUMENTED: OPCUA registry has 4 security-policy options (detail page has 6)', () => {
+    // Detail page exposes 6 options including Basic128Rsa15 and Basic256.
+    // Registry has 4. Migration will DROP 2 options (behavior change).
+    // Batch I must decide which set is correct.
+    const registry = getDriverFieldRegistry('opcua')!
+    const fields = registryToEditFields(registry)
+    const securityPolicy = fields.find((f) => f.key === 'security-policy')
+    expect(securityPolicy?.options?.length).toBe(4)
+  })
+
+  it('DOCUMENTED: modbus-tls registry port default is 802 (detail page placeholder is 502)', () => {
+    // The detail page shows port placeholder '502' (wrong for TLS).
+    // Registry has default 802 (correct). Migration will fix this
+    // placeholder (behavior change, but arguably a bug fix).
+    const registry = getDriverFieldRegistry('modbus-tls')!
+    const fields = registryToEditFields(registry)
+    const port = fields.find((f) => f.key === 'port')
+    expect(port?.placeholder).toBe('802')
+  })
+})

@@ -6,6 +6,7 @@
 import {
   MODBUS_CONNECTION_FIELDS,
   RECONNECT_GROUP,
+  type SettingsField,
   type TypeFieldRegistry,
 } from './settingsRegistryTypes'
 
@@ -348,3 +349,23 @@ export const DRIVER_SETTINGS_REGISTRY: Record<string, TypeFieldRegistry> = {
     ],
   },
 }
+
+/** Top-level driver fields (siblings of `settings`, not inside it).
+ *  Analogous to TRANSPORT_TOPLEVEL_FIELDS. Used by the wizard and (via
+ *  registryToEditFields adapter) by the detail-page edit forms. */
+export const DRIVER_TOPLEVEL_FIELDS: SettingsField[] = [
+  {
+    key: 'tags-file',
+    label: 'settings.tagsFile',
+    type: 'text',
+    default: 'tags.yaml',
+    help: 'settings.tagsFileHelp',
+  },
+  {
+    key: 'tags-interval',
+    label: 'settings.tagsInterval',
+    type: 'duration',
+    default: '1s',
+    help: 'settings.tagsIntervalHelp',
+  },
+]
