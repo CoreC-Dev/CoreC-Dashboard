@@ -13,6 +13,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useConfigRaw, useTransports, useUpdateConfig } from '@/api/hooks'
+import { ConnectionSummary } from '@/components/admin/DetailPageParts'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -186,15 +187,9 @@ export const TransportsPage: React.FC = () => {
                       <div>
                         <CardTitle className="text-sm font-semibold">{tp.name}</CardTitle>
                         <CardDescription className="text-xs font-mono">{tp.type}</CardDescription>
-                        {(() => {
-                          const summary = getTransportConnectionSummary(workingConfig, tp.name)
-                          if (!summary) return null
-                          return (
-                            <div className="text-xs text-muted-foreground/80 font-mono mt-0.5 truncate">
-                              {summary}
-                            </div>
-                          )
-                        })()}
+                        <ConnectionSummary
+                          summary={getTransportConnectionSummary(workingConfig, tp.name)}
+                        />
                       </div>
                     </div>
                     <div className="flex items-center gap-1">
@@ -316,15 +311,9 @@ export const TransportsPage: React.FC = () => {
                         <div>
                           <CardTitle className="text-sm font-semibold">{tr.name}</CardTitle>
                           <CardDescription className="text-xs font-mono">{tr.type}</CardDescription>
-                          {(() => {
-                            const summary = getTransportConnectionSummary(parsedConfig, tr.name)
-                            if (!summary) return null
-                            return (
-                              <div className="text-xs text-muted-foreground/80 font-mono mt-0.5 truncate">
-                                {summary}
-                              </div>
-                            )
-                          })()}
+                          <ConnectionSummary
+                            summary={getTransportConnectionSummary(parsedConfig, tr.name)}
+                          />
                         </div>
                       </div>
                       <Badge variant="outline" className={`text-xs ${st.badgeColor}`}>

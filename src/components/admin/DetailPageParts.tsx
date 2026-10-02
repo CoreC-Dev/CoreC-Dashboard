@@ -30,6 +30,14 @@ export const formatTimestamp = (ts: string, fallback = '—'): string => {
   return Number.isNaN(d.getTime()) ? ts : d.toLocaleString()
 }
 
+/** Inline connection-summary line for entity list cards. Renders null when
+ *  the summary is absent. Extracted from 4× repeated IIFE in DriversPage /
+ *  TransportsPage (TD-DUP-006). */
+export const ConnectionSummary: React.FC<{ summary: string | null }> = ({ summary }) => {
+  if (!summary) return null
+  return <div className="text-xs text-muted-foreground/80 font-mono mt-0.5 truncate">{summary}</div>
+}
+
 /**
  * Small warning badge marking a config field whose change requires an engine
  * restart. Shared by GlobalConfigEditor and NodeConfigEditor. The caller

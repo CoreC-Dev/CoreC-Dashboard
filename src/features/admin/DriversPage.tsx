@@ -13,6 +13,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useConfigRaw, useDrivers, useDriverTags, useUpdateConfig } from '@/api/hooks'
+import { ConnectionSummary } from '@/components/admin/DetailPageParts'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -201,15 +202,9 @@ export const DriversPage: React.FC = () => {
                       <div>
                         <CardTitle className="text-sm font-semibold">{drv.name}</CardTitle>
                         <CardDescription className="text-xs font-mono">{drv.type}</CardDescription>
-                        {(() => {
-                          const summary = getDriverConnectionSummary(workingConfig, drv.name)
-                          if (!summary) return null
-                          return (
-                            <div className="text-xs text-muted-foreground/80 font-mono mt-0.5 truncate">
-                              {summary}
-                            </div>
-                          )
-                        })()}
+                        <ConnectionSummary
+                          summary={getDriverConnectionSummary(workingConfig, drv.name)}
+                        />
                       </div>
                     </div>
                     <div className="flex items-center gap-1">
@@ -323,15 +318,9 @@ export const DriversPage: React.FC = () => {
                           <CardDescription className="text-xs font-mono">
                             {drv.type}
                           </CardDescription>
-                          {(() => {
-                            const summary = getDriverConnectionSummary(parsedConfig, drv.name)
-                            if (!summary) return null
-                            return (
-                              <div className="text-xs text-muted-foreground/80 font-mono mt-0.5 truncate">
-                                {summary}
-                              </div>
-                            )
-                          })()}
+                          <ConnectionSummary
+                            summary={getDriverConnectionSummary(parsedConfig, drv.name)}
+                          />
                         </div>
                       </div>
                       <Badge variant="outline" className={`text-xs ${st.badgeColor}`}>
