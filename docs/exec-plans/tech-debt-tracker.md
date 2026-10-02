@@ -51,9 +51,9 @@
 | TD-ARCH-008 | P2 | 架构 | feature 越过 hooks 直引 api/client | 批次B | 已完成 |
 | TD-ARCH-009 | P2 | 架构 | lib 依赖 i18n 单例 | 批次A | 已完成 |
 | TD-ARCH-010 | P2 | 架构 | @/ 别名与相对导入混用 | 阶段3 | 待处理 |
-| TD-ARCH-011 | P1 | 架构 | 字段元数据三处真相源 | 批次D | 待处理 |
-| TD-ARCH-012 | P2 | 架构 | EntityEditConfigCard 17 props 透传 | 批次D | 待处理 |
-| TD-ARCH-013 | P2 | 架构 | settingsRegistry 878 行数据 God Object | 批次D | 待处理 |
+| TD-ARCH-011 | P1 | 架构 | 字段元数据三处真相源 | 批次D | 基础完成 |
+| TD-ARCH-012 | P2 | 架构 | EntityEditConfigCard 17 props 透传 | 批次D | 已完成 |
+| TD-ARCH-013 | P2 | 架构 | settingsRegistry 878 行数据 God Object | 批次D | 已完成 |
 | TD-CPLX-001 | P1 | 复杂度 | ConfigCenterPage God 组件（~886 行） | 批次F | 待处理 |
 | TD-CPLX-002 | P1 | 复杂度 | TagExplorerPage God 组件（~800 行） | 批次F | 待处理 |
 | TD-CPLX-003 | P1 | 复杂度 | RulesPage God 组件（~818 行） | 批次F | 待处理 |
@@ -64,8 +64,8 @@
 | TD-CPLX-008 | P2 | 复杂度 | getActionBadge 5 分支 switch | 批次E | 待处理 |
 | TD-CPLX-009 | P2 | 复杂度 | TagExplorerPage WS effect 隐式 ref 状态 | 批次G | 待处理 |
 | TD-CPLX-010 | P2 | 复杂度 | ConfigCenterPage auto-load ref guard + getState | 批次G | 待处理 |
-| TD-DUP-001 | P1 | 重复 | Driver/TransportDetailPage 字段数组并行重复 | 批次D | 待处理 |
-| TD-DUP-002 | P1 | 重复 | Driver/TransportEditConfigSection 逻辑重复 | 批次D | 待处理 |
+| TD-DUP-001 | P1 | 重复 | Driver/TransportDetailPage 字段数组并行重复 | 批次D | 基础完成 |
+| TD-DUP-002 | P1 | 重复 | Driver/TransportEditConfigSection 逻辑重复 | 批次D | 已完成 |
 | TD-DUP-003 | P1 | 重复 | apply-confirmation+mutation 模式重复 4× | 批次E | 待处理 |
 | TD-DUP-004 | P2 | 重复 | reset-on-open wizard 模式重复 3× | 批次H | 待处理 |
 | TD-DUP-005 | P2 | 重复 | handleCreate/Edit/Delete 重复 3× | 批次E | 待处理 |
@@ -189,19 +189,19 @@
 - 位置：`src/lib/settingsRegistry.ts:141-852`、`src/features/admin/DriverDetailPage.tsx:49-288`、`src/lib/configSchema.ts:90-300`
 - 证据：同一 per-driver/per-transport 字段集在三处描述：(1) `DRIVER_SETTINGS_REGISTRY` 供 wizard 表单；(2) `MODBUS_TCP_FIELDS` 供详情编辑表单；(3) zod `superRefine` 必填校验。`settingsRegistry.ts:11-13` 头注释明确承认手工镜像。
 - 修复建议：以 `settingsRegistry.ts` 为唯一源：详情编辑字段经适配器派生，zod 必填校验由 `required:true` 标志生成。configSchema 仅保留跨实体规则。
-- 业务行为影响：无 ｜ 批次D ｜ 验收：结构测试断言字段集单源 + parity 测试 ｜ 状态：待处理
+- 业务行为影响：无 ｜ 批次D ｜ 验收：结构测试断言字段集单源 + parity 测试 ｜ 状态：基础完成（adapter+parity 已落，全量迁移待批次I）
 
 **TD-ARCH-012** ｜ EntityEditConfigCard 17 props 透传，逻辑未同置 ｜ P2
 - 位置：`src/components/admin/DetailPageParts.tsx:120-139`
 - 证据：`EntityEditConfigCardProps` 17 字段；两调用方各从重复的有状态区段接线全部 17 个。抽象止于展示，有状态行为被复制（见 TD-DUP-002）。
 - 修复建议：同置状态+展示：单一 `<EntityEditConfigCard entityName entityKind buildEntry upsert />` 经 `useEntityEditConfig` hook 持有状态。props 降至 ~5。
-- 业务行为影响：无 ｜ 批次D ｜ 验收：props 数下降 + 行为守恒 ｜ 状态：待处理
+- 业务行为影响：无 ｜ 批次D ｜ 验收：props 数下降 + 行为守恒 ｜ 状态：已完成
 
 **TD-ARCH-013** ｜ settingsRegistry 878 行数据 God Object，手工三同步风险 ｜ P2
 - 位置：`src/lib/settingsRegistry.ts:1-878`
 - 证据：单文件内联 `DRIVER_SETTINGS_REGISTRY`（7 驱动类型）+ `TRANSPORT_SETTINGS_REGISTRY`（5+ 传输类型），878 行声明式字段元数据。正确性依赖手工与 `configSchema.ts` 及 Go 服务 `Init()` 同步（头注释 11-13）。无测试断言与 configSchema 一致。
 - 修复建议：(a) 加测试：每个 registry 类型的 `required:true` 字段在 configSchema zod 校验中亦必填；(b) 拆分为 driver/transport 两文件；(c) 长期：若服务有 OpenAPI/schema 则生成 registry。
-- 业务行为影响：无 ｜ 批次D ｜ 验收：parity 测试存在 + 单文件行数下降 ｜ 状态：待处理
+- 业务行为影响：无 ｜ 批次D ｜ 验收：parity 测试存在 + 单文件行数下降 ｜ 状态：已完成
 
 ### 复杂度（CPLX）
 
@@ -271,13 +271,13 @@
 - 位置：`src/features/admin/DriverDetailPage.tsx:49-288`、`src/features/admin/TransportDetailPage.tsx:54-260`
 - 证据：DriverDetailPage 定义 MODBUS_TCP_FIELDS、MODBUS_TLS_FIELDS、MODBUS_RTU_FIELDS、S7_FIELDS、OPCUA_FIELDS（49-273）+ getDriverFields（275-288）；TransportDetailPage 定义 MQTT_FIELDS、HTTP_FIELDS 等 + getTransportFields（261）。与 settingsRegistry.ts:141+ 的 DRIVER/TRANSPORT_SETTINGS_REGISTRY 平行——同 key 不同 shape。加字段需改两处。
 - 修复建议：详情编辑字段从 getDriverFieldRegistry(type)/getTransportFieldRegistry(type) 经 registryToEditFields() 适配器派生。删除本地 *_FIELDS 数组。
-- 业务行为影响：无 ｜ 批次D ｜ 验收：本地字段数组删除 + 行为守恒 ｜ 状态：待处理
+- 业务行为影响：无 ｜ 批次D ｜ 验收：本地字段数组删除 + 行为守恒 ｜ 状态：基础完成（adapter+parity 已落，全量迁移待批次I）
 
 **TD-DUP-002** ｜ DriverEditConfigSection ≈ TransportEditConfigSection（逻辑未抽，仅 JSX） ｜ P1
 - 位置：`src/features/admin/DriverDetailPage.tsx:329-460`、`src/features/admin/TransportDetailPage.tsx:337-460`
 - 证据：两者共享 useState(open/values/statusMsg)、useEffect 从 parseConfigYaml(rawYaml) 预填（348-365/356-371）、previewYaml useMemo（368/374）、applyYaml useMemo 经 upsertDriver/upsertTransport 合并（377-390/382-395）、handleGenerateAndReload async。EntityEditConfigCard 仅抽展示 JSX（17 props），有状态逻辑复制。
 - 修复建议：抽 useEntityEditConfig({ entityName, entityKind, buildEntry, upsert }) hook 返回 { values, setField, previewYaml, applyYaml, statusMsg, handleReload, isReloading }。两区段退为薄封装。
-- 业务行为影响：无 ｜ 批次D ｜ 验收：逻辑单点 + 行为守恒 ｜ 状态：待处理
+- 业务行为影响：无 ｜ 批次D ｜ 验收：逻辑单点 + 行为守恒 ｜ 状态：已完成
 
 **TD-DUP-003** ｜ apply-confirmation + updateConfig.mutate 模式重复 4× ｜ P1
 - 位置：`DriversPage.tsx:442-469`、`TransportsPage.tsx:425-452`、`RulesPage.tsx:917-944`、`ConfigCenterPage.tsx:867-895`
