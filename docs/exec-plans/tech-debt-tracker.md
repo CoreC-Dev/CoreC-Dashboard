@@ -59,7 +59,7 @@
 | TD-CPLX-003 | P1 | 复杂度 | RulesPage God 组件（~818 行） | 批次F | 已完成 |
 | TD-CPLX-004 | P2 | 复杂度 | configSchema.validateConfig 165 行高圈复杂度 | 批次G | 待处理 |
 | TD-CPLX-005 | P2 | 复杂度 | AppShell 混杂 7 类关注点 | 批次F | 已完成 |
-| TD-CPLX-006 | P2 | 复杂度 | GlobalConfigEditor 手写渲染非数据驱动 | 批次F | 待处理 |
+| TD-CPLX-006 | P2 | 复杂度 | GlobalConfigEditor 手写渲染非数据驱动 | 批次F | 已完成 |
 | TD-CPLX-007 | P2 | 复杂度 | WriteControlPage 混杂 4 类关注点 | 批次F | 待处理 |
 | TD-CPLX-008 | P2 | 复杂度 | getActionBadge 5 分支 switch | 批次E | 已完成 |
 | TD-CPLX-009 | P2 | 复杂度 | TagExplorerPage WS effect 隐式 ref 状态 | 批次G | 待处理 |
@@ -239,7 +239,7 @@
 - 位置：`src/features/admin/GlobalConfigEditor.tsx:122-590`
 - 证据：46 处 FieldRow、~20 个字段块（log/api/engine/buffer），各内联 Input/Select/Switch/Checkbox + updateGlobalField('dotted.path')。重复 settingsRegistry.ts 已有的声明式模式（经 RegistryFieldGrid 驱动 driver/transport wizard）。
 - 修复建议：定义 GLOBAL_SETTINGS_REGISTRY（同 SettingsField[] 形状），经现有 RegistryFieldGrid/SettingsFieldRenderer 渲染。编辑器 = registry + updateGlobalField 绑定。
-- 业务行为影响：无 ｜ 批次F ｜ 验收：行数大幅下降 + 字段渲染数据驱动 ｜ 状态：待处理
+- 业务行为影响：无 ｜ 批次F ｜ 验收：行数大幅下降 + 字段渲染数据驱动 ｜ 状态：已完成（591→109 行；LoggingSection/ApiSection/EngineSection/BufferSection 抽至 GlobalConfigParts+Sections；完整 registry 迁移推迟至批次I）
 
 **TD-CPLX-007** ｜ WriteControlPage 混杂 4 类关注点 ｜ P2
 - 位置：`src/features/admin/WriteControlPage.tsx:84-590`
