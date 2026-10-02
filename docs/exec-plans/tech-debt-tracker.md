@@ -42,13 +42,13 @@
 | ID | 严重度 | 类别 | 标题（简） | 批次 | 状态 |
 |---|---|---|---|---|---|
 | TD-ARCH-001 | P1 | 架构 | types 层反向依赖 lib | 批次A | 已完成 |
-| TD-ARCH-002 | P1 | 架构 | api ↔ contexts 层级环 | 批次B | 待处理 |
+| TD-ARCH-002 | P1 | 架构 | api ↔ contexts 层级环 | 批次B | 已完成 |
 | TD-ARCH-003 | P1 | 架构 | configStore God Object（29 方法） | 批次C | 待处理 |
 | TD-ARCH-004 | P1 | 架构 | lib/utils 耦合 16 个 UI 原语到 i18n | 批次A | 已完成 |
 | TD-ARCH-005 | P2 | 架构 | UI 原语反向依赖 hooks | 批次A | 已完成 |
 | TD-ARCH-006 | P2 | 架构 | CoreCInstance 类型定义在 store | 批次C | 待处理 |
-| TD-ARCH-007 | P2 | 架构 | 无 WebSocket hook 抽象 | 批次B | 待处理 |
-| TD-ARCH-008 | P2 | 架构 | feature 越过 hooks 直引 api/client | 批次B | 待处理 |
+| TD-ARCH-007 | P2 | 架构 | 无 WebSocket hook 抽象 | 批次B | 已完成 |
+| TD-ARCH-008 | P2 | 架构 | feature 越过 hooks 直引 api/client | 批次B | 已完成 |
 | TD-ARCH-009 | P2 | 架构 | lib 依赖 i18n 单例 | 批次A | 已完成 |
 | TD-ARCH-010 | P2 | 架构 | @/ 别名与相对导入混用 | 阶段3 | 待处理 |
 | TD-ARCH-011 | P1 | 架构 | 字段元数据三处真相源 | 批次D | 待处理 |
@@ -135,7 +135,7 @@
 - 位置：`src/api/hooks/index.ts:2` ↔ `src/contexts/ConnectionContext.tsx:4-5`
 - 证据：`api/hooks` 导入 `@/contexts/ConnectionContext`（api→contexts）；`ConnectionContext` 导入 `@/api/activeConnection` 与 `@/api/endpoints`（contexts→api）。无运行时模块环，但架构依赖双向。
 - 修复建议：将 `api/hooks` 所需的连接状态（`isConnected`）下沉到更低层（如 `stores/connectionStore` 或无 context 的纯 hook），使 `api/hooks` 只向下依赖；或由调用方显式传入连接状态。
-- 业务行为影响：无 ｜ 批次B ｜ 验收：结构测试断言 api 与 contexts 无双向依赖 ｜ 状态：待处理
+- 业务行为影响：无 ｜ 批次B ｜ 验收：结构测试断言 api 与 contexts 无双向依赖 ｜ 状态：已完成（批次 B：connectionStore 镜像 isConnected，api/hooks 读 store 不读 context，structure-lint 零豁免）
 
 **TD-ARCH-003** ｜ configStore God Object（29 方法 / 14 消费者） ｜ P1
 - 位置：`src/stores/configStore.ts:84-148`（接口）、`:175`（create）
@@ -165,13 +165,13 @@
 - 位置：`src/api/websocket.ts`；消费者：`components/admin/EventLogTerminal.tsx:8`、`components/charts/MemoryChart.tsx:12`、`components/charts/TrafficChart.tsx:12`、`features/monitor/AlertsPage.tsx:20`、`features/monitor/TagExplorerPage.tsx:25`
 - 证据：5 处直 `import { CoreCWebSocket } from '@/api/websocket'`，内联管理连接生命周期。REST 经 `api/hooks` 统一（12 消费者），WS 无对应封装，重复生命周期样板。
 - 修复建议：引入 `useCoreCWebSocket` hook（放 `api/hooks` 或 `hooks/`）封装 connect/onMessage/close-on-unmount，5 消费者改用。
-- 业务行为影响：无 ｜ 批次B ｜ 验收：5 消费者不再直引 CoreCWebSocket ｜ 状态：待处理
+- 业务行为影响：无 ｜ 批次B ｜ 验收：5 消费者不再直引 CoreCWebSocket ｜ 状态：已完成（批次 B：useCoreCWebSocket hook + CoreCWebSocket re-export from api/hooks，5 消费者改引）
 
 **TD-ARCH-008** ｜ feature 越过 hooks 层直引 api/client ｜ P2
 - 位置：`src/features/admin/WriteControlPage.tsx:17`（另有 `features/admin/DiagnosticsPage.tsx:5` 直引 `@/api/activeConnection`）
 - 证据：`import { ApiError } from '@/api/client'`——feature 越过 `api/hooks` 直达原始 HTTP client 取错误类。
 - 修复建议：从 `api/hooks`（或 `api/endpoints`）re-export `ApiError`，`api/client` 作为内部传输细节。
-- 业务行为影响：无 ｜ 批次B ｜ 验收：结构测试断言 `features/**` 不导入 `@/api/client` ｜ 状态：待处理
+- 业务行为影响：无 ｜ 批次B ｜ 验收：结构测试断言 `features/**` 不导入 `@/api/client` ｜ 状态：已完成（批次 B：ApiError re-export from api/hooks，WriteControlPage 改引）
 
 **TD-ARCH-009** ｜ lib 依赖 i18n 运行时单例 ｜ P2
 - 位置：`src/lib/utils.ts:3`、`src/lib/writeValidation.ts:1`
@@ -616,3 +616,4 @@
 | 2026-10-02 | 初建。登记 76 条（ARCH 13 / CPLX 10 / DUP 6 / TEST 16 / SEC 12 / GATE 4 / DOC 3 / PERF 12），5 域并行审计完成 | Phase 1 全量扫描 |
 | 2026-10-02 | 阶段 3：TD-SEC-004 已核实（js-yaml integrity 匹配官方）、TD-SEC-007 已完成（server 安全头）、TD-SEC-008 已核实（audit 跑通）、TD-DOC-001..003 已完成；新增 TD-SEC-013（dompurify via monaco，P2） | Phase 3 门禁 |
 | 2026-10-02 | 批次 A 完成：TD-ARCH-001（DataTypeString→types）、TD-ARCH-004（cn→lib/cn.ts）、TD-ARCH-005（useCountUp 内联）、TD-ARCH-009（lib 纯化传 t）。structure-lint 4 豁免删除，门禁收紧 | Phase 4 批次 A |
+| 2026-10-02 | 批次 B 完成：TD-ARCH-008（ApiError re-export）、TD-ARCH-002（connectionStore 消环）、TD-ARCH-007（useCoreCWebSocket hook）。structure-lint 零豁免，全部门禁收紧到位 | Phase 4 批次 B |
