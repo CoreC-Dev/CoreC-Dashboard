@@ -2,6 +2,7 @@ import { Check, Download, Moon, Palette, Plus, Settings, Sun, Upload } from 'luc
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
+import { InstanceExportDialog } from '@/components/home/InstanceExportDialog'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -32,7 +33,6 @@ export const InstancePanel: React.FC = () => {
   const instances = useInstanceStore((s) => s.instances)
   const addInstance = useInstanceStore((s) => s.addInstance)
   const updateInstance = useInstanceStore((s) => s.updateInstance)
-  const exportInstances = useInstanceStore((s) => s.exportInstances)
   const importInstances = useInstanceStore((s) => s.importInstances)
 
   // Probe all instances in parallel every 15s — simultaneous multi-instance monitoring
@@ -45,6 +45,7 @@ export const InstancePanel: React.FC = () => {
   const [importOpen, setImportOpen] = React.useState(false)
   const [importText, setImportText] = React.useState('')
   const [importResult, setImportResult] = React.useState<string | null>(null)
+  const [exportOpen, setExportOpen] = React.useState(false)
 
   const handleAdd = () => {
     setEditingInstance(undefined)
@@ -72,14 +73,7 @@ export const InstancePanel: React.FC = () => {
   }
 
   const handleExport = () => {
-    const json = exportInstances()
-    const blob = new Blob([json], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `corec-instances-${new Date().toISOString().slice(0, 10)}.json`
-    a.click()
-    URL.revokeObjectURL(url)
+    setExportOpen(true)
   }
 
   const handleImport = () => {
@@ -278,6 +272,7 @@ export const InstancePanel: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <InstanceExportDialog open={exportOpen} onOpenChange={setExportOpen} />
     </div>
   )
 }

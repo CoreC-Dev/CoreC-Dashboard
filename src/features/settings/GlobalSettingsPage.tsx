@@ -3,6 +3,7 @@ import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
+import { InstanceExportDialog } from '@/components/home/InstanceExportDialog'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -27,7 +28,6 @@ import { THEME_I18N_KEYS, THEME_VARIANTS, type ThemeMode, useThemeStore } from '
 export const GlobalSettingsPage: React.FC = () => {
   const { t } = useTranslation()
   const { theme, setTheme } = useThemeStore()
-  const exportInstances = useInstanceStore((s) => s.exportInstances)
   const importInstances = useInstanceStore((s) => s.importInstances)
   const clearAll = useInstanceStore((s) => s.clearAll)
   const instanceCount = useInstanceStore((s) => s.instances.length)
@@ -36,16 +36,10 @@ export const GlobalSettingsPage: React.FC = () => {
   const [importText, setImportText] = useState('')
   const [importResult, setImportResult] = useState<string | null>(null)
   const [clearOpen, setClearOpen] = useState(false)
+  const [exportOpen, setExportOpen] = useState(false)
 
   const handleExport = () => {
-    const json = exportInstances()
-    const blob = new Blob([json], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `corec-instances-${new Date().toISOString().slice(0, 10)}.json`
-    a.click()
-    URL.revokeObjectURL(url)
+    setExportOpen(true)
   }
 
   const handleImport = () => {
@@ -210,6 +204,7 @@ export const GlobalSettingsPage: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <InstanceExportDialog open={exportOpen} onOpenChange={setExportOpen} />
     </div>
   )
 }

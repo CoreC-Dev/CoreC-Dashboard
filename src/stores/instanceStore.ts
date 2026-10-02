@@ -25,7 +25,7 @@ interface InstanceState {
     error?: string,
   ) => void
   setProbing: (id: string, probing: boolean) => void
-  exportInstances: () => string
+  exportInstances: (includeSecrets?: boolean) => string
   importInstances: (json: string, mode?: 'merge' | 'replace') => { added: number; skipped: number }
   clearAll: () => void
 }
@@ -170,8 +170,9 @@ export const useInstanceStore = create<InstanceState>((set, get) => ({
     }
   },
 
-  exportInstances: () => {
-    return JSON.stringify(get().instances, null, 2)
+  exportInstances: (includeSecrets = false) => {
+    const instances = includeSecrets ? get().instances : get().instances.map(stripSecret)
+    return JSON.stringify(instances, null, 2)
   },
 
   importInstances: (json, mode = 'merge') => {

@@ -88,7 +88,7 @@
 | TD-TEST-016 | P2 | 测试 | settingsRegistry 测试仅结构级 | 阶段5 | 待处理 |
 | TD-SEC-001 | P1 | 安全 | CSP connect-src * | 批次I | 待处理 |
 | TD-SEC-002 | P1 | 安全 | Bearer 密钥发往任意后端（浏览器 SSRF） | 批次I | 待处理 |
-| TD-SEC-003 | P0 | 安全 | 实例导出明文泄露 API 密钥 | 批次I | 待处理 |
+| TD-SEC-003 | P0 | 安全 | 实例导出明文泄露 API 密钥 | 批次I | 已完成 |
 | TD-SEC-004 | P1 | 安全 | js-yaml 5.4.2 来自第三方镜像（供应链） | 阶段3 | 已核实 |
 | TD-SEC-005 | P2 | 安全 | WS token 走 URL 查询串 | 批次I | 待处理 |
 | TD-SEC-006 | P2 | 安全 | 模板弱默认密钥 change-me-please | 批次I | 待处理 |
@@ -423,7 +423,7 @@
 - 位置：`src/stores/instanceStore.ts:247-249`，消费于 `features/settings/GlobalSettingsPage.tsx:41`、`features/home/InstancePanel.tsx:75`
 - 证据：`exportInstances: () => JSON.stringify(get().instances, null, 2)`——含 `secret` 字段，未脱敏。下载的 `corec-instances-YYYY-MM-DD.json` 含每个实例 secret 明文。操作者导出后易提交 git 或分享。
 - 修复建议：exportInstances 应用 stripSecret（或省略 secret），或导出前警告并提供"不含密钥"选项。
-- 业务行为影响：变更行为（见 §6 D2——导出是否含密钥为产品决策；若含密钥为备份意图，则至少加警告） ｜ 批次I ｜ 验收：导出文件不含明文 secret（或显式警告）+ 导入往返回归 ｜ 状态：待处理
+- 业务行为影响：变更行为（见 §6 D2——导出是否含密钥为产品决策；若含密钥为备份意图，则至少加警告） ｜ 批次I ｜ 验收：导出文件不含明文 secret（或显式警告）+ 导入往返回归 ｜ 状态：已完成（exportInstances 默认 stripSecret；InstanceExportDialog 含 opt-in 复选框 + 警告；D2 决策落地）
 
 **TD-SEC-004** ｜ 供应链风险——js-yaml 5.4.2 来自第三方镜像 ｜ P1（待核实）
 - 位置：`package.json:37`（`"js-yaml": "^5.4.2"`），package-lock.json 解析 `js-yaml@5.4.2` 自 `https://registry.npmmirror.com/...`；`@types/js-yaml` 为 4.0.9（不匹配）
