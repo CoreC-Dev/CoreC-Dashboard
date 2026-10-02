@@ -97,7 +97,7 @@
 | TD-SEC-013 | P2 | 安全 | dompurify 3.4.13-15 DOM XSS（经 monaco-editor 传递） | 阶段3 | 待处理 |
 | TD-SEC-009 | P2 | 安全 | js-yaml load() 未指定安全 schema | 批次I | 已完成 |
 | TD-SEC-010 | P2 | 安全 | 公网部署无仪表盘级鉴权 | 批次I | 已豁免 |
-| TD-SEC-011 | P2 | 安全 | importInstances 未校验 JSON 即 spread | 批次I | 待处理 |
+| TD-SEC-011 | P2 | 安全 | importInstances 未校验 JSON 即 spread | 批次I | 已完成 |
 | TD-SEC-012 | P2 | 安全 | ErrorBoundary 日志输出完整 ApiError.body | 阶段3 | 待处理 |
 | TD-GATE-001 | P1 | 门禁 | 质量门禁仅在 push main 部署时跑 | 阶段3 | 待处理 |
 | TD-GATE-002 | P1 | 门禁 | 双 lockfile（npm + pnpm），CI 用 npm | 阶段3 | 待处理 |
@@ -477,7 +477,7 @@
 - 位置：`src/stores/instanceStore.ts:251-290`
 - 证据：`imported = JSON.parse(json)`（无 schema、无 __proto__ guard）；仅存在性检查 `if (!inst.id || !inst.name || !inst.baseUrl)`；`next.push({ ...inst, ... })` spread 全字段含 secret。
 - 修复建议：用 InstanceDialog 同款 zod schema 校验导入实例（要求 ^https?:// baseUrl、min-8 secret、拒绝未知 key）。
-- 业务行为影响：变更行为 ｜ 批次I ｜ 验收：畸形导入被拒 + 合法导入回归 ｜ 状态：待处理
+- 业务行为影响：变更行为 ｜ 批次I ｜ 验收：畸形导入被拒 + 合法导入回归 ｜ 状态：已完成（zod schema 校验 id/name/baseUrl/secret；strict 字段白名单；rejectProtoKeys 拦截原型污染）
 
 **TD-SEC-012** ｜ ErrorBoundary 日志输出完整 error 对象（含 ApiError.body） ｜ P2
 - 位置：`src/components/ErrorBoundary.tsx:39`

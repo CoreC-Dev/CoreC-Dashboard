@@ -1,3 +1,4 @@
+import { z } from 'zod'
 import { create } from 'zustand'
 import { safePersist, safePersistSession, safeReadSession } from '@/lib/storage'
 
@@ -5,6 +6,42 @@ import type { CoreCInstance } from '@/types/models'
 
 // Re-export for backward compat (TD-ARCH-006 — canonical location is types/models.ts).
 export type { CoreCInstance }
+
+/**
+ * Zod schema for validating imported instances (TD-SEC-011).
+ * Strips unknown keys (zod default) so cached fields like lastKnownInfo
+ * are silently dropped. Requires valid baseUrl (http/https) and non-empty
+ * id/name. Secret is optional (stripped exports omit it).
+ */
+const importInstanceSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  baseUrl: z
+    .string()
+    .min(1)
+    .regex(/^https?:\/\//),
+  secret: z.string().default(''),
+  color: z.string().optional(),
+  notes: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+  createdAt: z.string().optional(),
+  sortOrder: z.number().optional(),
+  lastConnectedAt: z.string().optional(),
+})
+
+/** Reject objects containing prototype-polluting keys (TD-SEC-009). */
+const PROTO_KEYS = new Set(['__proto__', 'constructor', 'prototype'])
+function rejectProtoKeys(obj: unknown): void {
+  if (typeof obj !== 'object' || obj === null) return
+  if (Array.isArray(obj)) {
+    for (const item of obj) rejectProtoKeys(item)
+    return
+  }
+  for (const key of Object.keys(obj)) {
+    if (PROTO_KEYS.has(key)) throw new Error(`Forbidden key: ${key}`)
+    rejectProtoKeys((obj as Record<string, unknown>)[key])
+  }
+}
 
 interface InstanceState {
   instances: CoreCInstance[]
@@ -176,10 +213,11 @@ export const useInstanceStore = create<InstanceState>((set, get) => ({
   },
 
   importInstances: (json, mode = 'merge') => {
-    let imported: CoreCInstance[]
+    let raw: unknown
     try {
-      imported = JSON.parse(json)
-      if (!Array.isArray(imported)) throw new Error('Not an array')
+      raw = JSON.parse(json)
+      if (!Array.isArray(raw)) throw new Error('Not an array')
+      rejectProtoKeys(raw)
     } catch {
       return { added: 0, skipped: 0 }
     }
@@ -191,22 +229,30 @@ export const useInstanceStore = create<InstanceState>((set, get) => ({
     let added = 0
     let skipped = 0
     const next = [...existing]
-    for (const inst of imported) {
+    for (const item of raw) {
+      // Validate with zod — strips unknown keys, rejects invalid shapes (TD-SEC-011)
+      const parsed = importInstanceSchema.safeParse(item)
+      if (!parsed.success) {
+        skipped++
+        continue
+      }
+      const inst = parsed.data
       // Skip duplicates by id or name
       if (existingIds.has(inst.id) || existingNames.has(inst.name)) {
         skipped++
         continue
       }
-      // Ensure required fields
-      if (!inst.id || !inst.name || !inst.baseUrl) {
-        skipped++
-        continue
-      }
       const maxSort = next.reduce((max, i) => Math.max(max, i.sortOrder), 0)
       next.push({
-        ...inst,
-        sortOrder: inst.sortOrder ?? maxSort + 1,
+        id: inst.id,
+        name: inst.name,
+        baseUrl: inst.baseUrl,
+        secret: inst.secret,
+        color: inst.color,
+        notes: inst.notes,
+        tags: inst.tags,
         createdAt: inst.createdAt ?? new Date().toISOString(),
+        sortOrder: inst.sortOrder ?? maxSort + 1,
       })
       added++
     }
