@@ -468,52 +468,56 @@ function checkRuleTargetRefs(
   return errors
 }
 
-/**
- * Validate cross-entity consistency rules that zod schemas can't express.
- * Run this AFTER schema.parse() succeeds (shape/intra-entity checks pass).
- * Mirrors config.validate:122-272.
- */
-export function validateConfig(config: unknown): ConfigValidationResult {
-  const errors: ConfigValidationError[] = []
-  const cfg = config as {
-    node?: { id?: string; subscribe?: string[] }
-    drivers?: { name: string; type: string; tags?: { name: string }[] }[]
-    transports?: {
-      name: string
-      type: string
-      settings?: Record<string, unknown>
-      fallback?: string
-    }[]
-    rules?: { name: string; target?: string; targets?: string[] }[]
-    'rule-groups'?: Record<
-      string,
-      { name: string; match?: string; target?: string; targets?: string[] }[]
-    >
-  }
+/** Structural shape used by the cross-entity validators. */
+type CrossEntityConfig = {
+  node?: { id?: string; subscribe?: string[] }
+  drivers?: { name: string; type: string; tags?: { name: string }[] }[]
+  transports?: {
+    name: string
+    type: string
+    settings?: Record<string, unknown>
+    fallback?: string
+  }[]
+  rules?: { name: string; target?: string; targets?: string[] }[]
+  'rule-groups'?: Record<
+    string,
+    { name: string; match?: string; target?: string; targets?: string[] }[]
+  >
+}
 
-  const drivers = cfg.drivers ?? []
-  const transports = cfg.transports ?? []
-  const rules = cfg.rules ?? []
-
-  // At least one data source (config.validate:122-124)
+/** At least one data source: a driver, an inbound transport, or auto-discovery. */
+function checkDataSourcePresence(
+  drivers: { name: string; type: string }[],
+  transports: { settings?: Record<string, unknown> }[],
+  node: { id?: string; subscribe?: string[] } | undefined,
+): ConfigValidationError[] {
   if (
     drivers.length === 0 &&
     !transports.some(isInboundTransport) &&
-    !hasAutoDiscoveryInbound(cfg.node)
+    !hasAutoDiscoveryInbound(node)
   ) {
-    errors.push({
-      path: 'drivers',
-      message:
-        'no data source: configure at least one driver, or an inbound transport (mqtt data-topic / http webhook-addr), or enable auto-discovery with node.subscribe',
-    })
+    return [
+      {
+        path: 'drivers',
+        message:
+          'no data source: configure at least one driver, or an inbound transport (mqtt data-topic / http webhook-addr), or enable auto-discovery with node.subscribe',
+      },
+    ]
   }
+  return []
+}
 
-  // At least one transport (config.validate:125-127)
+/** At least one transport must be configured. */
+function checkTransportPresence(transports: { name: string }[]): ConfigValidationError[] {
   if (transports.length === 0) {
-    errors.push({ path: 'transports', message: 'at least one transport must be configured' })
+    return [{ path: 'transports', message: 'at least one transport must be configured' }]
   }
+  return []
+}
 
-  // Driver name uniqueness + type registry (config.validate:139-155)
+/** Driver name uniqueness + type registry (config.validate:139-155). */
+function checkDriverNames(drivers: { name: string; type: string }[]): ConfigValidationError[] {
+  const errors: ConfigValidationError[] = []
   const driverNames = new Set<string>()
   for (const d of drivers) {
     if (driverNames.has(d.name)) {
@@ -527,14 +531,21 @@ export function validateConfig(config: unknown): ConfigValidationResult {
       })
     }
   }
+  return errors
+}
 
-  // Transport name uniqueness + type registry (config.validate:210-226)
-  const transportNames = new Set<string>()
+/** Transport name uniqueness + type registry (config.validate:210-226). */
+function checkTransportNames(transports: { name: string; type: string }[]): {
+  names: Set<string>
+  errors: ConfigValidationError[]
+} {
+  const errors: ConfigValidationError[] = []
+  const names = new Set<string>()
   for (const t of transports) {
-    if (transportNames.has(t.name)) {
+    if (names.has(t.name)) {
       errors.push({ path: `transports[${t.name}]`, message: `duplicate transport name: ${t.name}` })
     }
-    transportNames.add(t.name)
+    names.add(t.name)
     if (TRANSPORT_TYPES.length > 0 && !TRANSPORT_TYPES.includes(t.type as never)) {
       errors.push({
         path: `transports[${t.name}].type`,
@@ -542,11 +553,15 @@ export function validateConfig(config: unknown): ConfigValidationResult {
       })
     }
   }
+  return { names, errors }
+}
 
-  // Transport fallback must reference an existing transport.
-  // CoreC doesn't validate this at config time (engine/publish.go:106-109
-  // silently skips if the fallback doesn't exist), but we catch it early
-  // to prevent a silent misconfiguration where fallback is never used.
+/** Transport fallback must reference an existing, distinct transport. */
+function checkTransportFallbacks(
+  transports: { name: string; fallback?: string }[],
+  transportNames: Set<string>,
+): ConfigValidationError[] {
+  const errors: ConfigValidationError[] = []
   for (const t of transports) {
     if (t.fallback && !transportNames.has(t.fallback)) {
       errors.push({
@@ -562,80 +577,112 @@ export function validateConfig(config: unknown): ConfigValidationResult {
       })
     }
   }
+  return errors
+}
 
-  // Rule target/targets must reference existing transports (config.validate:249-272)
-  errors.push(...checkRuleTargetRefs(rules, transportNames, (name) => `rules[${name}]`))
-
-  // ─── Rule groups: SUB-RULE circular reference detection ──────────
-  // Mirrors rule/engine.go:98-112 detectCircularSubRules. A rule's
-  // match field can be "SUB-RULE:group-name" to delegate to a named
-  // sub-rule group. Circular chains (A→B→A) must be detected.
-  const ruleGroups = cfg['rule-groups'] ?? {}
+/**
+ * Rule groups: validate target refs inside group rules + detect circular
+ * SUB-RULE references via DFS (mirrors rule/engine.go:98-112
+ * detectCircularSubRules). A rule's match field can be "SUB-RULE:group-name"
+ * to delegate to a named sub-rule group; circular chains (A→B→A) are caught.
+ */
+function checkSubRuleCycles(
+  ruleGroups: Record<
+    string,
+    { name: string; match?: string; target?: string; targets?: string[] }[]
+  >,
+  transportNames: Set<string>,
+): ConfigValidationError[] {
+  const errors: ConfigValidationError[] = []
   const groupNames = Object.keys(ruleGroups)
+  if (groupNames.length === 0) return errors
 
-  if (groupNames.length > 0) {
-    // Also validate target references inside group rules
-    for (const [groupName, groupRules] of Object.entries(ruleGroups)) {
-      errors.push(
-        ...checkRuleTargetRefs(
-          groupRules ?? [],
-          transportNames,
-          (name) => `rule-groups[${groupName}].${name}`,
-        ),
-      )
+  // Validate target references inside group rules
+  for (const [groupName, groupRules] of Object.entries(ruleGroups)) {
+    errors.push(
+      ...checkRuleTargetRefs(
+        groupRules ?? [],
+        transportNames,
+        (name) => `rule-groups[${groupName}].${name}`,
+      ),
+    )
+  }
+
+  // Detect circular SUB-RULE references via DFS
+  const SUB_RULE_PREFIX = 'SUB-RULE:'
+  const visited = new Set<string>()
+  const inStack = new Set<string>()
+
+  const detectCycle = (name: string, chain: string[]): boolean => {
+    if (inStack.has(name)) {
+      errors.push({
+        path: `rule-groups[${name}]`,
+        message: `circular sub-rule reference: ${chain.join(' -> ')} -> ${name}`,
+      })
+      return true
     }
+    if (visited.has(name)) return false
+    visited.add(name)
+    inStack.add(name)
 
-    // Detect circular SUB-RULE references via DFS
-    const SUB_RULE_PREFIX = 'SUB-RULE:'
-    const visited = new Set<string>()
-    const inStack = new Set<string>()
-
-    const detectCycle = (name: string, chain: string[]): boolean => {
-      if (inStack.has(name)) {
-        errors.push({
-          path: `rule-groups[${name}]`,
-          message: `circular sub-rule reference: ${chain.join(' -> ')} -> ${name}`,
-        })
-        return true
-      }
-      if (visited.has(name)) return false
-      visited.add(name)
-      inStack.add(name)
-
-      const groupRules = ruleGroups[name] ?? []
-      let foundCycle = false
-      for (const r of groupRules) {
-        const matchUpper = (r.match ?? '').toUpperCase()
-        if (matchUpper.startsWith(SUB_RULE_PREFIX)) {
-          const refName = (r.match ?? '').slice(SUB_RULE_PREFIX.length).trim()
-          if (ruleGroups[refName] !== undefined) {
-            if (detectCycle(refName, [...chain, name])) {
-              foundCycle = true
-              break
-            }
-          } else {
-            // Reference to non-existent group
-            errors.push({
-              path: `rule-groups[${name}].${r.name}.match`,
-              message: `SUB-RULE references non-existent group "${refName}"`,
-            })
+    const groupRules = ruleGroups[name] ?? []
+    let foundCycle = false
+    for (const r of groupRules) {
+      const matchUpper = (r.match ?? '').toUpperCase()
+      if (matchUpper.startsWith(SUB_RULE_PREFIX)) {
+        const refName = (r.match ?? '').slice(SUB_RULE_PREFIX.length).trim()
+        if (ruleGroups[refName] !== undefined) {
+          if (detectCycle(refName, [...chain, name])) {
+            foundCycle = true
+            break
           }
+        } else {
+          // Reference to non-existent group
+          errors.push({
+            path: `rule-groups[${name}].${r.name}.match`,
+            message: `SUB-RULE references non-existent group "${refName}"`,
+          })
         }
       }
-
-      // Always unwind inStack — even when a cycle was found in a child — so
-      // stale entries don't trigger false cycle reports for later top-level
-      // iterations that reference this node. [M-6]
-      inStack.delete(name)
-      return foundCycle
     }
 
-    for (const name of groupNames) {
-      if (!visited.has(name)) {
-        detectCycle(name, [])
-      }
+    // Always unwind inStack — even when a cycle was found in a child — so
+    // stale entries don't trigger false cycle reports for later top-level
+    // iterations that reference this node. [M-6]
+    inStack.delete(name)
+    return foundCycle
+  }
+
+  for (const name of groupNames) {
+    if (!visited.has(name)) {
+      detectCycle(name, [])
     }
   }
+  return errors
+}
+
+/**
+ * Validate cross-entity consistency rules that zod schemas can't express.
+ * Run this AFTER schema.parse() succeeds (shape/intra-entity checks pass).
+ * Mirrors config.validate:122-272. Delegates to named pure validators so
+ * each cross-entity rule is testable in isolation.
+ */
+export function validateConfig(config: unknown): ConfigValidationResult {
+  const cfg = config as CrossEntityConfig
+  const drivers = cfg.drivers ?? []
+  const transports = cfg.transports ?? []
+  const rules = cfg.rules ?? []
+  const ruleGroups = cfg['rule-groups'] ?? {}
+
+  const errors: ConfigValidationError[] = []
+  errors.push(...checkDataSourcePresence(drivers, transports, cfg.node))
+  errors.push(...checkTransportPresence(transports))
+  errors.push(...checkDriverNames(drivers))
+  const { names: transportNames, errors: transportNameErrors } = checkTransportNames(transports)
+  errors.push(...transportNameErrors)
+  errors.push(...checkTransportFallbacks(transports, transportNames))
+  errors.push(...checkRuleTargetRefs(rules, transportNames, (name) => `rules[${name}]`))
+  errors.push(...checkSubRuleCycles(ruleGroups, transportNames))
 
   return { valid: errors.length === 0, errors }
 }

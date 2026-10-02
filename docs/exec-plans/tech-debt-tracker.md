@@ -227,7 +227,7 @@
 - 位置：`src/lib/configSchema.ts:476-641`
 - 证据：~165 行，~12 个顺序 if/for 检查 + 嵌套递归 detectCycle DFS（593-631，visited/inStack 集合）。圈复杂度 ≥ 20。
 - 修复建议：拆为命名纯校验器：checkDataSourcePresence、checkNameUniqueness、checkTransportFallbacks、checkRuleTargetRefs、checkSubRuleCycles（detectCycle 独立函数返回环）。validateConfig = 顺序展开各结果 errors。
-- 业务行为影响：无 ｜ 批次G ｜ 验收：configSchema 现有测试全过 + 主函数 <60 行 ｜ 状态：待处理
+- 业务行为影响：无 ｜ 批次G ｜ 验收：configSchema 现有测试全过 + 主函数 <60 行 ｜ 状态：已完成（validateConfig 165→20 行编排；拆出 checkDataSourcePresence/checkTransportPresence/checkDriverNames/checkTransportNames/checkTransportFallbacks/checkSubRuleCycles 6 个命名纯校验器；54 测试全过）
 
 **TD-CPLX-005** ｜ AppShell 混杂 7 类关注点 ｜ P2
 - 位置：`src/components/layout/AppShell.tsx:58-595`
