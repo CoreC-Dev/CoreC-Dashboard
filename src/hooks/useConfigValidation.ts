@@ -11,6 +11,7 @@
  * path B (loaded from uploaded YAML).
  */
 import { useMemo } from 'react'
+import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { type ConfigValidationResult, validateFullConfig } from '@/lib/configSchema'
 import { useConfigStore } from '@/stores/configStore'
 
@@ -24,14 +25,17 @@ import { useConfigStore } from '@/stores/configStore'
  */
 export function useConfigValidation(): ConfigValidationResult & { hasConfig: boolean } {
   const workingConfig = useConfigStore((s) => s.workingConfig)
+  // Debounce validation to avoid running full zod validateFullConfig on every
+  // keystroke in form mode (TD-PERF-003). Mirrors the YAML diff debounce pattern.
+  const debouncedConfig = useDebouncedValue(workingConfig, 200)
 
   return useMemo(() => {
-    if (!workingConfig) {
+    if (!debouncedConfig) {
       return { valid: true, errors: [], hasConfig: false }
     }
-    const result = validateFullConfig(workingConfig)
+    const result = validateFullConfig(debouncedConfig)
     return { ...result, hasConfig: true }
-  }, [workingConfig])
+  }, [debouncedConfig])
 }
 
 /**

@@ -147,12 +147,18 @@ export const DiagnosticsPage: React.FC = () => {
     setPprofLoading(profile)
     setPprofError(null)
     try {
+      // Add 30s timeout — pprof profiles can block server-side for seconds
+      // but should not hang forever (TD-PERF-002).
+      const ctrl = new AbortController()
+      const timeoutId = setTimeout(() => ctrl.abort(), 30_000)
       const res = await fetch(url, {
         headers: {
           'X-CoreC-Target': cleanBase,
           Authorization: `Bearer ${secret}`,
         },
+        signal: ctrl.signal,
       })
+      clearTimeout(timeoutId)
       if (!res.ok) {
         throw new Error(
           t('diagnostics.httpError', { status: res.status, statusText: res.statusText }),
@@ -214,8 +220,14 @@ export const DiagnosticsPage: React.FC = () => {
   const publishLatency = histogram('corec_publish_latency_seconds')
   const httpReq = histogram('corec_http_request_duration_seconds')
   const dataAge = findMetric('corec_data_age_seconds') ?? histogram('corec_data_age_seconds').avg
-  const driverReads = metrics.filter((m) => m.name === 'corec_driver_read_total')
-  const transportPublishes = metrics.filter((m) => m.name === 'corec_transport_published_total')
+  const driverReads = useMemo(
+    () => metrics.filter((m) => m.name === 'corec_driver_read_total'),
+    [metrics],
+  )
+  const transportPublishes = useMemo(
+    () => metrics.filter((m) => m.name === 'corec_transport_published_total'),
+    [metrics],
+  )
 
   return (
     <div className="space-y-5">

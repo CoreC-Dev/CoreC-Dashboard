@@ -229,6 +229,10 @@ export const DeadLetterTable: React.FC<DeadLetterTableProps> = ({
 }) => {
   const { t } = useTranslation()
 
+  // Cap rendered dead letters to prevent DOM overload (TD-PERF-005).
+  const MAX_VISIBLE_DLQ = 100
+  const cappedDeadLetters = visibleDeadLetters.slice(0, MAX_VISIBLE_DLQ)
+
   return (
     <Card className="border-border bg-card">
       <CardHeader className="p-4 flex flex-row items-center justify-between">
@@ -309,7 +313,7 @@ export const DeadLetterTable: React.FC<DeadLetterTableProps> = ({
           </div>
         ) : (
           <div className="space-y-2">
-            {visibleDeadLetters.map((dl) => (
+            {cappedDeadLetters.map((dl) => (
               <div
                 key={`${dl.command.driver}-${dl.command.tag}-${dl.failed_at}-${dl.attempts}`}
                 className="p-3 rounded-lg border border-status-error/20 bg-status-error/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
@@ -340,6 +344,11 @@ export const DeadLetterTable: React.FC<DeadLetterTableProps> = ({
                 </Button>
               </div>
             ))}
+            {visibleDeadLetters.length > MAX_VISIBLE_DLQ && (
+              <p className="text-xs text-muted-foreground text-center py-2">
+                {t('common.showing', { shown: MAX_VISIBLE_DLQ, total: visibleDeadLetters.length })}
+              </p>
+            )}
           </div>
         )}
       </CardContent>

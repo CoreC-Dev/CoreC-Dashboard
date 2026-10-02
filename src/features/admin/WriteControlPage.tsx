@@ -1,6 +1,6 @@
 import { AlertOctagon, Loader2, Send, ShieldAlert } from 'lucide-react'
 import type React from 'react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { extractApiError } from '@/api/client'
 import { ApiError, useDeadLetters, useDrivers, useWriteTag } from '@/api/hooks'
@@ -68,7 +68,10 @@ export const WriteControlPage: React.FC = () => {
   // client-side hide: cleared entry keys are tracked locally and filtered out
   // of the rendered list. Newly arriving failures (new failed_at timestamps)
   // still surface, while refetched-but-already-cleared entries stay hidden.
-  const visibleDeadLetters = deadLetters.filter((dl) => !clearedDlqKeys.has(dlqKeyOf(dl)))
+  const visibleDeadLetters = useMemo(
+    () => deadLetters.filter((dl) => !clearedDlqKeys.has(dlqKeyOf(dl))),
+    [deadLetters, clearedDlqKeys],
+  )
 
   const parseValue = (raw: string, dt: DataTypeString): string | number | boolean => {
     if (dt === 'bool') {

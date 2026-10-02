@@ -9,7 +9,7 @@ import {
   Trash2,
 } from 'lucide-react'
 import type React from 'react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useConfigRaw, useDrivers, useDriverTags } from '@/api/hooks'
@@ -104,6 +104,21 @@ export const DriversPage: React.FC = () => {
   const configDrivers = workingConfig?.drivers ?? []
   const filteredConfigDrivers = filterEntities(configDrivers, searchQuery)
 
+  // Precompute connection summaries once per config change instead of
+  // recomputing inside every .map() iteration (TD-PERF-008).
+  const workingDriverConnSummaries = useMemo(() => {
+    const m = new Map<string, string>()
+    for (const drv of workingConfig?.drivers ?? []) {
+      m.set(drv.name, getDriverConnectionSummary(workingConfig, drv.name))
+    }
+    return m
+  }, [workingConfig])
+  const parsedDriverConnSummaries = useMemo(() => {
+    const m = new Map<string, string>()
+    for (const drv of drivers) m.set(drv.name, getDriverConnectionSummary(parsedConfig, drv.name))
+    return m
+  }, [parsedConfig, drivers])
+
   return (
     <div className="space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -190,7 +205,7 @@ export const DriversPage: React.FC = () => {
                         <CardTitle className="text-sm font-semibold">{drv.name}</CardTitle>
                         <CardDescription className="text-xs font-mono">{drv.type}</CardDescription>
                         <ConnectionSummary
-                          summary={getDriverConnectionSummary(workingConfig, drv.name)}
+                          summary={workingDriverConnSummaries.get(drv.name) ?? ''}
                         />
                       </div>
                     </div>
@@ -306,7 +321,7 @@ export const DriversPage: React.FC = () => {
                             {drv.type}
                           </CardDescription>
                           <ConnectionSummary
-                            summary={getDriverConnectionSummary(parsedConfig, drv.name)}
+                            summary={parsedDriverConnSummaries.get(drv.name) ?? ''}
                           />
                         </div>
                       </div>
@@ -427,6 +442,9 @@ const DriverDetailDialog: React.FC<{
   const { t } = useTranslation()
   const { data: tagsData, isLoading } = useDriverTags(driver.name)
   const tags = tagsData?.tags ? Object.values(tagsData.tags) : []
+  // Cap rendered tags to prevent DOM overload (TD-PERF-001, aligns with DriverDetailPage).
+  const MAX_TAGS = 200
+  const visibleTags = tags.slice(0, MAX_TAGS)
 
   return (
     <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
@@ -468,7 +486,7 @@ const DriverDetailDialog: React.FC<{
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/60">
-                  {tags.map((tag) => {
+                  {visibleTags.map((tag) => {
                     const q = QualityLabel[tag.quality] || QualityLabel[0]
                     return (
                       <tr key={tag.tag} className="hover:bg-muted/30">
@@ -492,6 +510,11 @@ const DriverDetailDialog: React.FC<{
                 </tbody>
               </table>
             </div>
+          )}
+          {tags.length > MAX_TAGS && (
+            <p className="text-xs text-muted-foreground text-center py-2">
+              {t('common.showing', { shown: MAX_TAGS, total: tags.length })}
+            </p>
           )}
         </div>
       </DialogContent>

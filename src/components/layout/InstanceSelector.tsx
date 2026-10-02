@@ -3,6 +3,7 @@ import { ChevronDown, Server } from 'lucide-react'
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { useShallow } from 'zustand/react/shallow'
 import { Select, SelectContent, SelectItem } from '@/components/ui/select'
 import { useConnection } from '@/contexts/ConnectionContext'
 import { cn } from '@/lib/cn'
@@ -23,7 +24,14 @@ export const InstanceSelector: React.FC<InstanceSelectorProps> = ({ eff }) => {
   const navigate = useNavigate()
   const location = useLocation()
   const { instance, isConnected, isConnecting } = useConnection()
-  const instances = useInstanceStore((s) => s.instances)
+  // Select only the fields this switcher needs (id/name/lastConnectedAt) and
+  // compare shallowly so unrelated instance field changes don't re-render
+  // (TD-PERF-009).
+  const instances = useInstanceStore(
+    useShallow((s) =>
+      s.instances.map((i) => ({ id: i.id, name: i.name, lastConnectedAt: i.lastConnectedAt })),
+    ),
+  )
 
   if (!instance) return null
 

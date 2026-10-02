@@ -179,6 +179,7 @@ export const AlertsPage: React.FC = () => {
   }, [])
 
   const deadLetters = useMemo(() => deadLettersData?.failed_writes || [], [deadLettersData])
+  const visibleDeadLetters = deadLetters.slice(0, 100) // Cap DOM (TD-PERF-004)
   const alertRules = useMemo(
     () => (rulesData?.rules || []).filter((r) => r.action === 'alert'),
     [rulesData],
@@ -336,7 +337,7 @@ export const AlertsPage: React.FC = () => {
             </div>
           ) : (
             <div className="space-y-2">
-              {deadLetters.map((entry) => {
+              {visibleDeadLetters.map((entry) => {
                 const retryKey = `${entry.command.driver}-${entry.command.tag}-${entry.failed_at}-${entry.attempts}`
                 return (
                   <div
@@ -371,6 +372,11 @@ export const AlertsPage: React.FC = () => {
                 )
               })}
             </div>
+          )}
+          {deadLetters.length > 100 && (
+            <p className="text-xs text-muted-foreground text-center py-2">
+              {t('common.showing', { shown: 100, total: deadLetters.length })}
+            </p>
           )}
         </CardContent>
       </Card>

@@ -148,7 +148,8 @@
     "toggleLanguage": "Toggle language",
     "lightMode": "Switch to light mode",
     "darkMode": "Switch to dark mode",
-    "footerText": "CoreC Dashboard · Open Source"
+    "footerText": "CoreC Dashboard · Open Source",
+    "showing": "Showing {{shown}} of {{total}}"
   },
   "instanceCard": {
     "throughput": "Throughput",

@@ -31,13 +31,26 @@ export const TopologyPage: React.FC = () => {
   const drivers = driversData?.drivers || []
   const transports = transportsData?.transports || []
   const rules = rulesData?.rules || []
-  const activeRules = rules.filter((r) => !r.disabled)
+  const activeRules = useMemo(() => rules.filter((r) => !r.disabled), [rules])
   const sortedRules = useMemo(() => [...rules].sort((a, b) => a.priority - b.priority), [rules])
 
   // Parse the raw config YAML once for connection-summary lookups. The raw
   // config is not polled (no refetchInterval), so this only re-parses when the
   // config is edited via PUT /configs.
   const config = useParsedConfig(rawYaml)
+
+  // Precompute connection summaries once per config/drivers/transports change
+  // instead of recomputing inside every .map() iteration (TD-PERF-007).
+  const driverConnSummaries = useMemo(() => {
+    const m = new Map<string, string>()
+    for (const d of drivers) m.set(d.name, getDriverConnectionSummary(config, d.name))
+    return m
+  }, [config, drivers])
+  const transportConnSummaries = useMemo(() => {
+    const m = new Map<string, string>()
+    for (const tr of transports) m.set(tr.name, getTransportConnectionSummary(config, tr.name))
+    return m
+  }, [config, transports])
 
   const hasError = serverInfoError || driversError || transportsError || statsError || rulesError
 
@@ -101,7 +114,7 @@ export const TopologyPage: React.FC = () => {
               ) : (
                 drivers.map((d) => {
                   const st = ConnStateLabel[d.state] || ConnStateLabel[0]
-                  const connSummary = getDriverConnectionSummary(config, d.name)
+                  const connSummary = driverConnSummaries.get(d.name) ?? ''
                   return (
                     <div
                       key={d.name}
@@ -180,7 +193,7 @@ export const TopologyPage: React.FC = () => {
               ) : (
                 transports.map((transport) => {
                   const st = ConnStateLabel[transport.state] || ConnStateLabel[0]
-                  const connSummary = getTransportConnectionSummary(config, transport.name)
+                  const connSummary = transportConnSummaries.get(transport.name) ?? ''
                   return (
                     <div
                       key={transport.name}

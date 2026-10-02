@@ -10,6 +10,10 @@ import { useEffect, useState } from 'react'
  */
 
 const DLQ_CLEARED_KEY = 'corec_dlq_cleared'
+// Cap the persisted cleared-key set so sessionStorage cannot grow unbounded
+// (TD-PERF-012). Set preserves insertion order, so the oldest entries are
+// dropped first when the cap is exceeded.
+const MAX_CLEARED_DLQ_KEYS = 200
 
 export function useClearedDlqKeys() {
   const [clearedDlqKeys, setClearedDlqKeys] = useState<Set<string>>(() => {
@@ -25,7 +29,11 @@ export function useClearedDlqKeys() {
   // Persist cleared keys to sessionStorage whenever they change. [L-5]
   useEffect(() => {
     try {
-      sessionStorage.setItem(DLQ_CLEARED_KEY, JSON.stringify([...clearedDlqKeys]))
+      // Cap to the most recent MAX_CLEARED_DLQ_KEYS entries before persisting
+      // (TD-PERF-012).
+      const arr = [...clearedDlqKeys]
+      const toStore = arr.length > MAX_CLEARED_DLQ_KEYS ? arr.slice(-MAX_CLEARED_DLQ_KEYS) : arr
+      sessionStorage.setItem(DLQ_CLEARED_KEY, JSON.stringify(toStore))
     } catch {
       // sessionStorage may be unavailable (private mode) — silently ignore.
     }
