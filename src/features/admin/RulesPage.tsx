@@ -41,9 +41,10 @@ import { ValidationBanner } from '@/components/wizard/ValidationBanner'
 import { RuleWizard } from '@/features/admin/RuleWizard'
 import { formatValidationErrors, useConfigValidation } from '@/hooks/useConfigValidation'
 import { parseConfigYaml } from '@/lib/configYaml'
+import { formatRelativeTime } from '@/lib/formatters'
 import { evaluateMatch, type SimDataPoint } from '@/lib/ruleMatchEvaluator'
 import { buildRuleYaml, type EditFormData } from '@/lib/ruleYaml'
-import { formatNumber, formatRelativeTime, isZeroTime } from '@/lib/utils'
+import { formatNumber, isZeroTime } from '@/lib/utils'
 import { useConfigStore } from '@/stores/configStore'
 import { DATA_TYPES, type RuleConfig } from '@/types/config'
 import type { RuleStat } from '@/types/models'
@@ -594,7 +595,7 @@ export const RulesPage: React.FC = () => {
                             {t('rules.lastMiss')}:{' '}
                             {isZeroTime(rule.miss_at)
                               ? t('common.never')
-                              : formatRelativeTime(rule.miss_at)}
+                              : formatRelativeTime(rule.miss_at, t)}
                           </div>
                         </td>
                         <td className="px-4 py-3 text-right">

@@ -160,7 +160,7 @@ export const WriteControlPage: React.FC = () => {
       return
     }
 
-    const validationError = validateValue(value, type)
+    const validationError = validateValue(value, type, t)
     if (validationError) {
       setErrorMsg(validationError)
       return

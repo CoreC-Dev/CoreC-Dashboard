@@ -31,7 +31,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { ConnStateLabel } from '@/lib/constants'
-import { formatCompact, formatRelativeTime, formatUptime } from '@/lib/utils'
+import { formatRelativeTime } from '@/lib/formatters'
+import { formatCompact, formatUptime } from '@/lib/utils'
 import type { CoreCInstance } from '@/stores/instanceStore'
 import { useInstanceStore } from '@/stores/instanceStore'
 
@@ -393,7 +394,7 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
           {/* Last connected */}
           {instance.lastConnectedAt && !probeError && !stats && (
             <div className="text-xs text-muted-foreground/70">
-              {formatRelativeTime(instance.lastConnectedAt)}
+              {formatRelativeTime(instance.lastConnectedAt, t)}
             </div>
           )}
 

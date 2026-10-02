@@ -582,7 +582,7 @@ export const TagExplorerPage: React.FC = () => {
     // non-numeric strings (NaN serializes to null in JSON), out-of-range
     // values, and ambiguous bool input — all of which previously wrote a
     // silently-coerced value to a physical actuator.
-    const validationError = validateValue(writeValue, selectedTagForWrite.type)
+    const validationError = validateValue(writeValue, selectedTagForWrite.type, t)
     if (validationError) {
       setWriteError(validationError)
       return

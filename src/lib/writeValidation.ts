@@ -1,4 +1,4 @@
-import i18n from '@/i18n'
+import type { TFunction } from 'i18next'
 import type { DataTypeString } from '@/lib/constants'
 
 /**
@@ -28,31 +28,28 @@ const NUMERIC_RANGES: Record<string, [number, number]> = {
  *
  * This is shared between WriteControlPage and TagExplorerPage so every
  * write path enforces the same safety rules before issuing a physical
- * write. The translation function is resolved via the shared i18n
- * singleton rather than threaded through the call signature: validateValue
- * is only ever invoked from event handlers (never during render), so the
- * instance reads the user's active locale at call time and messages stay
- * in sync with language switches.
+ * write. The translation function `t` is passed explicitly (TD-ARCH-009)
+ * so this module stays pure — no i18n singleton import.
  */
-export const validateValue = (raw: string, dt: DataTypeString): string | null => {
+export const validateValue = (raw: string, dt: DataTypeString, t: TFunction): string | null => {
   if (dt === 'bool') {
     const v = raw.trim().toLowerCase()
     if (v !== 'true' && v !== 'false' && v !== '0' && v !== '1') {
-      return i18n.t('write.errBoolInvalid')
+      return t('write.errBoolInvalid')
     }
     return null
   }
   if (dt.startsWith('int') || dt.startsWith('uint') || dt.startsWith('float')) {
     const n = Number(raw)
     if (raw.trim() === '' || Number.isNaN(n)) {
-      return i18n.t('write.errNotNumber', { raw, dt })
+      return t('write.errNotNumber', { raw, dt })
     }
     if (!Number.isFinite(n)) {
-      return i18n.t('write.errNotFinite')
+      return t('write.errNotFinite')
     }
     const range = NUMERIC_RANGES[dt]
     if (range && (n < range[0] || n > range[1])) {
-      return i18n.t('write.errOutOfRange', { n, dt, min: range[0], max: range[1] })
+      return t('write.errOutOfRange', { n, dt, min: range[0], max: range[1] })
     }
     return null
   }
