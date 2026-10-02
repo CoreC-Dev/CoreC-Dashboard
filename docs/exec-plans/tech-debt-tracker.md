@@ -86,8 +86,8 @@
 | TD-TEST-014 | P2 | 测试 | admin 冒烟测试不断言行为 | 阶段5 | 待处理 |
 | TD-TEST-015 | P2 | 测试 | wizard 测试只覆盖纯函数 | 阶段5 | 待处理 |
 | TD-TEST-016 | P2 | 测试 | settingsRegistry 测试仅结构级 | 阶段5 | 待处理 |
-| TD-SEC-001 | P1 | 安全 | CSP connect-src * | 批次I | 待处理 |
-| TD-SEC-002 | P1 | 安全 | Bearer 密钥发往任意后端（浏览器 SSRF） | 批次I | 待处理 |
+| TD-SEC-001 | P1 | 安全 | CSP connect-src * | 批次I | 已完成 |
+| TD-SEC-002 | P1 | 安全 | Bearer 密钥发往任意后端（浏览器 SSRF） | 批次I | 已完成 |
 | TD-SEC-003 | P0 | 安全 | 实例导出明文泄露 API 密钥 | 批次I | 已完成 |
 | TD-SEC-004 | P1 | 安全 | js-yaml 5.4.2 来自第三方镜像（供应链） | 阶段3 | 已核实 |
 | TD-SEC-005 | P2 | 安全 | WS token 走 URL 查询串 | 批次I | 待处理 |
@@ -411,13 +411,13 @@
 - 位置：`index.html:7-10`
 - 证据：CSP meta 中 `connect-src * ws: wss:`。
 - 修复建议：换为已知 CoreC 后端主机显式白名单（或 server.mjs 同源代理部署下 `'self' ws: wss:`）。收紧 `style-src 'unsafe-inline'`（Monaco 注入内联样式——可能需 nonce）。
-- 业务行为影响：变更行为（限制可连后端——需产品决策，见计划 §6 D3） ｜ 批次I ｜ 验收：CSP 头更新 + 页面功能回归 ｜ 状态：待处理
+- 业务行为影响：变更行为（限制可连后端——需产品决策，见计划 §6 D3） ｜ 批次I ｜ 验收：CSP 头更新 + 页面功能回归 ｜ 状态：已完成（CSP connect-src 收紧为 'self' ws: wss:；经同源代理 /corec-proxy + /corec-ws）
 
 **TD-SEC-002** ｜ API Bearer 密钥发往任意用户选定后端（浏览器 SSRF / 凭证重定向） ｜ P1
 - 位置：`src/api/client.ts:50-56`、`src/features/home/InstanceDialog.tsx:32-35`
 - 证据：client.ts——baseUrl 为用户输入，无白名单；`headers.set('Authorization', \`Bearer ${conn.secret}\`)`。InstanceDialog——仅校验 `^https?://`，任意 host。useHomepageProbe.ts:80 亦从浏览器直发 `Bearer ${instance.secret}` 到 instance.baseUrl。结合 TD-SEC-001（connect-src *），能影响 baseUrl 的脚本可将凭证外泄到攻击者 host。
 - 修复建议：加后端主机白名单（或 server.mjs 部署要求同源 /corec-api）。
-- 业务行为影响：变更行为（见 §6 D3） ｜ 批次I ｜ 验收：白名单生效 + 多实例 UX 回归 ｜ 状态：待处理
+- 业务行为影响：变更行为（见 §6 D3） ｜ 批次I ｜ 验收：白名单生效 + 多实例 UX 回归 ｜ 状态：已完成（所有 HTTP/WS 流量经同源代理；浏览器不再直连后端；CSP connect-src 'self' ws: wss:）
 
 **TD-SEC-003** ｜ 实例导出将 API 密钥写入明文 JSON 文件（凭证泄露） ｜ **P0**
 - 位置：`src/stores/instanceStore.ts:247-249`，消费于 `features/settings/GlobalSettingsPage.tsx:41`、`features/home/InstancePanel.tsx:75`

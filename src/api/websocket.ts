@@ -66,22 +66,29 @@ export class CoreCWebSocket<T = unknown> {
 
     // Convert http/https to ws/wss
     const wsBase = baseUrl.replace(/^http:\/\//i, 'ws://').replace(/^https:\/\//i, 'wss://')
-    const url = new URL(`${wsBase}${this.path}`)
+    const targetUrl = new URL(`${wsBase}${this.path}`)
+
+    // Route through same-origin WS proxy (TD-SEC-001/002, D3): the browser
+    // connects to ws://<same-origin>/corec-ws?target=<backend>&token=...;
+    // server.mjs proxies the upgrade to the real backend.
+    const proxyUrl = new URL(`/corec-ws`, window.location.origin)
+    proxyUrl.protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+    proxyUrl.searchParams.set('target', targetUrl.toString())
 
     if (secret) {
-      url.searchParams.set('token', secret)
+      proxyUrl.searchParams.set('token', secret)
     }
 
     Object.entries(this.params).forEach(([key, val]) => {
       if (val !== undefined && val !== null) {
-        url.searchParams.set(key, val)
+        proxyUrl.searchParams.set(key, val)
       }
     })
 
     this.onStatusCallback?.('connecting')
 
     try {
-      this.ws = new WebSocket(url.toString())
+      this.ws = new WebSocket(proxyUrl.toString())
 
       this.ws.onopen = () => {
         this.retryCount = 0

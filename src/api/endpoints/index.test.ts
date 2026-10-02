@@ -65,8 +65,9 @@ describe('getConfigsRaw (GET /configs/raw)', () => {
     expect(result).toBe(yamlText)
     // Verify the request was shaped correctly.
     const [url, init] = mockFetch.mock.calls[0]
-    expect(url).toBe('http://127.0.0.1:9090/configs/raw')
+    expect(url).toBe('/corec-proxy/configs/raw')
     expect(init?.method).toBeUndefined() // GET is the default
+    expect(init?.headers.get('X-CoreC-Target')).toBe('http://127.0.0.1:9090')
     expect(init?.headers.get('Authorization')).toBe('Bearer test-secret-token')
     expect(init?.headers.get('Accept')).toBe('application/yaml')
   })
@@ -101,8 +102,9 @@ describe('validateConfigs (POST /configs/validate)', () => {
 
     expect(result).toEqual({ valid: true })
     const [url, init] = mockFetch.mock.calls[0]
-    expect(url).toBe('http://127.0.0.1:9090/configs/validate')
+    expect(url).toBe('/corec-proxy/configs/validate')
     expect(init?.method).toBe('POST')
+    expect(init?.headers.get('X-CoreC-Target')).toBe('http://127.0.0.1:9090')
     expect(init?.headers.get('Content-Type')).toBe('application/json')
     // Payload wrapped in { payload: <yaml> }.
     expect(JSON.parse(init?.body as string)).toEqual({ payload: VALID_YAML })

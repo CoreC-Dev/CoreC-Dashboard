@@ -77,15 +77,19 @@ async function probeInstance(
   signal?: AbortSignal,
 ): Promise<CoreCInstance['lastKnownInfo']> {
   const base = instance.baseUrl.trim().replace(/\/+$/, '')
-  const headers = { Authorization: `Bearer ${instance.secret}` }
+  // Route through same-origin proxy (TD-SEC-001/002, D3).
+  const headers = {
+    'X-CoreC-Target': base,
+    Authorization: `Bearer ${instance.secret}`,
+  }
 
   // Fetch GET / and GET /stats and GET /tags and GET /rules and GET /configs/raw in parallel
   const [infoRes, statsRes, tagsRes, rulesRes, rawCfgRes] = await Promise.allSettled([
-    fetchWithTimeout(`${base}/`, {}, REQUEST_TIMEOUT, signal),
-    fetchWithTimeout(`${base}/stats`, { headers }, REQUEST_TIMEOUT, signal),
-    fetchWithTimeout(`${base}/tags`, { headers }, REQUEST_TIMEOUT, signal),
-    fetchWithTimeout(`${base}/rules`, { headers }, REQUEST_TIMEOUT, signal),
-    fetchWithTimeout(`${base}/configs/raw`, { headers }, REQUEST_TIMEOUT, signal),
+    fetchWithTimeout(`/corec-proxy/`, { headers }, REQUEST_TIMEOUT, signal),
+    fetchWithTimeout(`/corec-proxy/stats`, { headers }, REQUEST_TIMEOUT, signal),
+    fetchWithTimeout(`/corec-proxy/tags`, { headers }, REQUEST_TIMEOUT, signal),
+    fetchWithTimeout(`/corec-proxy/rules`, { headers }, REQUEST_TIMEOUT, signal),
+    fetchWithTimeout(`/corec-proxy/configs/raw`, { headers }, REQUEST_TIMEOUT, signal),
   ])
 
   // GET / must succeed — otherwise the instance is unreachable

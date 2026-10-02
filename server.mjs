@@ -18,6 +18,8 @@ const PORT = parseInt(process.argv[2] || '8080', 10)
 const DIST = resolve(process.argv[3] || './dist')
 const COREC = process.argv[4] || 'http://127.0.0.1:9090'
 const PROXY_PREFIX = '/corec-api'
+const DYNAMIC_PROXY_PREFIX = '/corec-proxy'
+const DYNAMIC_WS_PREFIX = '/corec-ws'
 
 // Parse COREC target into host/port
 let corecUrl
@@ -219,6 +221,164 @@ function proxyUpgradeToCoreC(req, socket, head) {
   proxyReq.end()
 }
 
+// ---------------------------------------------------------------------------
+// Dynamic per-instance proxy (TD-SEC-001/002, D3).
+//
+// The browser sends same-origin requests to /corec-proxy/* with an
+// X-CoreC-Target header containing the instance's baseUrl. The server
+// validates the target and proxies the request, so the browser never
+// connects directly to a backend — enabling CSP connect-src 'self'.
+// ---------------------------------------------------------------------------
+
+/** Validate a target URL: must be http/https with a hostname. */
+function parseTarget(raw) {
+  if (!raw) return null
+  try {
+    const u = new URL(raw)
+    if (u.protocol !== 'http:' && u.protocol !== 'https:') return null
+    if (!u.hostname) return null
+    return u
+  } catch {
+    return null
+  }
+}
+
+/** Strip the /corec-proxy prefix, keeping the path + query string. */
+function stripDynamicProxyPrefix(url) {
+  if (url.startsWith(DYNAMIC_PROXY_PREFIX + '/')) return url.slice(DYNAMIC_PROXY_PREFIX.length)
+  return '/'
+}
+
+/** Dynamic HTTP proxy: reads X-CoreC-Target header, proxies to that backend. */
+function proxyDynamic(req, res) {
+  const target = parseTarget(req.headers['x-corec-target'])
+  if (!target) {
+    res.writeHead(400, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify({ error: 'Missing or invalid X-CoreC-Target header' }))
+    return
+  }
+
+  const targetPath = stripDynamicProxyPrefix(req.url)
+  // Build forwarded headers: drop the target header, keep everything else.
+  const fwdHeaders = { ...req.headers }
+  delete fwdHeaders['x-corec-target']
+  fwdHeaders.host = target.host
+
+  const proxyReq = httpRequest(
+    {
+      hostname: target.hostname,
+      port: target.port || (target.protocol === 'https:' ? 443 : 80),
+      path: targetPath,
+      method: req.method,
+      headers: fwdHeaders,
+    },
+    (proxyRes) => {
+      res.writeHead(proxyRes.statusCode, proxyRes.headers)
+      proxyRes.pipe(res, { end: true })
+    },
+  )
+
+  proxyReq.on('error', (err) => {
+    if (!res.headersSent) {
+      res.writeHead(502, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: 'Backend unreachable', detail: err.message }))
+    } else {
+      res.destroy()
+    }
+  })
+
+  req.pipe(proxyReq)
+}
+
+/**
+ * Dynamic WebSocket proxy: reads `target` query param (ws/wss URL),
+ * proxies the upgrade to that backend. The browser connects same-origin
+ * to ws://host/corec-ws?target=ws://backend/path&token=secret.
+ */
+function proxyDynamicUpgrade(req, socket, head) {
+  // Parse target from query string.
+  const urlObj = new URL(req.url, 'http://placeholder')
+  const rawTarget = urlObj.searchParams.get('target')
+  if (!rawTarget) {
+    socket.destroy()
+    return
+  }
+
+  // Convert ws:/wss: to http:/https: for URL parsing, then use ws/wss port.
+  const httpTarget = rawTarget.replace(/^ws:/i, 'http:').replace(/^wss:/i, 'https:')
+  const target = parseTarget(httpTarget)
+  if (!target) {
+    socket.destroy()
+    return
+  }
+
+  // Reconstruct the target path with query string (minus the `target` param).
+  const targetUrl = new URL(rawTarget)
+  const targetPath = targetUrl.pathname + (targetUrl.search || '')
+
+  const fwdHeaders = { ...req.headers }
+  fwdHeaders.host = target.host
+
+  const proxyReq = httpRequest({
+    hostname: target.hostname,
+    port: target.port || (target.protocol === 'https:' ? 443 : 80),
+    path: targetPath,
+    method: 'GET',
+    headers: fwdHeaders,
+  })
+
+  proxyReq.on('upgrade', (proxyRes, proxySocket, proxyHead) => {
+    const headLines = [
+      'HTTP/1.1 101 Switching Protocols',
+      ...Object.entries(proxyRes.headers).map(([k, v]) => `${k}: ${v}`),
+      '',
+      '',
+    ]
+    socket.write(headLines.join('\r\n'))
+    if (proxyHead && proxyHead.length > 0) socket.write(proxyHead)
+    if (head && head.length > 0) proxySocket.write(head)
+    proxySocket.pipe(socket)
+    socket.pipe(proxySocket)
+    const cleanup = () => {
+      proxySocket.destroy()
+      socket.destroy()
+    }
+    proxySocket.on('error', cleanup)
+    socket.on('error', cleanup)
+    proxySocket.on('close', cleanup)
+    socket.on('close', cleanup)
+  })
+
+  proxyReq.on('response', (proxyRes) => {
+    const chunks = []
+    proxyRes.on('data', (c) => chunks.push(c))
+    proxyRes.on('end', () => {
+      const body = Buffer.concat(chunks)
+      const headers = { ...proxyRes.headers }
+      delete headers['transfer-encoding']
+      headers['content-length'] = String(body.length)
+      const headLines = [
+        `HTTP/1.1 ${proxyRes.statusCode} ${proxyRes.statusMessage}`,
+        ...Object.entries(headers).map(([k, v]) => `${k}: ${v}`),
+        '',
+        '',
+      ]
+      socket.write(headLines.join('\r\n'))
+      socket.write(body)
+      socket.end()
+    })
+    proxyRes.on('error', () => {
+      if (!socket.destroyed) socket.destroy()
+    })
+  })
+
+  proxyReq.on('error', () => {
+    if (!socket.destroyed) socket.destroy()
+  })
+
+  proxyReq.end()
+}
+
 /** Serve static file or SPA fallback. */
 async function serveStatic(req, res) {
   // 安全响应头（TD-SEC-007，阶段 3）
@@ -265,15 +425,27 @@ async function serveStatic(req, res) {
 }
 
 const server = createServer((req, res) => {
-  // Route: /corec-api/* → CoreC reverse proxy; everything else → static.
+  // Route: /corec-api/* → fixed CoreC reverse proxy (single-backend deploy).
   if (req.url === PROXY_PREFIX || req.url.startsWith(PROXY_PREFIX + '/')) {
     return proxyToCoreC(req, res)
+  }
+  // Route: /corec-proxy/* → dynamic per-instance proxy (multi-instance deploy).
+  if (req.url === DYNAMIC_PROXY_PREFIX || req.url.startsWith(DYNAMIC_PROXY_PREFIX + '/')) {
+    return proxyDynamic(req, res)
   }
   return serveStatic(req, res)
 })
 
-// Forward WebSocket upgrades to CoreC (real-time log/alert/tag streams).
-server.on('upgrade', proxyUpgradeToCoreC)
+// Forward WebSocket upgrades: fixed proxy for /corec-api/*, dynamic for /corec-ws.
+server.on('upgrade', (req, socket, head) => {
+  if (req.url === PROXY_PREFIX || req.url.startsWith(PROXY_PREFIX + '/')) {
+    return proxyUpgradeToCoreC(req, socket, head)
+  }
+  if (req.url === DYNAMIC_WS_PREFIX || req.url.startsWith(DYNAMIC_WS_PREFIX + '?')) {
+    return proxyDynamicUpgrade(req, socket, head)
+  }
+  socket.destroy()
+})
 
 server.listen(PORT, '0.0.0.0', () => {
   console.log(

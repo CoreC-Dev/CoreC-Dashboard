@@ -1,14 +1,125 @@
+import { request as httpRequest } from 'node:http'
 import path from 'node:path'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
-import { defineConfig } from 'vite'
+import { defineConfig, type Plugin } from 'vite'
+
+/**
+ * Vite dev-server plugin: dynamic per-instance same-origin proxy (TD-SEC-001/002, D3).
+ * In dev the browser sends /corec-proxy/* with X-CoreC-Target header (HTTP) or
+ * /corec-ws?target=... (WS). This middleware proxies to the target backend so
+ * the dev workflow matches production (server.mjs).
+ */
+function dynamicProxyPlugin(): Plugin {
+  return {
+    name: 'corec-dynamic-proxy',
+    configureServer(server) {
+      server.middlewares.use('/corec-proxy', (req, res) => {
+        const targetRaw = req.headers['x-corec-target'] as string | undefined
+        if (!targetRaw) {
+          res.writeHead(400, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ error: 'Missing X-CoreC-Target header' }))
+          return
+        }
+        let target: URL
+        try {
+          target = new URL(targetRaw)
+          if (target.protocol !== 'http:' && target.protocol !== 'https:') throw new Error()
+        } catch {
+          res.writeHead(400, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ error: 'Invalid target URL' }))
+          return
+        }
+        const reqUrl = req.url || '/'
+        const fwdHeaders = { ...req.headers }
+        delete fwdHeaders['x-corec-target']
+        fwdHeaders.host = target.host
+        const proxyReq = httpRequest(
+          {
+            hostname: target.hostname,
+            port: target.port || (target.protocol === 'https:' ? 443 : 80),
+            path: reqUrl,
+            method: req.method || 'GET',
+            headers: fwdHeaders,
+          },
+          (proxyRes) => {
+            res.writeHead(proxyRes.statusCode || 502, proxyRes.headers)
+            proxyRes.pipe(res, { end: true })
+          },
+        )
+        proxyReq.on('error', (err) => {
+          if (!res.headersSent) {
+            res.writeHead(502, { 'Content-Type': 'application/json' })
+            res.end(JSON.stringify({ error: 'Backend unreachable', detail: err.message }))
+          }
+        })
+        req.pipe(proxyReq)
+      })
+
+      server.httpServer?.on('upgrade', (req, socket, head) => {
+        if (!req.url?.startsWith('/corec-ws')) return
+        const urlObj = new URL(req.url, 'http://placeholder')
+        const rawTarget = urlObj.searchParams.get('target')
+        if (!rawTarget) {
+          socket.destroy()
+          return
+        }
+        const httpTarget = rawTarget.replace(/^ws:/i, 'http:').replace(/^wss:/i, 'https:')
+        let target: URL
+        try {
+          target = new URL(httpTarget)
+          if (target.protocol !== 'http:' && target.protocol !== 'https:') throw new Error()
+        } catch {
+          socket.destroy()
+          return
+        }
+        const targetUrl = new URL(rawTarget)
+        const targetPath = targetUrl.pathname + (targetUrl.search || '')
+        const fwdHeaders = { ...req.headers }
+        fwdHeaders.host = target.host
+        const proxyReq = httpRequest({
+          hostname: target.hostname,
+          port: target.port || (target.protocol === 'https:' ? 443 : 80),
+          path: targetPath,
+          method: 'GET',
+          headers: fwdHeaders,
+        })
+        proxyReq.on('upgrade', (proxyRes, proxySocket, proxyHead) => {
+          const headLines = [
+            'HTTP/1.1 101 Switching Protocols',
+            ...Object.entries(proxyRes.headers).map(([k, v]) => `${k}: ${v}`),
+            '',
+            '',
+          ]
+          socket.write(headLines.join('\r\n'))
+          if (proxyHead?.length) socket.write(proxyHead)
+          if (head?.length) proxySocket.write(head)
+          proxySocket.pipe(socket)
+          socket.pipe(proxySocket)
+          const cleanup = () => {
+            proxySocket.destroy()
+            socket.destroy()
+          }
+          proxySocket.on('error', cleanup)
+          socket.on('error', cleanup)
+          proxySocket.on('close', cleanup)
+          socket.on('close', cleanup)
+        })
+        proxyReq.on('error', () => {
+          if (!socket.destroyed) socket.destroy()
+        })
+        proxyReq.end()
+      })
+    },
+  }
+}
 
 // https://vite.dev/config/
 export default defineConfig({
   // Relative asset paths so the build works under any host path — including
   // GitHub Pages custom domains, project subpaths, and local static servers.
   base: './',
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), dynamicProxyPlugin()],
   resolve: {
     alias: {
       '@': path.resolve(import.meta.dirname, './src'),

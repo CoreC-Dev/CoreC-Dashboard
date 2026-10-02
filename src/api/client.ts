@@ -66,9 +66,14 @@ export async function apiRequest<T = unknown>(
 
   const cleanBase = conn.baseUrl.trim().replace(/\/+$/, '')
   const cleanPath = path.startsWith('/') ? path : `/${path}`
-  const url = `${cleanBase}${cleanPath}`
+  // Route through same-origin proxy (TD-SEC-001/002, D3): the browser sends
+  // /corec-proxy<path> with X-CoreC-Target header; server.mjs forwards to the
+  // real backend. This keeps CSP connect-src 'self' and prevents credential
+  // leakage to arbitrary origins.
+  const url = `/corec-proxy${cleanPath}`
 
   const headers = new Headers(options.headers || {})
+  headers.set('X-CoreC-Target', cleanBase)
   if (conn.secret) {
     headers.set('Authorization', `Bearer ${conn.secret}`)
   }

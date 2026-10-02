@@ -142,12 +142,16 @@ export const DiagnosticsPage: React.FC = () => {
     const baseUrl = conn?.baseUrl ?? ''
     const secret = conn?.secret ?? ''
     const cleanBase = baseUrl.trim().replace(/\/+$/, '')
-    const url = `${cleanBase}/debug/pprof/${profile}`
+    // Route through same-origin proxy (TD-SEC-001/002, D3).
+    const url = `/corec-proxy/debug/pprof/${profile}`
     setPprofLoading(profile)
     setPprofError(null)
     try {
       const res = await fetch(url, {
-        headers: { Authorization: `Bearer ${secret}` },
+        headers: {
+          'X-CoreC-Target': cleanBase,
+          Authorization: `Bearer ${secret}`,
+        },
       })
       if (!res.ok) {
         throw new Error(
