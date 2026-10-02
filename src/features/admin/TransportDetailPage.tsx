@@ -375,37 +375,31 @@ const TransportEditConfigSection: React.FC<{ transport: TransportStatus }> = ({ 
     [transport],
   )
 
-  const { open, setOpen, values, setField, previewYaml, statusMsg, handleReload, isReloading } =
-    useEntityEditConfig<TransportEditField>({
-      entityName: transport.name,
-      fields,
-      prefillValues,
-      buildPreviewYaml,
-      buildApplyYaml,
-      successKey: 'transports.editConfig.reloadSuccess',
-      failureKey: 'transports.editConfig.reloadFailed',
-    })
+  const edit = useEntityEditConfig<TransportEditField>({
+    entityName: transport.name,
+    fields,
+    prefillValues,
+    buildPreviewYaml,
+    buildApplyYaml,
+    successKey: 'transports.editConfig.reloadSuccess',
+    failureKey: 'transports.editConfig.reloadFailed',
+  })
 
   return (
     <EntityEditConfigCard
-      title={t('transports.editConfig.title')}
-      description={t('transports.editConfig.description')}
-      toggleAriaLabel={t('transports.editConfig.toggle')}
-      open={open}
-      onToggleOpen={() => setOpen((o) => !o)}
+      edit={edit}
       fields={fields}
       fieldIdPrefix="transport-field-"
       labelFor={(f) => t(f.labelKey)}
-      values={values}
-      onFieldChange={setField}
-      unsupportedMessage={t('transports.editConfig.unsupportedProtocol')}
-      yamlPreviewLabel={t('transports.editConfig.yamlPreview')}
-      yamlPreview={previewYaml}
-      statusMsg={statusMsg}
-      reloadingLabel={t('transports.editConfig.reloading')}
-      reloadButtonLabel={t('transports.editConfig.generateAndReload')}
-      isReloading={isReloading}
-      onReload={handleReload}
+      labels={{
+        title: t('transports.editConfig.title'),
+        description: t('transports.editConfig.description'),
+        toggleAriaLabel: t('transports.editConfig.toggle'),
+        unsupportedMessage: t('transports.editConfig.unsupportedProtocol'),
+        yamlPreviewLabel: t('transports.editConfig.yamlPreview'),
+        reloadingLabel: t('transports.editConfig.reloading'),
+        reloadButtonLabel: t('transports.editConfig.generateAndReload'),
+      }}
     />
   )
 }

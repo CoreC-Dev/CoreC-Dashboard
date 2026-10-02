@@ -1,3 +1,4 @@
+import type React from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useConfigRaw, useUpdateConfig } from '@/api/hooks'
@@ -36,6 +37,19 @@ interface UseEntityEditConfigOptions<TField extends { key: string }> {
   successKey: string
   /** i18n key for the failure message fallback. */
   failureKey: string
+}
+
+/** State managed by useEntityEditConfig — passed to EntityEditConfigCard as a single prop. */
+export interface EntityEditConfigState {
+  open: boolean
+  setOpen: React.Dispatch<React.SetStateAction<boolean>>
+  values: Record<string, string>
+  setField: (key: string, v: string) => void
+  previewYaml: string
+  applyYaml: string
+  statusMsg: { type: 'success' | 'error'; text: string } | null
+  handleReload: () => Promise<void>
+  isReloading: boolean
 }
 
 export function useEntityEditConfig<TField extends { key: string }>(

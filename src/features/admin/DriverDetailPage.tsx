@@ -364,37 +364,31 @@ const DriverEditConfigSection: React.FC<{ driver: DriverStatus }> = ({ driver })
     [driver],
   )
 
-  const { open, setOpen, values, setField, previewYaml, statusMsg, handleReload, isReloading } =
-    useEntityEditConfig<DriverEditField>({
-      entityName: driver.name,
-      fields,
-      prefillValues,
-      buildPreviewYaml,
-      buildApplyYaml,
-      successKey: 'drivers.editConfig.reloadSuccess',
-      failureKey: 'drivers.editConfig.reloadFailed',
-    })
+  const edit = useEntityEditConfig<DriverEditField>({
+    entityName: driver.name,
+    fields,
+    prefillValues,
+    buildPreviewYaml,
+    buildApplyYaml,
+    successKey: 'drivers.editConfig.reloadSuccess',
+    failureKey: 'drivers.editConfig.reloadFailed',
+  })
 
   return (
     <EntityEditConfigCard
-      title={t('drivers.editConfig.title')}
-      description={t('drivers.editConfig.description')}
-      toggleAriaLabel={t('drivers.editConfig.toggle')}
-      open={open}
-      onToggleOpen={() => setOpen((o) => !o)}
+      edit={edit}
       fields={fields}
       fieldIdPrefix="driver-field-"
       labelFor={(f) => t(f.labelKey)}
-      values={values}
-      onFieldChange={setField}
-      unsupportedMessage={t('drivers.editConfig.unsupportedProtocol')}
-      yamlPreviewLabel={t('drivers.editConfig.yamlPreview')}
-      yamlPreview={previewYaml}
-      statusMsg={statusMsg}
-      reloadingLabel={t('drivers.editConfig.reloading')}
-      reloadButtonLabel={t('drivers.editConfig.generateAndReload')}
-      isReloading={isReloading}
-      onReload={handleReload}
+      labels={{
+        title: t('drivers.editConfig.title'),
+        description: t('drivers.editConfig.description'),
+        toggleAriaLabel: t('drivers.editConfig.toggle'),
+        unsupportedMessage: t('drivers.editConfig.unsupportedProtocol'),
+        yamlPreviewLabel: t('drivers.editConfig.yamlPreview'),
+        reloadingLabel: t('drivers.editConfig.reloading'),
+        reloadButtonLabel: t('drivers.editConfig.generateAndReload'),
+      }}
     />
   )
 }

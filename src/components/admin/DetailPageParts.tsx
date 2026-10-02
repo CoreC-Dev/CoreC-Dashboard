@@ -21,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import type { EntityEditConfigState } from '@/hooks/useEntityEditConfig'
 import { isZeroTime } from '@/lib/utils'
 
 export const formatTimestamp = (ts: string, fallback = '—'): string => {
@@ -117,72 +118,60 @@ export interface EditConfigStatus {
   text: string
 }
 
-interface EntityEditConfigCardProps {
+/** Display labels for EntityEditConfigCard (i18n strings). */
+export interface EntityEditConfigLabels {
   title: string
   description: string
   toggleAriaLabel: string
-  open: boolean
-  onToggleOpen: () => void
+  unsupportedMessage: string
+  yamlPreviewLabel: string
+  reloadingLabel: string
+  reloadButtonLabel: string
+}
+
+interface EntityEditConfigCardProps {
+  /** State from useEntityEditConfig hook. */
+  edit: EntityEditConfigState
+  /** Editable fields for this entity type. */
   fields: readonly EditField[]
   fieldIdPrefix: string
   labelFor: (field: EditField) => string
-  values: Record<string, string>
-  onFieldChange: (key: string, value: string) => void
-  unsupportedMessage: string
-  yamlPreviewLabel: string
-  yamlPreview: string
-  statusMsg: EditConfigStatus | null
-  reloadingLabel: string
-  reloadButtonLabel: string
-  isReloading: boolean
-  onReload: () => void
+  /** Display labels (i18n). */
+  labels: EntityEditConfigLabels
 }
 
 export const EntityEditConfigCard: React.FC<EntityEditConfigCardProps> = ({
-  title,
-  description,
-  toggleAriaLabel,
-  open,
-  onToggleOpen,
+  edit,
   fields,
   fieldIdPrefix,
   labelFor,
-  values,
-  onFieldChange,
-  unsupportedMessage,
-  yamlPreviewLabel,
-  yamlPreview,
-  statusMsg,
-  reloadingLabel,
-  reloadButtonLabel,
-  isReloading,
-  onReload,
+  labels,
 }) => (
   <Card className="bg-card">
     <CardHeader className="flex-row items-center justify-between space-y-0 pb-3">
       <div className="flex items-center gap-2">
         <Sliders className="h-4 w-4 text-primary" />
         <div>
-          <CardTitle className="text-sm font-semibold">{title}</CardTitle>
-          <CardDescription>{description}</CardDescription>
+          <CardTitle className="text-sm font-semibold">{labels.title}</CardTitle>
+          <CardDescription>{labels.description}</CardDescription>
         </div>
       </div>
       <Button
         variant="ghost"
         size="sm"
         className="h-8 px-2 text-xs text-muted-foreground"
-        onClick={onToggleOpen}
-        aria-label={toggleAriaLabel}
-        aria-expanded={open}
+        onClick={() => edit.setOpen((o) => !o)}
+        aria-label={labels.toggleAriaLabel}
+        aria-expanded={edit.open}
       >
-        <ChevronDown className={`h-4 w-4 transition-transform ${open ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`h-4 w-4 transition-transform ${edit.open ? 'rotate-180' : ''}`} />
       </Button>
     </CardHeader>
-    {open && (
+    {edit.open && (
       <CardContent className="space-y-4">
         {fields.length === 0 ? (
           <div className="rounded-lg border border-status-warning/20 bg-status-warning/10 p-3 text-xs text-status-warning">
-            {unsupportedMessage}
+            {labels.unsupportedMessage}
           </div>
         ) : (
           <>
@@ -197,8 +186,8 @@ export const EntityEditConfigCard: React.FC<EntityEditConfigCardProps> = ({
                   </label>
                   {f.kind === 'select' && f.options ? (
                     <Select
-                      value={values[f.key] ?? ''}
-                      onValueChange={(v) => onFieldChange(f.key, v)}
+                      value={edit.values[f.key] ?? ''}
+                      onValueChange={(v) => edit.setField(f.key, v)}
                     >
                       <SelectTrigger id={`${fieldIdPrefix}${f.key}`} className="h-9 text-xs">
                         <SelectValue placeholder="—" />
@@ -215,9 +204,9 @@ export const EntityEditConfigCard: React.FC<EntityEditConfigCardProps> = ({
                     <Input
                       id={`${fieldIdPrefix}${f.key}`}
                       type={f.kind === 'number' ? 'number' : 'text'}
-                      value={values[f.key] ?? ''}
+                      value={edit.values[f.key] ?? ''}
                       placeholder={f.placeholder}
-                      onChange={(e) => onFieldChange(f.key, e.target.value)}
+                      onChange={(e) => edit.setField(f.key, e.target.value)}
                       className="h-9 text-xs"
                     />
                   )}
@@ -226,37 +215,44 @@ export const EntityEditConfigCard: React.FC<EntityEditConfigCardProps> = ({
             </div>
 
             <div className="space-y-1.5">
-              <div className="text-xs font-medium text-muted-foreground">{yamlPreviewLabel}</div>
+              <div className="text-xs font-medium text-muted-foreground">
+                {labels.yamlPreviewLabel}
+              </div>
               <pre className="max-h-56 overflow-auto rounded-lg border border-border bg-muted/40 p-3 font-mono text-xs leading-relaxed whitespace-pre-wrap break-all text-foreground">
-                {yamlPreview}
+                {edit.previewYaml}
               </pre>
             </div>
 
-            {statusMsg && (
+            {edit.statusMsg && (
               <div
                 className={`flex items-center gap-2 rounded-lg border p-3 text-xs ${
-                  statusMsg.type === 'success'
+                  edit.statusMsg.type === 'success'
                     ? 'border-status-running/20 bg-status-running/10 text-status-running'
                     : 'border-status-error/20 bg-status-error/10 text-status-error'
                 }`}
               >
-                {statusMsg.type === 'success' ? (
+                {edit.statusMsg.type === 'success' ? (
                   <CheckCircle2 className="h-4 w-4 shrink-0" />
                 ) : (
                   <AlertCircle className="h-4 w-4 shrink-0" />
                 )}
-                <span className="break-all">{statusMsg.text}</span>
+                <span className="break-all">{edit.statusMsg.text}</span>
               </div>
             )}
 
             <div className="flex justify-end">
-              <Button size="sm" onClick={onReload} disabled={isReloading} className="h-8 text-xs">
-                {isReloading ? (
+              <Button
+                size="sm"
+                onClick={edit.handleReload}
+                disabled={edit.isReloading}
+                className="h-8 text-xs"
+              >
+                {edit.isReloading ? (
                   <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
                 ) : (
                   <Flame className="mr-1.5 h-3.5 w-3.5 text-status-warning" />
                 )}
-                <span>{isReloading ? reloadingLabel : reloadButtonLabel}</span>
+                <span>{edit.isReloading ? labels.reloadingLabel : labels.reloadButtonLabel}</span>
               </Button>
             </div>
           </>
