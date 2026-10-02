@@ -61,15 +61,15 @@
 | TD-CPLX-005 | P2 | 复杂度 | AppShell 混杂 7 类关注点 | 批次F | 待处理 |
 | TD-CPLX-006 | P2 | 复杂度 | GlobalConfigEditor 手写渲染非数据驱动 | 批次F | 待处理 |
 | TD-CPLX-007 | P2 | 复杂度 | WriteControlPage 混杂 4 类关注点 | 批次F | 待处理 |
-| TD-CPLX-008 | P2 | 复杂度 | getActionBadge 5 分支 switch | 批次E | 待处理 |
+| TD-CPLX-008 | P2 | 复杂度 | getActionBadge 5 分支 switch | 批次E | 已完成 |
 | TD-CPLX-009 | P2 | 复杂度 | TagExplorerPage WS effect 隐式 ref 状态 | 批次G | 待处理 |
 | TD-CPLX-010 | P2 | 复杂度 | ConfigCenterPage auto-load ref guard + getState | 批次G | 待处理 |
 | TD-DUP-001 | P1 | 重复 | Driver/TransportDetailPage 字段数组并行重复 | 批次D | 基础完成 |
 | TD-DUP-002 | P1 | 重复 | Driver/TransportEditConfigSection 逻辑重复 | 批次D | 已完成 |
-| TD-DUP-003 | P1 | 重复 | apply-confirmation+mutation 模式重复 4× | 批次E | 待处理 |
+| TD-DUP-003 | P1 | 重复 | apply-confirmation+mutation 模式重复 4× | 批次E | 已完成 |
 | TD-DUP-004 | P2 | 重复 | reset-on-open wizard 模式重复 3× | 批次H | 待处理 |
-| TD-DUP-005 | P2 | 重复 | handleCreate/Edit/Delete 重复 3× | 批次E | 待处理 |
-| TD-DUP-006 | P2 | 重复 | 内联 connection-summary 渲染重复 4× | 批次E | 待处理 |
+| TD-DUP-005 | P2 | 重复 | handleCreate/Edit/Delete 重复 3× | 批次E | 已完成 |
+| TD-DUP-006 | P2 | 重复 | 内联 connection-summary 渲染重复 4× | 批次E | 已完成 |
 | TD-TEST-001 | P1 | 测试 | 无 vitest 配置，覆盖率从不测量 | 阶段3 | 待处理 |
 | TD-TEST-002 | P1 | 测试 | instanceStore 完全无测试 | 阶段5 | 待处理 |
 | TD-TEST-003 | P1 | 测试 | api/client.ts 无测试 | 阶段5 | 待处理 |
@@ -251,7 +251,7 @@
 - 位置：`src/features/admin/RulesPage.tsx:306-348`
 - 证据：5 分支 switch，各返回 `<Badge variant="outline" className="border-X/30 bg-X/10 text-X">{t(label)}</Badge>`，仅颜色 + i18n key 不同。43 行。
 - 修复建议：换 `ACTION_BADGE: Record<string, {cls; key}>` 查表 + 单一 Badge。镜像 RuleWizard.tsx:64 已有 ACTION_META。
-- 业务行为影响：无 ｜ 批次E ｜ 验收：行数下降 + 行为守恒 ｜ 状态：待处理
+- 业务行为影响：无 ｜ 批次E ｜ 验收：行数下降 + 行为守恒 ｜ 状态：已完成
 
 **TD-CPLX-009** ｜ TagExplorerPage WS effect 大型多关注 effect + 隐式 ref 状态 ｜ P2
 - 位置：`src/features/monitor/TagExplorerPage.tsx:365-440`（effect）+ 302-359（rAF flush）
@@ -283,7 +283,7 @@
 - 位置：`DriversPage.tsx:442-469`、`TransportsPage.tsx:425-452`、`RulesPage.tsx:917-944`、`ConfigCenterPage.tsx:867-895`
 - 证据：4 处近似相同 ConfigApplyConfirmationDialog。onConfirm 同 ~12 行：`if (validationErrors) return; const yaml = getWorkingYaml(); setApplyError(null); updateConfig.mutate({payload: yaml}, { onSuccess: () => { markSaved(); setApplyDialogOpen(false); [可选 invalidateQueries] }, onError: … })`。仅 RulesPage 加 invalidateQueries(['rules'])。
 - 修复建议：抽 useApplyConfig({ getWorkingYaml, getSavedYaml, markSaved, invalidateOnSuccess? }) hook 返回 { open, openDialog, closeDialog, applyError, dialogProps }。页面渲染 `<ConfigApplyConfirmationDialog {...dialogProps} />`。
-- 业务行为影响：无 ｜ 批次E ｜ 验收：4 处统一 + 行为守恒 ｜ 状态：待处理
+- 业务行为影响：无 ｜ 批次E ｜ 验收：4 处统一 + 行为守恒 ｜ 状态：已完成
 
 **TD-DUP-004** ｜ reset-on-open wizard 模式重复 3× ｜ P2
 - 位置：`DriverWizard.tsx:149-159`、`RuleWizard.tsx:153-165`、`TransportWizard.tsx:110-126`
@@ -295,13 +295,13 @@
 - 位置：`DriversPage.tsx:87-112`、`TransportsPage.tsx:78-103`、`RulesPage.tsx:163-181`
 - 证据：同形 CRUD handler；仅实体名与 store selector 不同。
 - 修复建议：抽 useEntityListPage({ find, remove, resetToEmpty }) 返回 { handleCreate, handleEdit, handleDelete, confirmDelete, wizardOpen, editing, deleteTarget, … }。
-- 业务行为影响：无 ｜ 批次E ｜ 验收：3 处统一 ｜ 状态：待处理
+- 业务行为影响：无 ｜ 批次E ｜ 验收：3 处统一 ｜ 状态：已完成
 
 **TD-DUP-006** ｜ 内联 connection-summary 渲染重复 4× ｜ P2
 - 位置：`DriversPage.tsx:205 & 327`、`TransportsPage.tsx:190 & 320`
 - 证据：两列表页在 .map() 卡片渲染内联调 getDriverConnectionSummary/getTransportConnectionSummary，渲染同 summary.map(f => <Param>) 块各两次（working-config + runtime 卡片）。4× 重复。
 - 修复建议：抽 `<ConnectionFields config name kind />` 组件。
-- 业务行为影响：无 ｜ 批次E ｜ 验收：4 处统一 ｜ 状态：待处理
+- 业务行为影响：无 ｜ 批次E ｜ 验收：4 处统一 ｜ 状态：已完成
 
 ### 测试（TEST）
 
