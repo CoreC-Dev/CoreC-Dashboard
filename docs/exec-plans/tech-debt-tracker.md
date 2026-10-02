@@ -57,17 +57,17 @@
 | TD-CPLX-001 | P1 | 复杂度 | ConfigCenterPage God 组件（~886 行） | 批次F | 已完成 |
 | TD-CPLX-002 | P1 | 复杂度 | TagExplorerPage God 组件（~800 行） | 批次F | 已完成 |
 | TD-CPLX-003 | P1 | 复杂度 | RulesPage God 组件（~818 行） | 批次F | 已完成 |
-| TD-CPLX-004 | P2 | 复杂度 | configSchema.validateConfig 165 行高圈复杂度 | 批次G | 待处理 |
+| TD-CPLX-004 | P2 | 复杂度 | configSchema.validateConfig 165 行高圈复杂度 | 批次G | 已完成 |
 | TD-CPLX-005 | P2 | 复杂度 | AppShell 混杂 7 类关注点 | 批次F | 已完成 |
 | TD-CPLX-006 | P2 | 复杂度 | GlobalConfigEditor 手写渲染非数据驱动 | 批次F | 已完成 |
 | TD-CPLX-007 | P2 | 复杂度 | WriteControlPage 混杂 4 类关注点 | 批次F | 待处理 |
 | TD-CPLX-008 | P2 | 复杂度 | getActionBadge 5 分支 switch | 批次E | 已完成 |
-| TD-CPLX-009 | P2 | 复杂度 | TagExplorerPage WS effect 隐式 ref 状态 | 批次G | 待处理 |
-| TD-CPLX-010 | P2 | 复杂度 | ConfigCenterPage auto-load ref guard + getState | 批次G | 待处理 |
+| TD-CPLX-009 | P2 | 复杂度 | TagExplorerPage WS effect 隐式 ref 状态 | 批次G | 已完成 |
+| TD-CPLX-010 | P2 | 复杂度 | ConfigCenterPage auto-load ref guard + getState | 批次G | 已完成 |
 | TD-DUP-001 | P1 | 重复 | Driver/TransportDetailPage 字段数组并行重复 | 批次D | 基础完成 |
 | TD-DUP-002 | P1 | 重复 | Driver/TransportEditConfigSection 逻辑重复 | 批次D | 已完成 |
 | TD-DUP-003 | P1 | 重复 | apply-confirmation+mutation 模式重复 4× | 批次E | 已完成 |
-| TD-DUP-004 | P2 | 重复 | reset-on-open wizard 模式重复 3× | 批次H | 待处理 |
+| TD-DUP-004 | P2 | 重复 | reset-on-open wizard 模式重复 3× | 批次H | 已完成 |
 | TD-DUP-005 | P2 | 重复 | handleCreate/Edit/Delete 重复 3× | 批次E | 已完成 |
 | TD-DUP-006 | P2 | 重复 | 内联 connection-summary 渲染重复 4× | 批次E | 已完成 |
 | TD-TEST-001 | P1 | 测试 | 无 vitest 配置，覆盖率从不测量 | 阶段3 | 待处理 |
