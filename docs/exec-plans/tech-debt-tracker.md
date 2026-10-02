@@ -29,7 +29,7 @@
 
 ## 汇总
 
-- 已登记：**76 条**（5 域并行审计全部完成）
+- 已登记：**76 条**（5 域并行审计全部完成；其中 **1 已豁免**：TD-SEC-010，用户决策维持公网无鉴权现状）
 - 严重度分布：**P0 ×1** ｜ **P1 ×24** ｜ **P2 ×51**
 - 类别分布：架构 13 ｜ 复杂度 10 ｜ 重复 6 ｜ 测试 16 ｜ 安全 12 ｜ 门禁 4 ｜ 文档 3 ｜ 性能 10 ｜ 可靠性 2
 - 业务行为影响：**变更行为 ×10**（均需人工决策后单独提交，见 `harness-migration.md` §6）｜ 修复bug ×0 ｜ 无 ×66
@@ -95,7 +95,7 @@
 | TD-SEC-007 | P2 | 安全 | server.mjs 无安全响应头 | 阶段3 | 待处理 |
 | TD-SEC-008 | P2 | 安全 | 依赖均为 bleeding-edge 大版本 | 阶段3 | 待处理 |
 | TD-SEC-009 | P2 | 安全 | js-yaml load() 未指定安全 schema | 批次I | 待处理 |
-| TD-SEC-010 | P2 | 安全 | 公网部署无仪表盘级鉴权 | 批次I | 待处理 |
+| TD-SEC-010 | P2 | 安全 | 公网部署无仪表盘级鉴权 | 批次I | 已豁免 |
 | TD-SEC-011 | P2 | 安全 | importInstances 未校验 JSON 即 spread | 批次I | 待处理 |
 | TD-SEC-012 | P2 | 安全 | ErrorBoundary 日志输出完整 ApiError.body | 阶段3 | 待处理 |
 | TD-GATE-001 | P1 | 门禁 | 质量门禁仅在 push main 部署时跑 | 阶段3 | 待处理 |
@@ -464,7 +464,7 @@
 - 位置：`src/App.tsx`/`src/main.tsx`、`.github/workflows/deploy.yml:1-16`、`public/CNAME`（dash.liusy.eu.org）
 - 证据：无登录/会话/角色检查；任何能访问 URL 者可用仪表盘。deploy.yml 发布到公网 GitHub Pages 自定义域。
 - 修复建议：若公网托管，加鉴权层（server.mjs 代理会话 cookie / basic auth，或 auth provider）。若内网/气隙，记录网络访问控制要求并避免公网 Pages 部署。
-- 业务行为影响：变更行为（见 §6 D4） ｜ 批次I ｜ 验收：部署模式与鉴权一致 ｜ 状态：待处理
+- 业务行为影响：变更行为（见 §6 D4） ｜ 批次I ｜ 验收：—— ｜ 状态：已豁免（用户 2026-10-02 决策：维持公网无鉴权现状，接受风险，仅靠逐实例 Bearer 密钥保护）
 
 **TD-SEC-011** ｜ importInstances 未校验 JSON 即 spread，接受任意字段（含攻击者 baseUrl/secret） ｜ P2
 - 位置：`src/stores/instanceStore.ts:251-290`
