@@ -9,7 +9,7 @@
  * never mutate the input, so callers can build optimistic-update snapshots
  * safely.
  */
-import { dump, load } from 'js-yaml'
+import { dump, JSON_SCHEMA, load } from 'js-yaml'
 import type {
   CoreCConfig,
   DriverConfig,
@@ -20,15 +20,39 @@ import type {
 
 // ─── Parse / dump ────────────────────────────────────────────────────
 
+/**
+ * Reject objects containing prototype-polluting keys (__proto__, constructor,
+ * prototype) at any nesting depth (TD-SEC-009). js-yaml's safe schema
+ * prevents code execution but does not strip these keys from mappings.
+ */
+const PROTO_KEYS = new Set(['__proto__', 'constructor', 'prototype'])
+
+function rejectProtoKeys(obj: unknown, path = ''): void {
+  if (typeof obj !== 'object' || obj === null) return
+  if (Array.isArray(obj)) {
+    for (let i = 0; i < obj.length; i++) {
+      rejectProtoKeys(obj[i], `${path}[${i}]`)
+    }
+    return
+  }
+  for (const key of Object.keys(obj)) {
+    if (PROTO_KEYS.has(key)) {
+      throw new Error(`Prototype-polluting key "${key}" at ${path || 'root'} is not allowed`)
+    }
+    rejectProtoKeys((obj as Record<string, unknown>)[key], path ? `${path}.${key}` : key)
+  }
+}
+
 /** Parse a CoreC YAML document into a typed config object. Throws on invalid YAML. */
 export function parseConfigYaml(yaml: string): CoreCConfig {
-  const parsed = load(yaml)
+  const parsed = load(yaml, { schema: JSON_SCHEMA })
   if (parsed === undefined || parsed === null) {
     return {}
   }
   if (typeof parsed !== 'object' || Array.isArray(parsed)) {
     throw new Error(`Config root must be a YAML mapping (object), got ${typeof parsed}`)
   }
+  rejectProtoKeys(parsed)
   return parsed as CoreCConfig
 }
 

@@ -95,7 +95,7 @@
 | TD-SEC-007 | P2 | 安全 | server.mjs 无安全响应头 | 阶段3 | 已完成 |
 | TD-SEC-008 | P2 | 安全 | 依赖均为 bleeding-edge 大版本 | 阶段3 | 已核实 |
 | TD-SEC-013 | P2 | 安全 | dompurify 3.4.13-15 DOM XSS（经 monaco-editor 传递） | 阶段3 | 待处理 |
-| TD-SEC-009 | P2 | 安全 | js-yaml load() 未指定安全 schema | 批次I | 待处理 |
+| TD-SEC-009 | P2 | 安全 | js-yaml load() 未指定安全 schema | 批次I | 已完成 |
 | TD-SEC-010 | P2 | 安全 | 公网部署无仪表盘级鉴权 | 批次I | 已豁免 |
 | TD-SEC-011 | P2 | 安全 | importInstances 未校验 JSON 即 spread | 批次I | 待处理 |
 | TD-SEC-012 | P2 | 安全 | ErrorBoundary 日志输出完整 ApiError.body | 阶段3 | 待处理 |
@@ -465,7 +465,7 @@
 - 位置：`src/lib/configYaml.ts:24-32`，喂自服务配置（useHomepageProbe.ts:160、ConfigCenterPage）与用户粘贴 YAML（configStore.ts:190-204）
 - 证据：`const parsed = load(yaml)`——无 { schema } 选项。含 `constructor.prototype.<x>` key 的 YAML 映射可能在 zod 校验前污染 Object.prototype。
 - 修复建议：显式 `load(yaml, { schema: JSON_SCHEMA })`（或 DEFAULT_SAFE_SCHEMA）。解析后拒绝 `__proto__`/`constructor`/`prototype` key。核实解析出的 js-yaml@5.4.2 行为。
-- 业务行为影响：无 ｜ 批次I ｜ 验收：污染 payload 被拒 ｜ 状态：待处理
+- 业务行为影响：无 ｜ 批次I ｜ 验收：污染 payload 被拒 ｜ 状态：已完成（load() 显式 JSON_SCHEMA + rejectProtoKeys 递归拦截 __proto__/constructor/prototype）
 
 **TD-SEC-010** ｜ 无仪表盘级鉴权——公网部署仅靠逐实例 Bearer 密钥 ｜ P2
 - 位置：`src/App.tsx`/`src/main.tsx`、`.github/workflows/deploy.yml:1-16`、`public/CNAME`（dash.liusy.eu.org）

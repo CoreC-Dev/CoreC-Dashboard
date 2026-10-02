@@ -172,7 +172,6 @@ export function useTagExplorerStream({
   // message; merge by composite key so same-name tags across drivers/devices
   // don't collide. Also bump the row's flash tick and buffer trend samples for
   // the tag currently shown in the drawer (if numeric).
-  // biome-ignore lint/correctness/useExhaustiveDependencies: trendTagRef is a stable ref; .current changes do not require re-subscription
   useEffect(() => {
     const ws = new CoreCWebSocket<DataPoint>(
       '/tags/stream',
