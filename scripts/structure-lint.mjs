@@ -103,10 +103,7 @@ function isForbidden(importerLayer, importeeLayer) {
 
 // --- 已登记豁免（已知技术债，阶段 4 移除） ---
 // 每条：importer 子串 + importee 子串 + TD ID
-const EXEMPTIONS = [
-  { importer: 'api/hooks', importee: 'contexts/ConnectionContext', td: 'TD-ARCH-002', batch: 'B' },
-  { importer: 'contexts/ConnectionContext', importee: 'api/hooks', td: 'TD-ARCH-002', batch: 'B' },
-];
+const EXEMPTIONS = [];
 
 function isExempt(importerRel, importeeRel) {
   return EXEMPTIONS.find((e) =>

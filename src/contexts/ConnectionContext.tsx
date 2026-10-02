@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { setActiveConnection } from '@/api/activeConnection'
 import { getServerInfo } from '@/api/endpoints'
 import { useConfigStore } from '@/stores/configStore'
+import { useConnectionStore } from '@/stores/connectionStore'
 import type { CoreCInstance } from '@/stores/instanceStore'
 import { useInstanceStore } from '@/stores/instanceStore'
 
@@ -75,6 +76,16 @@ export const ConnectionProvider: React.FC<{
   const [error, setError] = useState<string | null>(null)
   const [serverInfo, setServerInfo] = useState<ConnectionContextValue['serverInfo']>(null)
   const [probeNonce, setProbeNonce] = useState(0)
+
+  // Mirror isConnected to the connection store so api/hooks can read it
+  // without importing this context (breaks api↔contexts cycle, TD-ARCH-002).
+  const setConnected = useConnectionStore((s) => s.setConnected)
+  useEffect(() => {
+    setConnected(isConnected)
+  }, [isConnected, setConnected])
+  useEffect(() => {
+    return () => setConnected(false)
+  }, [setConnected])
 
   const queryClient = useMemo(() => getQueryClient(instanceId), [instanceId])
 
