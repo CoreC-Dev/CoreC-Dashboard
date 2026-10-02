@@ -34,6 +34,7 @@ import { ValidationBanner } from '@/components/wizard/ValidationBanner'
 import { TransportWizard } from '@/features/admin/TransportWizard'
 import { useApplyConfig } from '@/hooks/useApplyConfig'
 import { formatValidationErrors, useConfigValidation } from '@/hooks/useConfigValidation'
+import { useEntityListPage } from '@/hooks/useEntityListPage'
 import { useParsedConfig } from '@/hooks/useParsedConfig'
 import { getTransportConnectionSummary } from '@/lib/connectionInfo'
 import { ConnStateLabel } from '@/lib/constants'
@@ -65,9 +66,6 @@ export const TransportsPage: React.FC = () => {
   const validation = useConfigValidation()
   const validationErrors = formatValidationErrors(validation)
 
-  const [wizardOpen, setWizardOpen] = useState(false)
-  const [editingTransport, setEditingTransport] = useState<TransportConfig | undefined>(undefined)
-  const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
 
   const { openDialog: openApplyDialog, dialogProps: applyDialogProps } = useApplyConfig({
@@ -77,28 +75,24 @@ export const TransportsPage: React.FC = () => {
     validationErrors,
   })
 
+  const {
+    wizardOpen,
+    setWizardOpen,
+    editing: editingTransport,
+    deleteTarget,
+    setDeleteTarget,
+    handleCreate,
+    handleEdit,
+    confirmDelete,
+  } = useEntityListPage<TransportConfig>({
+    find: findTransport,
+    remove: removeTransport,
+    resetToEmpty,
+    hasWorkingConfig: !!workingConfig,
+  })
+
   const configTransports = workingConfig?.transports ?? []
   const filteredConfigTransports = filterEntities(configTransports, searchQuery)
-
-  const handleCreate = () => {
-    if (!workingConfig) resetToEmpty()
-    setEditingTransport(undefined)
-    setWizardOpen(true)
-  }
-
-  const handleEdit = (name: string) => {
-    const tp = findTransport(name)
-    if (!tp) return
-    setEditingTransport(tp)
-    setWizardOpen(true)
-  }
-
-  const confirmDelete = () => {
-    if (deleteTarget) {
-      removeTransport(deleteTarget)
-      setDeleteTarget(null)
-    }
-  }
 
   return (
     <div className="space-y-5">

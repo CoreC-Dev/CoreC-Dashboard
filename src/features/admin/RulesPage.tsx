@@ -41,6 +41,7 @@ import { ValidationBanner } from '@/components/wizard/ValidationBanner'
 import { RuleWizard } from '@/features/admin/RuleWizard'
 import { useApplyConfig } from '@/hooks/useApplyConfig'
 import { formatValidationErrors, useConfigValidation } from '@/hooks/useConfigValidation'
+import { useEntityListPage } from '@/hooks/useEntityListPage'
 import { parseConfigYaml } from '@/lib/configYaml'
 import { formatRelativeTime } from '@/lib/formatters'
 import { evaluateMatch, type SimDataPoint } from '@/lib/ruleMatchEvaluator'
@@ -176,9 +177,6 @@ export const RulesPage: React.FC = () => {
   const validation = useConfigValidation()
   const validationErrors = formatValidationErrors(validation)
 
-  const [wizardOpen, setWizardOpen] = useState(false)
-  const [editingRule, setEditingRule] = useState<RuleConfig | undefined>(undefined)
-  const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
 
   const { openDialog: openApplyDialog, dialogProps: applyDialogProps } = useApplyConfig({
@@ -189,28 +187,24 @@ export const RulesPage: React.FC = () => {
     onApplySuccess: () => queryClient.invalidateQueries({ queryKey: ['rules'] }),
   })
 
+  const {
+    wizardOpen,
+    setWizardOpen,
+    editing: editingRule,
+    deleteTarget,
+    setDeleteTarget,
+    handleCreate: handleCreateRule,
+    handleEdit: handleEditRule,
+    confirmDelete: confirmDeleteRule,
+  } = useEntityListPage<RuleConfig>({
+    find: findRule,
+    remove: removeRule,
+    resetToEmpty,
+    hasWorkingConfig: !!workingConfig,
+  })
+
   const configRules = workingConfig?.rules ?? []
   const filteredConfigRules = filterEntities(configRules, searchQuery)
-
-  const handleCreateRule = () => {
-    if (!workingConfig) resetToEmpty()
-    setEditingRule(undefined)
-    setWizardOpen(true)
-  }
-
-  const handleEditRule = (name: string) => {
-    const rl = findRule(name)
-    if (!rl) return
-    setEditingRule(rl)
-    setWizardOpen(true)
-  }
-
-  const confirmDeleteRule = () => {
-    if (deleteTarget) {
-      removeRule(deleteTarget)
-      setDeleteTarget(null)
-    }
-  }
 
   // Quality option labels are translated, so this is built inside the
   // component (where `t` is in scope) rather than at module load.

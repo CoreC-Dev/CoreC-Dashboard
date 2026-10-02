@@ -41,6 +41,7 @@ import { ValidationBanner } from '@/components/wizard/ValidationBanner'
 import { DriverWizard } from '@/features/admin/DriverWizard'
 import { useApplyConfig } from '@/hooks/useApplyConfig'
 import { formatValidationErrors, useConfigValidation } from '@/hooks/useConfigValidation'
+import { useEntityListPage } from '@/hooks/useEntityListPage'
 import { useParsedConfig } from '@/hooks/useParsedConfig'
 import { getDriverConnectionSummary } from '@/lib/connectionInfo'
 import { ConnStateLabel, QualityLabel } from '@/lib/constants'
@@ -71,9 +72,6 @@ export const DriversPage: React.FC = () => {
   const validation = useConfigValidation()
   const validationErrors = formatValidationErrors(validation)
 
-  const [wizardOpen, setWizardOpen] = useState(false)
-  const [editingDriver, setEditingDriver] = useState<DriverConfig | undefined>(undefined)
-  const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
 
   const { openDialog: openApplyDialog, dialogProps: applyDialogProps } = useApplyConfig({
@@ -83,37 +81,28 @@ export const DriversPage: React.FC = () => {
     validationErrors,
   })
 
+  const {
+    wizardOpen,
+    setWizardOpen,
+    editing: editingDriver,
+    deleteTarget,
+    setDeleteTarget,
+    handleCreate,
+    handleEdit,
+    handleDelete,
+    confirmDelete,
+  } = useEntityListPage<DriverConfig>({
+    find: findDriver,
+    remove: removeDriver,
+    resetToEmpty,
+    hasWorkingConfig: !!workingConfig,
+  })
+
   const drivers = data?.drivers || []
 
   // Config drivers (from working config, may differ from runtime)
   const configDrivers = workingConfig?.drivers ?? []
   const filteredConfigDrivers = filterEntities(configDrivers, searchQuery)
-
-  const handleCreate = () => {
-    if (!workingConfig) {
-      resetToEmpty()
-    }
-    setEditingDriver(undefined)
-    setWizardOpen(true)
-  }
-
-  const handleEdit = (name: string) => {
-    const drv = findDriver(name)
-    if (!drv) return
-    setEditingDriver(drv)
-    setWizardOpen(true)
-  }
-
-  const handleDelete = (name: string) => {
-    setDeleteTarget(name)
-  }
-
-  const confirmDelete = () => {
-    if (deleteTarget) {
-      removeDriver(deleteTarget)
-      setDeleteTarget(null)
-    }
-  }
 
   return (
     <div className="space-y-5">
