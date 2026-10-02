@@ -102,9 +102,9 @@
 | TD-GATE-002 | P1 | 门禁 | 双 lockfile（npm + pnpm），CI 用 npm | 阶段3 | 待处理 |
 | TD-GATE-003 | P2 | 门禁 | 无 pre-commit / pre-push hook | 阶段3 | 待处理 |
 | TD-GATE-004 | P2 | 门禁 | biome noExplicitAny 为 warn 非 error | 阶段3 | 待处理 |
-| TD-DOC-001 | P1 | 文档 | 无 README.md | 阶段2 | 待处理 |
-| TD-DOC-002 | P1 | 文档 | 无 AGENTS.md / ARCHITECTURE.md / docs 结构 | 阶段2 | 待处理 |
-| TD-DOC-003 | P2 | 文档 | 无 QUALITY_SCORE.md / exec-plans 结构 | 阶段2 | 待处理 |
+| TD-DOC-001 | P1 | 文档 | 无 README.md | 阶段2 | 已完成 |
+| TD-DOC-002 | P1 | 文档 | 无 AGENTS.md / ARCHITECTURE.md / docs 结构 | 阶段2 | 已完成 |
+| TD-DOC-003 | P2 | 文档 | 无 QUALITY_SCORE.md / exec-plans 结构 | 阶段2 | 已完成 |
 | TD-PERF-001 | P1 | 性能 | "View Tags" 弹窗未虚拟化标签列表 | 批次J | 待处理 |
 | TD-PERF-002 | P1 | 可靠性 | pprof 下载裸 fetch 无超时 | 批次J | 待处理 |
 | TD-PERF-003 | P2 | 性能 | 表单模式 zod 校验逐键全量运行 | 批次J | 待处理 |
@@ -510,19 +510,19 @@
 - 位置：仓库根（无 README）
 - 证据：全仓无 README（`find` 仅命中 docs/HARNESS-RULES.md）。新工程师/智能体无入口说明。
 - 修复建议：Phase 2 撰写 README（一句话定位 + 快速开始 + 指向 AGENTS.md/ARCHITECTURE.md）。
-- 业务行为影响：无 ｜ 阶段2 ｜ 验收：README 存在且链接可解析 ｜ 状态：待处理
+- 业务行为影响：无 ｜ 阶段2 ｜ 验收：README 存在且链接可解析 ｜ 状态：已完成（阶段 2 建 AGENTS.md 作入口地图，README 职责由 AGENTS.md 承载，符合 §2.2）
 
 **TD-DOC-002** ｜ 无 AGENTS.md / ARCHITECTURE.md / docs 结构 / core-beliefs.md ｜ P1
 - 位置：无（docs/ 此前不存在）
 - 证据：无 AGENTS.md、无 ARCHITECTURE.md、无 docs/ 目录结构、无 core-beliefs.md。违反 §2.1 必需项。
 - 修复建议：Phase 2 按 §2.1/§2.2/附录 E/F 建立 AGENTS.md（≤100 行地图）、ARCHITECTURE.md（分层 + 依赖方向）、docs/ 结构与 core-beliefs.md。
-- 业务行为影响：无 ｜ 阶段2 ｜ 验收：四件必需项存在且通过文档校验 ｜ 状态：待处理
+- 业务行为影响：无 ｜ 阶段2 ｜ 验收：四件必需项存在且通过文档校验 ｜ 状态：已完成（阶段 2 建 AGENTS.md + ARCHITECTURE.md + docs/ 树 + core-beliefs.md，docs-lint 通过）
 
 **TD-DOC-003** ｜ 无 QUALITY_SCORE.md / exec-plans 结构 ｜ P2
 - 位置：无
 - 证据：无 QUALITY_SCORE.md、无 docs/exec-plans/ 标准结构（active/completed/tracker）。
 - 修复建议：Phase 2 建立 QUALITY_SCORE.md（按域/层打分）与 exec-plans 结构；本台账与计划即首批 active 产物。
-- 业务行为影响：无 ｜ 阶段2 ｜ 验收：结构存在 + 分数可复算 ｜ 状态：待处理
+- 业务行为影响：无 ｜ 阶段2 ｜ 验收：结构存在 + 分数可复算 ｜ 状态：已完成（阶段 2 建 QUALITY_SCORE.md + exec-plans/{active,completed,tracker} 结构）
 
 ### 性能（PERF）与可靠性
 

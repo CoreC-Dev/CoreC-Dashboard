@@ -4,7 +4,7 @@
 - 项目 / 仓库：CoreC-Dashboard（CoreC 项目前端）
 - 分支：`harnessing`（从 `main` 切出，改造期间所有提交仅落此分支，§7.1）
 - 计划版本 / 日期：v1.0 / 2026-10-02
-- 状态：决策已确认（D1–D7 于 2026-10-02 落盘），待指令启动阶段 2
+- 状态：阶段 2（文档对齐）已完成，待指令启动阶段 3
 - 规则母本：`docs/HARNESS-RULES.md`（§0 契约 C1–C7、§5 五阶段、附录 A/B/C/E/F）
 - 本轮范围：**仅阶段 1**（全量扫描 + 计划 + 问题清单）。阶段 2–5 待人工确认本计划后启动（契约 C2 串行、C1 计划先行）。
 
@@ -100,6 +100,8 @@
 - **产出物**：AGENTS.md、ARCHITECTURE.md、docs/ 树 + index.md、core-beliefs.md、QUALITY_SCORE.md、文档校验脚本。
 - **验收**：AGENTS.md ≤200 行能引到下一站；ARCHITECTURE.md 依赖方向抽样 ≥3 处与代码一致；index.md 链接全可解析；QUALITY_SCORE 每域有分+差距+可复算依据；文档门禁缺必填节/死链时失败。覆盖 TD-DOC-001..003。
 
+> **✅ 阶段 2 已完成（2026-10-02）**。产出：`AGENTS.md`（67 行）+ `ARCHITECTURE.md` + `docs/` 树（`index.md`、`design-docs/{index,core-beliefs,architecture-decisions,doc-gardening}.md`、`FRONTEND.md`、`SECURITY.md`、`RELIABILITY.md`、`DESIGN.md`、`engineering.md`、`QUALITY_SCORE.md`、`exec-plans/completed/`）+ `scripts/docs-lint.mjs`。验收：`node scripts/docs-lint.mjs` 通过（链接可解析、必填节齐全、索引完备、AGENTS.md 67 行 ≤200）。`ARCHITECTURE.md` 含 5 处与代码一致的健康不变量 + 4 处已知反转（标 TD ID）。ADR-002..009 落盘。TD-DOC-001..003 结清。
+
 ### 阶段 3 · 门禁审计与自动化质量校验  （前置：阶段 2 通过）
 - **子任务**：**非 Tauri，跳过 §3.3 三问**（docs/CI.md 记"不适用"，不生成打包发布流水线）。盘点现有门禁 → 新增 `ci.yml`（PR + 全分支触发，lint+type-check+build+test+coverage）→ deploy.yml 改 needs:ci → pre-commit hook（biome check on staged + commit-msg Conventional Commits）→ 架构结构测试（校验分层依赖方向，§4.1）→ 自定义 linter（文件大小上限/命名/品味不变量 T1–T10，§4.2）→ 文档门禁 → 覆盖率门禁（整体+关键模块下限）→ 豁免机制（显式+原因+到期）→ 锁file 治理（§6 D1 决策后定 npm/pnpm 权威）→ `npm audit`/`pnpm audit`（核实 TD-SEC-004 js-yaml 来源）→ server.mjs 安全响应头（TD-SEC-007）→ ErrorBoundary 生产脱敏日志（TD-SEC-012）→ biome noExplicitAny 提 error（TD-GATE-004，存量 any 清理后）→ vitest.config.ts + setup + coverage（TD-TEST-001）。
 - **产出物**：ci.yml、hook 配置、结构测试、自定义 linter、覆盖率配置、更新后的 docs/CI.md + 门禁清单文档。
@@ -138,9 +140,11 @@
 | 2026-10-02 | 1 | 5 域并行审计（架构/复杂度/测试/安全/性能），原始报告落 .scratch/ | （待提交） | 全量扫描 §5.1 子任务 3–10 |
 | 2026-10-02 | 1 | 汇总 76 条入 tech-debt-tracker.md，分级 P0×1/P1×24/P2×51，定批次 A–J | （待提交） | 子任务 11–12；附录 B 字段 |
 | 2026-10-02 | 1 | 写本计划；`git diff --stat` 自证零业务代码改动 | （待提交） | C1 计划先行；阶段 1 验收末项 |
-| 2026-10-02 | 1 | **提交计划等待人工确认** | （待提交） | C2 串行；确认前不启动阶段 2 |
-| 2026-10-02 | 1 | 人工确认 7 项决策 D1–D7，答案落盘 §6 | （待提交） | C7；D4=维持现状→TD-SEC-010 已豁免；其余 6 项驱动批次 I/J 修复方向 |
+| 2026-10-02 | 1 | **提交计划等待人工确认** | faf10f6/c6881f5/53ce307 | C2 串行；确认前不启动阶段 2 |
+| 2026-10-02 | 1 | 人工确认 7 项决策 D1–D7，答案落盘 §6 | 0c11db2 | C7；D4=维持现状→TD-SEC-010 已豁免；其余 6 项驱动批次 I/J 修复方向 |
+| 2026-10-02 | 2 | 重写 AGENTS.md（67 行）+ ARCHITECTURE.md + docs/ 树 + core-beliefs.md + QUALITY_SCORE.md + 规范文档 + 工程化说明 | （待提交） | 附录 E/F；§2.1 必需项；ADR-002..009 落盘 |
+| 2026-10-02 | 2 | 建 scripts/docs-lint.mjs 文档防腐 linter；`node scripts/docs-lint.mjs` 通过 | （待提交） | TD-DOC-001..003 结清；阶段 2 验收全过 |
 
-> **下一步**：人工确认本计划后，按阶段 2 → 3 → 4 → 5 串行推进。阶段 3/4 前先逐条确认 §6 D1–D7。
+> **下一步**：阶段 2 已完成，待指令启动阶段 3（门禁审计与自动化质量校验）。
 >
-> **决策已确认（2026-10-02）**：D1–D7 答案见 §6。待指令启动阶段 2（文档对齐）。
+> **决策已确认（2026-10-02）**：D1–D7 答案见 §6，已落 ADR-002..008。
