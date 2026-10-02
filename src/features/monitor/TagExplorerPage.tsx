@@ -45,6 +45,7 @@ import {
 import { QualityLabel } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import { validateValue } from '@/lib/writeValidation'
+import { useThemeStore } from '@/stores/themeStore'
 import type { DataPoint } from '@/types/models'
 
 const ROW_HEIGHT = 48
@@ -226,6 +227,12 @@ export const TagExplorerPage: React.FC = () => {
   // Per-row update counter; bumping it retriggers the flash animation.
   const [flashTick, setFlashTick] = useState<Record<string, number>>({})
   const [searchTerm, setSearchTerm] = useState('')
+  // Track the resolved theme so the lightweight-charts canvas re-creates
+  // when the user toggles light/dark. The chart reads CSS custom
+  // properties via getComputedStyle at creation time; without this
+  // dependency, a theme switch leaves the chart with stale colors until
+  // a full page refresh.
+  const resolvedTheme = useThemeStore((s) => s.resolvedTheme)
   // Defer the search term so the expensive filter+sort in filteredTags runs at
   // a lower priority than the input's keystroke rendering. The <Input> below
   // keeps using the immediate `searchTerm` for responsive typing, while the
@@ -394,6 +401,11 @@ export const TagExplorerPage: React.FC = () => {
   // Create the trend chart once per tag selection. Data is pushed in by the
   // separate [trendSamples] effect below so the chart isn't rebuilt on every
   // sample (which would flicker).
+  // resolvedTheme is in the dep array because lightweight-charts renders to a
+  // <canvas> that reads CSS variables at creation time; toggling the theme
+  // changes those variables, so we must recreate the chart. The linter can't
+  // trace this indirect dependency through getComputedStyle.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: resolvedTheme triggers chart recreation via CSS variable reads
   useEffect(() => {
     if (!trendTag || !isNumericType(trendTag.type)) return
     const container = chartContainerRef.current
@@ -438,7 +450,7 @@ export const TagExplorerPage: React.FC = () => {
       chartRef.current = null
       seriesRef.current = null
     }
-  }, [trendTag])
+  }, [trendTag, resolvedTheme])
 
   // Push buffered samples into the chart series whenever they change.
   useEffect(() => {
@@ -449,11 +461,15 @@ export const TagExplorerPage: React.FC = () => {
   }, [trendSamples])
 
   const drivers = driversData?.drivers || []
-  // Memoize the list derivation so a WS message (setTagMap) doesn't re-run
-  // the full Object.values + filter scan on every render without the deps
-  // actually changing the inputs. This prevents render thrashing on
-  // high-frequency /tags/stream updates.
-  const tagsList = useMemo(() => Object.values(tagMap), [tagMap])
+  // Defer the tagMap so the expensive Object.values + filter + sort
+  // recomputation runs at lower priority. Without this, every WS flush
+  // (up to 60x/sec) creates a new tagMap reference, causing tagsList
+  // and filteredTags to recompute every frame and re-render all visible
+  // virtual rows. useDeferredValue coalesces rapid successive updates
+  // so the list only recomputes when the browser is idle, keeping the
+  // UI responsive under high-frequency /tags/stream traffic.
+  const deferredTagMap = useDeferredValue(tagMap)
+  const tagsList = useMemo(() => Object.values(deferredTagMap), [deferredTagMap])
 
   // Extract unique non-empty group names for the group filter dropdown.
   const uniqueGroups = useMemo(() => {

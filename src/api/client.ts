@@ -38,7 +38,7 @@ export interface ApiRequestOptions extends RequestInit {
  *   frozen page with stale data.
  * - 204 No Content → returns undefined.
  */
-export async function apiRequest<T = any>(
+export async function apiRequest<T = unknown>(
   path: string,
   options: ApiRequestOptions = {},
 ): Promise<T> {

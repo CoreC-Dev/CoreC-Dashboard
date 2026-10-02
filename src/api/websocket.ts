@@ -23,10 +23,19 @@ export class CoreCWebSocket<T = unknown> {
    * render thrashing. Messages above this rate are dropped (not queued).
    */
   private maxMsgPerSec = 500
-  /** Sliding window of recent message timestamps (ms). */
-  private msgTimestamps: number[] = []
-  /** Index of the first unexpired timestamp — avoids O(n) Array.shift(). */
-  private msgTimestampsHead = 0
+  /**
+   * Fixed-size ring buffer for the sliding-window rate limiter. Capacity is
+   * the next power of two ≥ maxMsgPerSec, so we can use bitwise AND (& mask)
+   * instead of modulo (%) for wrap-around — no allocations after init, no
+   * array growth, no compaction. O(1) per message.
+   */
+  private static readonly RING_CAPACITY = 512
+  private static readonly RING_MASK = 511 // RING_CAPACITY - 1
+  private ringBuf: number[] = new Array(CoreCWebSocket.RING_CAPACITY)
+  /** Index of the oldest entry in the ring buffer. */
+  private ringHead = 0
+  /** Number of valid entries currently in the ring buffer. */
+  private ringCount = 0
 
   constructor(
     path: string,
@@ -81,29 +90,26 @@ export class CoreCWebSocket<T = unknown> {
       }
 
       this.ws.onmessage = (event) => {
-        // Real backpressure: sliding-window rate limiter. If the message
-        // arrival rate exceeds maxMsgPerSec, drop this message to protect
-        // the event loop from render thrashing on high-frequency streams
-        // (e.g. /tags/stream on a large plant).
+        // Real backpressure: sliding-window rate limiter using a fixed-size
+        // ring buffer. If the message arrival rate exceeds maxMsgPerSec,
+        // drop this message to protect the event loop from render thrashing
+        // on high-frequency streams (e.g. /tags/stream on a large plant).
+        // The ring buffer is O(1) per message with zero allocations after
+        // initialization — no array growth, no slice/compaction.
         const now = Date.now()
-        // Prune timestamps older than 1 second. Use a head index instead of
-        // Array.shift() (which is O(n) per call → O(n²) at 500 msg/s).
-        while (
-          this.msgTimestampsHead < this.msgTimestamps.length &&
-          now - this.msgTimestamps[this.msgTimestampsHead] > 1000
-        ) {
-          this.msgTimestampsHead++
+        // Prune timestamps older than 1 second from the head of the ring.
+        while (this.ringCount > 0 && now - this.ringBuf[this.ringHead] > 1000) {
+          this.ringHead = (this.ringHead + 1) & CoreCWebSocket.RING_MASK
+          this.ringCount--
         }
-        // Compact the array when the head advances far enough.
-        if (this.msgTimestampsHead > 256) {
-          this.msgTimestamps = this.msgTimestamps.slice(this.msgTimestampsHead)
-          this.msgTimestampsHead = 0
-        }
-        const activeCount = this.msgTimestamps.length - this.msgTimestampsHead
-        if (activeCount >= this.maxMsgPerSec) {
+        // Drop if the window is at capacity.
+        if (this.ringCount >= this.maxMsgPerSec) {
           return // drop this message
         }
-        this.msgTimestamps.push(now)
+        // Push the current timestamp at the tail of the ring.
+        const tail = (this.ringHead + this.ringCount) & CoreCWebSocket.RING_MASK
+        this.ringBuf[tail] = now
+        this.ringCount++
         try {
           const data = typeof event.data === 'string' ? event.data : String(event.data)
           const parsed = JSON.parse(data)

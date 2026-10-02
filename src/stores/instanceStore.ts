@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { safePersist } from '@/lib/storage'
+import { safePersist, safePersistSession, safeReadSession } from '@/lib/storage'
 
 /**
  * A saved CoreC instance — a persistent identity for a gateway/edge node
@@ -105,13 +105,34 @@ interface InstanceState {
 }
 
 const STORAGE_KEY = 'corec_instances'
+/**
+ * Secrets are stored in sessionStorage (per-tab, cleared on tab close)
+ * instead of localStorage, so an XSS attack cannot harvest persisted
+ * API credentials across browser sessions. The non-sensitive instance
+ * metadata (name, baseUrl, color, etc.) remains in localStorage for
+ * persistence across sessions; only the secret is ephemeral.
+ */
+const SECRETS_STORAGE_KEY = 'corec_instance_secrets'
+
+/** Strip the secret field from an instance for safe persistent storage. */
+function stripSecret(instance: CoreCInstance): Omit<CoreCInstance, 'secret'> & { secret?: string } {
+  const { secret: _secret, ...rest } = instance
+  return rest
+}
 
 function loadInstances(): CoreCInstance[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw) {
       const parsed = JSON.parse(raw)
-      if (Array.isArray(parsed)) return parsed
+      if (Array.isArray(parsed)) {
+        // Merge secrets from sessionStorage back into instances.
+        const secrets = loadSecrets()
+        return parsed.map((inst: CoreCInstance) => ({
+          ...inst,
+          secret: secrets[inst.id] ?? inst.secret ?? '',
+        }))
+      }
     }
   } catch (e) {
     console.error('Failed to parse instance storage', e)
@@ -119,8 +140,32 @@ function loadInstances(): CoreCInstance[] {
   return []
 }
 
+/** Load the id→secret map from sessionStorage. */
+function loadSecrets(): Record<string, string> {
+  try {
+    const raw = safeReadSession(SECRETS_STORAGE_KEY)
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      if (parsed && typeof parsed === 'object') return parsed
+    }
+  } catch {
+    /* best-effort */
+  }
+  return {}
+}
+
 function persistInstances(instances: CoreCInstance[]): void {
-  safePersist(STORAGE_KEY, JSON.stringify(instances))
+  // Store non-sensitive metadata in localStorage (persistent).
+  const safeInstances = instances.map((i) => stripSecret(i))
+  safePersist(STORAGE_KEY, JSON.stringify(safeInstances))
+  // Store secrets in sessionStorage (ephemeral, per-tab).
+  const secrets: Record<string, string> = {}
+  for (const inst of instances) {
+    if (inst.secret) {
+      secrets[inst.id] = inst.secret
+    }
+  }
+  safePersistSession(SECRETS_STORAGE_KEY, JSON.stringify(secrets))
 }
 
 function generateId(): string {

@@ -142,12 +142,10 @@ const DropdownMenuSeparator: React.FC<
 )
 DropdownMenuSeparator.displayName = DropdownMenuPrimitive.Separator.displayName
 
-const DropdownMenuShortcut: React.FC<{ className?: string }> = ({ className, ...props }) => (
-  <span
-    className={cn('ml-auto text-xs tracking-widest opacity-60', className)}
-    {...(props as any)}
-  />
-)
+const DropdownMenuShortcut: React.FC<React.HTMLAttributes<HTMLSpanElement>> = ({
+  className,
+  ...props
+}) => <span className={cn('ml-auto text-xs tracking-widest opacity-60', className)} {...props} />
 DropdownMenuShortcut.displayName = 'DropdownMenuShortcut'
 
 export {
