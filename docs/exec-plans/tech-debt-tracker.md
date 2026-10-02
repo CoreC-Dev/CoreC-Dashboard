@@ -43,10 +43,10 @@
 |---|---|---|---|---|---|
 | TD-ARCH-001 | P1 | 架构 | types 层反向依赖 lib | 批次A | 已完成 |
 | TD-ARCH-002 | P1 | 架构 | api ↔ contexts 层级环 | 批次B | 已完成 |
-| TD-ARCH-003 | P1 | 架构 | configStore God Object（29 方法） | 批次C | 待处理 |
+| TD-ARCH-003 | P1 | 架构 | configStore God Object（29 方法） | 批次C | 已完成 |
 | TD-ARCH-004 | P1 | 架构 | lib/utils 耦合 16 个 UI 原语到 i18n | 批次A | 已完成 |
 | TD-ARCH-005 | P2 | 架构 | UI 原语反向依赖 hooks | 批次A | 已完成 |
-| TD-ARCH-006 | P2 | 架构 | CoreCInstance 类型定义在 store | 批次C | 待处理 |
+| TD-ARCH-006 | P2 | 架构 | CoreCInstance 类型定义在 store | 批次C | 已完成 |
 | TD-ARCH-007 | P2 | 架构 | 无 WebSocket hook 抽象 | 批次B | 已完成 |
 | TD-ARCH-008 | P2 | 架构 | feature 越过 hooks 直引 api/client | 批次B | 已完成 |
 | TD-ARCH-009 | P2 | 架构 | lib 依赖 i18n 单例 | 批次A | 已完成 |
@@ -141,7 +141,7 @@
 - 位置：`src/stores/configStore.ts:84-148`（接口）、`:175`（create）
 - 证据：425 行；`ConfigStoreState` 声明 29 方法，跨 6 类关注点（加载、5 类实体 CRUD 共 10 方法、区段更新、保存/回退、6 个派生 getter、5 个唯一性检查）。被 14 个文件导入。
 - 修复建议：按关注点切分为 `configCrudSlice`（实体 upsert/remove）、`configSectionSlice`（global/node 字段更新），`configStore` 仅保留 working/saved/dirty 状态壳。消费者已选窄切片，拆分低风险。
-- 业务行为影响：无 ｜ 批次C ｜ 验收：拆分后行为守恒（configStore 现有测试全过）+ 单文件行数下降 ｜ 状态：待处理
+- 业务行为影响：无 ｜ 批次C ｜ 验收：拆分后行为守恒（configStore 现有测试全过）+ 单文件行数下降 ｜ 状态：已完成（批次 C：configCrudSlice + configGetterSlice + lib/configHelpers，425→190+146+110+56 行）
 
 **TD-ARCH-004** ｜ lib/utils（34 导入者）将 16 个 UI 原语耦合到 i18n ｜ P1
 - 位置：`src/lib/utils.ts:3`（i18n 导入）、`:5`（cn）、`:80`（formatRelativeTime 用 i18n）
@@ -159,7 +159,7 @@
 - 位置：`src/stores/instanceStore.ts:8`；导入者 5 个（ConnectionContext:7、InstanceCard:35、InstanceDialog:27、InstancePanel:23、useHomepageProbe:3）
 - 证据：`export interface CoreCInstance` 位于 store 模块；5 文件经 `@/stores/instanceStore` 导入该类型，把类型消费者耦合到 store 模块（及其 `lib/storage` 依赖）。
 - 修复建议：将 `CoreCInstance` 移至 `types/models.ts`（或 `types/instance.ts`）；`instanceStore.ts` 从 types 导入并可选 re-export。
-- 业务行为影响：无（消费者为 type-only） ｜ 批次C ｜ 验收：grep 确认类型定义在 types/ ｜ 状态：待处理
+- 业务行为影响：无（消费者为 type-only） ｜ 批次C ｜ 验收：grep 确认类型定义在 types/ ｜ 状态：已完成（批次 C：CoreCInstance 移 types/models.ts，instanceStore re-export，5 消费者改引）
 
 **TD-ARCH-007** ｜ 无 WebSocket hook 抽象，5 个消费者直用 api/websocket ｜ P2
 - 位置：`src/api/websocket.ts`；消费者：`components/admin/EventLogTerminal.tsx:8`、`components/charts/MemoryChart.tsx:12`、`components/charts/TrafficChart.tsx:12`、`features/monitor/AlertsPage.tsx:20`、`features/monitor/TagExplorerPage.tsx:25`
@@ -617,3 +617,4 @@
 | 2026-10-02 | 阶段 3：TD-SEC-004 已核实（js-yaml integrity 匹配官方）、TD-SEC-007 已完成（server 安全头）、TD-SEC-008 已核实（audit 跑通）、TD-DOC-001..003 已完成；新增 TD-SEC-013（dompurify via monaco，P2） | Phase 3 门禁 |
 | 2026-10-02 | 批次 A 完成：TD-ARCH-001（DataTypeString→types）、TD-ARCH-004（cn→lib/cn.ts）、TD-ARCH-005（useCountUp 内联）、TD-ARCH-009（lib 纯化传 t）。structure-lint 4 豁免删除，门禁收紧 | Phase 4 批次 A |
 | 2026-10-02 | 批次 B 完成：TD-ARCH-008（ApiError re-export）、TD-ARCH-002（connectionStore 消环）、TD-ARCH-007（useCoreCWebSocket hook）。structure-lint 零豁免，全部门禁收紧到位 | Phase 4 批次 B |
+| 2026-10-02 | 批次 C 完成：TD-ARCH-006（CoreCInstance→types/models）、TD-ARCH-003（configStore 拆分 crud/getter slices + pure helpers）。425→190+146+110+56 行 | Phase 4 批次 C |
