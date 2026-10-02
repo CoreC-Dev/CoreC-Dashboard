@@ -1,5 +1,5 @@
 import type React from 'react'
-import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useDeferredValue, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useDrivers, useTags } from '@/api/hooks'
 import { TagTable } from '@/components/monitor/TagTable'
@@ -17,20 +17,20 @@ export const TagExplorerPage: React.FC = () => {
   const { data: driversData } = useDrivers()
 
   const [selectedDriver, setSelectedDriver] = useState<string>('all')
-  const [trendTag, setTrendTag] = useState<DataPoint | null>(null)
-  // The WS callback is bound once per driver change; keep a ref to the
-  // currently-selected trend tag so it can read the latest value live.
-  const trendTagRef = useRef<DataPoint | null>(null)
-  useEffect(() => {
-    trendTagRef.current = trendTag
-  }, [trendTag])
 
-  const { tagMap, flashTick, trendSamples, setTrendSamples, discardPendingTrend, resetSeed } =
-    useTagExplorerStream({
-      initialTags: initialTagsData?.tags,
-      selectedDriver,
-      trendTagRef,
-    })
+  const {
+    tagMap,
+    flashTick,
+    trendSamples,
+    setTrendSamples,
+    discardPendingTrend,
+    resetSeed,
+    trendTag,
+    setTrendTag,
+  } = useTagExplorerStream({
+    initialTags: initialTagsData?.tags,
+    selectedDriver,
+  })
 
   // Search/filter/sort state.
   const [searchTerm, setSearchTerm] = useState('')
@@ -106,12 +106,8 @@ export const TagExplorerPage: React.FC = () => {
       // Discard samples staged for the previous tag so a pending RAF does
       // not flush them into the new tag's chart (stale-sample leak). [H-8]
       discardPendingTrend()
-      // Update the ref synchronously so the WS onmessage callback sees the
-      // new tag on the very next message — without this, the ref lags the
-      // state by one async tick (passive effect), and a stale-tag sample
-      // arriving in that window would be staged and flushed into the new
-      // tag's chart. [H-8 residual race]
-      trendTagRef.current = point
+      // setTrendTag updates the internal ref synchronously so the WS
+      // onmessage callback sees the new tag on the very next message. [H-8]
       setTrendTag(point)
       if (isNumericType(point.type)) {
         const num = Number(point.value)
@@ -120,16 +116,20 @@ export const TagExplorerPage: React.FC = () => {
         setTrendSamples([])
       }
     },
-    [discardPendingTrend, setTrendSamples],
+    [
+      discardPendingTrend,
+      setTrendSamples, // setTrendTag updates the internal ref synchronously so the WS
+      // onmessage callback sees the new tag on the very next message. [H-8]
+      setTrendTag,
+    ],
   )
 
   const closeTrend = () => {
     // Discard staged samples so a pending RAF doesn't flush them into a chart
     // that's about to unmount / already cleared. [H-8]
     discardPendingTrend()
-    // Clear the ref synchronously so the WS callback stops staging samples
-    // immediately (the passive effect lags by one tick). [H-8 residual race]
-    trendTagRef.current = null
+    // setTrendTag clears the internal ref synchronously so the WS callback
+    // stops staging samples immediately. [H-8]
     setTrendTag(null)
     setTrendSamples([])
   }

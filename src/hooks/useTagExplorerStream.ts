@@ -14,9 +14,6 @@ interface UseTagExplorerStreamOptions {
   initialTags: Record<string, DataPoint> | undefined
   /** Active driver filter ('all' = every driver); drives the WS params. */
   selectedDriver: string
-  /** Ref to the tag currently shown in the trend drawer, so the WS onmessage
-   *  callback can stage live samples for it without a stale closure. */
-  trendTagRef: React.RefObject<DataPoint | null>
 }
 
 interface UseTagExplorerStreamResult {
@@ -35,6 +32,12 @@ interface UseTagExplorerStreamResult {
   /** Reset the one-time seed guard so the next REST snapshot re-merges
    *  (used by the manual Refresh button to discover newly-added tags). */
   resetSeed: () => void
+  /** The tag currently shown in the trend drawer. */
+  trendTag: DataPoint | null
+  /** Set the trend tag. Updates the internal ref synchronously so the WS
+   *  onmessage callback sees the new value on the very next message —
+   *  without the one-tick lag a passive effect would introduce. */
+  setTrendTag: (tag: DataPoint | null) => void
 }
 
 /**
@@ -51,13 +54,23 @@ interface UseTagExplorerStreamResult {
 export function useTagExplorerStream({
   initialTags,
   selectedDriver,
-  trendTagRef,
 }: UseTagExplorerStreamOptions): UseTagExplorerStreamResult {
   // Live tag map, keyed by the composite tagKey() (driver::device::tag).
   const [tagMap, setTagMap] = useState<Record<string, DataPoint>>({})
   // Per-row update counter; bumping it retriggers the flash animation.
   const [flashTick, setFlashTick] = useState<Record<string, number>>({})
   const [trendSamples, setTrendSamples] = useState<TrendSample[]>([])
+
+  // The trend tag and a ref mirror. The WS onmessage callback (bound once per
+  // driver change) reads the ref to stage live samples without a stale closure.
+  // setTrendTag updates the ref synchronously to avoid the one-tick lag a
+  // passive effect would introduce (H-8 residual race).
+  const [trendTag, setTrendTagState] = useState<DataPoint | null>(null)
+  const trendTagRef = useRef<DataPoint | null>(null)
+  const setTrendTag = useCallback((tag: DataPoint | null) => {
+    trendTagRef.current = tag
+    setTrendTagState(tag)
+  }, [])
 
   // Seed-once guard so the 5s REST poll never clobbers fresher WS values.
   const hasSeeded = useRef(false)
@@ -207,5 +220,7 @@ export function useTagExplorerStream({
     setTrendSamples,
     discardPendingTrend,
     resetSeed,
+    trendTag,
+    setTrendTag,
   }
 }

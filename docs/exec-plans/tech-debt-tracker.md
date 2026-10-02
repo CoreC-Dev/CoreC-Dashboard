@@ -257,7 +257,7 @@
 - 位置：`src/features/monitor/TagExplorerPage.tsx:365-440`（effect）+ 302-359（rAF flush）
 - 证据：WS useEffect 创建 CoreCWebSocket，message 回调读 trendTagRef.current（隐式 ref 状态 377），暂存 3 refs，调 scheduleFlush。scheduleFlush（319-359）40 行 rAF 处理器，3 条件 flush 分支 + 嵌套 setState。4 refs + 1 deferred + driver 过滤条件。
 - 修复建议：将流+批处理封装进 useTagStream(selectedDriver) 返回 { tagMap, flashTick, trendSamples, subscribeTrend, closeTrend }。页面不再触 refs/rAF。
-- 业务行为影响：无 ｜ 批次G ｜ 验收：页面无裸 ref/rAF + 行为守恒 ｜ 状态：待处理
+- 业务行为影响：无 ｜ 批次G ｜ 验收：页面无裸 ref/rAF + 行为守恒 ｜ 状态：已完成（trendTag 状态+ref 移入 useTagExplorerStream，暴露 setTrendTag 同步更新 ref；TagExplorerPage 不再触 useRef/useEffect/裸 ref）
 
 **TD-CPLX-010** ｜ ConfigCenterPage auto-load 用 ref guard + store getState()（隐式状态） ｜ P2
 - 位置：`src/features/admin/ConfigCenterPage.tsx:213-229` 与 235-246
