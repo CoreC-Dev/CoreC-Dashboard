@@ -26,6 +26,7 @@ import { RegistryFieldGrid } from '@/components/wizard/RegistryFieldGrid'
 import { WizardDialog, type WizardStep } from '@/components/wizard/Wizard'
 import { WizardContextValidationBanner } from '@/components/wizard/WizardContextValidationBanner'
 import { useTransportNames } from '@/hooks/useConfigValidation'
+import { useResetOnOpen } from '@/hooks/useResetOnOpen'
 import { cn } from '@/lib/cn'
 import { dumpConfigYaml } from '@/lib/configYaml'
 import { validateTransportInContext } from '@/lib/entityValidation'
@@ -106,9 +107,7 @@ export const TransportWizard: React.FC<TransportWizardProps> = ({
   const [currentStep, setCurrentStep] = useState(0)
 
   // Reset on open
-  const [lastOpen, setLastOpen] = useState(open)
-  if (open && !lastOpen) {
-    setLastOpen(true)
+  useResetOnOpen(open, () => {
     setSelectedType((existingTransport?.type as TransportType) ?? null)
     setTransportName(existingTransport?.name ?? '')
     setSettings(existingTransport?.settings ?? {})
@@ -122,8 +121,7 @@ export const TransportWizard: React.FC<TransportWizardProps> = ({
     }
     setToplevel(tl)
     setCurrentStep(0)
-  }
-  if (!open && lastOpen) setLastOpen(false)
+  })
 
   // Registry lookup
   const registry = useMemo(

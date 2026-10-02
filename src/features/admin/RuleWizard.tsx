@@ -43,6 +43,7 @@ import { ExprValidationMessages } from '@/components/wizard/ExprValidationMessag
 import { WizardDialog, type WizardStep } from '@/components/wizard/Wizard'
 import { WizardContextValidationBanner } from '@/components/wizard/WizardContextValidationBanner'
 import { useTransportNames } from '@/hooks/useConfigValidation'
+import { useResetOnOpen } from '@/hooks/useResetOnOpen'
 import { cn } from '@/lib/cn'
 import { dumpConfigYaml } from '@/lib/configYaml'
 import { validateRuleInContext } from '@/lib/entityValidation'
@@ -149,9 +150,7 @@ export const RuleWizard: React.FC<RuleWizardProps> = ({
   const [currentStep, setCurrentStep] = useState(0)
 
   // Reset on open
-  const [lastOpen, setLastOpen] = useState(open)
-  if (open && !lastOpen) {
-    setLastOpen(true)
+  useResetOnOpen(open, () => {
     setRuleName(existingRule?.name ?? '')
     setMatch(existingRule?.match ?? 'ALL')
     setPriority(existingRule?.priority ?? 100)
@@ -161,8 +160,7 @@ export const RuleWizard: React.FC<RuleWizardProps> = ({
     setTransformExpr(existingRule?.transform?.expression ?? '')
     setTagRename(existingRule?.transform?.['tag-rename'] ?? '')
     setCurrentStep(0)
-  }
-  if (!open && lastOpen) setLastOpen(false)
+  })
 
   // ─── Determine which steps to show based on action ───────────────
   const actionMeta = ACTION_META.find((m) => m.action === action)!

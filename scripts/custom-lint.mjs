@@ -24,7 +24,6 @@ const SIZE_EXEMPTIONS = [
   { file: 'features/admin/DriversPage.tsx', td: 'TD-DUP-005', batch: 'E' },
   { file: 'features/admin/DriverWizard.tsx', td: 'TD-CPLX-009', batch: 'H' },
   { file: 'features/admin/DiagnosticsPage.tsx', td: 'TD-CPLX-003', batch: 'F' },
-  { file: 'features/admin/RuleWizard.tsx', td: 'TD-CPLX-010', batch: 'H' },
 ];
 const exemptSet = new Set(SIZE_EXEMPTIONS.map((e) => e.file));
 

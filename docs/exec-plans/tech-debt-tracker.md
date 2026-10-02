@@ -289,7 +289,7 @@
 - 位置：`DriverWizard.tsx:149-159`、`RuleWizard.tsx:153-165`、`TransportWizard.tsx:110-126`
 - 证据：三者同实现 `const [lastOpen, setLastOpen] = useState(open)` + `if (open && !lastOpen) { /* reset draft */ }` + `if (!open && lastOpen) setLastOpen(false)`。6 处匹配。
 - 修复建议：抽 useResetOnOpen(open, resetFn) 至 @/hooks。
-- 业务行为影响：无 ｜ 批次H ｜ 验收：3 处统一 ｜ 状态：待处理
+- 业务行为影响：无 ｜ 批次H ｜ 验收：3 处统一 ｜ 状态：已完成（抽 useResetOnOpen(open, resetFn) 至 @/hooks；DriverWizard/RuleWizard/TransportWizard 3 处统一；RuleWizard 降至 499 行移除大小豁免）
 
 **TD-DUP-005** ｜ handleCreate/Edit/Delete/confirmDelete 重复 3× ｜ P2
 - 位置：`DriversPage.tsx:87-112`、`TransportsPage.tsx:78-103`、`RulesPage.tsx:163-181`

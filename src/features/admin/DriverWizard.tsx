@@ -39,6 +39,7 @@ import {
 import { RegistryFieldGrid } from '@/components/wizard/RegistryFieldGrid'
 import { WizardDialog, type WizardStep } from '@/components/wizard/Wizard'
 import { WizardContextValidationBanner } from '@/components/wizard/WizardContextValidationBanner'
+import { useResetOnOpen } from '@/hooks/useResetOnOpen'
 import { cn } from '@/lib/cn'
 import { dumpConfigYaml } from '@/lib/configYaml'
 import { validateDriverInContext } from '@/lib/entityValidation'
@@ -145,9 +146,7 @@ export const DriverWizard: React.FC<DriverWizardProps> = ({
   const [currentStep, setCurrentStep] = useState(0)
 
   // Reset state when the dialog opens (especially for re-entry after close).
-  const [lastOpen, setLastOpen] = useState(open)
-  if (open && !lastOpen) {
-    setLastOpen(true)
+  useResetOnOpen(open, () => {
     setSelectedType((existingDriver?.type as DriverType) ?? null)
     setDriverName(existingDriver?.name ?? '')
     setSettings(existingDriver?.settings ?? {})
@@ -155,10 +154,7 @@ export const DriverWizard: React.FC<DriverWizardProps> = ({
     setTagsFile(existingDriver?.['tags-file'] ?? '')
     setTagsInterval(existingDriver?.['tags-interval'] ?? '')
     setCurrentStep(0)
-  }
-  if (!open && lastOpen) {
-    setLastOpen(false)
-  }
+  })
 
   // ─── Registry lookup ─────────────────────────────────────────────
   const registry = useMemo(
