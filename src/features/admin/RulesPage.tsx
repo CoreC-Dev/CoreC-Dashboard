@@ -1,9 +1,16 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { AlertCircle, Check, Loader2, Pencil, Play, Plus, RefreshCw, Trash2 } from 'lucide-react'
+import { AlertCircle, Loader2, Pencil, Play, Plus, RefreshCw, Trash2 } from 'lucide-react'
 import type React from 'react'
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useConfigRaw, useRules, useToggleRule, useUpdateConfig } from '@/api/hooks'
+import { useConfigRaw, useRules, useUpdateConfig } from '@/api/hooks'
+import {
+  ActionBadge,
+  EMPTY_TEST_DP,
+  getTargetDisplay,
+  RuleEditDialog,
+  RuleTestDialog,
+} from '@/components/admin/RuleParts'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,22 +24,6 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { ConfigApplyConfirmationDialog } from '@/components/wizard/ConfigApplyConfirmationDialog'
 import { EntitySearchBar, filterEntities } from '@/components/wizard/EntitySearchBar'
@@ -42,121 +33,19 @@ import { RuleWizard } from '@/features/admin/RuleWizard'
 import { useApplyConfig } from '@/hooks/useApplyConfig'
 import { formatValidationErrors, useConfigValidation } from '@/hooks/useConfigValidation'
 import { useEntityListPage } from '@/hooks/useEntityListPage'
+import { useRuleToggle } from '@/hooks/useRuleToggle'
 import { parseConfigYaml } from '@/lib/configYaml'
 import { formatRelativeTime } from '@/lib/formatters'
 import { evaluateMatch, type SimDataPoint } from '@/lib/ruleMatchEvaluator'
 import { buildRuleYaml, type EditFormData } from '@/lib/ruleYaml'
 import { formatNumber, isZeroTime } from '@/lib/utils'
 import { useConfigStore } from '@/stores/configStore'
-import { DATA_TYPES, type RuleConfig } from '@/types/config'
+import type { RuleConfig } from '@/types/config'
 import type { RuleStat } from '@/types/models'
-
-/** Action badge metadata: CSS classes + i18n key per rule action. */
-const ACTION_BADGE_META: Record<string, { cls: string; key: string }> = {
-  alert: {
-    cls: 'border-status-warning/30 bg-status-warning/10 text-status-warning',
-    key: 'rules.actionAlert',
-  },
-  drop: {
-    cls: 'border-status-error/30 bg-status-error/10 text-status-error',
-    key: 'rules.actionDrop',
-  },
-  transform: {
-    cls: 'border-primary/30 bg-primary/10 text-primary',
-    key: 'rules.actionTransform',
-  },
-  mirror: {
-    cls: 'border-primary/30 bg-primary/10 text-primary',
-    key: 'rules.actionMirror',
-  },
-  default: {
-    cls: 'border-status-queued/30 bg-status-queued/10 text-status-queued',
-    key: 'rules.actionForward',
-  },
-}
-
-// Targets serialize as `null` (not `[]`) when empty; prefer the multi-target
-// list when present, otherwise fall back to the single `target` field.
-const getTargetDisplay = (rule: RuleStat): string => {
-  if (rule.targets && rule.targets.length > 0) {
-    return rule.targets.join(', ')
-  }
-  return rule.target || '-'
-}
-
-const EMPTY_TEST_DP: SimDataPoint = {
-  driver: '',
-  device: '',
-  group: '',
-  tag: '',
-  value: '',
-  type: 'float32',
-  quality: '0',
-}
-
-const TEST_TYPE_OPTIONS: { value: string; label: string }[] = DATA_TYPES.map((v) => ({
-  value: v,
-  label: v,
-}))
-
-const LabeledInput: React.FC<{
-  label: string
-  value: string
-  onChange: (v: string) => void
-  placeholder?: string
-}> = ({ label, value, onChange, placeholder }) => (
-  <div className="space-y-1.5">
-    <label className="text-xs font-semibold text-foreground">{label}</label>
-    <Input
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder={placeholder}
-      className="h-9 text-xs"
-    />
-  </div>
-)
-
-const LabeledSelect: React.FC<{
-  label: string
-  value: string
-  onChange: (v: string) => void
-  options: { value: string; label: string }[]
-}> = ({ label, value, onChange, options }) => (
-  <div className="space-y-1.5">
-    <label className="text-xs font-semibold text-foreground">{label}</label>
-    <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className="font-mono">
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent>
-        {options.map((o) => (
-          <SelectItem key={o.value} value={o.value} className="font-mono">
-            {o.label}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  </div>
-)
-
-// Rule editor form state — the editable subset of a RuleStat that the dialog
-// binds to. Pre-filled from the selected rule on open. Transform fields are
-// only relevant when action === 'transform'; `targets` (comma-separated) is
-// only relevant when action === 'mirror'.
-// Action options for the editor's Select dropdown. The value is the wire
-// format CoreC expects; the label is resolved via i18n at render time.
-const EDIT_ACTION_OPTIONS: { value: RuleStat['action']; labelKey: string }[] = [
-  { value: 'forward', labelKey: 'rules.edit.actionForward' },
-  { value: 'drop', labelKey: 'rules.edit.actionDrop' },
-  { value: 'alert', labelKey: 'rules.edit.actionAlert' },
-  { value: 'transform', labelKey: 'rules.edit.actionTransform' },
-  { value: 'mirror', labelKey: 'rules.edit.actionMirror' },
-]
 
 export const RulesPage: React.FC = () => {
   const { t } = useTranslation()
   const { data, refetch, isFetching, isLoading, isError, error } = useRules()
-  const toggleMutation = useToggleRule()
   const updateMutation = useUpdateConfig()
   const queryClient = useQueryClient()
   // Raw config YAML — used to pre-fill transform config for transform rules,
@@ -206,24 +95,11 @@ export const RulesPage: React.FC = () => {
   const configRules = workingConfig?.rules ?? []
   const filteredConfigRules = filterEntities(configRules, searchQuery)
 
-  // Quality option labels are translated, so this is built inside the
-  // component (where `t` is in scope) rather than at module load.
-  const QUALITY_OPTIONS = useMemo(
-    () =>
-      [
-        { value: '0', label: `0 — ${t('common.good')}` },
-        { value: '1', label: `1 — ${t('common.bad')}` },
-        { value: '2', label: `2 — ${t('common.uncertain')}` },
-      ] as { value: string; label: string }[],
-    [t],
-  )
-
   // Track the specific rules being toggled so only those rows' switches are
   // disabled while mutations are in flight (not every switch on the page).
   // Uses a Set so multiple rules can toggle concurrently without one's
-  // completion clearing another's in-flight state. [M-5]
-  const [togglingIndices, setTogglingIndices] = useState<Set<number>>(new Set())
-  const [toggleError, setToggleError] = useState<string | null>(null)
+  // Per-row toggle in-flight tracking + error surface. [M-5]
+  const { togglingIndices, toggleError, handleToggle, clearToggleError } = useRuleToggle()
   const [testRule, setTestRule] = useState<RuleStat | null>(null)
   const [testDp, setTestDp] = useState<SimDataPoint>(EMPTY_TEST_DP)
   const [testResult, setTestResult] = useState<boolean | null>(null)
@@ -232,24 +108,6 @@ export const RulesPage: React.FC = () => {
   const [editStatus, setEditStatus] = useState<{ type: 'success' | 'error'; text: string } | null>(
     null,
   )
-
-  const handleToggle = async (index: number, currentDisabled: boolean) => {
-    setTogglingIndices((prev) => new Set(prev).add(index))
-    setToggleError(null)
-    try {
-      await toggleMutation.mutateAsync({ index, disabled: !currentDisabled })
-    } catch (err) {
-      // Catch prevents unhandled rejection; the switch reverts via the next
-      // poll. Surface the error so the operator knows why.
-      setToggleError(err instanceof Error ? err.message : t('rules.toggleFailed'))
-    } finally {
-      setTogglingIndices((prev) => {
-        const next = new Set(prev)
-        next.delete(index)
-        return next
-      })
-    }
-  }
 
   const openTest = (rule: RuleStat) => {
     setTestRule(rule)
@@ -329,15 +187,6 @@ export const RulesPage: React.FC = () => {
     }
   }
 
-  const getActionBadge = (action: string) => {
-    const meta = ACTION_BADGE_META[action] ?? ACTION_BADGE_META.default
-    return (
-      <Badge variant="outline" className={meta.cls}>
-        {t(meta.key)}
-      </Badge>
-    )
-  }
-
   return (
     <div className="space-y-5">
       {toggleError && (
@@ -346,7 +195,7 @@ export const RulesPage: React.FC = () => {
           <span>{toggleError}</span>
           <button
             type="button"
-            onClick={() => setToggleError(null)}
+            onClick={clearToggleError}
             aria-label="Dismiss"
             className="ml-auto text-status-error/60 hover:text-status-error"
           >
@@ -445,7 +294,9 @@ export const RulesPage: React.FC = () => {
                     <td className="px-3 py-2 font-mono text-xs text-muted-foreground max-w-[200px] truncate">
                       {rl.match}
                     </td>
-                    <td className="px-3 py-2">{getActionBadge(rl.action)}</td>
+                    <td className="px-3 py-2">
+                      <ActionBadge action={rl.action} />
+                    </td>
                     <td className="px-3 py-2 font-mono text-xs text-muted-foreground">
                       {rl.targets?.join(', ') || rl.target || '-'}
                     </td>
@@ -555,7 +406,9 @@ export const RulesPage: React.FC = () => {
                             {rule.match}
                           </code>
                         </td>
-                        <td className="px-4 py-3">{getActionBadge(rule.action)}</td>
+                        <td className="px-4 py-3">
+                          <ActionBadge action={rule.action} />
+                        </td>
                         <td className="px-4 py-3 font-mono text-muted-foreground">
                           {getTargetDisplay(rule)}
                         </td>
@@ -621,258 +474,24 @@ export const RulesPage: React.FC = () => {
         </Card>
       </div>
 
-      <Dialog open={testRule !== null} onOpenChange={(o) => !o && closeTest()}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>{t('rules.testRule', { name: testRule?.name })}</DialogTitle>
-            <DialogDescription>{t('rules.testDesc')}</DialogDescription>
-          </DialogHeader>
+      <RuleTestDialog
+        testRule={testRule}
+        testDp={testDp}
+        setTestDp={setTestDp}
+        testResult={testResult}
+        closeTest={closeTest}
+        runTest={runTest}
+      />
 
-          <div className="space-y-4">
-            <div className="space-y-1.5">
-              <div className="text-xs font-semibold text-muted-foreground">
-                {t('rules.matchExpression')}
-              </div>
-              <code className="block px-3 py-2 rounded bg-muted/60 text-xs font-mono text-primary border border-border break-all">
-                {testRule?.match || t('rules.emptyMatch')}
-              </code>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <LabeledInput
-                label={t('common.driver')}
-                value={testDp.driver}
-                onChange={(v) => setTestDp({ ...testDp, driver: v })}
-                placeholder={t('rules.phDriver')}
-              />
-              <LabeledInput
-                label={t('common.device')}
-                value={testDp.device}
-                onChange={(v) => setTestDp({ ...testDp, device: v })}
-                placeholder={t('rules.phDevice')}
-              />
-              <LabeledInput
-                label={t('common.group')}
-                value={testDp.group}
-                onChange={(v) => setTestDp({ ...testDp, group: v })}
-                placeholder={t('rules.phGroup')}
-              />
-              <LabeledInput
-                label={t('common.tag')}
-                value={testDp.tag}
-                onChange={(v) => setTestDp({ ...testDp, tag: v })}
-                placeholder={t('rules.phTag')}
-              />
-              <LabeledInput
-                label={t('common.value')}
-                value={testDp.value}
-                onChange={(v) => setTestDp({ ...testDp, value: v })}
-                placeholder={t('rules.phValue')}
-              />
-              <LabeledSelect
-                label={t('common.type')}
-                value={testDp.type}
-                onChange={(v) => setTestDp({ ...testDp, type: v })}
-                options={TEST_TYPE_OPTIONS}
-              />
-              <LabeledSelect
-                label={t('common.quality')}
-                value={testDp.quality}
-                onChange={(v) => setTestDp({ ...testDp, quality: v })}
-                options={QUALITY_OPTIONS}
-              />
-            </div>
-
-            {testRule && testResult !== null && (
-              <div
-                className={`rounded-lg border p-3 space-y-2 ${
-                  testResult
-                    ? 'border-status-running/30 bg-status-running/10'
-                    : 'border-status-error/30 bg-status-error/10'
-                }`}
-              >
-                {testResult ? (
-                  <div className="space-y-1.5">
-                    <div className="text-xs font-bold text-status-running">
-                      {t('rules.matched')}
-                    </div>
-                    <div className="flex items-center gap-2 text-xs">
-                      <span className="text-muted-foreground">{t('common.action')}:</span>
-                      {getActionBadge(testRule.action)}
-                    </div>
-                    <div className="text-xs font-mono">
-                      <span className="text-muted-foreground">{t('common.target')}:</span>{' '}
-                      <span className="text-foreground">{getTargetDisplay(testRule)}</span>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-xs font-bold text-status-error">{t('rules.noMatch')}</div>
-                )}
-                <div className="text-xs text-muted-foreground pt-1 border-t border-border/40">
-                  {t('rules.testNote')}
-                </div>
-              </div>
-            )}
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={closeTest}>
-              {t('common.close')}
-            </Button>
-            <Button onClick={runTest} disabled={!testRule}>
-              <Play className="w-3.5 h-3.5 mr-1.5" />
-              {t('rules.runTest')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={editRule !== null} onOpenChange={(o) => !o && closeEdit()}>
-        <DialogContent className="max-w-xl">
-          <DialogHeader>
-            <DialogTitle>{t('rules.edit.title')}</DialogTitle>
-            <DialogDescription>{t('rules.subtitle')}</DialogDescription>
-          </DialogHeader>
-
-          {editForm && (
-            <div className="space-y-4">
-              <LabeledInput
-                label={t('rules.edit.name')}
-                value={editForm.name}
-                onChange={(v) => setEditForm({ ...editForm, name: v })}
-              />
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-foreground">
-                  {t('rules.edit.match')}
-                </label>
-                <textarea
-                  value={editForm.match}
-                  onChange={(e) => setEditForm({ ...editForm, match: e.target.value })}
-                  placeholder={t('rules.edit.matchPlaceholder')}
-                  rows={3}
-                  className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-xs font-mono text-foreground shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-foreground">
-                  {t('rules.edit.action')}
-                </label>
-                <Select
-                  value={editForm.action}
-                  onValueChange={(v) =>
-                    setEditForm({ ...editForm, action: v as RuleStat['action'] })
-                  }
-                >
-                  <SelectTrigger className="h-9 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {EDIT_ACTION_OPTIONS.map((o) => (
-                      <SelectItem key={o.value} value={o.value} className="text-xs">
-                        {t(o.labelKey)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                {editForm.action === 'mirror' ? (
-                  <LabeledInput
-                    label={t('rules.edit.targets')}
-                    value={editForm.targets}
-                    onChange={(v) => setEditForm({ ...editForm, targets: v })}
-                    placeholder={t('rules.edit.targetsPlaceholder')}
-                  />
-                ) : (
-                  <LabeledInput
-                    label={t('rules.edit.target')}
-                    value={editForm.target}
-                    onChange={(v) => setEditForm({ ...editForm, target: v })}
-                  />
-                )}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-foreground">
-                    {t('rules.edit.priority')}
-                  </label>
-                  <Input
-                    type="number"
-                    min={0}
-                    value={editForm.priority}
-                    onChange={(e) => {
-                      const n = Number(e.target.value)
-                      if (!Number.isNaN(n)) setEditForm({ ...editForm, priority: n })
-                    }}
-                    className="h-9 text-xs"
-                  />
-                </div>
-              </div>
-
-              {editForm.action === 'transform' && (
-                <div className="space-y-3 rounded-md border border-primary/20 bg-primary/5 p-3">
-                  <LabeledInput
-                    label={t('rules.edit.transformExpression')}
-                    value={editForm.transformExpression}
-                    onChange={(v) => setEditForm({ ...editForm, transformExpression: v })}
-                    placeholder={t('rules.edit.transformExpressionPlaceholder')}
-                  />
-                  <LabeledInput
-                    label={t('rules.edit.transformTagRename')}
-                    value={editForm.transformTagRename}
-                    onChange={(v) => setEditForm({ ...editForm, transformTagRename: v })}
-                    placeholder={t('rules.edit.transformTagRenamePlaceholder')}
-                  />
-                </div>
-              )}
-
-              <div className="space-y-1.5">
-                <div className="text-xs font-semibold text-muted-foreground">
-                  {t('config.yamlCode')}
-                </div>
-                <pre className="max-h-48 overflow-auto rounded-md border border-border bg-muted/60 p-3 text-xs font-mono text-primary whitespace-pre-wrap break-all">
-                  {buildRuleYaml(editForm)}
-                </pre>
-              </div>
-
-              {editStatus && (
-                <div
-                  className={`flex items-center gap-2 rounded-md border px-3 py-2 text-xs ${
-                    editStatus.type === 'success'
-                      ? 'border-status-running/30 bg-status-running/10 text-status-running'
-                      : 'border-status-error/30 bg-status-error/10 text-status-error'
-                  }`}
-                >
-                  {editStatus.type === 'error' ? (
-                    <AlertCircle className="h-4 w-4 shrink-0" />
-                  ) : (
-                    <Check className="h-4 w-4 shrink-0" />
-                  )}
-                  <span className="break-all">{editStatus.text}</span>
-                </div>
-              )}
-            </div>
-          )}
-
-          <DialogFooter>
-            <Button variant="outline" onClick={closeEdit}>
-              {t('common.close')}
-            </Button>
-            <Button
-              onClick={handleGenerateAndReload}
-              disabled={!editForm || updateMutation.isPending}
-            >
-              {updateMutation.isPending ? (
-                <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-              ) : (
-                <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
-              )}
-              {t('rules.edit.generateAndReload')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <RuleEditDialog
+        editRule={editRule}
+        editForm={editForm}
+        setEditForm={setEditForm}
+        editStatus={editStatus}
+        closeEdit={closeEdit}
+        handleGenerateAndReload={handleGenerateAndReload}
+        isPending={updateMutation.isPending}
+      />
 
       {/* Rule create/edit wizard */}
       <RuleWizard open={wizardOpen} onOpenChange={setWizardOpen} existingRule={editingRule} />
