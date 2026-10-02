@@ -12,6 +12,23 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * Extracts a human-readable error message from CoreC's JSON error response
+ * body (e.g. {"error":"unsupported patch key(s): [foo]"}). Falls back to the
+ * raw body if it's not JSON or has no "error" field; the caller supplies the
+ * final fallback string (translated) for an empty body.
+ */
+export function extractApiError(body: string, fallback: string): string {
+  try {
+    const parsed = JSON.parse(body)
+    if (parsed?.error) return parsed.error
+    if (typeof parsed === 'string') return parsed
+  } catch {
+    // body is not JSON
+  }
+  return body.slice(0, 200) || fallback
+}
+
 /** Default request timeout — prevents hung CoreC from piling up in-flight calls. */
 const DEFAULT_TIMEOUT_MS = 15_000
 
