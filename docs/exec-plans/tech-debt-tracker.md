@@ -263,7 +263,7 @@
 - 位置：`src/features/admin/ConfigCenterPage.tsx:213-229` 与 235-246
 - 证据：autoLoadedRef（213）effect 内一次性 guard（222-229）。handleImportYamlToForm（235-246）在 loadFromYaml() 后立即读 useConfigStore.getState().error，因"渲染闭包内 configError 已过期"（注释 238-239）——store 变更被命令式读取而非响应式。
 - 修复建议：auto-load 改用 useEffect + 正常"已加载"state 标志，或 react-query onSuccess/select。loadFromYaml 同步返回 error 而非 mutate + getState。
-- 业务行为影响：无 ｜ 批次G ｜ 验收：无裸 getState 读取 + 行为守恒 ｜ 状态：待处理
+- 业务行为影响：无 ｜ 批次G ｜ 验收：无裸 getState 读取 + 行为守恒 ｜ 状态：已完成（loadFromYaml 同步返回 error；4 处 getState().error 消除；autoLoadedRef→autoLoaded state；revertWorkingConfig 用 selector；useConfigCenter 无 getState/useRef）
 
 ### 重复（DUP）
 

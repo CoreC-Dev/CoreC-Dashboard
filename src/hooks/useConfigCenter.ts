@@ -7,7 +7,7 @@
  * load, dry-run validation, change history, and the debounced diff preview.
  * No behavior changes — pure relocation of the page's stateful logic.
  */
-import { type ChangeEvent, useEffect, useMemo, useRef, useState } from 'react'
+import { type ChangeEvent, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   useConfigRaw,
@@ -97,6 +97,7 @@ export function useConfigCenter() {
   const getSavedYaml = useConfigStore((s) => s.getSavedYaml)
   const markSaved = useConfigStore((s) => s.markSaved)
   const loadFromYaml = useConfigStore((s) => s.loadFromYaml)
+  const revertConfig = useConfigStore((s) => s.revert)
   const configWorkingExists = useConfigStore((s) => !!s.workingConfig)
   // Pre-apply validation: run zod schema + cross-entity checks on the
   // working config. Errors are surfaced in the apply confirmation dialog
@@ -130,33 +131,30 @@ export function useConfigCenter() {
   // Guards one-time auto-load of the live server config into the editor on
   // first successful fetch, so operators see the actual running config
   // instead of DEFAULT_SAMPLE_YAML without a manual "Load from Server" click.
-  const autoLoadedRef = useRef(false)
+  const [autoLoaded, setAutoLoaded] = useState(false)
 
   // Auto-load the live server config into the editor on first successful
   // fetch. Without this the editor shows DEFAULT_SAMPLE_YAML and the operator
   // must manually click "Load from Server" to see the actual running config —
   // a confusing UX, especially when they then "Hot Reload" and would push the
-  // stale sample YAML back to the server. The autoLoadedRef guard ensures we
+  // stale sample YAML back to the server. The autoLoaded guard ensures we
   // only auto-populate once (on mount), not on every refetch, so subsequent
   // manual edits are not clobbered by background revalidations.
   useEffect(() => {
-    if (autoLoadedRef.current) return
+    if (autoLoaded) return
     const yamlText = rawConfigQuery.data
     if (!yamlText?.trim()) return
-    autoLoadedRef.current = true
+    setAutoLoaded(true)
     setYamlContent(yamlText)
     loadFromYaml(yamlText)
-  }, [rawConfigQuery.data, loadFromYaml])
+  }, [rawConfigQuery.data, loadFromYaml, autoLoaded])
 
   // ── YAML ↔ Form bridge ─────────────────────────────────────────────
   // "Import YAML → Form": parse the current Monaco editor content into the
   // configStore so the structured editors (Global/Node/Drivers/etc.) reflect
   // the YAML the user has been editing in code view.
   const handleImportYamlToForm = () => {
-    loadFromYaml(yamlContent)
-    // Read error directly from the store — the configError from the render
-    // closure is stale because loadFromYaml just mutated the store.
-    const err = useConfigStore.getState().error
+    const err = loadFromYaml(yamlContent)
     if (err) {
       setStatusMsg({ type: 'error', text: t('config.importYamlFailed', { error: err }) })
     } else {
@@ -188,8 +186,7 @@ export function useConfigCenter() {
     reader.onload = () => {
       const text = String(reader.result)
       setYamlContent(text)
-      loadFromYaml(text)
-      const err = useConfigStore.getState().error
+      const err = loadFromYaml(text)
       if (err) {
         setStatusMsg({
           type: 'error',
@@ -233,8 +230,7 @@ export function useConfigCenter() {
   // Load a pre-built configuration template into the working config.
   const handleLoadTemplate = (template: ConfigTemplate) => {
     setYamlContent(template.yaml)
-    loadFromYaml(template.yaml)
-    const err = useConfigStore.getState().error
+    const err = loadFromYaml(template.yaml)
     if (err) {
       setStatusMsg({ type: 'error', text: t('config.importYamlFailed', { error: err }) })
     } else {
@@ -319,8 +315,7 @@ export function useConfigCenter() {
           return
         }
         setYamlContent(yamlText)
-        loadFromYaml(yamlText)
-        const err = useConfigStore.getState().error
+        const err = loadFromYaml(yamlText)
         if (err) {
           setStatusMsg({ type: 'error', text: t('config.importYamlFailed', { error: err }) })
         } else {
@@ -363,7 +358,7 @@ export function useConfigCenter() {
   }
 
   // Revert the configStore working config to the last saved state.
-  const revertWorkingConfig = () => useConfigStore.getState().revert()
+  const revertWorkingConfig = () => revertConfig()
 
   // Line-by-line diff between the editor content and the last submitted YAML.
   // Uses the debounced value so the O(m×n) LCS isn't recomputed on every

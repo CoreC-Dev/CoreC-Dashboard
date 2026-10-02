@@ -49,8 +49,10 @@ export interface ConfigStoreState {
 
   // ─── Loading ──────────────────────────────────────────────────────
 
-  /** Load config from a YAML string (path B: uploaded file or pasted YAML). */
-  loadFromYaml: (yaml: string) => void
+  /** Load config from a YAML string (path B: uploaded file or pasted YAML).
+   *  Returns the error message on failure, or null on success — so callers
+   *  can react to the result synchronously without reading store.getState(). */
+  loadFromYaml: (yaml: string) => string | null
   /** Start a new empty config (blank-slate creation). */
   resetToEmpty: () => void
 
@@ -126,10 +128,13 @@ export const useConfigStore = create<ConfigStoreState>((set, get) => {
           dirty: false,
           error: null,
         })
+        return null
       } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err)
         set({
-          error: err instanceof Error ? err.message : String(err),
+          error: message,
         })
+        return message
       }
     },
 
