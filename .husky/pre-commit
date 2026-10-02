@@ -1,0 +1,5 @@
+npx biome check src
+npm run docs:lint
+npm run structure:lint
+npm run custom:lint
+npm run any:ratchet

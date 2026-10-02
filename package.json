@@ -10,7 +10,16 @@
     "lint:fix": "biome check src --write --unsafe",
     "format": "biome format src --write",
     "test": "vitest run",
-    "preview": "vite preview"
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest",
+    "typecheck": "tsc -b",
+    "docs:lint": "node scripts/docs-lint.mjs",
+    "structure:lint": "node scripts/structure-lint.mjs",
+    "custom:lint": "node scripts/custom-lint.mjs",
+    "any:ratchet": "node scripts/any-ratchet.mjs",
+    "lint:all": "biome check src && npm run docs:lint && npm run structure:lint && npm run custom:lint && npm run any:ratchet",
+    "preview": "vite preview",
+    "prepare": "husky"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",
@@ -57,6 +66,8 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.1",
+    "@vitest/coverage-v8": "^5.0.3",
+    "husky": "^9.1.7",
     "jsdom": "^29.1.1",
     "typescript": "~7.0.2",
     "vite": "^8.3.0",

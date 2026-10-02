@@ -1,0 +1,61 @@
+# CI —— 持续集成质量门禁（阶段 3 建立）
+# PR + 全分支触发；deploy.yml 通过 workflow_call 复用本工作流。
+# 门禁：biome lint → typecheck → docs-lint → 结构测试 → 自定义 linter → any 棘轮 → build → test → coverage
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches-ignore: [main] # main 由 deploy.yml 经 workflow_call 触发
+  workflow_call: # 供 deploy.yml 复用
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    name: 质量门禁
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint（biome）
+        run: npm run lint
+
+      - name: Type-check（tsc -b）
+        run: npm run typecheck
+
+      - name: Docs lint（链接/必填节/索引）
+        run: npm run docs:lint
+
+      - name: 结构测试（分层依赖方向）
+        run: npm run structure:lint
+
+      - name: 自定义 linter（文件大小/console.log）
+        run: npm run custom:lint
+
+      - name: any 棘轮（noExplicitAny 基线）
+        run: npm run any:ratchet
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm test
+
+      - name: Coverage（基线门禁）
+        run: npm run test:coverage

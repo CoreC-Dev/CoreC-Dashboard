@@ -221,6 +221,13 @@ function proxyUpgradeToCoreC(req, socket, head) {
 
 /** Serve static file or SPA fallback. */
 async function serveStatic(req, res) {
+  // 安全响应头（TD-SEC-007，阶段 3）
+  res.setHeader('X-Content-Type-Options', 'nosniff')
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin')
+  res.setHeader('X-Frame-Options', 'DENY')
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
+  // 注：不加 HSTS（Strict-Transport-Security）——部署经 HTTP 自定义域（见 deploy.yml），
+  //     HSTS 会强制 HTTPS 触发 Mixed Content。改 HTTPS 部署时再加。
   const p = safeStaticPath(req.url)
   if (!p) {
     res.writeHead(403)

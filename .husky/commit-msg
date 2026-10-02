@@ -1,0 +1,9 @@
+msg=$(cat "$1")
+pattern='^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\(.+\))?!?: .+'
+if ! printf '%s' "$msg" | grep -qE "$pattern"; then
+  echo "❌ commit-msg 不符合 Conventional Commits："
+  echo "   $msg"
+  echo "   格式：type(scope): description"
+  echo "   type ∈ feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert"
+  exit 1
+fi

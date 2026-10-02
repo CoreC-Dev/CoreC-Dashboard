@@ -25,11 +25,14 @@
 - **TD-SEC-011（P2）**：`importInstances` 用 zod 校验导入 JSON，拒绝未知 key。
 - **TD-SEC-005（P2）**：WS token 维持查询串（ADR-007）；登记 CoreC 侧日志脱敏依赖。
 
-## 待核实/门禁侧（阶段 3）
-- **TD-SEC-004（P1）**：js-yaml 5.4.2 来自 npmmirror 镜像——从官方 registry 重解析 + 哈希确认 + `npm audit`。
-- **TD-SEC-007（P2）**：server.mjs 加安全响应头（nosniff / Referrer-Policy / Permissions-Policy / HSTS）。
-- **TD-SEC-008（P2）**：bleeding-edge 依赖——`npm audit` + 锁精确版本。
-- **TD-SEC-012（P2）**：ErrorBoundary 生产脱敏日志（仅 status+message，body 置 `import.meta.env.DEV` 后）。
+## 门禁侧（阶段 3 已落地）
+- **TD-SEC-004（P1）✅ 已核实**：js-yaml@5.4.2 integrity 哈希与 registry.npmjs.org 官方一致（内容相同，非 fork）。audit 需 `--registry=https://registry.npmjs.org`（npmmirror 不支持 audit 端点）。
+- **TD-SEC-007（P2）✅ 已完成**：server.mjs `serveStatic` 加 `X-Content-Type-Options: nosniff` / `Referrer-Policy: strict-origin-when-cross-origin` / `X-Frame-Options: DENY` / `Permissions-Policy`。HSTS 因 HTTP 部署暂不加（见 deploy.yml）。
+- **TD-SEC-008（P2）✅ 已核实**：`npm audit --registry=https://registry.npmjs.org` 跑通，2 low（dompurify via monaco，见下），无 high/critical。
+- **TD-SEC-013（P2）🆕 待处理**：dompurify 3.4.13-15 DOM XSS（GHSA-p98j-92pf-mc4p），经 monaco-editor 传递。低危（Monaco markdown 预览，非配置路径）。批次 J 自托管 Monaco 时升级或 `npm audit fix`。
+- **TD-SEC-012（P2）⏳ 延至阶段 4 批次 I**：ErrorBoundary 生产脱敏日志——属 `src/` 行为变更，按 C4 随安全批次单独提交。
+
+> 豁免/ratchet 机制与 audit 细节见 `docs/design-docs/gate-exemptions.md`。
 
 ## 已豁免
 - **TD-SEC-010**：公网无仪表盘鉴权——用户决策接受风险（ADR-005）。**风险残留：任何能访问 URL 者可操作仪表盘。** 改内网部署时需重新评估。

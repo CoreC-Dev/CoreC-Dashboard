@@ -4,7 +4,7 @@
 - 项目 / 仓库：CoreC-Dashboard（CoreC 项目前端）
 - 分支：`harnessing`（从 `main` 切出，改造期间所有提交仅落此分支，§7.1）
 - 计划版本 / 日期：v1.0 / 2026-10-02
-- 状态：阶段 2（文档对齐）已完成，待指令启动阶段 3
+- 状态：阶段 3（门禁审计与自动化质量校验）已完成，待指令启动阶段 4（重构落地，改 src/）
 - 规则母本：`docs/HARNESS-RULES.md`（§0 契约 C1–C7、§5 五阶段、附录 A/B/C/E/F）
 - 本轮范围：**仅阶段 1**（全量扫描 + 计划 + 问题清单）。阶段 2–5 待人工确认本计划后启动（契约 C2 串行、C1 计划先行）。
 
@@ -107,6 +107,8 @@
 - **产出物**：ci.yml、hook 配置、结构测试、自定义 linter、覆盖率配置、更新后的 docs/CI.md + 门禁清单文档。
 - **验收**：干净环境"安装→构建→测试"一次成功；故意越层依赖门禁失败（实测）；故意超长文件/非结构日志门禁失败（实测）；死链/缺 index 条目文档门禁失败（实测）；每门禁失败信息含可执行修复指引；本地一条命令复现；豁免项有原因+到期。覆盖 TD-GATE-001..004, TD-SEC-004,007,008,012, TD-TEST-001, TD-ARCH-010。
 
+> **✅ 阶段 3 已完成（2026-10-02）**。产出：删除 `pnpm-lock.yaml`（D1=npm）；`vitest.config.ts`+`src/test/setup.ts`（jsdom+v8 coverage，阈值 floor lines26/stmt25/branch19/func18）；`scripts/structure-lint.mjs`（分层依赖方向，5 豁免 TD-ARCH-001/002/004/005/009）；`scripts/custom-lint.mjs`（文件大小≤500+console.log，15 豁免）；`scripts/any-ratchet.mjs`（noExplicitAny 基线 2）；`.github/workflows/ci.yml`（PR+全分支，lint+typecheck+docs+结构+custom+any+build+test+coverage）；`deploy.yml` 改 `needs:ci`（复用 ci.yml）；`.husky/` pre-commit+commit-msg（Conventional Commits）；`server.mjs` 安全响应头（TD-SEC-007）；`docs/design-docs/gate-exemptions.md`（豁免/ratchet 机制+audit）。验收：lint:all+typecheck+build+test(325)+coverage 全绿；注入越层/超长/死链三缺陷门禁均失败且修复指引可执行；`npm audit --registry=npmjs.org` 无 high/critical（2 low dompurify via monaco→TD-SEC-013）；js-yaml integrity 匹配官方（TD-SEC-004 已核实）；`src/` 仅新增 test infra，零业务逻辑变更。TD-SEC-012 延至阶段 4 批次 I（属 src/ 行为变更）。
+
 ### 阶段 4 · 问题修复与重构落地  （前置：阶段 3 通过，护栏就位）
 - **子任务**：按 §4 批次 A→J 顺序推进，每批一域、小粒度提交。拆臃肿模块→落实单一职责→降复杂度→抽公共逻辑→修清单缺陷（P0 优先=TD-SEC-003）→同步更新文档/QUALITY_SCORE/计划进度日志→更新 tracker（结清移除/新发现登记）。**变更行为项（批次 I）每条单独提交，不得与重构混提（C4）。**
 - **产出物**：每批一组小提交 + 同步文档 + 更新 tracker + 计划进度日志。
@@ -145,6 +147,6 @@
 | 2026-10-02 | 2 | 重写 AGENTS.md（67 行）+ ARCHITECTURE.md + docs/ 树 + core-beliefs.md + QUALITY_SCORE.md + 规范文档 + 工程化说明 | （待提交） | 附录 E/F；§2.1 必需项；ADR-002..009 落盘 |
 | 2026-10-02 | 2 | 建 scripts/docs-lint.mjs 文档防腐 linter；`node scripts/docs-lint.mjs` 通过 | （待提交） | TD-DOC-001..003 结清；阶段 2 验收全过 |
 
-> **下一步**：阶段 2 已完成，待指令启动阶段 3（门禁审计与自动化质量校验）。
+> **下一步**：阶段 3 已完成，待指令启动阶段 4（问题修复与重构落地，改 src/）。阶段 4 按 §4 批次 A→J 推进，每批一域小粒度提交，行为守恒由测试证明。
 >
 > **决策已确认（2026-10-02）**：D1–D7 答案见 §6，已落 ADR-002..008。

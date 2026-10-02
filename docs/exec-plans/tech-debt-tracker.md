@@ -29,7 +29,7 @@
 
 ## 汇总
 
-- 已登记：**76 条**（5 域并行审计全部完成；其中 **1 已豁免**：TD-SEC-010，用户决策维持公网无鉴权现状）
+- 已登记：**77 条**（5 域并行审计 76 条 + 阶段 3 audit 新增 TD-SEC-013；其中 **1 已豁免**：TD-SEC-010，用户决策维持公网无鉴权现状）
 - 严重度分布：**P0 ×1** ｜ **P1 ×24** ｜ **P2 ×51**
 - 类别分布：架构 13 ｜ 复杂度 10 ｜ 重复 6 ｜ 测试 16 ｜ 安全 12 ｜ 门禁 4 ｜ 文档 3 ｜ 性能 10 ｜ 可靠性 2
 - 业务行为影响：**变更行为 ×10**（均需人工决策后单独提交，见 `harness-migration.md` §6）｜ 修复bug ×0 ｜ 无 ×66
@@ -89,11 +89,12 @@
 | TD-SEC-001 | P1 | 安全 | CSP connect-src * | 批次I | 待处理 |
 | TD-SEC-002 | P1 | 安全 | Bearer 密钥发往任意后端（浏览器 SSRF） | 批次I | 待处理 |
 | TD-SEC-003 | P0 | 安全 | 实例导出明文泄露 API 密钥 | 批次I | 待处理 |
-| TD-SEC-004 | P1 | 安全 | js-yaml 5.4.2 来自第三方镜像（供应链） | 阶段3 | 待处理 |
+| TD-SEC-004 | P1 | 安全 | js-yaml 5.4.2 来自第三方镜像（供应链） | 阶段3 | 已核实 |
 | TD-SEC-005 | P2 | 安全 | WS token 走 URL 查询串 | 批次I | 待处理 |
 | TD-SEC-006 | P2 | 安全 | 模板弱默认密钥 change-me-please | 批次I | 待处理 |
-| TD-SEC-007 | P2 | 安全 | server.mjs 无安全响应头 | 阶段3 | 待处理 |
-| TD-SEC-008 | P2 | 安全 | 依赖均为 bleeding-edge 大版本 | 阶段3 | 待处理 |
+| TD-SEC-007 | P2 | 安全 | server.mjs 无安全响应头 | 阶段3 | 已完成 |
+| TD-SEC-008 | P2 | 安全 | 依赖均为 bleeding-edge 大版本 | 阶段3 | 已核实 |
+| TD-SEC-013 | P2 | 安全 | dompurify 3.4.13-15 DOM XSS（经 monaco-editor 传递） | 阶段3 | 待处理 |
 | TD-SEC-009 | P2 | 安全 | js-yaml load() 未指定安全 schema | 批次I | 待处理 |
 | TD-SEC-010 | P2 | 安全 | 公网部署无仪表盘级鉴权 | 批次I | 已豁免 |
 | TD-SEC-011 | P2 | 安全 | importInstances 未校验 JSON 即 spread | 批次I | 待处理 |
@@ -428,7 +429,7 @@
 - 位置：`package.json:37`（`"js-yaml": "^5.4.2"`），package-lock.json 解析 `js-yaml@5.4.2` 自 `https://registry.npmmirror.com/...`；`@types/js-yaml` 为 4.0.9（不匹配）
 - 证据：官方 js-yaml 稳定线为 4.x；需核实 5.4.2 是否合法发布而非镜像 fork/typosquat。@types 4.0.9 vs 运行时 5.4.2 不匹配致类型不可靠。
 - 修复建议：从官方 registry.npmjs.org 重新解析，确认完整性哈希。Phase 3 跑 `npm audit`。
-- 业务行为影响：无（仅核实） ｜ 阶段3 ｜ 验收：官方源解析 + 哈希确认 ｜ 状态：待处理
+- 业务行为影响：无（仅核实） ｜ 阶段3 ｜ 验收：官方源解析 + 哈希确认 ｜ 状态：已核实（阶段 3：integrity sha512 与 registry.npmjs.org 官方一致，内容相同；audit 需 `--registry=https://registry.npmjs.org` 因 npmmirror 不支持 audit 端点）
 
 **TD-SEC-005** ｜ WebSocket 鉴权 token 走 URL 查询串（日志泄露） ｜ P2
 - 位置：`src/api/websocket.ts:68-73`
@@ -446,13 +447,19 @@
 - 位置：`server.mjs:223-258`（serveStatic）、`server.mjs:79-114`（proxyToCoreC）
 - 证据：无 X-Content-Type-Options: nosniff、Referrer-Policy、Strict-Transport-Security、Permissions-Policy。CSP 经 index.html meta 覆盖文档，静态资产无 nosniff。
 - 修复建议：在 serveStatic 与 proxyToCoreC 加 res.setHeader：nosniff、Referrer-Policy: strict-origin-when-cross-origin、Permissions-Policy: geolocation=(), microphone=(), camera=()。TLS 时加 HSTS。
-- 业务行为影响：无 ｜ 阶段3 ｜ 验收：curl 验证头存在 ｜ 状态：待处理
+- 业务行为影响：无 ｜ 阶段3 ｜ 验收：curl 验证头存在 ｜ 状态：已完成（阶段 3：serveStatic 加 nosniff/Referrer-Policy/X-Frame-Options/Permissions-Policy；curl 验证通过；HSTS 因 HTTP 部署暂不加）
 
 **TD-SEC-008** ｜ 依赖均为 bleeding-edge 大版本 ｜ P2
 - 位置：`package.json:15-64`
 - 证据：react ^19.3、vite ^8.3、typescript ~7.0、@biomejs/biome ^2.5、zod ^4、i18next ^26、@types/node ^26、vitest ^5、jsdom ^29。大版本很新，实战窗口短，传递 CVE 概率高。
 - 修复建议：Phase 3 对实时 registry 跑 npm audit + pnpm audit；CI 锁定精确版本；审查 Vite 8 rolldown 传递依赖。
-- 业务行为影响：无 ｜ 阶段3 ｜ 验收：audit 报告 + 无高危 CVE ｜ 状态：待处理
+- 业务行为影响：无 ｜ 阶段3 ｜ 验收：audit 报告 + 无高危 CVE ｜ 状态：已核实（阶段 3：`npm audit --registry=https://registry.npmjs.org` 跑通，2 low severity（dompurify via monaco，见 TD-SEC-013），无 high/critical）
+
+**TD-SEC-013** ｜ dompurify 3.4.13-15 DOM XSS（经 monaco-editor 传递） ｜ P2
+- 位置：`node_modules/monaco-editor → dompurify`（传递依赖）
+- 证据：`npm audit --registry=https://registry.npmjs.org` 报 GHSA-p98j-92pf-mc4p（dompurify IN_PLACE hook DOM XSS，low）。monaco-editor >=0.57.0-rc.2 依赖受影响版本。
+- 修复建议：`npm audit fix` 升级 dompurify，或随批次 J 自托管 Monaco（ADR-008）时升级 monaco-editor 至修复版。低危：dompurify 用于 Monaco markdown 预览，非应用配置路径。
+- 业务行为影响：无 ｜ 批次J ｜ 验收：audit 无 dompurify 漏洞 ｜ 状态：待处理
 
 **TD-SEC-009** ｜ js-yaml load() 未指定安全 schema（原型污染风险） ｜ P2（待核实）
 - 位置：`src/lib/configYaml.ts:24-32`，喂自服务配置（useHomepageProbe.ts:160、ConfigCenterPage）与用户粘贴 YAML（configStore.ts:190-204）
@@ -607,3 +614,4 @@
 | 日期 | 动作 | 关联 |
 |---|---|---|
 | 2026-10-02 | 初建。登记 76 条（ARCH 13 / CPLX 10 / DUP 6 / TEST 16 / SEC 12 / GATE 4 / DOC 3 / PERF 12），5 域并行审计完成 | Phase 1 全量扫描 |
+| 2026-10-02 | 阶段 3：TD-SEC-004 已核实（js-yaml integrity 匹配官方）、TD-SEC-007 已完成（server 安全头）、TD-SEC-008 已核实（audit 跑通）、TD-DOC-001..003 已完成；新增 TD-SEC-013（dompurify via monaco，P2） | Phase 3 门禁 |

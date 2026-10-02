@@ -20,6 +20,7 @@
 | `design-docs/core-beliefs.md` | 第一性原则（争议裁决依据） | ✅ |
 | `design-docs/architecture-decisions.md` | 架构决策记录（ADR：框架判定 + D1–D7） | ✅ |
 | `design-docs/doc-gardening.md` | 文档防腐规则与园丁任务 | ✅ |
+| `design-docs/gate-exemptions.md` | 门禁豁免/ratchet 机制 + npm audit 结果 | ✅ |
 
 ## 规范文档
 | 文档 | 职责 | 状态 |
