@@ -94,7 +94,7 @@
 | TD-SEC-006 | P2 | 安全 | 模板弱默认密钥 change-me-please | 批次I | 已完成 |
 | TD-SEC-007 | P2 | 安全 | server.mjs 无安全响应头 | 阶段3 | 已完成 |
 | TD-SEC-008 | P2 | 安全 | 依赖均为 bleeding-edge 大版本 | 阶段3 | 已核实 |
-| TD-SEC-013 | P2 | 安全 | dompurify 3.4.13-15 DOM XSS（经 monaco-editor 传递） | 阶段3 | 待处理 |
+| TD-SEC-013 | P2 | 安全 | dompurify 3.4.13-15 DOM XSS（经 monaco-editor 传递） | 阶段3 | 已完成 |
 | TD-SEC-009 | P2 | 安全 | js-yaml load() 未指定安全 schema | 批次I | 已完成 |
 | TD-SEC-010 | P2 | 安全 | 公网部署无仪表盘级鉴权 | 批次I | 已豁免 |
 | TD-SEC-011 | P2 | 安全 | importInstances 未校验 JSON 即 spread | 批次I | 已完成 |
@@ -106,18 +106,18 @@
 | TD-DOC-001 | P1 | 文档 | 无 README.md | 阶段2 | 已完成 |
 | TD-DOC-002 | P1 | 文档 | 无 AGENTS.md / ARCHITECTURE.md / docs 结构 | 阶段2 | 已完成 |
 | TD-DOC-003 | P2 | 文档 | 无 QUALITY_SCORE.md / exec-plans 结构 | 阶段2 | 已完成 |
-| TD-PERF-001 | P1 | 性能 | "View Tags" 弹窗未虚拟化标签列表 | 批次J | 待处理 |
-| TD-PERF-002 | P1 | 可靠性 | pprof 下载裸 fetch 无超时 | 批次J | 待处理 |
-| TD-PERF-003 | P2 | 性能 | 表单模式 zod 校验逐键全量运行 | 批次J | 待处理 |
-| TD-PERF-004 | P2 | 性能 | AlertsPage 死信列表未虚拟化/未封顶 | 批次J | 待处理 |
-| TD-PERF-005 | P2 | 性能 | WriteControlPage 死信未 memo + 未虚拟化 | 批次J | 待处理 |
-| TD-PERF-006 | P2 | 性能 | DiagnosticsPage .filter 每渲染重算 | 批次J | 待处理 |
-| TD-PERF-007 | P2 | 性能 | TopologyPage 未 memo + O(n²) 连接摘要 | 批次J | 待处理 |
-| TD-PERF-008 | P2 | 性能 | DriversPage getDriverConnectionSummary O(n²) | 批次J | 待处理 |
-| TD-PERF-009 | P2 | 性能 | AppShell 订阅整个 instances 数组 | 批次J | 待处理 |
-| TD-PERF-010 | P2 | 可靠性 | Monaco 运行时从 CDN 拉取（离线/CSP） | 批次J | 待处理 |
-| TD-PERF-011 | P2 | 性能 | 首页探测 5N 请求/15s 无并发上限 | 批次J | 待处理 |
-| TD-PERF-012 | P2 | 性能 | clearedDlqKeys Set 在 sessionStorage 无界增长 | 批次J | 待处理 |
+| TD-PERF-001 | P1 | 性能 | "View Tags" 弹窗未虚拟化标签列表 | 批次J | 已完成 |
+| TD-PERF-002 | P1 | 可靠性 | pprof 下载裸 fetch 无超时 | 批次J | 已完成 |
+| TD-PERF-003 | P2 | 性能 | 表单模式 zod 校验逐键全量运行 | 批次J | 已完成 |
+| TD-PERF-004 | P2 | 性能 | AlertsPage 死信列表未虚拟化/未封顶 | 批次J | 已完成 |
+| TD-PERF-005 | P2 | 性能 | WriteControlPage 死信未 memo + 未虚拟化 | 批次J | 已完成 |
+| TD-PERF-006 | P2 | 性能 | DiagnosticsPage .filter 每渲染重算 | 批次J | 已完成 |
+| TD-PERF-007 | P2 | 性能 | TopologyPage 未 memo + O(n²) 连接摘要 | 批次J | 已完成 |
+| TD-PERF-008 | P2 | 性能 | DriversPage getDriverConnectionSummary O(n²) | 批次J | 已完成 |
+| TD-PERF-009 | P2 | 性能 | AppShell 订阅整个 instances 数组 | 批次J | 已完成 |
+| TD-PERF-010 | P2 | 可靠性 | Monaco 运行时从 CDN 拉取（离线/CSP） | 批次J | 已完成 |
+| TD-PERF-011 | P2 | 性能 | 首页探测 5N 请求/15s 无并发上限 | 批次J | 已豁免 |
+| TD-PERF-012 | P2 | 性能 | clearedDlqKeys Set 在 sessionStorage 无界增长 | 批次J | 已完成 |
 
 ---
 
@@ -539,73 +539,73 @@
 - 位置：`src/features/admin/DriversPage.tsx:480,522`
 - 证据：`const tags = tagsData?.tags ? Object.values(tagsData.tags) : []` 后 `{tags.map((tag) => { … })}`，无 `.slice`、无 `useVirtualizer`。兄弟 `DriverDetailPage.tsx:717` 显式 `tags.slice(0, 200)`、`TagExplorerPage` 虚拟化同数据——本弹窗为不一致离群点。IIoT PLC 驱动常带 500–5000 标签，开弹窗即挂载数千 `<tr>`。
 - 修复建议：用 `tags.slice(0, 200)`（对齐 DriverDetailPage）或更好用 `@tanstack/react-virtual`（已是依赖）虚拟化 `<tbody>`。
-- 业务行为影响：无 ｜ 批次J ｜ 验收：大标签集开弹窗不卡（DOM 节点数有界） ｜ 状态：待处理
+- 业务行为影响：无 ｜ 批次J ｜ 验收：大标签集开弹窗不卡（DOM 节点数有界） ｜ 状态：已完成（tags.slice(0, 200) + showing N/M 提示）
 
 **TD-PERF-002** ｜ pprof 下载用裸 fetch 无超时/AbortController——可永久挂起 ｜ P1
 - 位置：`src/features/admin/DiagnosticsPage.tsx:149`
 - 证据：`const res = await fetch(url, { headers: { Authorization: … } })`——无 signal、无 AbortController、无单次超时。`trace?seconds=5`/`profile?seconds=5` 服务端阻塞 ≥5s；CoreC 挂起/不可达时 promise 永久 pending，`pprofLoading` 不清、spinner 永转。其余 fetch（apiRequest、useHomepageProbe）均有超时，本处绕过封装。
 - 修复建议：经 `apiRequest`（15s 默认，可覆写 timeoutMs）或在 AbortController 加宽超时（如 30s）并于弹窗 unmount 时 abort。
-- 业务行为影响：无 ｜ 批次J ｜ 验收：不可达后端超时清 spinner ｜ 状态：待处理
+- 业务行为影响：无 ｜ 批次J ｜ 验收：不可达后端超时清 spinner ｜ 状态：已完成（30s AbortController 超时）
 
 **TD-PERF-003** ｜ 表单模式配置校验逐键全量运行 zod validateFullConfig（无防抖） ｜ P2
 - 位置：`src/features/admin/ConfigCenterPage.tsx:190` + `src/hooks/useConfigValidation.ts:28-34`
 - 证据：`useConfigValidation()` 订阅 workingConfig，在 `useMemo([workingConfig])` 内跑 `validateFullConfig(workingConfig)`。表单视图 `GlobalConfigEditor`/`NodeConfigEditor` 每次 onChange 调 `updateGlobalField(...)` 产生新 workingConfig ref → 逐键同步全量 zod 遍历。YAML diff 预览已正确防抖（`debouncedYaml = useDebouncedValue(yamlContent, 300)` :201），校验未防抖。大配置致输入卡顿。
 - 修复建议：校验输入防抖——`useDebouncedValue(workingConfig, 150-300)` 喂 validateFullConfig，或 `useDeferredValue`/setTimeout 防抖 effect，镜像 diff 预览模式。
-- 业务行为影响：无 ｜ 批次J（与 批次F/TD-CPLX-001 ConfigCenterPage 拆分协同） ｜ 验收：大配置逐键无卡顿 ｜ 状态：待处理
+- 业务行为影响：无 ｜ 批次J（与 批次F/TD-CPLX-001 ConfigCenterPage 拆分协同） ｜ 验收：大配置逐键无卡顿 ｜ 状态：已完成（useDebouncedValue(workingConfig, 200) 喂 validateFullConfig）
 
 **TD-PERF-004** ｜ AlertsPage 死信列表未虚拟化/未封顶 ｜ P2
 - 位置：`src/monitor/AlertsPage.tsx:340`
 - 证据：`{deadLetters.map((entry) => { … })}` 每死信一卡片，无 `.slice`、无虚拟化器。`deadLetters` 来自 `useDeadLetters()`（每 4s 轮询）。队列大小由后端控制；大积压（写入风暴打到宕机传输）挂载无界 DOM 且每 4s 全量重渲。
 - 修复建议：封顶渲染条目（如 `.slice(0, 100)` + "显示 N/M" 提示）或虚拟化。上方 live-log 已封顶 50——同纪律。
-- 业务行为影响：无 ｜ 批次J ｜ 验收：大积压 DOM 节点有界 ｜ 状态：待处理
+- 业务行为影响：无 ｜ 批次J ｜ 验收：大积压 DOM 节点有界 ｜ 状态：已完成（deadLetters.slice(0, 100) + showing N/M 提示）
 
 **TD-PERF-005** ｜ WriteControlPage 死信：未 memo 过滤 + 未虚拟化渲染 ｜ P2
 - 位置：`src/features/admin/WriteControlPage.tsx:137,531`
 - 证据：`const visibleDeadLetters = deadLetters.filter((dl) => !clearedDlqKeys.has(dlqKeyOf(dl)))` 每渲染重算（无 useMemo），后 `{visibleDeadLetters.map((dl) => …)}` 全量渲染未封顶。`useDeadLetters()` 每 4s 轮询 → 过滤+全量重渲 15×/min，不论数据是否变化。
 - 修复建议：过滤包 `useMemo([deadLetters, clearedDlqKeys])`，渲染封顶/虚拟化。
-- 业务行为影响：无 ｜ 批次J（与 批次F/TD-CPLX-007 协同） ｜ 验收：轮询间无多余重算 ｜ 状态：待处理
+- 业务行为影响：无 ｜ 批次J（与 批次F/TD-CPLX-007 协同） ｜ 验收：轮询间无多余重算 ｜ 状态：已完成（visibleDeadLetters useMemo([deadLetters, clearedDlqKeys]) + DeadLetterTable .slice(0, 100) + showing N/M）
 
 **TD-PERF-006** ｜ DiagnosticsPage driverReads/transportPublishes 每渲染 .filter 重算 ｜ P2
 - 位置：`src/features/admin/DiagnosticsPage.tsx:213-214`
 - 证据：`const driverReads = metrics.filter(...)` 与 `transportPublishes = metrics.filter(...)` 在 render body 无 useMemo。`metrics` 来自 `useMetrics()`（每 12s 轮询），页面 autoRefresh 切换/手动 refetch 亦重渲 → O(n) 扫描每次轮询重跑，即使指标集未变。（兄弟 `metricsMap`/`histogramsMap` :177/:179 已正确 memo。）
 - 修复建议：两者 `useMemo(() => metrics.filter(...), [metrics])`，或从 metricsMap 派生。
-- 业务行为影响：无 ｜ 批次J ｜ 验收：指标未变时不重算 ｜ 状态：待处理
+- 业务行为影响：无 ｜ 批次J ｜ 验收：指标未变时不重算 ｜ 状态：已完成（driverReads/transportPublishes 各 useMemo([metrics])）
 
 **TD-PERF-007** ｜ TopologyPage：未 memo 的 activeRules + .map 内逐项连接摘要查找 O(n²) ｜ P2
 - 位置：`src/features/admin/TopologyPage.tsx:34`（及 driver/transport `.map` 体）
 - 证据：`const activeRules = rules.filter((r) => !r.disabled)` 每渲染跑（相邻 `sortedRules` 已 memo :35）。driver/transport 渲染循环内 `getDriverConnectionSummary(config, d.name)`/`getTransportConnectionSummary(config, tr.name)` 逐项逐渲染调，各做 `config.drivers.find(...)`（O(drivers)）→ 卡片行 O(drivers²)/渲染。页面挂 7 个轮询查询（5–30s）→ 频繁重渲。
 - 修复建议：memo activeRules；`useMemo` 预算 `Map<name, summary>`（每 config 一次），循环内按名查。
-- 业务行为影响：无 ｜ 批次J ｜ 验收：渲染复杂度降为 O(n) ｜ 状态：待处理
+- 业务行为影响：无 ｜ 批次J ｜ 验收：渲染复杂度降为 O(n) ｜ 状态：已完成（activeRules useMemo + driverConnSummaries/transportConnSummaries Map 预算，循环内按名查）
 
 **TD-PERF-008** ｜ DriversPage 每卡片每渲染调 getDriverConnectionSummary（O(n²) find） ｜ P2
 - 位置：`src/features/admin/DriversPage.tsx:205,327`
 - 证据：`filteredConfigDrivers.map` 与 `drivers.map` 内 IIFE `const summary = getDriverConnectionSummary(workingConfig, drv.name)`/`getDriverConnectionSummary(parsedConfig, drv.name)` 逐卡跑，各 `config.drivers.find(d => d.name === name)` → 渲 N 卡 O(N²)。`useDrivers()` 每 15s 轮询、workingConfig 每次 wizard 编辑变 → 频繁重跑。
 - 修复建议：`useMemo` 建 `Map<driverName, summary>`（从 workingConfig/parsedConfig 一次），循环内索引。
-- 业务行为影响：无 ｜ 批次J（与 批次E/TD-DUP-006 协同） ｜ 验收：渲染复杂度 O(n) ｜ 状态：待处理
+- 业务行为影响：无 ｜ 批次J（与 批次E/TD-DUP-006 协同） ｜ 验收：渲染复杂度 O(n) ｜ 状态：已完成（workingDriverConnSummaries/parsedDriverConnSummaries Map 预算，循环内按名查）
 
 **TD-PERF-009** ｜ AppShell 订阅整个 instances 数组（宽 Zustand selector） ｜ P2
 - 位置：`src/components/layout/AppShell.tsx:65`
 - 证据：`const instances = useInstanceStore((s) => s.instances)` 选整个数组。任何产生新数组 ref 的变更——尤其 `setProbeResult`（每次探测 map instances）——重渲整个 shell + `<Outlet>` 子树。ConnectionProvider 挂载即 setProbeResult；首页探测每 15s 更新 instances。`InstanceCard` 已正确 memo + 窄 selector，但 shell 本身未。
 - 修复建议：若 AppShell 仅需实例数/ids 供切换器，选派生原语（`s.instances.map(i => ({id:i.id,name:i.name}))` + 浅相等 selector，或 useShallow）。否则接受——实例路由内有界且低频。
-- 业务行为影响：无 ｜ 批次J（与 批次F/TD-CPLX-005 AppShell 拆分协同） ｜ 验收：探测不触发全 shell 重渲 ｜ 状态：待处理
+- 业务行为影响：无 ｜ 批次J（与 批次F/TD-CPLX-005 AppShell 拆分协同） ｜ 验收：探测不触发全 shell 重渲 ｜ 状态：已完成（InstanceSelector useShallow 选派生 {id,name,lastConnectedAt}，探测变更不触发重渲）
 
 **TD-PERF-010** ｜ Monaco 编辑器核心运行时从公网 CDN 拉取——离线/气隙 + CSP 依赖 ｜ P2
 - 位置：`src/main.tsx:14`
 - 证据：`loader.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.55.1/min/vs' } })` 启动即跑；`@monaco-editor/react` 在 Config Center 编辑器挂载时惰性从 jsDelivr 拉 Monaco 核心。权衡：Monaco 包（~3-4MB）不进 app chunk（首屏好），但 (a) 首次进 Config Center 有 CDN 往返，(b) 需联网 + CSP `script-src`/`style-src` 白名单 jsdelivr（代码注释已警告），(c) 气隙 IIoT 控制网无法加载编辑器 → Config Center 空白。
 - 修复建议：IIoT 部署自托管 `monaco-editor` 的 `min/vs` 资产，loader.config 指本地路径（或用 @monaco-editor/react loader + bundled workers）。CDN 路径留作开发便利，置 env flag 后。
-- 业务行为影响：变更行为（见 §6 D7——自托管 vs CDN 为部署决策） ｜ 批次J ｜ 验收：气隙环境 Config Center 可用 ｜ 状态：待处理
+- 业务行为影响：变更行为（见 §6 D7——自托管 vs CDN 为部署决策） ｜ 批次J ｜ 验收：气隙环境 Config Center 可用 ｜ 状态：已完成（vite monacoSelfHostPlugin：dev 从 node_modules 服务，build 拷贝到 dist；CSP 移除 cdn.jsdelivr.net）
 
 **TD-PERF-011** ｜ 首页探测每 15s 对 N 实例发 5 并行请求，无并发上限 ｜ P2
 - 位置：`src/features/home/useHomepageProbe.ts:83-89,232`
 - 证据：`probeInstance` 对每实例 `Promise.allSettled` 5 fetch（`/`、`/stats`、`/tags`、`/rules`、`/configs/raw`）；`probeAll` 在 `setInterval(probeAll, 15_000)` 上对全部实例 `list.map(...)` 并行。N 实例 = 每 15s 跨 N 后端 5N 请求。每请求 8s 超时 + unmount abort（好），但无单实例/全局并发限 → 大实例列表（或慢后端）突发 5N 同时 socket。
 - 修复建议：对"同时多实例监控"为有意设计，典型 N（<20）无碍。若预期大 N，加小并发限（p-limit 式）或错峰逐实例探测。低优先。
-- 业务行为影响：无 ｜ 批次J ｜ 验收：大 N 下 socket 数有界 ｜ 状态：待处理
+- 业务行为影响：无 ｜ 批次J ｜ 验收：大 N 下 socket 数有界 ｜ 状态：已豁免（典型 N < 20 无碍；并发探测为多实例监控有意设计；每请求已有 8s 超时 + unmount abort）
 
 **TD-PERF-012** ｜ WriteControlPage clearedDlqKeys Set 在 sessionStorage 无界增长 ｜ P2
 - 位置：`src/features/admin/WriteControlPage.tsx:124`
 - 证据：`sessionStorage.setItem(DLQ_CLEARED_KEY, JSON.stringify([...clearedDlqKeys]))` 每次变更持久化整个 cleared-keys Set。CoreC 无死信 DELETE 端点，"清除"为客户端按键隐藏；每次清除的复合 key（`driver-tag-failed_at-attempts`）累积入 Set 且每次清除重序列化。长会话 + 反复写入失败 → Set 及其 JSON 串无界增长。
 - 修复建议：封顶 Set（如保留最近 200 个清除 key，淘汰最旧）或当对应死信不再出现于 deadLetters 时清陈旧 key。
-- 业务行为影响：无 ｜ 批次J（与 批次F/TD-CPLX-007 协同） ｜ 验收：长会话 Set 大小有界 ｜ 状态：待处理
+- 业务行为影响：无 ｜ 批次J（与 批次F/TD-CPLX-007 协同） ｜ 验收：长会话 Set 大小有界 ｜ 状态：已完成（useClearedDlqKeys MAX_CLEARED_DLQ_KEYS=200，持久化前 slice(-200) 淘汰最旧）
 
 ---
 

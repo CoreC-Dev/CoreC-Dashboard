@@ -1,4 +1,6 @@
 import { request as httpRequest } from 'node:http'
+import { readFile, stat } from 'node:fs/promises'
+import { existsSync } from 'node:fs'
 import path from 'node:path'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
@@ -114,12 +116,62 @@ function dynamicProxyPlugin(): Plugin {
   }
 }
 
+/**
+ * Vite plugin: self-host Monaco editor assets (TD-PERF-010, D7).
+ * Serves node_modules/monaco-editor/min/vs at /monaco/min/vs in dev mode.
+ * In production, copies the assets to dist/monaco/min/vs during build.
+ */
+const MONACO_VS_DIR = path.resolve(import.meta.dirname, 'node_modules/monaco-editor/min/vs')
+const MONACO_SERVE_PREFIX = '/monaco/min/vs'
+const MIME_MAP: Record<string, string> = {
+  '.js': 'application/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.json': 'application/json; charset=utf-8',
+  '.html': 'text/html; charset=utf-8',
+}
+
+function monacoSelfHostPlugin(): Plugin {
+  return {
+    name: 'monaco-self-host',
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        const reqUrl = req.url || ''
+        if (!reqUrl.startsWith(MONACO_SERVE_PREFIX)) return next()
+        const relPath = reqUrl.slice(MONACO_SERVE_PREFIX.length).split('?')[0]
+        const filePath = path.join(MONACO_VS_DIR, relPath)
+        stat(filePath)
+          .then((s) => {
+            if (!s.isFile()) throw new Error('not a file')
+            return readFile(filePath)
+          })
+          .then((data) => {
+            res.writeHead(200, {
+              'Content-Type': MIME_MAP[path.extname(filePath)] || 'application/octet-stream',
+            })
+            res.end(data)
+          })
+          .catch(() => {
+            res.writeHead(404)
+            res.end('Not Found')
+          })
+      })
+    },
+    async writeBundle() {
+      // Copy monaco/min/vs to dist/monaco/min/vs for production.
+      const distDir = path.resolve(import.meta.dirname, 'dist/monaco/min/vs')
+      if (!existsSync(MONACO_VS_DIR)) return
+      const { cp } = await import('node:fs/promises')
+      await cp(MONACO_VS_DIR, distDir, { recursive: true })
+    },
+  }
+}
+
 // https://vite.dev/config/
 export default defineConfig({
   // Relative asset paths so the build works under any host path — including
   // GitHub Pages custom domains, project subpaths, and local static servers.
   base: './',
-  plugins: [react(), tailwindcss(), dynamicProxyPlugin()],
+  plugins: [react(), tailwindcss(), dynamicProxyPlugin(), monacoSelfHostPlugin()],
   resolve: {
     alias: {
       '@': path.resolve(import.meta.dirname, './src'),

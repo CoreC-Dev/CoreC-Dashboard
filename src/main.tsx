@@ -5,13 +5,12 @@ import './index.css'
 import './i18n'
 import App from './App'
 
-// Monaco core is fetched from jsDelivr at runtime by @monaco-editor/loader.
-// Pin the build explicitly (matching the loader's own default) instead of
-// relying on a version that may drift when the loader package updates. The
-// CDN host MUST also be allow-listed in index.html's Content-Security-Policy
-// (script-src / style-src) — otherwise production CSP blocks the injected
-// <script> and editor stylesheets, leaving the Config Center editor blank.
-loader.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.55.1/min/vs' } })
+// Monaco core is self-hosted from /monaco/min/vs (TD-PERF-010, D7).
+// In dev, vite.config.ts monacoSelfHostPlugin serves from node_modules6monaco-editor.
+// In production, the plugin copies the assets to dist/monaco/min/vs at build time.
+// This removes the CDN dependency (air-gapped/offline compatible) and allows
+// CSP script-src/style-src to drop the cdn.jsdelivr.net allow-list.
+loader.config({ paths: { vs: '/monaco/min/vs' } })
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
