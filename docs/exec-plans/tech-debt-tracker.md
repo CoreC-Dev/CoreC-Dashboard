@@ -56,9 +56,9 @@
 | TD-ARCH-013 | P2 | 架构 | settingsRegistry 878 行数据 God Object | 批次D | 已完成 |
 | TD-CPLX-001 | P1 | 复杂度 | ConfigCenterPage God 组件（~886 行） | 批次F | 待处理 |
 | TD-CPLX-002 | P1 | 复杂度 | TagExplorerPage God 组件（~800 行） | 批次F | 待处理 |
-| TD-CPLX-003 | P1 | 复杂度 | RulesPage God 组件（~818 行） | 批次F | 待处理 |
+| TD-CPLX-003 | P1 | 复杂度 | RulesPage God 组件（~818 行） | 批次F | 已完成 |
 | TD-CPLX-004 | P2 | 复杂度 | configSchema.validateConfig 165 行高圈复杂度 | 批次G | 待处理 |
-| TD-CPLX-005 | P2 | 复杂度 | AppShell 混杂 7 类关注点 | 批次F | 待处理 |
+| TD-CPLX-005 | P2 | 复杂度 | AppShell 混杂 7 类关注点 | 批次F | 已完成 |
 | TD-CPLX-006 | P2 | 复杂度 | GlobalConfigEditor 手写渲染非数据驱动 | 批次F | 待处理 |
 | TD-CPLX-007 | P2 | 复杂度 | WriteControlPage 混杂 4 类关注点 | 批次F | 待处理 |
 | TD-CPLX-008 | P2 | 复杂度 | getActionBadge 5 分支 switch | 批次E | 已完成 |
@@ -221,7 +221,7 @@
 - 位置：`src/features/admin/RulesPage.tsx:129-947`
 - 证据：~818 行；15 useState。混杂规则列表渲染、逐行 toggle 变更跟踪（Set）、编辑弹窗（从原始 YAML 预填 transform）、live evaluateMatch 测试模拟器、apply 确认。getActionBadge（306-348）5 分支 switch 返回近似 Badge JSX。
 - 修复建议：抽 `<RuleTestSimulator>`、`<RuleEditDialog>`、`useRuleToggle()`；getActionBadge 换 ACTION_BADGE_META 查表。
-- 业务行为影响：无 ｜ 批次F ｜ 验收：单组件 <300 行 + 行为守恒 ｜ 状态：待处理
+- 业务行为影响：无 ｜ 批次F ｜ 验收：单组件 <300 行 + 行为守恒 ｜ 状态：已完成（886→524 行；useRuleToggle + RuleTestDialog + RuleEditDialog + ActionBadge 抽至 RuleParts.tsx）
 
 **TD-CPLX-004** ｜ configSchema.validateConfig 165 行高圈复杂度 + 嵌套 DFS ｜ P2
 - 位置：`src/lib/configSchema.ts:476-641`
@@ -233,7 +233,7 @@
 - 位置：`src/components/layout/AppShell.tsx:58-595`
 - 证据：~537 行。内联 handleThemeChange（87-106）View Transitions API + flushSync。4 useEffect。sidebarContent（211-~440）~230 行内联 JSX。
 - 修复建议：抽 `<SidebarNav>`、`<ThemeSelector>`、`<InstanceSelector>`、`<TopProgressBar>`、`useSidebarState()`；nav item 数组移到 navItems.ts。
-- 业务行为影响：无 ｜ 批次F ｜ 验收：单组件 <250 行 ｜ 状态：待处理
+- 业务行为影响：无 ｜ 批次F ｜ 验收：单组件 <250 行 ｜ 状态：已完成（595→160 行；SidebarNav + ThemeSelector + InstanceSelector + TopProgressBar + useSidebarState + navItems.ts）
 
 **TD-CPLX-006** ｜ GlobalConfigEditor 手写渲染非数据驱动 ｜ P2
 - 位置：`src/features/admin/GlobalConfigEditor.tsx:122-590`
