@@ -4,7 +4,7 @@
 - 项目 / 仓库：CoreC-Dashboard（CoreC 项目前端）
 - 分支：`harnessing`（从 `main` 切出，改造期间所有提交仅落此分支，§7.1）
 - 计划版本 / 日期：v1.0 / 2026-10-02
-- 状态：阶段 4（问题修复与重构落地）批次 A/B/C/D/E/F/G/H/I/J 已完成（~95%），剩 TD-ARCH-010 + TD-GATE-004 + TD-SEC-012 已落（commit 23fc082/b2772e9/ef3d920）；阶段 5（测试补全）待启动
+- 状态：阶段 4 批次 A–J 已完成；阶段 5（测试补全 TD-TEST-002..016）已完成，592 tests 全绿；剩 §14 收官拆解（归档 HARNESS-RULES.md）
 - 规则母本：`docs/HARNESS-RULES.md`（§0 契约 C1–C7、§5 五阶段、附录 A/B/C/E/F）
 - 本轮范围：**仅阶段 1**（全量扫描 + 计划 + 问题清单）。阶段 2–5 待人工确认本计划后启动（契约 C2 串行、C1 计划先行）。
 
@@ -161,7 +161,8 @@
 | 2026-10-03 | 4 | 批次 J 性能/可靠性（虚拟化/封顶、pprof 超时、memo、Monaco 自托管、Set 封顶） | 2bb156a..723dc9d | TD-PERF-001..010/012、TD-SEC-013 结清 |
 | 2026-10-03 | 4 | 文档同步：修正台账速查表 5 行过时状态 + 补完成度汇总 + 更新本计划 §0/§7 | （本次提交） | 防腐；台账与代码现状对齐 |
 | 2026-10-03 | 4 | 批次 D 全量迁移：Driver/TransportDetailPage 经 registryToEditFields 单源派生，删本地 *_FIELDS；structure-lint 增单源规则；adapter parity 测试；ADR-010 落盘 | 17c722c | TD-ARCH-011/TD-DUP-001 结清；5 类分歧按 registry 落地 + tags-file 顶层 bug 修复（行为变更，ADR-010）；339 tests |
+| 2026-10-03 | 5 | 阶段 5 测试补全：15 个 TD-TEST 条目全覆盖（13 新文件 + 3 扩展），592 tests 全绿 | （本次提交） | TD-TEST-002..016 全部结清；typecheck/lint:all/docs:lint/build 全通过 |
 
-> **下一步**：启动阶段 5（测试补全，覆盖 TD-TEST-002..016 + 收紧覆盖率门禁）→ 阶段 5 通过即达 DoD（§11.1）→ 执行 §14 收官拆解归档 HARNESS-RULES.md。
+> **下一步**：执行 §14 收官拆解——归档 HARNESS-RULES.md 至 `docs/exec-plans/completed/`，长效契约迁移至常驻文档，自检后单独提交。
 >
 > **决策已确认（2026-10-02）**：D1–D7 答案见 §6，已落 ADR-002..008。

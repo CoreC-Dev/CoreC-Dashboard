@@ -39,14 +39,11 @@
 
 | 状态 | 条数 | 说明 |
 |---|---|---|
-| 已完成 | 58 | 阶段 2 文档 + 阶段 3 门禁 + 阶段 4 批次 A/B/C/D/E/F/G/H/I/J 重构与修复 + TD-ARCH-010 + TD-GATE-004 + TD-SEC-012 |
+| 已完成 | 73 | 阶段 2 文档 + 阶段 3 门禁 + 阶段 4 批次 A/B/C/D/E/F/G/H/I/J 重构与修复 + TD-ARCH-010 + TD-GATE-004 + TD-SEC-012 + 阶段 5 测试 TD-TEST-002..016 |
 | 已核实 | 2 | TD-SEC-004（js-yaml integrity 匹配官方）、TD-SEC-008（bleeding-edge 已核实）——安全风险经核实可接受，视同关闭 |
 | 已豁免 | 2 | TD-SEC-010、TD-PERF-011——用户决策豁免，登记留痕 |
-| 待处理 | 15 | 阶段 5 测试 15 条（TD-TEST-002..016） |
 
-- **剩余 P1 ×7**：TD-TEST-002..008,010（阶段 5 未启动）
-- **剩余 P2 ×8**：TD-TEST-009/011..016
-- **P0 已归零**。
+- **P0 已归零，P1 已归零，P2 已归零**。
 
 > 说明：多条安全发现标记"变更行为"——修复会改变产品行为（如限制可连接的后端、导出不再含密钥），属产品决策，不可自行猜测后改造（契约 C7）。已集中列入计划 §6「待人工决策清单」，Phase 3/4 落地前逐条确认。
 
@@ -84,21 +81,21 @@
 | TD-DUP-005 | P2 | 重复 | handleCreate/Edit/Delete 重复 3× | 批次E | 已完成 |
 | TD-DUP-006 | P2 | 重复 | 内联 connection-summary 渲染重复 4× | 批次E | 已完成 |
 | TD-TEST-001 | P1 | 测试 | 无 vitest 配置，覆盖率从不测量 | 阶段3 | 已完成 |
-| TD-TEST-002 | P1 | 测试 | instanceStore 完全无测试 | 阶段5 | 待处理 |
-| TD-TEST-003 | P1 | 测试 | api/client.ts 无测试 | 阶段5 | 待处理 |
-| TD-TEST-004 | P1 | 测试 | api/websocket.ts 无测试 | 阶段5 | 待处理 |
-| TD-TEST-005 | P1 | 测试 | ConnectionContext 无测试 | 阶段5 | 待处理 |
-| TD-TEST-006 | P1 | 测试 | useHomepageProbe 无测试 | 阶段5 | 待处理 |
-| TD-TEST-007 | P1 | 测试 | InstanceDialog 表单校验无测试 | 阶段5 | 待处理 |
-| TD-TEST-008 | P1 | 测试 | api/endpoints 16 个端点仅测 2 个 | 阶段5 | 待处理 |
-| TD-TEST-009 | P2 | 测试 | api/hooks 全部无测试 | 阶段5 | 待处理 |
-| TD-TEST-010 | P1 | 测试 | writeValidation 无测试 | 阶段5 | 待处理 |
-| TD-TEST-011 | P2 | 测试 | configYaml 无测试 | 阶段5 | 待处理 |
-| TD-TEST-012 | P2 | 测试 | connectionInfo 无测试 | 阶段5 | 待处理 |
-| TD-TEST-013 | P2 | 测试 | ruleMatchEvaluator 无测试 | 阶段5 | 待处理 |
-| TD-TEST-014 | P2 | 测试 | admin 冒烟测试不断言行为 | 阶段5 | 待处理 |
-| TD-TEST-015 | P2 | 测试 | wizard 测试只覆盖纯函数 | 阶段5 | 待处理 |
-| TD-TEST-016 | P2 | 测试 | settingsRegistry 测试仅结构级 | 阶段5 | 待处理 |
+| TD-TEST-002 | P1 | 测试 | instanceStore 完全无测试 | 阶段5 | 已完成 |
+| TD-TEST-003 | P1 | 测试 | api/client.ts 无测试 | 阶段5 | 已完成 |
+| TD-TEST-004 | P1 | 测试 | api/websocket.ts 无测试 | 阶段5 | 已完成 |
+| TD-TEST-005 | P1 | 测试 | ConnectionContext 无测试 | 阶段5 | 已完成 |
+| TD-TEST-006 | P1 | 测试 | useHomepageProbe 无测试 | 阶段5 | 已完成 |
+| TD-TEST-007 | P1 | 测试 | InstanceDialog 表单校验无测试 | 阶段5 | 已完成 |
+| TD-TEST-008 | P1 | 测试 | api/endpoints 16 个端点仅测 2 个 | 阶段5 | 已完成 |
+| TD-TEST-009 | P2 | 测试 | api/hooks 全部无测试 | 阶段5 | 已完成 |
+| TD-TEST-010 | P1 | 测试 | writeValidation 无测试 | 阶段5 | 已完成 |
+| TD-TEST-011 | P2 | 测试 | configYaml 无测试 | 阶段5 | 已完成 |
+| TD-TEST-012 | P2 | 测试 | connectionInfo 无测试 | 阶段5 | 已完成 |
+| TD-TEST-013 | P2 | 测试 | ruleMatchEvaluator 无测试 | 阶段5 | 已完成 |
+| TD-TEST-014 | P2 | 测试 | admin 冒烟测试不断言行为 | 阶段5 | 已完成 |
+| TD-TEST-015 | P2 | 测试 | wizard 测试只覆盖纯函数 | 阶段5 | 已完成 |
+| TD-TEST-016 | P2 | 测试 | settingsRegistry 测试仅结构级 | 阶段5 | 已完成 |
 | TD-SEC-001 | P1 | 安全 | CSP connect-src * | 批次I | 已完成 |
 | TD-SEC-002 | P1 | 安全 | Bearer 密钥发往任意后端（浏览器 SSRF） | 批次I | 已完成 |
 | TD-SEC-003 | P0 | 安全 | 实例导出明文泄露 API 密钥 | 批次I | 已完成 |
