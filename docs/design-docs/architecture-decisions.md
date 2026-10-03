@@ -30,6 +30,13 @@
 - **影响**：批次 I；需改 server.mjs 代理逻辑 + index.html CSP；行为变更。
 - **日期**：2026-10-02
 
+## ADR-004a 同源代理可选化：静态托管直连回退（ADR-004 addendum）
+- **背景**：ADR-004 的同源代理需要 `server.mjs` 运行。部署到 GitHub Pages（纯静态托管）时无代理，`/corec-proxy/*` 返回 404，全部 API/WS 调用失败。
+- **决策**：启动时探测 `/corec-proxy/`（HEAD）。404 → 直连模式（`fetch(baseUrl+path)`，CSP 放宽为 `connect-src * ws: wss:`）；非 404 → 代理模式（ADR-004 原行为）。`src/api/proxyMode.ts` 缓存探测结果。
+- **理由**：恢复 GitHub Pages 功能性。直连模式下凭证暴露给浏览器（ADR-004 前的行为），接受为静态托管的权衡。`server.mjs` 部署仍走代理模式，安全无降级。
+- **影响**：行为变更；改 `client.ts` + `websocket.ts` + `main.tsx` + `index.html` CSP；新增 `proxyMode.ts`。
+- **日期**：2026-10-03
+
 ## ADR-005 仪表盘鉴权：维持公网无鉴权现状（D4）
 - **背景**：仪表盘公网部署（GitHub Pages 自定义域）且无登录。
 - **决策**：维持现状，不加仪表盘级鉴权。TD-SEC-010 标记已豁免。

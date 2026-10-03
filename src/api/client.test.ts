@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { setActiveConnection } from '@/api/activeConnection'
 import { ApiError, apiRequest } from '@/api/client'
+import { resetProxyMode, setProxyMode } from '@/api/proxyMode'
 
 // Mock fetch — each test configures the response it expects (same pattern as
 // src/api/endpoints/index.test.ts).
@@ -9,6 +10,7 @@ globalThis.fetch = mockFetch as unknown as typeof globalThis.fetch
 
 beforeEach(() => {
   mockFetch.mockReset()
+  resetProxyMode()
   // Seed the active connection so apiRequest builds a valid URL.
   setActiveConnection({
     instanceId: 'test-instance',
@@ -173,5 +175,47 @@ describe('apiRequest — caller-supplied signal', () => {
     expect((caught as Error).name).toBe('AbortError')
     // Not translated to an ApiError(408).
     expect(caught).not.toBeInstanceOf(ApiError)
+  })
+})
+
+describe('apiRequest — direct mode (static-host fallback)', () => {
+  it('sends directly to baseUrl + path without /corec-proxy prefix', async () => {
+    setProxyMode('direct')
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }),
+    )
+
+    await apiRequest('/configs/raw')
+
+    const [url, init] = mockFetch.mock.calls[0]
+    expect(url).toBe('http://127.0.0.1:9090/configs/raw')
+    // X-CoreC-Target header is NOT set in direct mode.
+    expect(init!.headers.get('X-CoreC-Target')).toBeNull()
+    // Authorization header is still set.
+    expect(init!.headers.get('Authorization')).toBe('Bearer test-secret-token')
+  })
+
+  it('works without a secret in direct mode', async () => {
+    setProxyMode('direct')
+    setActiveConnection({
+      instanceId: 'no-secret',
+      baseUrl: 'http://10.0.0.1:8080',
+      secret: '',
+    })
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }),
+    )
+
+    await apiRequest('/stats')
+
+    const [url, init] = mockFetch.mock.calls[0]
+    expect(url).toBe('http://10.0.0.1:8080/stats')
+    expect(init!.headers.get('Authorization')).toBeNull()
   })
 })

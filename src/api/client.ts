@@ -1,4 +1,5 @@
 import { getActiveConnection } from '@/api/activeConnection'
+import { getProxyMode } from '@/api/proxyMode'
 
 export class ApiError extends Error {
   status: number
@@ -66,14 +67,23 @@ export async function apiRequest<T = unknown>(
 
   const cleanBase = conn.baseUrl.trim().replace(/\/+$/, '')
   const cleanPath = path.startsWith('/') ? path : `/${path}`
-  // Route through same-origin proxy (TD-SEC-001/002, D3): the browser sends
-  // /corec-proxy<path> with X-CoreC-Target header; server.mjs forwards to the
-  // real backend. This keeps CSP connect-src 'self' and prevents credential
-  // leakage to arbitrary origins.
-  const url = `/corec-proxy${cleanPath}`
+  const proxyMode = getProxyMode()
+  let url: string
+  if (proxyMode === 'proxy') {
+    // Same-origin proxy (ADR-004, D3): the browser sends /corec-proxy<path>
+    // with X-CoreC-Target header; server.mjs forwards to the real backend.
+    // Keeps CSP connect-src 'self' and prevents credential leakage.
+    url = `/corec-proxy${cleanPath}`
+  } else {
+    // Direct connection (static-host fallback, ADR-004 addendum):
+    // fetch baseUrl + path directly. CSP relaxed to connect-src *.
+    url = `${cleanBase}${cleanPath}`
+  }
 
   const headers = new Headers(options.headers || {})
-  headers.set('X-CoreC-Target', cleanBase)
+  if (proxyMode === 'proxy') {
+    headers.set('X-CoreC-Target', cleanBase)
+  }
   if (conn.secret) {
     headers.set('Authorization', `Bearer ${conn.secret}`)
   }

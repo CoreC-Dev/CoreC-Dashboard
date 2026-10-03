@@ -1,10 +1,10 @@
 # Build and deploy CoreC-Dashboard to GitHub Pages on every push to main.
 #
 # CI 门禁（ci.yml）先行：lint/typecheck/结构测试/linter/any/build/test/coverage 全过才部署。
-# Architecture: the Dashboard is a pure static SPA. It connects DIRECTLY to
-# the remote CoreC backend from the browser (fetch + WebSocket). This workflow
-# only builds the static assets and publishes them — it does NOT proxy or
-# touch CoreC in any way.
+# Architecture: the Dashboard is a static SPA. On GitHub Pages (no server.mjs),
+# it connects DIRECTLY to the remote CoreC backend (proxyMode auto-detects: 404
+# on /corec-proxy/ → direct mode, CSP connect-src *). On server.mjs deployments,
+# it routes through the same-origin proxy (ADR-004, strict CSP).
 #
 # Custom domain (HTTP):
 #   1. Add your domain to repo Settings → Pages → Custom domain.

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { setActiveConnection } from '@/api/activeConnection'
+import { resetProxyMode, setProxyMode } from '@/api/proxyMode'
 import { CoreCWebSocket, type WSStatus } from '@/api/websocket'
 
 /**
@@ -83,6 +84,7 @@ beforeEach(() => {
   globalThis.WebSocket = MockWebSocket as unknown as typeof WebSocket
   // Pin jitter factor to 1.0 (0.8 + 0.5 * 0.4) so backoff delays are exact.
   mathRandomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.5)
+  resetProxyMode()
   setActiveConnection({
     instanceId: 'test-instance',
     baseUrl: 'http://127.0.0.1:9090',
@@ -335,6 +337,31 @@ describe('CoreCWebSocket — TD-TEST-004', () => {
       expect(statuses.at(-1)).toBe('rejected')
       expect(MockWebSocket.instances.length).toBe(instancesBefore)
       expect(vi.getTimerCount()).toBe(0)
+      client.destroy()
+    })
+  })
+
+  describe('direct mode (static-host fallback)', () => {
+    it('connects directly to the backend WS URL without /corec-ws proxy', () => {
+      setProxyMode('direct')
+      const client = new CoreCWebSocket('/tags/stream', {}, vi.fn())
+      const inst = MockWebSocket.last()
+
+      // URL should be ws://127.0.0.1:9090/tags/stream?token=... (direct)
+      expect(inst.url).toContain('ws://127.0.0.1:9090/tags/stream')
+      expect(inst.url).not.toContain('/corec-ws')
+      expect(inst.url).toContain('token=test-secret-token')
+      client.destroy()
+    })
+
+    it('passes extra params in direct mode', () => {
+      setProxyMode('direct')
+      const client = new CoreCWebSocket('/ws', { tag: 'temp1' }, vi.fn())
+      const inst = MockWebSocket.last()
+
+      expect(inst.url).toContain('ws://127.0.0.1:9090/ws')
+      expect(inst.url).toContain('tag=temp1')
+      expect(inst.url).toContain('token=test-secret-token')
       client.destroy()
     })
   })

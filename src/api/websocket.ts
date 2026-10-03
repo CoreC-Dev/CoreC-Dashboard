@@ -1,4 +1,5 @@
 import { getActiveConnection } from '@/api/activeConnection'
+import { getProxyMode } from '@/api/proxyMode'
 
 export type WSStatus = 'connecting' | 'open' | 'closed' | 'error' | 'rejected'
 
@@ -68,37 +69,39 @@ export class CoreCWebSocket<T = unknown> {
     const wsBase = baseUrl.replace(/^http:\/\//i, 'ws://').replace(/^https:\/\//i, 'wss://')
     const targetUrl = new URL(`${wsBase}${this.path}`)
 
-    // Route through same-origin WS proxy (TD-SEC-001/002, D3): the browser
-    // connects to ws://<same-origin>/corec-ws?target=<backend>&token=...;
-    // server.mjs proxies the upgrade to the real backend.
-    const proxyUrl = new URL(`/corec-ws`, window.location.origin)
-    proxyUrl.protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    proxyUrl.searchParams.set('target', targetUrl.toString())
+    const proxyMode = getProxyMode()
+    let wsUrl: URL
+    if (proxyMode === 'proxy') {
+      // Same-origin WS proxy (ADR-004, D3): the browser connects to
+      // ws://<same-origin>/corec-ws?target=<backend>&token=...;
+      // server.mjs proxies the upgrade to the real backend.
+      wsUrl = new URL(`/corec-ws`, window.location.origin)
+      wsUrl.protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+      wsUrl.searchParams.set('target', targetUrl.toString())
+    } else {
+      // Direct WS connection (static-host fallback, ADR-004 addendum):
+      // connect to the backend WebSocket directly.
+      wsUrl = targetUrl
+    }
 
     if (secret) {
       // SECURITY NOTE (TD-SEC-005, D6): The token travels in the WS URL query
-      // string. This is maintained by product decision D6 — switching to a
-      // short-lived ticket exchange or Sec-WebSocket-Protocol header would
-      // require CoreC backend cooperation. Mitigations in place:
-      // 1. The URL is same-origin (ws://<dashboard>/corec-ws), so the token
-      //    does NOT appear in backend access logs — only in the dashboard
-      //    server's upgrade handler (server.mjs), which does not log URLs.
-      // 2. CSP connect-src 'self' prevents exfiltration to external origins.
-      // 3. Deployments MUST ensure the dashboard server does not log query
-      //    strings (server.mjs does not; verify any reverse proxy in front).
-      proxyUrl.searchParams.set('token', secret)
+      // string. In proxy mode the URL is same-origin (token not in backend
+      // logs). In direct mode the token is visible to the backend — this is
+      // the pre-ADR-004 behavior, accepted as a tradeoff for static hosting.
+      wsUrl.searchParams.set('token', secret)
     }
 
     Object.entries(this.params).forEach(([key, val]) => {
       if (val !== undefined && val !== null) {
-        proxyUrl.searchParams.set(key, val)
+        wsUrl.searchParams.set(key, val)
       }
     })
 
     this.onStatusCallback?.('connecting')
 
     try {
-      this.ws = new WebSocket(proxyUrl.toString())
+      this.ws = new WebSocket(wsUrl.toString())
 
       this.ws.onopen = () => {
         this.retryCount = 0
