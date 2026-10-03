@@ -1,5 +1,7 @@
 # Harness 工程化改造计划
 
+> 一次性施工计划，已竣工归档。常驻规范见 AGENTS.md / core-beliefs.md / ARCHITECTURE.md。
+
 ## 0. 元信息
 - 项目 / 仓库：CoreC-Dashboard（CoreC 项目前端）
 - 分支：`harnessing`（从 `main` 切出，改造期间所有提交仅落此分支，§7.1）

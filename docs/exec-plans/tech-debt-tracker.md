@@ -525,7 +525,7 @@
 
 **TD-DOC-001** ｜ 无 README.md ｜ P1
 - 位置：仓库根（无 README）
-- 证据：全仓无 README（`find` 仅命中 docs/HARNESS-RULES.md）。新工程师/智能体无入口说明。
+- 证据：全仓无 README（`find` 仅命中 docs/exec-plans/completed/harness-2026-10-03.md）。新工程师/智能体无入口说明。
 - 修复建议：Phase 2 撰写 README（一句话定位 + 快速开始 + 指向 AGENTS.md/ARCHITECTURE.md）。
 - 业务行为影响：无 ｜ 阶段2 ｜ 验收：README 存在且链接可解析 ｜ 状态：已完成（阶段 2 建 AGENTS.md 作入口地图，README 职责由 AGENTS.md 承载，符合 §2.2）
 

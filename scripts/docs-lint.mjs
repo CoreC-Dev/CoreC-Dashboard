@@ -60,7 +60,8 @@ checkFile('docs/index.md');
 checkFile('docs/QUALITY_SCORE.md');
 checkFile('docs/CI.md');
 checkFile('docs/exec-plans/tech-debt-tracker.md');
-checkFile('docs/exec-plans/active/harness-migration.md');
+checkFile('docs/exec-plans/completed/harness-2026-10-03.md');
+checkFile('docs/exec-plans/completed/harness-migration-2026-10-03.md');
 checkFile('docs/design-docs/core-beliefs.md');
 checkFile('docs/design-docs/architecture-decisions.md');
 

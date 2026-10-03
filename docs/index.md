@@ -34,11 +34,13 @@
 ## 规则母本
 | 文档 | 职责 | 状态 |
 |---|---|---|
-| `HARNESS-RULES.md` | 改造规则母本（§0 契约 + §5 五阶段 + 附录） | ✅ |
+| `exec-plans/completed/harness-2026-10-03.md` | 改造规则母本（已竣工归档） | ✅ |
 
 ## 执行计划
-- `exec-plans/active/` — 进行中（当前：harness-migration.md）
-- `exec-plans/completed/` — 已完成归档
+- `exec-plans/active/` — 进行中（当前：无，改造已竣工）
+- `exec-plans/completed/` — 已完成归档：
+  - `exec-plans/completed/harness-2026-10-03.md`（改造规则母本）
+  - `exec-plans/completed/harness-migration-2026-10-03.md`（改造执行计划）
 - `exec-plans/.scratch/` — 审计工作底稿（证据来源，非正式交付物）
 
 ## 裁剪说明

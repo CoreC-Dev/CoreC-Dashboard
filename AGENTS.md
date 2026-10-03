@@ -57,4 +57,4 @@ src/
 - 提交粒度单一职责（Conventional Commits）；改造仅落 `harnessing` 分支
 - 计划写在 `docs/exec-plans/active/`，完成后移入 `completed/`
 - 任何交互式决策确认后必须写入仓库文档（见 `docs/design-docs/architecture-decisions.md`）
-- 改造规则母本：`docs/HARNESS-RULES.md`
+- 改造规则母本（已竣工归档）：`docs/exec-plans/completed/harness-2026-10-03.md`
