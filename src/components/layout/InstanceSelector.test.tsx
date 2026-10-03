@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, screen } from '@testing-library/react'
+import { cleanup, render, screen } from '@testing-library/react'
 import { act } from 'react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -54,6 +54,7 @@ beforeEach(() => {
   useInstanceStore.setState({ instances: [], probing: {}, probeErrors: {} })
 })
 afterEach(() => {
+  cleanup()
   vi.useRealTimers()
   useInstanceStore.setState({ instances: [], probing: {}, probeErrors: {} })
 })

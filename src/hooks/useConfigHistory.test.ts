@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { act, renderHook } from '@testing-library/react'
+import { act, cleanup, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { useConfigHistory } from '@/hooks/useConfigHistory'
 
@@ -9,6 +9,7 @@ describe('useConfigHistory', () => {
   })
 
   afterEach(() => {
+    cleanup()
     localStorage.clear()
   })
 

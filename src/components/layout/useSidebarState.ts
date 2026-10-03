@@ -3,26 +3,28 @@ import { useLocation } from 'react-router-dom'
 
 const SIDEBAR_KEY = 'corec_sidebar_collapsed'
 
-function useIsMobile() {
-  const [isMobile, setIsMobile] = useState(() =>
-    typeof window === 'undefined' ? false : window.matchMedia('(max-width: 767px)').matches,
+function useMatchMedia(query: string): boolean {
+  const [matches, setMatches] = useState(() =>
+    typeof window === 'undefined' ? false : window.matchMedia(query).matches,
   )
   useEffect(() => {
-    const mql = window.matchMedia('(max-width: 767px)')
-    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches)
+    const mql = window.matchMedia(query)
+    const handler = (e: MediaQueryListEvent) => setMatches(e.matches)
     mql.addEventListener('change', handler)
     return () => mql.removeEventListener('change', handler)
-  }, [])
-  return isMobile
+  }, [query])
+  return matches
 }
 
 /**
  * Sidebar layout state: desktop collapse (persisted in localStorage) plus
  * mobile drawer open/close. The mobile drawer auto-closes on route change
- * and when resizing to desktop.
+ * and when resizing to desktop. On tablet (768–1023px) the sidebar
+ * auto-collapses to the icon rail for more content space.
  */
 export function useSidebarState() {
-  const isMobile = useIsMobile()
+  const isMobile = useMatchMedia('(max-width: 767px)')
+  const isTablet = useMatchMedia('(min-width: 768px) and (max-width: 1023px)')
   const location = useLocation()
 
   // Sidebar collapse state (desktop) — persisted in localStorage
@@ -38,6 +40,12 @@ export function useSidebarState() {
     localStorage.setItem(SIDEBAR_KEY, collapsed ? 'collapsed' : 'expanded')
   }, [collapsed])
 
+  // Auto-collapse sidebar when entering tablet range (one-time, per resize).
+  // The user may still manually expand afterwards.
+  useEffect(() => {
+    if (isTablet) setCollapsed(true)
+  }, [isTablet])
+
   // Close mobile drawer on route change
   // biome-ignore lint/correctness/useExhaustiveDependencies: location.pathname is an intentional trigger — close the drawer on navigation, not a value read in the body.
   useEffect(() => {
@@ -49,5 +57,5 @@ export function useSidebarState() {
     if (!isMobile) setMobileOpen(false)
   }, [isMobile])
 
-  return { isMobile, collapsed, setCollapsed, mobileOpen, setMobileOpen }
+  return { isMobile, isTablet, collapsed, setCollapsed, mobileOpen, setMobileOpen }
 }
