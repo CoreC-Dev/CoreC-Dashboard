@@ -13,12 +13,9 @@ export {
 } from '@/lib/settingsRegistryTransport'
 // Types & shared fragments
 export type {
-  FieldGroup,
-  FieldType,
   SettingsField,
   TypeFieldRegistry,
 } from '@/lib/settingsRegistryTypes'
-export { MODBUS_CONNECTION_FIELDS, RECONNECT_GROUP } from '@/lib/settingsRegistryTypes'
 
 import { DRIVER_SETTINGS_REGISTRY } from '@/lib/settingsRegistryDriver'
 import { TRANSPORT_SETTINGS_REGISTRY } from '@/lib/settingsRegistryTransport'

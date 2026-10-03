@@ -45,7 +45,7 @@ export interface WizardStep {
   render: () => React.ReactNode
 }
 
-export interface WizardProps {
+interface WizardProps {
   /** Visible steps in order. */
   steps: WizardStep[]
   /** Current step index (0-based). Controlled. */
@@ -76,7 +76,7 @@ export interface WizardProps {
   canFinish?: boolean
 }
 
-export const Wizard: React.FC<WizardProps> = ({
+const Wizard: React.FC<WizardProps> = ({
   steps,
   current,
   onNext,
@@ -254,7 +254,7 @@ export const Wizard: React.FC<WizardProps> = ({
 }
 
 /** Convenience wrapper: Wizard inside its own Dialog shell (open/onOpenChange). */
-export interface WizardDialogProps extends WizardProps {
+interface WizardDialogProps extends WizardProps {
   open: boolean
   onOpenChange: (open: boolean) => void
 }

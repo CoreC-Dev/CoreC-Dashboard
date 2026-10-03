@@ -29,7 +29,7 @@ export interface EditFormData {
 // Wrap a string as a YAML single-quoted scalar — internal single quotes are
 // doubled. The match DSL may contain `&&`, `||`, comparisons and embedded
 // quotes, none of which are safe as a bare YAML scalar.
-export const yamlScalar = (s: string): string => `'${s.replace(/'/g, "''")}'`
+const yamlScalar = (s: string): string => `'${s.replace(/'/g, "''")}'`
 
 export const buildRuleYaml = (data: EditFormData): string => {
   const lines: string[] = [
