@@ -1,9 +1,9 @@
 import * as SelectPrimitive from '@radix-ui/react-select'
 import { ChevronDown, Server } from 'lucide-react'
 import type React from 'react'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { useShallow } from 'zustand/react/shallow'
 import { Select, SelectContent, SelectItem } from '@/components/ui/select'
 import { useConnection } from '@/contexts/ConnectionContext'
 import { cn } from '@/lib/cn'
@@ -24,13 +24,24 @@ export const InstanceSelector: React.FC<InstanceSelectorProps> = ({ eff }) => {
   const navigate = useNavigate()
   const location = useLocation()
   const { instance, isConnected, isConnecting } = useConnection()
-  // Select only the fields this switcher needs (id/name/lastConnectedAt) and
-  // compare shallowly so unrelated instance field changes don't re-render
-  // (TD-PERF-009).
-  const instances = useInstanceStore(
-    useShallow((s) =>
-      s.instances.map((i) => ({ id: i.id, name: i.name, lastConnectedAt: i.lastConnectedAt })),
-    ),
+  // Select the raw instances array (a stable ref between store updates) and
+  // project to the fields this switcher needs via useMemo.
+  //
+  // The previous code wrapped a `.map(...)` selector in useShallow. That loops:
+  // zustand v5's useStore has no equalityFn arg — it uses
+  // React.useSyncExternalStore with Object.is — and useShallow only compares
+  // array elements by reference. So every getSnapshot() returned a brand-new
+  // array of brand-new objects → React saw a changed snapshot every render →
+  // "Maximum update depth exceeded" (#185) on every instance-scoped route
+  // (SidebarNav → InstanceSelector). Returning the stable s.instances ref from
+  // the selector and projecting in useMemo breaks the loop. (TD-PERF-009: this
+  // re-renders on any instances change rather than only id/name/lastConnectedAt;
+  // on instance routes the store changes at most once — the initial probe — so
+  // the cost is nil.)
+  const allInstances = useInstanceStore((s) => s.instances)
+  const instances = useMemo(
+    () => allInstances.map((i) => ({ id: i.id, name: i.name, lastConnectedAt: i.lastConnectedAt })),
+    [allInstances],
   )
 
   if (!instance) return null

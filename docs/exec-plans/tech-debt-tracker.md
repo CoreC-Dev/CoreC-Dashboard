@@ -596,8 +596,8 @@
 **TD-PERF-009** ｜ AppShell 订阅整个 instances 数组（宽 Zustand selector） ｜ P2
 - 位置：`src/components/layout/AppShell.tsx:65`
 - 证据：`const instances = useInstanceStore((s) => s.instances)` 选整个数组。任何产生新数组 ref 的变更——尤其 `setProbeResult`（每次探测 map instances）——重渲整个 shell + `<Outlet>` 子树。ConnectionProvider 挂载即 setProbeResult；首页探测每 15s 更新 instances。`InstanceCard` 已正确 memo + 窄 selector，但 shell 本身未。
-- 修复建议：若 AppShell 仅需实例数/ids 供切换器，选派生原语（`s.instances.map(i => ({id:i.id,name:i.name}))` + 浅相等 selector，或 useShallow）。否则接受——实例路由内有界且低频。
-- 业务行为影响：无 ｜ 批次J（与 批次F/TD-CPLX-005 AppShell 拆分协同） ｜ 验收：探测不触发全 shell 重渲 ｜ 状态：已完成（InstanceSelector useShallow 选派生 {id,name,lastConnectedAt}，探测变更不触发重渲）
+- 修复建议：选派生原语时**不可**用 `useShallow` 包 `.map(...)` 选择器——zustand v5 `useStore` 无 equalityFn 参数（底层 `useSyncExternalStore` + `Object.is`），而 `shallow` 仅对数组元素做引用比较；`.map` 每次返回新对象 → 每次 getSnapshot 返回新数组 → "Maximum update depth exceeded"（React #185），实例路由全挂。正确做法：选择器返回稳定 `s.instances` 引用（不在选择器内分配），派生投影放 `useMemo`。
+- 业务行为影响：无 ｜ 批次J（与 批次F/TD-CPLX-005 AppShell 拆分协同） ｜ 验收：探测不触发全 shell 重渲 ｜ 状态：已完成（InstanceSelector 选稳定 `s.instances` + `useMemo` 派生 {id,name,lastConnectedAt}；原 useShallow 写法致 #185 全实例路由崩溃，已修正并加 `InstanceSelector.test.tsx` 回归守卫）
 
 **TD-PERF-010** ｜ Monaco 编辑器核心运行时从公网 CDN 拉取——离线/气隙 + CSP 依赖 ｜ P2
 - 位置：`src/main.tsx:14`
