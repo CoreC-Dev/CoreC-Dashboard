@@ -196,7 +196,7 @@ export const RulesPage: React.FC = () => {
           <button
             type="button"
             onClick={clearToggleError}
-            aria-label="Dismiss"
+            aria-label={t('common.close')}
             className="ml-auto text-status-error/60 hover:text-status-error"
           >
             ×
