@@ -213,7 +213,7 @@ export const DriversPage: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => handleEdit(drv.name)}
-                        className="p-1.5 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground"
+                        className="p-2 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground"
                         title={t('common.edit')}
                         aria-label={t('common.edit')}
                       >
@@ -222,7 +222,7 @@ export const DriversPage: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => handleDelete(drv.name)}
-                        className="p-1.5 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
+                        className="p-2 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
                         title={t('common.delete')}
                         aria-label={t('common.delete')}
                       >

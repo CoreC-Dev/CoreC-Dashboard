@@ -45,7 +45,7 @@ export const DiffPreview: React.FC<{
           onClick={onToggleDiff}
           aria-expanded={diffOpen}
           aria-label={t('config.diffToggle')}
-          className="h-7 w-7"
+          className="h-9 w-9"
         >
           {diffOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
         </Button>

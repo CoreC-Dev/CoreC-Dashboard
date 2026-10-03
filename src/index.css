@@ -76,7 +76,7 @@
 
     --status-running: 146 62% 38%;     /* #1f9e58 — readable as text + dot */
     --status-warning: 36 78% 44%;      /* #c8861a — readable as text + dot */
-    --status-error: 354 70% 45%;       /* #c6364a — WCAG AA 5.7:1 on white */
+    --status-error: 354 70% 45%;       /* #c32232 — WCAG AA 5.8:1 on white */
     --status-stale: 36 60% 42%;        /* dimmed amber */
     --status-queued: 210 80% 50%;      /* #2d88e0 — readable as text + dot */
     --status-idle: 219 6% 42%;         /* darker muted */
