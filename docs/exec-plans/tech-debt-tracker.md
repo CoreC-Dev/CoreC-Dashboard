@@ -39,14 +39,14 @@
 
 | 状态 | 条数 | 说明 |
 |---|---|---|
-| 已完成 | 55 | 阶段 2 文档 + 阶段 3 门禁 + 阶段 4 批次 A/B/C/E/F/G/H/I/J 重构与修复 + TD-ARCH-010 导入统一 + TD-GATE-004 any 收紧 |
+| 已完成 | 56 | 阶段 2 文档 + 阶段 3 门禁 + 阶段 4 批次 A/B/C/E/F/G/H/I/J 重构与修复 + TD-ARCH-010 + TD-GATE-004 + TD-SEC-012 |
 | 已核实 | 2 | TD-SEC-004（js-yaml integrity 匹配官方）、TD-SEC-008（bleeding-edge 已核实）——安全风险经核实可接受，视同关闭 |
 | 已豁免 | 2 | TD-SEC-010、TD-PERF-011——用户决策豁免，登记留痕 |
 | 基礎完成 | 2 | TD-ARCH-011、TD-DUP-001——adapter 基础已落（commit 70b2675），全量单一真相源迁移待阶段 4 收尾 |
-| 待处理 | 16 | 阶段 5 测试 15 条（TD-TEST-002..016）+ TD-SEC-012 |
+| 待处理 | 15 | 阶段 5 测试 15 条（TD-TEST-002..016） |
 
 - **剩余 P1 ×9**：TD-ARCH-011、TD-DUP-001（基礎完成，待全量迁移）+ TD-TEST-002..008,010（阶段 5 未启动）
-- **剩余 P2 ×9**：TD-TEST-009/011..016、TD-SEC-012
+- **剩余 P2 ×8**：TD-TEST-009/011..016
 - **P0 已归零**。
 
 > 说明：多条安全发现标记"变更行为"——修复会改变产品行为（如限制可连接的后端、导出不再含密钥），属产品决策，不可自行猜测后改造（契约 C7）。已集中列入计划 §6「待人工决策清单」，Phase 3/4 落地前逐条确认。
@@ -112,7 +112,7 @@
 | TD-SEC-009 | P2 | 安全 | js-yaml load() 未指定安全 schema | 批次I | 已完成 |
 | TD-SEC-010 | P2 | 安全 | 公网部署无仪表盘级鉴权 | 批次I | 已豁免 |
 | TD-SEC-011 | P2 | 安全 | importInstances 未校验 JSON 即 spread | 批次I | 已完成 |
-| TD-SEC-012 | P2 | 安全 | ErrorBoundary 日志输出完整 ApiError.body | 阶段3 | 待处理 |
+| TD-SEC-012 | P2 | 安全 | ErrorBoundary 日志输出完整 ApiError.body | 阶段3 | 已完成 |
 | TD-GATE-001 | P1 | 门禁 | 质量门禁仅在 push main 部署时跑 | 阶段3 | 已完成 |
 | TD-GATE-002 | P1 | 门禁 | 双 lockfile（npm + pnpm），CI 用 npm | 阶段3 | 已完成 |
 | TD-GATE-003 | P2 | 门禁 | 无 pre-commit / pre-push hook | 阶段3 | 已完成 |
@@ -497,7 +497,7 @@
 - 位置：`src/components/ErrorBoundary.tsx:39`
 - 证据：`console.error('[ErrorBoundary] Uncaught error:', error, info.componentStack)`。ApiError.body 来自 `await res.text()`（client.ts:82）——原始服务响应文本。
 - 修复建议：生产环境仅记脱敏摘要（status + message，不含 body）。完整日志置于 `import.meta.env.DEV` 之后。
-- 业务行为影响：无 ｜ 阶段3 ｜ 验收：生产构建无完整 body 日志 ｜ 状态：待处理
+- 业务行为影响：无 ｜ 阶段3 ｜ 验收：生产构建无完整 body 日志 ｜ 状态：已完成（componentDidCatch 与 render 的 stack 按 import.meta.env.DEV 门控；生产仅记 name+message(≤200)+status）
 
 ### 门禁（GATE）
 
