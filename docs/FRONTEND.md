@@ -28,3 +28,15 @@ WebSocket 经 `api/websocket.ts`（退避+抖动+重连上限 10+环形缓冲限
 
 ## 提交
 Conventional Commits；单一职责；重构与行为变更不混提；改造仅落 `harnessing`。
+
+## 测试
+- 框架：Vitest 5 + jsdom（全局，`src/test/setup.ts`）；组件测试用 @testing-library/react + jest-dom。
+- **⚠️ cleanup 必须手动**：`vitest.config.ts` 未设 `globals: true`，导致 @testing-library/react 的自动 cleanup 静默失效。**所有渲染组件/Context/hook 的测试文件必须在 `afterEach` 中显式调用 `cleanup()`**：
+  ```ts
+  import { cleanup } from '@testing-library/react'
+  import { afterEach } from 'vitest'
+  afterEach(() => cleanup())
+  ```
+  遗漏会导致 DOM 残留、后续测试断言串扰。纯函数测试（无 DOM 渲染）不需要 cleanup。
+- Mock 约定：`globalThis.fetch` 用 `vi.fn()` mock；无 msw、无 user-event。Biome 强制单引号。
+- 覆盖率门禁：`npm run test:coverage`（v8 provider），阈值在 `vitest.config.ts` 中配置（ratchet，只升不降）。CI（`ci.yml`）已接入。

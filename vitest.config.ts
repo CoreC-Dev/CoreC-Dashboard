@@ -28,13 +28,14 @@ export default defineConfig({
         'src/**/*.d.ts',
         'src/types/**',
       ],
-      // 基线 floor（ratchet，只升不降）。阶段 5 补测试后上调。
+      // 基线 floor（ratchet，只升不降）。阶段 5 补测试后已上调。
       // 基线（2026-10-02）：lines 26.8 / stmt 25.9 / branch 19.7 / func 18.5
+      // 上调（2026-10-03，阶段 5 完成后）：lines 41.9 / stmt 41.1 / branch 30.4 / func 31.7
       thresholds: {
-        lines: 26,
-        functions: 18,
-        branches: 19,
-        statements: 25,
+        lines: 41,
+        functions: 31,
+        branches: 30,
+        statements: 40,
       },
     },
   },
