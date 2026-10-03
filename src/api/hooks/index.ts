@@ -77,10 +77,13 @@ export function useTransport(name: string) {
 }
 
 export function useTags() {
+  // No refetchInterval: TagExplorerPage seeds from this REST snapshot once,
+  // then the /tags/stream WebSocket owns live state (hasSeeded guard ignores
+  // subsequent polls). A 5s REST poll was pure waste — ~12 req/min eliminated.
+  // Manual Refresh calls refetch() explicitly. [perf: redundant poll removed]
   return useConnectedQuery({
     queryKey: ['tags'],
     queryFn: api.getTags,
-    refetchInterval: 5000,
   })
 }
 

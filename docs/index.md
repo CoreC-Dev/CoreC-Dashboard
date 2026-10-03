@@ -37,7 +37,8 @@
 | `exec-plans/completed/harness-2026-10-03.md` | 改造规则母本（已竣工归档） | ✅ |
 
 ## 执行计划
-- `exec-plans/active/` — 进行中（当前：无，改造已竣工）
+- `exec-plans/active/` — 进行中：
+  - `exec-plans/active/arch-perf-slim-plan.md`（架构/性能/交互/瘦身优化方案）
 - `exec-plans/completed/` — 已完成归档：
   - `exec-plans/completed/harness-2026-10-03.md`（改造规则母本）
   - `exec-plans/completed/harness-migration-2026-10-03.md`（改造执行计划）

@@ -16,14 +16,11 @@ import { checkBalancedParens, type ValidationResult } from '@/lib/exprShared'
  *
  * This validator catches common syntax errors before applying config.
  */
-// Re-exported alias so existing test imports (`ArithValidationResult`) stay valid.
-export type ArithValidationResult = ValidationResult
-
 /**
  * Validates a CoreC transform arithmetic expression for syntax correctness.
  * Returns {valid, errors, warnings}. Pure function — no side effects.
  */
-export function validateTransformExpression(expr: string): ArithValidationResult {
+export function validateTransformExpression(expr: string): ValidationResult {
   const errors: string[] = []
   const warnings: string[] = []
 
