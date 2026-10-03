@@ -14,6 +14,7 @@ export interface ActiveConnection {
   instanceId: string
   baseUrl: string
   secret: string
+  useProxy?: 'auto' | 'proxy' | 'direct'
 }
 
 let active: ActiveConnection | null = null

@@ -1,5 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { detectProxyMode, getProxyMode, resetProxyMode, setProxyMode } from '@/api/proxyMode'
+import {
+  detectProxyMode,
+  getProxyMode,
+  resetProxyMode,
+  resolveProxyMode,
+  setProxyMode,
+} from '@/api/proxyMode'
 
 describe('proxyMode (ADR-004 addendum)', () => {
   beforeEach(() => {
@@ -56,5 +62,31 @@ describe('proxyMode (ADR-004 addendum)', () => {
     expect(getProxyMode()).toBe('direct')
     setProxyMode('proxy')
     expect(getProxyMode()).toBe('proxy')
+  })
+
+  describe('resolveProxyMode — per-instance override', () => {
+    it('returns "proxy" when useProxy is "proxy" regardless of global mode', () => {
+      setProxyMode('direct') // global is direct
+      expect(resolveProxyMode('proxy')).toBe('proxy')
+    })
+
+    it('returns "direct" when useProxy is "direct" regardless of global mode', () => {
+      setProxyMode('proxy') // global is proxy
+      expect(resolveProxyMode('direct')).toBe('direct')
+    })
+
+    it('falls back to global mode when useProxy is "auto"', () => {
+      setProxyMode('proxy')
+      expect(resolveProxyMode('auto')).toBe('proxy')
+      setProxyMode('direct')
+      expect(resolveProxyMode('auto')).toBe('direct')
+    })
+
+    it('falls back to global mode when useProxy is undefined', () => {
+      setProxyMode('proxy')
+      expect(resolveProxyMode(undefined)).toBe('proxy')
+      setProxyMode('direct')
+      expect(resolveProxyMode(undefined)).toBe('direct')
+    })
   })
 })

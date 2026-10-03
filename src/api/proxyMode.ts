@@ -57,3 +57,17 @@ export function setProxyMode(m: 'proxy' | 'direct'): void {
 export function resetProxyMode(): void {
   mode = null
 }
+
+/**
+ * Resolve the effective proxy mode for a specific instance.
+ *
+ * Per-instance setting (ADR-004a) takes precedence:
+ * - 'proxy'  → force proxy (server.mjs forwards to backend)
+ * - 'direct' → force direct (browser connects to backend)
+ * - 'auto' / undefined → follow the global auto-detected mode
+ */
+export function resolveProxyMode(useProxy?: 'auto' | 'proxy' | 'direct'): 'proxy' | 'direct' {
+  if (useProxy === 'proxy') return 'proxy'
+  if (useProxy === 'direct') return 'direct'
+  return getProxyMode()
+}

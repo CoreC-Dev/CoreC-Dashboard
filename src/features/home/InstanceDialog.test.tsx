@@ -86,6 +86,10 @@ describe('InstanceDialog form validation (TD-TEST-007)', () => {
       name: 'Test Instance',
       baseUrl: 'http://127.0.0.1:9090',
       secret: 'secret123',
+      useProxy: 'auto',
+      color: undefined,
+      notes: undefined,
+      tags: undefined,
     })
   })
 

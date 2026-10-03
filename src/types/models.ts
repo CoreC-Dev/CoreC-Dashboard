@@ -186,4 +186,6 @@ export interface CoreCInstance {
   createdAt: string
   /** Sort order for card display. */
   sortOrder: number
+  /** Per-instance proxy mode (ADR-004a). 'auto' follows global detection. */
+  useProxy?: 'auto' | 'proxy' | 'direct'
 }

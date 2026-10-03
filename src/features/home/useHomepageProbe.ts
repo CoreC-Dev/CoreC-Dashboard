@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { resolveProxyMode } from '@/api/proxyMode'
 import { getDriverConnectionSummary, getTransportConnectionSummary } from '@/lib/connectionInfo'
 import { useInstanceStore } from '@/stores/instanceStore'
 import type { CoreCConfig } from '@/types/config'
@@ -77,19 +78,24 @@ async function probeInstance(
   signal?: AbortSignal,
 ): Promise<CoreCInstance['lastKnownInfo']> {
   const base = instance.baseUrl.trim().replace(/\/+$/, '')
-  // Route through same-origin proxy (TD-SEC-001/002, D3).
-  const headers = {
-    'X-CoreC-Target': base,
+  const proxyMode = resolveProxyMode(instance.useProxy)
+  const headers: Record<string, string> = {
     Authorization: `Bearer ${instance.secret}`,
   }
+  if (proxyMode === 'proxy') {
+    headers['X-CoreC-Target'] = base
+  }
+
+  // Build URL prefix: /corec-proxy in proxy mode, baseUrl in direct mode.
+  const urlPrefix = proxyMode === 'proxy' ? '/corec-proxy' : base
 
   // Fetch GET / and GET /stats and GET /tags and GET /rules and GET /configs/raw in parallel
   const [infoRes, statsRes, tagsRes, rulesRes, rawCfgRes] = await Promise.allSettled([
-    fetchWithTimeout(`/corec-proxy/`, { headers }, REQUEST_TIMEOUT, signal),
-    fetchWithTimeout(`/corec-proxy/stats`, { headers }, REQUEST_TIMEOUT, signal),
-    fetchWithTimeout(`/corec-proxy/tags`, { headers }, REQUEST_TIMEOUT, signal),
-    fetchWithTimeout(`/corec-proxy/rules`, { headers }, REQUEST_TIMEOUT, signal),
-    fetchWithTimeout(`/corec-proxy/configs/raw`, { headers }, REQUEST_TIMEOUT, signal),
+    fetchWithTimeout(`${urlPrefix}/`, { headers }, REQUEST_TIMEOUT, signal),
+    fetchWithTimeout(`${urlPrefix}/stats`, { headers }, REQUEST_TIMEOUT, signal),
+    fetchWithTimeout(`${urlPrefix}/tags`, { headers }, REQUEST_TIMEOUT, signal),
+    fetchWithTimeout(`${urlPrefix}/rules`, { headers }, REQUEST_TIMEOUT, signal),
+    fetchWithTimeout(`${urlPrefix}/configs/raw`, { headers }, REQUEST_TIMEOUT, signal),
   ])
 
   // GET / must succeed — otherwise the instance is unreachable

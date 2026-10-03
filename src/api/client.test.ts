@@ -219,3 +219,49 @@ describe('apiRequest — direct mode (static-host fallback)', () => {
     expect(init!.headers.get('Authorization')).toBeNull()
   })
 })
+
+describe('apiRequest — per-instance useProxy override', () => {
+  it('uses direct mode when global is proxy but instance useProxy is "direct"', async () => {
+    setProxyMode('proxy')
+    setActiveConnection({
+      instanceId: 'test-instance',
+      baseUrl: 'http://127.0.0.1:9090',
+      secret: 'test-secret-token',
+      useProxy: 'direct',
+    })
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }),
+    )
+
+    await apiRequest('/configs/raw')
+
+    const [url, init] = mockFetch.mock.calls[0]
+    expect(url).toBe('http://127.0.0.1:9090/configs/raw')
+    expect(init!.headers.get('X-CoreC-Target')).toBeNull()
+  })
+
+  it('uses proxy mode when global is direct but instance useProxy is "proxy"', async () => {
+    setProxyMode('direct')
+    setActiveConnection({
+      instanceId: 'test-instance',
+      baseUrl: 'http://127.0.0.1:9090',
+      secret: 'test-secret-token',
+      useProxy: 'proxy',
+    })
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }),
+    )
+
+    await apiRequest('/configs/raw')
+
+    const [url, init] = mockFetch.mock.calls[0]
+    expect(url).toBe('/corec-proxy/configs/raw')
+    expect(init!.headers.get('X-CoreC-Target')).toBe('http://127.0.0.1:9090')
+  })
+})

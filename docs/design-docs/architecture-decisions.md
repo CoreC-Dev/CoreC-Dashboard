@@ -30,11 +30,13 @@
 - **影响**：批次 I；需改 server.mjs 代理逻辑 + index.html CSP；行为变更。
 - **日期**：2026-10-02
 
-## ADR-004a 同源代理可选化：静态托管直连回退（ADR-004 addendum）
-- **背景**：ADR-004 的同源代理需要 `server.mjs` 运行。部署到 GitHub Pages（纯静态托管）时无代理，`/corec-proxy/*` 返回 404，全部 API/WS 调用失败。
-- **决策**：启动时探测 `/corec-proxy/`（HEAD）。404 → 直连模式（`fetch(baseUrl+path)`，CSP 放宽为 `connect-src * ws: wss:`）；非 404 → 代理模式（ADR-004 原行为）。`src/api/proxyMode.ts` 缓存探测结果。
-- **理由**：恢复 GitHub Pages 功能性。直连模式下凭证暴露给浏览器（ADR-004 前的行为），接受为静态托管的权衡。`server.mjs` 部署仍走代理模式，安全无降级。
-- **影响**：行为变更；改 `client.ts` + `websocket.ts` + `main.tsx` + `index.html` CSP；新增 `proxyMode.ts`。
+## ADR-004a 同源代理可选化：静态托管直连回退 + 每实例可配置（ADR-004 addendum）
+- **背景**：ADR-004 的同源代理需要 `server.mjs` 运行。部署到 GitHub Pages（纯静态托管）时无代理，`/corec-proxy/*` 返回 404，全部 API/WS 调用失败。此外，不同 CoreC 实例的网络可达性不同（有的只有浏览器可达如 localhost，有的只有 VPS 可达如内网），全局代理/直连开关无法覆盖混合场景。
+- **决策**：
+  1. 启动时探测 `/corec-proxy/`（HEAD）。404 → 直连模式（`fetch(baseUrl+path)`，CSP 放宽为 `connect-src * ws: wss:`）；非 404 → 代理模式（ADR-004 原行为）。`src/api/proxyMode.ts` 缓存探测结果。
+  2. 每实例可配 `useProxy: 'auto' | 'proxy' | 'direct'`（`CoreCInstance` 新增字段，默认 `'auto'`）。`resolveProxyMode(useProxy)` 解析：`proxy`/`direct` 强制覆盖全局探测结果，`auto`/`undefined` 跟随全局。InstanceDialog 提供下拉选择。
+- **理由**：恢复 GitHub Pages 功能性 + 支持混合网络拓扑。直连模式下凭证暴露给浏览器（ADR-004 前的行为），接受为静态托管的权衡。`server.mjs` 部署仍走代理模式，安全无降级。
+- **影响**：行为变更；改 `client.ts` + `websocket.ts` + `main.tsx` + `index.html` CSP + `ConnectionContext.tsx` + `useHomepageProbe.ts` + `InstanceDialog.tsx` + `InstancePanel.tsx`；新增 `proxyMode.ts`；`CoreCInstance` + `ActiveConnection` 类型扩展。
 - **日期**：2026-10-03
 
 ## ADR-005 仪表盘鉴权：维持公网无鉴权现状（D4）

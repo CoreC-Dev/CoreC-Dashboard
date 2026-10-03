@@ -108,6 +108,7 @@ export const ConnectionProvider: React.FC<{
         instanceId: instance.id,
         baseUrl: instance.baseUrl,
         secret: instance.secret,
+        useProxy: instance.useProxy,
       })
       connRef.current = { baseUrl: instance.baseUrl, secret: instance.secret }
     } else {

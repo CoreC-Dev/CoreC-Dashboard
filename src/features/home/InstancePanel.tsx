@@ -61,6 +61,7 @@ export const InstancePanel: React.FC = () => {
     name: string
     baseUrl: string
     secret: string
+    useProxy?: 'auto' | 'proxy' | 'direct'
     color?: string
     notes?: string
     tags?: string[]

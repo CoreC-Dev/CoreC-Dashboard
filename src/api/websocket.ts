@@ -1,5 +1,5 @@
 import { getActiveConnection } from '@/api/activeConnection'
-import { getProxyMode } from '@/api/proxyMode'
+import { resolveProxyMode } from '@/api/proxyMode'
 
 export type WSStatus = 'connecting' | 'open' | 'closed' | 'error' | 'rejected'
 
@@ -69,7 +69,7 @@ export class CoreCWebSocket<T = unknown> {
     const wsBase = baseUrl.replace(/^http:\/\//i, 'ws://').replace(/^https:\/\//i, 'wss://')
     const targetUrl = new URL(`${wsBase}${this.path}`)
 
-    const proxyMode = getProxyMode()
+    const proxyMode = resolveProxyMode(conn?.useProxy)
     let wsUrl: URL
     if (proxyMode === 'proxy') {
       // Same-origin WS proxy (ADR-004, D3): the browser connects to

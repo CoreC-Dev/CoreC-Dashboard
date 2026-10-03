@@ -20,7 +20,7 @@
 ## 待修复（阶段 4 批次 I，行为变更，每条单独提交）
 - **TD-SEC-003（P0）**：`instanceStore.ts:247` 导出脱敏 + opt-in。→ ADR-003
 - **TD-SEC-001/002（P1）**：CSP 收紧 + server.mjs 同源代理。→ ADR-004
-  - **ADR-004a addendum**：静态托管（GitHub Pages）无代理时自动回退直连模式，CSP 放宽为 `connect-src * ws: wss:`。`server.mjs` 部署仍走代理模式（安全无降级）。
+  - **ADR-004a addendum**：静态托管（GitHub Pages）无代理时自动回退直连模式，CSP 放宽为 `connect-src * ws: wss:`。每实例可配 `useProxy: auto/proxy/direct` 覆盖全局探测（支持混合网络拓扑）。`server.mjs` 部署仍走代理模式（安全无降级）。
 - **TD-SEC-006（P2）**：模板随机密钥。→ ADR-006
 - **TD-SEC-009（P2）**：`configYaml.ts` `load(yaml, { schema: JSON_SCHEMA })` + 拒绝 `__proto__`/`constructor` key。
 - **TD-SEC-011（P2）**：`importInstances` 用 zod 校验导入 JSON，拒绝未知 key。

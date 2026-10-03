@@ -22,6 +22,13 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { DEFAULT_COREC_URL } from '@/lib/constants'
 import type { CoreCInstance } from '@/types/models'
@@ -34,6 +41,7 @@ const instanceSchema = (t: (k: string) => string) =>
       .min(1, t('instances.urlRequired'))
       .regex(/^https?:\/\//, t('instances.urlInvalid')),
     secret: z.string().min(8, t('instances.secretMin')),
+    useProxy: z.enum(['auto', 'proxy', 'direct']),
     color: z.string().optional(),
     notes: z.string().optional(),
     tags: z.string().optional(),
@@ -50,6 +58,7 @@ export interface InstanceDialogProps {
     name: string
     baseUrl: string
     secret: string
+    useProxy?: 'auto' | 'proxy' | 'direct'
     color?: string
     notes?: string
     tags?: string[]
@@ -82,6 +91,7 @@ export const InstanceDialog: React.FC<InstanceDialogProps> = ({
       name: '',
       baseUrl: DEFAULT_COREC_URL,
       secret: '',
+      useProxy: 'auto',
       color: '',
       notes: '',
       tags: '',
@@ -94,6 +104,7 @@ export const InstanceDialog: React.FC<InstanceDialogProps> = ({
         name: instance?.name ?? '',
         baseUrl: instance?.baseUrl ?? DEFAULT_COREC_URL,
         secret: instance?.secret ?? '',
+        useProxy: instance?.useProxy ?? 'auto',
         color: instance?.color ?? '',
         notes: instance?.notes ?? '',
         tags: instance?.tags?.join(', ') ?? '',
@@ -106,6 +117,7 @@ export const InstanceDialog: React.FC<InstanceDialogProps> = ({
       name: data.name.trim(),
       baseUrl: data.baseUrl.trim().replace(/\/+$/, ''),
       secret: data.secret.trim(),
+      useProxy: data.useProxy,
       color: data.color || undefined,
       notes: data.notes || undefined,
       tags: data.tags
@@ -180,6 +192,29 @@ export const InstanceDialog: React.FC<InstanceDialogProps> = ({
                       </button>
                     </div>
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="useProxy"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('instances.proxyMode')}</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="auto">{t('instances.proxyModeAuto')}</SelectItem>
+                      <SelectItem value="proxy">{t('instances.proxyModeProxy')}</SelectItem>
+                      <SelectItem value="direct">{t('instances.proxyModeDirect')}</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

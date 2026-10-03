@@ -1,5 +1,5 @@
 import { getActiveConnection } from '@/api/activeConnection'
-import { getProxyMode } from '@/api/proxyMode'
+import { resolveProxyMode } from '@/api/proxyMode'
 
 export class ApiError extends Error {
   status: number
@@ -67,7 +67,7 @@ export async function apiRequest<T = unknown>(
 
   const cleanBase = conn.baseUrl.trim().replace(/\/+$/, '')
   const cleanPath = path.startsWith('/') ? path : `/${path}`
-  const proxyMode = getProxyMode()
+  const proxyMode = resolveProxyMode(conn.useProxy)
   let url: string
   if (proxyMode === 'proxy') {
     // Same-origin proxy (ADR-004, D3): the browser sends /corec-proxy<path>
