@@ -1,13 +1,4 @@
-import {
-  AlertCircle,
-  ExternalLink,
-  Loader2,
-  Pencil,
-  Plus,
-  RefreshCw,
-  Send,
-  Trash2,
-} from 'lucide-react'
+import { AlertCircle, ExternalLink, Pencil, Plus, RefreshCw, Send, Trash2 } from 'lucide-react'
 import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -27,6 +18,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { LoadingState } from '@/components/ui/loading-state'
 import { ConfigApplyConfirmationDialog } from '@/components/wizard/ConfigApplyConfirmationDialog'
 import { EntitySearchBar, filterEntities } from '@/components/wizard/EntitySearchBar'
 import { UnsavedChangesBanner } from '@/components/wizard/UnsavedChangesBanner'
@@ -246,10 +238,7 @@ export const TransportsPage: React.FC = () => {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 card-stagger">
           {isLoading && transports.length === 0 ? (
-            <div className="col-span-full py-12 flex items-center justify-center gap-2 text-xs text-muted-foreground">
-              <Loader2 className="w-4 h-4 animate-spin" />
-              <span>{t('common.loading')}</span>
-            </div>
+            <LoadingState className="col-span-full py-12" />
           ) : isError ? (
             <Card className="col-span-full p-8 text-center space-y-3">
               <AlertCircle className="mx-auto h-8 w-8 text-status-error" />

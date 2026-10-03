@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { AlertCircle, Loader2, Pencil, Play, Plus, RefreshCw, Trash2 } from 'lucide-react'
+import { AlertCircle, Pencil, Play, Plus, RefreshCw, Trash2 } from 'lucide-react'
 import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -24,6 +24,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { LoadingState } from '@/components/ui/loading-state'
 import { Switch } from '@/components/ui/switch'
 import { ConfigApplyConfirmationDialog } from '@/components/wizard/ConfigApplyConfirmationDialog'
 import { EntitySearchBar, filterEntities } from '@/components/wizard/EntitySearchBar'
@@ -342,10 +343,7 @@ export const RulesPage: React.FC = () => {
         </div>
         <Card className="border-border bg-card overflow-hidden">
           {isLoading ? (
-            <div className="flex items-center justify-center gap-2 py-16 text-xs text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              {t('common.loading')}
-            </div>
+            <LoadingState />
           ) : isError ? (
             <div className="space-y-3 py-10 text-center">
               <AlertCircle className="mx-auto h-8 w-8 text-status-error" />

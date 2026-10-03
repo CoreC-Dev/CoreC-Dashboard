@@ -200,7 +200,7 @@ export const InstancePanel: React.FC = () => {
         {instances.length === 0 ? (
           /* Empty state */
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <img src="/logo-animated.svg" alt="CoreC" className="w-16 h-16 mb-4" />
+            <img src="/logo-animated.svg" alt="CoreC" className="w-32 h-32 mb-4" />
             <h2 className="text-xl font-semibold mb-2">{t('instances.emptyTitle')}</h2>
             <p className="text-sm text-muted-foreground mb-6 max-w-md">
               {t('instances.emptyDesc')}

@@ -3,7 +3,6 @@ import {
   AlertOctagon,
   CheckCircle2,
   Clock,
-  Loader2,
   RefreshCw,
   RotateCcw,
   Send,
@@ -22,6 +21,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { LoadingState } from '@/components/ui/loading-state'
 import {
   Select,
   SelectContent,
@@ -282,10 +282,7 @@ export const DeadLetterTable: React.FC<DeadLetterTableProps> = ({
         )}
 
         {loadingDlq ? (
-          <div className="flex items-center justify-center gap-2 py-8 text-xs text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            {t('common.loading')}
-          </div>
+          <LoadingState className="py-8" />
         ) : errorDlq ? (
           <div className="space-y-3 py-8 text-center">
             <AlertCircle className="mx-auto h-8 w-8 text-status-error" />

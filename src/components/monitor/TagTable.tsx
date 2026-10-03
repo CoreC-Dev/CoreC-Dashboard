@@ -1,10 +1,11 @@
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { AlertCircle, ArrowDown, ArrowUp, ChevronsUpDown, Loader2, RefreshCw } from 'lucide-react'
+import { AlertCircle, ArrowDown, ArrowUp, ChevronsUpDown, RefreshCw } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { TagRow } from '@/components/monitor/TagRow'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { LoadingState } from '@/components/ui/loading-state'
 import { COLS, ROW_HEIGHT, tagKey } from '@/lib/tagExplorer'
 import type { DataPoint } from '@/types/models'
 
@@ -56,10 +57,7 @@ export function TagTable({
         <div className="text-xs text-muted-foreground">{t('tags.clickToOpenTrend')}</div>
       </div>
       {showLoading ? (
-        <div className="flex items-center justify-center gap-2 py-16 text-xs text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          {t('common.loading')}
-        </div>
+        <LoadingState />
       ) : showError ? (
         <div className="space-y-3 py-10 text-center">
           <AlertCircle className="mx-auto h-8 w-8 text-status-error" />

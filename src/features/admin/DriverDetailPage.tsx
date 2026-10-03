@@ -23,6 +23,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { LoadingState } from '@/components/ui/loading-state'
 import { useEntityEditConfig } from '@/hooks/useEntityEditConfig'
 import { useParsedConfig } from '@/hooks/useParsedConfig'
 import { dumpConfigYaml, parseConfigYaml, upsertDriver } from '@/lib/configYaml'
@@ -195,9 +196,7 @@ export const DriverDetailPage: React.FC = () => {
         <BackLink to={`${adminBase}/drivers`}>
           {t('drivers.driverList', { defaultValue: 'Back to Drivers' })}
         </BackLink>
-        <div className="py-16 text-center text-xs text-muted-foreground">
-          {t('common.loading', { defaultValue: 'Loading driver...' })}
-        </div>
+        <LoadingState text={t('common.loading', { defaultValue: 'Loading driver...' })} />
       </div>
     )
   }

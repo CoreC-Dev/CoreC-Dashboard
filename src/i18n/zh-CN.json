@@ -1,7 +1,7 @@
 {
   "nav": {
     "monitor": "前台监控",
-    "dashboard": "总览大屏",
+    "dashboard": "Dashboard",
     "tags": "实时测点",
     "alerts": "告警事件",
     "admin": "后台管理",

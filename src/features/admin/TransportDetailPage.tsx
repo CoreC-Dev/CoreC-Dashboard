@@ -25,6 +25,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { LoadingState } from '@/components/ui/loading-state'
 import { useEntityEditConfig } from '@/hooks/useEntityEditConfig'
 import { useParsedConfig } from '@/hooks/useParsedConfig'
 import { dumpConfigYaml, parseConfigYaml, upsertTransport } from '@/lib/configYaml'
@@ -280,9 +281,7 @@ export const TransportDetailPage: React.FC = () => {
         <BackLink to={`${adminBase}/transports`}>
           {t('transports.transportList', { defaultValue: 'Back to Transports' })}
         </BackLink>
-        <div className="py-16 text-center text-xs text-muted-foreground">
-          {t('common.loading', { defaultValue: 'Loading transport...' })}
-        </div>
+        <LoadingState text={t('common.loading', { defaultValue: 'Loading transport...' })} />
       </div>
     )
   }

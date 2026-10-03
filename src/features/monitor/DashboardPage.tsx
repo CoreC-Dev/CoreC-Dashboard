@@ -5,7 +5,6 @@ import {
   Clock,
   Cpu,
   Database,
-  Loader2,
   Send,
   ShieldCheck,
   TrendingDown,
@@ -21,6 +20,7 @@ import { TrafficChart } from '@/components/charts/TrafficChart'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { CountUpNumber } from '@/components/ui/count-up-number'
+import { LoadingState } from '@/components/ui/loading-state'
 import { ConnStateLabel } from '@/lib/constants'
 import { formatNumber, formatUptime } from '@/lib/utils'
 
@@ -75,12 +75,7 @@ export const DashboardPage: React.FC = () => {
 
   // Loading skeleton — shown while the initial stats fetch is in flight.
   if (statsLoading) {
-    return (
-      <div className="flex items-center justify-center py-24 text-muted-foreground">
-        <Loader2 className="w-6 h-6 animate-spin mr-3" />
-        <span className="text-base">{t('common.loading')}</span>
-      </div>
-    )
+    return <LoadingState className="py-24" />
   }
 
   // Error fallback — shown if the stats fetch fails (connection lost, server

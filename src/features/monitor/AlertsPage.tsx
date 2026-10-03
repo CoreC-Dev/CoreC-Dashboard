@@ -7,7 +7,6 @@ import {
   BellRing,
   CheckCircle2,
   Clock,
-  Loader2,
   RefreshCw,
   RotateCcw,
   Search,
@@ -21,6 +20,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { LoadingState } from '@/components/ui/loading-state'
 import {
   Select,
   SelectContent,
@@ -302,10 +302,7 @@ export const AlertsPage: React.FC = () => {
             </div>
           )}
           {isLoading && deadLetters.length === 0 ? (
-            <div className="flex items-center justify-center gap-2 py-8 text-xs text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              {t('common.loading')}
-            </div>
+            <LoadingState className="py-8" />
           ) : isError ? (
             <div className="space-y-3 py-8 text-center">
               <AlertCircle className="mx-auto h-8 w-8 text-status-error" />
