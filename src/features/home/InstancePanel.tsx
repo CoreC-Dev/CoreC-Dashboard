@@ -45,6 +45,8 @@ export const InstancePanel: React.FC = () => {
   const [importOpen, setImportOpen] = React.useState(false)
   const [importText, setImportText] = React.useState('')
   const [importResult, setImportResult] = React.useState<string | null>(null)
+  const [importDragOver, setImportDragOver] = React.useState(false)
+  const fileInputRef = React.useRef<HTMLInputElement>(null)
   const [exportOpen, setExportOpen] = React.useState(false)
 
   const handleAdd = () => {
@@ -85,6 +87,24 @@ export const InstancePanel: React.FC = () => {
       setImportText('')
       setImportResult(null)
     }
+  }
+
+  const handleFileRead = (file: File) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      setImportText(typeof reader.result === 'string' ? reader.result : '')
+    }
+    reader.onerror = () => {
+      setImportResult(t('instances.importFileError', { error: reader.error?.message ?? '' }))
+    }
+    reader.readAsText(file)
+  }
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    setImportDragOver(false)
+    const file = e.dataTransfer.files[0]
+    if (file) handleFileRead(file)
   }
 
   const toggleLanguage = () => {
@@ -185,10 +205,16 @@ export const InstancePanel: React.FC = () => {
             <p className="text-sm text-muted-foreground mb-6 max-w-md">
               {t('instances.emptyDesc')}
             </p>
-            <Button onClick={handleAdd} size="lg">
-              <Plus className="w-4 h-4 mr-2" />
-              {t('instances.addNew')}
-            </Button>
+            <div className="flex items-center gap-3">
+              <Button onClick={handleAdd} size="lg">
+                <Plus className="w-4 h-4 mr-2" />
+                {t('instances.addNew')}
+              </Button>
+              <Button variant="outline" onClick={() => setImportOpen(true)} size="lg">
+                <Upload className="w-4 h-4 mr-2" />
+                {t('instances.import')}
+              </Button>
+            </div>
           </div>
         ) : (
           <>
@@ -255,8 +281,37 @@ export const InstancePanel: React.FC = () => {
             <DialogTitle>{t('instances.importTitle')}</DialogTitle>
             <DialogDescription>{t('instances.importDesc')}</DialogDescription>
           </DialogHeader>
+          {/* Drop zone + file browse */}
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            onDragOver={(e) => {
+              e.preventDefault()
+              setImportDragOver(true)
+            }}
+            onDragLeave={() => setImportDragOver(false)}
+            onDrop={handleDrop}
+            className={`w-full cursor-pointer rounded-md border-2 border-dashed p-4 text-center transition-colors ${importDragOver ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}
+          >
+            <Upload className="w-5 h-5 mx-auto mb-1.5 text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">{t('instances.importDrop')}</p>
+            <p className="text-xs text-primary font-medium mt-1">{t('instances.importBrowse')}</p>
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/json,.json"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0]
+              if (f) handleFileRead(f)
+              e.target.value = ''
+            }}
+          />
+          {/* Paste textarea */}
+          <p className="text-xs text-muted-foreground">{t('instances.importOrPaste')}</p>
           <textarea
-            className="w-full h-48 rounded-md border border-border bg-background px-3 py-2 text-xs font-mono resize-none focus:outline-none focus:ring-2 focus:ring-primary"
+            className="w-full h-32 rounded-md border border-border bg-background px-3 py-2 text-xs font-mono resize-none focus:outline-none focus:ring-2 focus:ring-primary"
             aria-label={t('instances.importTitle')}
             placeholder='[{"id":"inst_...","name":"...","baseUrl":"...","secret":"..."}]'
             value={importText}

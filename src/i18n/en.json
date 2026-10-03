@@ -71,7 +71,11 @@
     "dataManagement": "Data Management",
     "clearAllTitle": "Clear All Local Data",
     "clearAllDesc": "This will delete all saved CoreC instance configs. This cannot be undone.",
-    "clearAll": "Clear All Data"
+    "clearAll": "Clear All Data",
+    "importDrop": "Drop JSON file here, or",
+    "importBrowse": "Browse file",
+    "importOrPaste": "or paste JSON text directly",
+    "importFileError": "File read failed: {{error}}"
   },
   "common": {
     "status": "Status",

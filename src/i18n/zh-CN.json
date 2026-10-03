@@ -71,7 +71,11 @@
     "dataManagement": "数据管理",
     "clearAllTitle": "清除所有本地数据",
     "clearAllDesc": "这将删除所有已保存的 CoreC 实例配置。此操作不可撤销。",
-    "clearAll": "清除所有数据"
+    "clearAll": "清除所有数据",
+    "importDrop": "拖拽 JSON 文件到此处，或",
+    "importBrowse": "选择文件",
+    "importOrPaste": "或直接粘贴 JSON 文本",
+    "importFileError": "文件读取失败：{{error}}"
   },
   "common": {
     "status": "状态",
