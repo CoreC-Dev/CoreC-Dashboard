@@ -972,7 +972,9 @@
     "key": "键",
     "value": "值",
     "addEntry": "添加条目",
-    "noEntries": "暂无条目。点击添加创建一个。"
+    "noEntries": "暂无条目。点击添加创建一个。",
+    "tagsFile": "测点文件",
+    "tagsInterval": "测点轮询间隔"
   },
   "alerts": {
     "title": "告警事件",

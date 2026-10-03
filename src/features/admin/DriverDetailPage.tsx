@@ -28,6 +28,8 @@ import { useParsedConfig } from '@/hooks/useParsedConfig'
 import { dumpConfigYaml, parseConfigYaml, upsertDriver } from '@/lib/configYaml'
 import { extractDriverYaml, getDriverConnectionFields } from '@/lib/connectionInfo'
 import { ConnStateLabel, QualityLabel } from '@/lib/constants'
+import { type RegistryEditField, registryToEditFields } from '@/lib/registryAdapter'
+import { DRIVER_TOPLEVEL_FIELDS, getDriverFieldRegistry } from '@/lib/settingsRegistry'
 import { formatNumber } from '@/lib/utils'
 import type { CoreCConfig, DriverConfig } from '@/types/config'
 import type { DriverStatus } from '@/types/models'
@@ -35,257 +37,13 @@ import type { DriverStatus } from '@/types/models'
 // --- Driver Configuration Edit Section ---
 // Renders a collapsible form that lets operators edit a driver's southbound
 // connection parameters, preview the generated YAML and hot-reload it through
-// PUT /configs (useUpdateConfig). Fields are derived from the driver protocol.
+// PUT /configs (useUpdateConfig). Field metadata is derived from the settings
+// registry (single source of truth — TD-ARCH-011/TD-DUP-001) via the
+// registryToEditFields adapter; no local field arrays are duplicated here.
 
-type DriverFieldKind = 'text' | 'number' | 'select'
-
-interface DriverEditField {
-  key: string
-  labelKey: string
-  kind: DriverFieldKind
-  options?: readonly string[]
-  placeholder?: string
-}
-
-const MODBUS_TCP_FIELDS: readonly DriverEditField[] = [
-  { key: 'host', labelKey: 'drivers.editConfig.host', kind: 'text', placeholder: '192.168.1.100' },
-  { key: 'port', labelKey: 'drivers.editConfig.port', kind: 'number', placeholder: '502' },
-  { key: 'slave-id', labelKey: 'drivers.editConfig.slaveId', kind: 'number', placeholder: '1' },
-  { key: 'timeout', labelKey: 'drivers.editConfig.timeout', kind: 'text', placeholder: '5s' },
-  { key: 'retry', labelKey: 'drivers.editConfig.retry', kind: 'number', placeholder: '3' },
-  {
-    key: 'reconnect-interval',
-    labelKey: 'drivers.editConfig.reconnectInterval',
-    kind: 'text',
-    placeholder: '1s',
-  },
-  {
-    key: 'reconnect-max-interval',
-    labelKey: 'drivers.editConfig.reconnectMaxInterval',
-    kind: 'text',
-    placeholder: '30s',
-  },
-  {
-    key: 'max-reconnect-failures',
-    labelKey: 'drivers.editConfig.maxReconnectFailures',
-    kind: 'number',
-    placeholder: '10',
-  },
-  {
-    key: 'tags-file',
-    labelKey: 'drivers.editConfig.tagsFile',
-    kind: 'text',
-    placeholder: 'tags.yaml',
-  },
-  {
-    key: 'tags-interval',
-    labelKey: 'drivers.editConfig.tagsInterval',
-    kind: 'text',
-    placeholder: '1s',
-  },
-]
-
-const MODBUS_TLS_FIELDS: readonly DriverEditField[] = [
-  { key: 'host', labelKey: 'drivers.editConfig.host', kind: 'text', placeholder: '192.168.1.100' },
-  { key: 'port', labelKey: 'drivers.editConfig.port', kind: 'number', placeholder: '502' },
-  { key: 'slave-id', labelKey: 'drivers.editConfig.slaveId', kind: 'number', placeholder: '1' },
-  { key: 'timeout', labelKey: 'drivers.editConfig.timeout', kind: 'text', placeholder: '5s' },
-  {
-    key: 'cert-file',
-    labelKey: 'drivers.editConfig.certFile',
-    kind: 'text',
-    placeholder: '/path/to/cert.pem',
-  },
-  {
-    key: 'key-file',
-    labelKey: 'drivers.editConfig.keyFile',
-    kind: 'text',
-    placeholder: '/path/to/key.pem',
-  },
-  {
-    key: 'ca-file',
-    labelKey: 'drivers.editConfig.caFile',
-    kind: 'text',
-    placeholder: '/path/to/ca.pem',
-  },
-  {
-    key: 'tags-file',
-    labelKey: 'drivers.editConfig.tagsFile',
-    kind: 'text',
-    placeholder: 'tags.yaml',
-  },
-  {
-    key: 'tags-interval',
-    labelKey: 'drivers.editConfig.tagsInterval',
-    kind: 'text',
-    placeholder: '1s',
-  },
-]
-
-const MODBUS_RTU_FIELDS: readonly DriverEditField[] = [
-  {
-    key: 'serial-device',
-    labelKey: 'drivers.editConfig.serialDevice',
-    kind: 'text',
-    placeholder: '/dev/ttyS0',
-  },
-  {
-    key: 'baud-rate',
-    labelKey: 'drivers.editConfig.baudRate',
-    kind: 'number',
-    placeholder: '9600',
-  },
-  {
-    key: 'data-bits',
-    labelKey: 'drivers.editConfig.dataBits',
-    kind: 'select',
-    options: ['7', '8'],
-  },
-  {
-    key: 'parity',
-    labelKey: 'drivers.editConfig.parity',
-    kind: 'select',
-    options: ['none', 'even', 'odd'],
-  },
-  {
-    key: 'stop-bits',
-    labelKey: 'drivers.editConfig.stopBits',
-    kind: 'select',
-    options: ['1', '2'],
-  },
-  { key: 'slave-id', labelKey: 'drivers.editConfig.slaveId', kind: 'number', placeholder: '1' },
-  {
-    key: 'tags-file',
-    labelKey: 'drivers.editConfig.tagsFile',
-    kind: 'text',
-    placeholder: 'tags.yaml',
-  },
-  {
-    key: 'tags-interval',
-    labelKey: 'drivers.editConfig.tagsInterval',
-    kind: 'text',
-    placeholder: '1s',
-  },
-]
-
-const S7_FIELDS: readonly DriverEditField[] = [
-  { key: 'host', labelKey: 'drivers.editConfig.host', kind: 'text', placeholder: '192.168.1.10' },
-  { key: 'port', labelKey: 'drivers.editConfig.port', kind: 'number', placeholder: '102' },
-  { key: 'rack', labelKey: 'drivers.editConfig.rack', kind: 'number', placeholder: '0' },
-  { key: 'slot', labelKey: 'drivers.editConfig.slot', kind: 'number', placeholder: '1' },
-  {
-    key: 'idle-timeout',
-    labelKey: 'drivers.editConfig.idleTimeout',
-    kind: 'text',
-    placeholder: '30s',
-  },
-  { key: 'timeout', labelKey: 'drivers.editConfig.timeout', kind: 'text', placeholder: '5s' },
-  {
-    key: 'tags-file',
-    labelKey: 'drivers.editConfig.tagsFile',
-    kind: 'text',
-    placeholder: 'tags.yaml',
-  },
-  {
-    key: 'tags-interval',
-    labelKey: 'drivers.editConfig.tagsInterval',
-    kind: 'text',
-    placeholder: '1s',
-  },
-]
-
-const OPCUA_FIELDS: readonly DriverEditField[] = [
-  {
-    key: 'endpoint',
-    labelKey: 'drivers.editConfig.endpoint',
-    kind: 'text',
-    placeholder: 'opc.tcp://192.168.1.20:4840',
-  },
-  {
-    key: 'mode',
-    labelKey: 'drivers.editConfig.mode',
-    kind: 'select',
-    options: ['polling', 'subscription'],
-  },
-  {
-    key: 'security-policy',
-    labelKey: 'drivers.editConfig.securityPolicy',
-    kind: 'select',
-    options: [
-      'None',
-      'Basic128Rsa15',
-      'Basic256',
-      'Basic256Sha256',
-      'Aes128Sha256RsaOaep',
-      'Aes256Sha256RsaPss',
-    ],
-  },
-  {
-    key: 'security-mode',
-    labelKey: 'drivers.editConfig.securityMode',
-    kind: 'select',
-    options: ['None', 'Sign', 'SignAndEncrypt'],
-  },
-  { key: 'username', labelKey: 'drivers.editConfig.username', kind: 'text' },
-  { key: 'password', labelKey: 'drivers.editConfig.password', kind: 'text' },
-  {
-    key: 'subscription-interval',
-    labelKey: 'drivers.editConfig.subscriptionInterval',
-    kind: 'text',
-    placeholder: '500ms',
-  },
-  {
-    key: 'subscription-buffer',
-    labelKey: 'drivers.editConfig.subscriptionBuffer',
-    kind: 'number',
-    placeholder: '100',
-  },
-  {
-    key: 'max-batch-size',
-    labelKey: 'drivers.editConfig.maxBatchSize',
-    kind: 'number',
-    placeholder: '1000',
-  },
-  {
-    key: 'cert-file',
-    labelKey: 'drivers.editConfig.certFile',
-    kind: 'text',
-    placeholder: '/path/to/cert.pem',
-  },
-  {
-    key: 'key-file',
-    labelKey: 'drivers.editConfig.keyFile',
-    kind: 'text',
-    placeholder: '/path/to/key.pem',
-  },
-  { key: 'timeout', labelKey: 'drivers.editConfig.timeout', kind: 'text', placeholder: '5s' },
-  {
-    key: 'tags-file',
-    labelKey: 'drivers.editConfig.tagsFile',
-    kind: 'text',
-    placeholder: 'tags.yaml',
-  },
-  {
-    key: 'tags-interval',
-    labelKey: 'drivers.editConfig.tagsInterval',
-    kind: 'text',
-    placeholder: '1s',
-  },
-]
-
-function getDriverFields(type: string): readonly DriverEditField[] {
-  const lower = type.toLowerCase()
-  if (lower.includes('modbus')) {
-    if (lower.includes('tls')) return MODBUS_TLS_FIELDS
-    // Pure serial RTU (not RTU-over-TCP/UDP) uses serial fields.
-    if (lower.includes('rtu') && !lower.includes('over')) return MODBUS_RTU_FIELDS
-    // tcp, udp, rtuovertcp, rtuoverudp → TCP-style host/port fields.
-    return MODBUS_TCP_FIELDS
-  }
-  if (lower.includes('s7')) return S7_FIELDS
-  if (lower.includes('opcua') || lower.includes('opc-ua') || lower.includes('opc_ua'))
-    return OPCUA_FIELDS
-  return []
+/** Resolve the edit fields for a driver type from the settings registry. */
+function getDriverFields(type: string): readonly RegistryEditField[] {
+  return registryToEditFields(getDriverFieldRegistry(type), DRIVER_TOPLEVEL_FIELDS)
 }
 
 /** Serialize an existing config value into the string form the edit form uses.
@@ -297,34 +55,38 @@ function driverConfigValueToString(src: unknown): string {
   return String(src)
 }
 
-function buildDriverSettings(
-  fields: readonly DriverEditField[],
+/** Build a driver entry ({ name, type, settings, ...top-level }) from the edit
+ *  form values. Fields tagged `group: 'settings'` go inside `settings`; fields
+ *  tagged `group: 'top'` (e.g. tags-file, tags-interval) are placed as
+ *  top-level siblings — matching configSchema + the wizard (bug fix: the
+ *  previous local arrays wrote tags-file inside `settings`). */
+function buildDriverEntry(
+  driver: DriverStatus,
+  fields: readonly RegistryEditField[],
   values: Record<string, string>,
 ): Record<string, unknown> {
   const settings: Record<string, unknown> = {}
+  const entry: Record<string, unknown> = { name: driver.name, type: driver.type }
   for (const f of fields) {
     const raw = (values[f.key] ?? '').trim()
     if (raw === '') continue
-    if (f.kind === 'number') {
-      const n = Number(raw)
-      settings[f.key] = Number.isNaN(n) ? raw : n
-    } else {
-      settings[f.key] = raw
-    }
+    const val = f.kind === 'number' ? (Number.isNaN(Number(raw)) ? raw : Number(raw)) : raw
+    if (f.group === 'settings') settings[f.key] = val
+    else entry[f.key] = val
   }
-  return settings
+  if (Object.keys(settings).length > 0) entry.settings = settings
+  return entry
 }
 
 function buildDriverYaml(
   driver: DriverStatus,
-  fields: readonly DriverEditField[],
+  fields: readonly RegistryEditField[],
   values: Record<string, string>,
 ): string {
-  const settings = buildDriverSettings(fields, values)
-  const doc = {
-    drivers: [{ name: driver.name, type: driver.type, settings }],
-  }
-  return dump(doc, { skipInvalid: true, noRefs: true, lineWidth: -1 })
+  return dump(
+    { drivers: [buildDriverEntry(driver, fields, values)] },
+    { skipInvalid: true, noRefs: true, lineWidth: -1 },
+  )
 }
 
 const DriverEditConfigSection: React.FC<{ driver: DriverStatus }> = ({ driver }) => {
@@ -334,10 +96,15 @@ const DriverEditConfigSection: React.FC<{ driver: DriverStatus }> = ({ driver })
   const prefillValues = useCallback(
     (cfg: CoreCConfig): Record<string, string> | null => {
       const me = cfg.drivers?.find((d) => d.name === driver.name)
-      if (!me?.settings) return null
+      if (!me) return null
       const init: Record<string, string> = {}
       for (const f of fields) {
-        const src = me.settings?.[f.key]
+        // Top-level fields (tags-file, tags-interval) live on the driver entry;
+        // settings fields live inside `settings`.
+        const src =
+          f.group === 'settings'
+            ? me.settings?.[f.key]
+            : (me as unknown as Record<string, unknown>)[f.key]
         init[f.key] = driverConfigValueToString(src)
       }
       return init
@@ -346,25 +113,36 @@ const DriverEditConfigSection: React.FC<{ driver: DriverStatus }> = ({ driver })
   )
 
   const buildPreviewYaml = useCallback(
-    (flds: readonly DriverEditField[], vals: Record<string, string>) =>
+    (flds: readonly RegistryEditField[], vals: Record<string, string>) =>
       buildDriverYaml(driver, flds, vals),
     [driver],
   )
 
   const buildApplyYaml = useCallback(
-    (raw: string, flds: readonly DriverEditField[], vals: Record<string, string>): string => {
+    (raw: string, flds: readonly RegistryEditField[], vals: Record<string, string>): string => {
       const fullConfig = parseConfigYaml(raw)
       const existing = fullConfig.drivers?.find((d) => d.name === driver.name)
-      const settings = buildDriverSettings(flds, vals)
+      const built = buildDriverEntry(driver, flds, vals)
+      // Merge the edited settings + top-level fields onto the existing driver
+      // (preserving its tags etc.), or create a fresh one with empty tags.
       const updatedDriver: DriverConfig = existing
-        ? { ...existing, settings }
-        : { name: driver.name, type: driver.type, settings, tags: [] }
+        ? {
+            ...existing,
+            ...built,
+            settings: { ...(existing.settings ?? {}), ...(built.settings ?? {}) },
+          }
+        : {
+            name: driver.name,
+            type: driver.type,
+            settings: (built.settings as Record<string, unknown>) ?? {},
+            tags: [],
+          }
       return dumpConfigYaml(upsertDriver(fullConfig, updatedDriver))
     },
     [driver],
   )
 
-  const edit = useEntityEditConfig<DriverEditField>({
+  const edit = useEntityEditConfig<RegistryEditField>({
     entityName: driver.name,
     fields,
     prefillValues,

@@ -124,4 +124,81 @@ describe('registryToEditFields', () => {
     const port = fields.find((f) => f.key === 'port')
     expect(port?.placeholder).toBe('802')
   })
+
+  // ─── Single-source migration parity (TD-ARCH-011 / TD-DUP-001) ──────
+
+  it('every driver registry field is tagged with a group (settings|top)', () => {
+    for (const type of ['modbus-tcp', 'modbus-rtu', 'modbus-tls', 's7', 'opcua']) {
+      const fields = registryToEditFields(getDriverFieldRegistry(type), DRIVER_TOPLEVEL_FIELDS)
+      for (const f of fields) {
+        expect(['settings', 'top']).toContain(f.group)
+      }
+      // tags-file / tags-interval are top-level (bug fix: were inside settings).
+      const tagsFile = fields.find((f) => f.key === 'tags-file')
+      expect(tagsFile?.group).toBe('top')
+    }
+  })
+
+  it('registry boolean fields render as true/false select with boolean flag', () => {
+    // mqtt clean-session / retained are boolean in the registry.
+    const fields = registryToEditFields(
+      getTransportFieldRegistry('mqtt')!,
+      TRANSPORT_TOPLEVEL_FIELDS,
+    )
+    const cleanSession = fields.find((f) => f.key === 'clean-session')!
+    expect(cleanSession.kind).toBe('select')
+    expect(cleanSession.options).toEqual(['true', 'false'])
+    expect(cleanSession.boolean).toBe(true)
+    expect(cleanSession.group).toBe('settings')
+  })
+
+  it('transport curated edit keys all resolve in the registry (except headers)', () => {
+    // Guards the TransportDetailPage curated key list: every key (bar `headers`,
+    // which is a map supplement) must exist in the registry so no field silently
+    // disappears from the edit form when the registry evolves.
+    const mqttKeys = new Set([
+      'broker',
+      'topic-template',
+      'client-id',
+      'qos',
+      'data-topic',
+      'command-topic',
+      'retained',
+      'clean-session',
+      'keep-alive',
+      'connect-timeout',
+      'publish-timeout',
+      'auto-reconnect',
+      'username',
+      'password',
+      'retry-count',
+      'buffer-size',
+    ])
+    const httpKeys = new Set([
+      'url',
+      'method',
+      'webhook-addr',
+      'webhook-path',
+      'webhook-secret',
+      'timeout',
+      'max-idle-conns',
+      'idle-conn-timeout',
+      'batch-size',
+      'flush-interval',
+      'retry-count',
+      'buffer-size',
+    ])
+    const mqttAll = new Set(
+      registryToEditFields(getTransportFieldRegistry('mqtt')!, TRANSPORT_TOPLEVEL_FIELDS).map(
+        (f) => f.key,
+      ),
+    )
+    const httpAll = new Set(
+      registryToEditFields(getTransportFieldRegistry('http')!, TRANSPORT_TOPLEVEL_FIELDS).map(
+        (f) => f.key,
+      ),
+    )
+    for (const k of mqttKeys) expect(mqttAll.has(k)).toBe(true)
+    for (const k of httpKeys) expect(httpAll.has(k)).toBe(true)
+  })
 })

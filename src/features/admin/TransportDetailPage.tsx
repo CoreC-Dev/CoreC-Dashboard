@@ -30,6 +30,8 @@ import { useParsedConfig } from '@/hooks/useParsedConfig'
 import { dumpConfigYaml, parseConfigYaml, upsertTransport } from '@/lib/configYaml'
 import { extractTransportYaml, getTransportConnectionFields } from '@/lib/connectionInfo'
 import { ConnStateLabel } from '@/lib/constants'
+import { type RegistryEditField, registryToEditFields } from '@/lib/registryAdapter'
+import { getTransportFieldRegistry, TRANSPORT_TOPLEVEL_FIELDS } from '@/lib/settingsRegistry'
 import { formatNumber } from '@/lib/utils'
 import type { CoreCConfig, TransportConfig } from '@/types/config'
 import type { TransportStatus } from '@/types/models'
@@ -37,233 +39,80 @@ import type { TransportStatus } from '@/types/models'
 // --- Transport Configuration Edit Section ---
 // Renders a collapsible form that lets operators edit a transport's northbound
 // publishing parameters, preview the generated YAML and hot-reload it through
-// PUT /configs (useUpdateConfig). Fields are derived from the transport protocol.
+// PUT /configs (useUpdateConfig). Field METADATA is derived from the settings
+// registry (single source of truth — TD-ARCH-011/TD-DUP-001) via the
+// registryToEditFields adapter. The set of fields shown is a curated
+// presentation choice (quick-edit form): advanced/dynamic fields (TLS certs,
+// command forwarding, fallback dynamic-select, connect-retry tuning) are edited
+// via the wizard, not this form.
 
-type TransportFieldKind = 'text' | 'number' | 'select'
+// Curated field keys exposed by the quick-edit form. The registry is the single
+// source of metadata (label/placeholder/options/type/group/boolean); this list
+// only selects which fields appear here.
+const MQTT_EDIT_KEYS = new Set([
+  'broker',
+  'topic-template',
+  'client-id',
+  'qos',
+  'data-topic',
+  'command-topic',
+  'retained',
+  'clean-session',
+  'keep-alive',
+  'connect-timeout',
+  'publish-timeout',
+  'auto-reconnect',
+  'username',
+  'password',
+  'retry-count',
+  'buffer-size',
+])
+const HTTP_EDIT_KEYS = new Set([
+  'url',
+  'method',
+  'headers',
+  'webhook-addr',
+  'webhook-path',
+  'webhook-secret',
+  'timeout',
+  'max-idle-conns',
+  'idle-conn-timeout',
+  'batch-size',
+  'flush-interval',
+  'retry-count',
+  'buffer-size',
+])
 
-interface TransportEditField {
-  key: string
-  labelKey: string
-  kind: TransportFieldKind
-  group: 'settings' | 'top'
-  options?: readonly string[]
-  placeholder?: string
-  /** Whether this select field stores a YAML boolean (options are "true"/"false"). */
-  boolean?: boolean
+// `headers` is a map field not yet modeled by the registry (SettingsField has no
+// map/object type); retained as an explicit supplement until the registry gains
+// one. [TD-ARCH-011 follow-up — tracked in tech-debt-tracker]
+const HEADERS_SUPPLEMENT: RegistryEditField = {
+  key: 'headers',
+  labelKey: 'transports.editConfig.headers',
+  kind: 'text',
+  group: 'settings',
+  placeholder: 'Content-Type:application/json',
 }
 
-const MQTT_FIELDS: readonly TransportEditField[] = [
-  {
-    key: 'broker',
-    labelKey: 'transports.editConfig.broker',
-    kind: 'text',
-    group: 'settings',
-    placeholder: 'tcp://broker.emqx.io:1883',
-  },
-  {
-    key: 'topic-template',
-    labelKey: 'transports.editConfig.topic',
-    kind: 'text',
-    group: 'settings',
-    placeholder: 'factory/{{.Driver}}/{{.Tag}}',
-  },
-  {
-    key: 'client-id',
-    labelKey: 'transports.editConfig.clientId',
-    kind: 'text',
-    group: 'settings',
-    placeholder: 'corec-001',
-  },
-  {
-    key: 'qos',
-    labelKey: 'transports.editConfig.qos',
-    kind: 'select',
-    group: 'settings',
-    options: ['0', '1', '2'],
-  },
-  {
-    key: 'data-topic',
-    labelKey: 'transports.editConfig.dataTopic',
-    kind: 'text',
-    group: 'settings',
-  },
-  {
-    key: 'command-topic',
-    labelKey: 'transports.editConfig.commandTopic',
-    kind: 'text',
-    group: 'settings',
-  },
-  {
-    key: 'retained',
-    labelKey: 'transports.editConfig.retained',
-    kind: 'select',
-    group: 'settings',
-    options: ['true', 'false'],
-    boolean: true,
-  },
-  {
-    key: 'clean-session',
-    labelKey: 'transports.editConfig.cleanSession',
-    kind: 'select',
-    group: 'settings',
-    options: ['true', 'false'],
-    boolean: true,
-  },
-  {
-    key: 'keep-alive',
-    labelKey: 'transports.editConfig.keepAlive',
-    kind: 'text',
-    group: 'settings',
-    placeholder: '30s',
-  },
-  {
-    key: 'connect-timeout',
-    labelKey: 'transports.editConfig.connectTimeout',
-    kind: 'text',
-    group: 'settings',
-    placeholder: '5s',
-  },
-  {
-    key: 'publish-timeout',
-    labelKey: 'transports.editConfig.publishTimeout',
-    kind: 'text',
-    group: 'settings',
-    placeholder: '10s',
-  },
-  {
-    key: 'auto-reconnect',
-    labelKey: 'transports.editConfig.autoReconnect',
-    kind: 'select',
-    group: 'settings',
-    options: ['true', 'false'],
-    boolean: true,
-  },
-  {
-    key: 'username',
-    labelKey: 'transports.editConfig.username',
-    kind: 'text',
-    group: 'settings',
-  },
-  {
-    key: 'password',
-    labelKey: 'transports.editConfig.password',
-    kind: 'text',
-    group: 'settings',
-  },
-  {
-    key: 'retry-count',
-    labelKey: 'transports.editConfig.retryCount',
-    kind: 'number',
-    group: 'top',
-    placeholder: '3',
-  },
-  {
-    key: 'buffer-size',
-    labelKey: 'transports.editConfig.bufferSize',
-    kind: 'number',
-    group: 'top',
-    placeholder: '100',
-  },
-]
-
-const HTTP_FIELDS: readonly TransportEditField[] = [
-  {
-    key: 'url',
-    labelKey: 'transports.editConfig.url',
-    kind: 'text',
-    group: 'settings',
-    placeholder: 'https://example.com/ingest',
-  },
-  {
-    key: 'method',
-    labelKey: 'transports.editConfig.method',
-    kind: 'select',
-    group: 'settings',
-    options: ['GET', 'POST', 'PUT'],
-  },
-  {
-    key: 'headers',
-    labelKey: 'transports.editConfig.headers',
-    kind: 'text',
-    group: 'settings',
-    placeholder: 'Content-Type:application/json',
-  },
-  {
-    key: 'webhook-addr',
-    labelKey: 'transports.editConfig.webhookAddr',
-    kind: 'text',
-    group: 'settings',
-    placeholder: '0.0.0.0:8080',
-  },
-  {
-    key: 'webhook-path',
-    labelKey: 'transports.editConfig.webhookPath',
-    kind: 'text',
-    group: 'settings',
-    placeholder: '/webhook',
-  },
-  {
-    key: 'webhook-secret',
-    labelKey: 'transports.editConfig.webhookSecret',
-    kind: 'text',
-    group: 'settings',
-  },
-  {
-    key: 'timeout',
-    labelKey: 'transports.editConfig.timeout',
-    kind: 'text',
-    group: 'settings',
-    placeholder: '10s',
-  },
-  {
-    key: 'max-idle-conns',
-    labelKey: 'transports.editConfig.maxIdleConns',
-    kind: 'number',
-    group: 'settings',
-    placeholder: '100',
-  },
-  {
-    key: 'idle-conn-timeout',
-    labelKey: 'transports.editConfig.idleConnTimeout',
-    kind: 'text',
-    group: 'settings',
-    placeholder: '90s',
-  },
-  {
-    key: 'batch-size',
-    labelKey: 'transports.editConfig.batchSize',
-    kind: 'number',
-    group: 'top',
-    placeholder: '50',
-  },
-  {
-    key: 'flush-interval',
-    labelKey: 'transports.editConfig.flushInterval',
-    kind: 'text',
-    group: 'top',
-    placeholder: '1s',
-  },
-  {
-    key: 'retry-count',
-    labelKey: 'transports.editConfig.retryCount',
-    kind: 'number',
-    group: 'top',
-    placeholder: '3',
-  },
-  {
-    key: 'buffer-size',
-    labelKey: 'transports.editConfig.bufferSize',
-    kind: 'number',
-    group: 'top',
-    placeholder: '100',
-  },
-]
-
-function getTransportFields(type: string): readonly TransportEditField[] {
+/** Resolve the curated edit fields for a transport type from the settings
+ *  registry, preserving registry order. `headers` (http only) is appended as a
+ *  supplement since the registry does not yet model map fields. */
+function getTransportFields(type: string): readonly RegistryEditField[] {
   const lower = type.toLowerCase()
-  if (lower.includes('mqtt')) return MQTT_FIELDS
-  if (lower.includes('http')) return HTTP_FIELDS
-  return []
+  const isMqtt = lower.includes('mqtt')
+  const isHttp = lower.includes('http')
+  if (!isMqtt && !isHttp) return []
+  const keys = isMqtt ? MQTT_EDIT_KEYS : HTTP_EDIT_KEYS
+  const all = registryToEditFields(getTransportFieldRegistry(type), TRANSPORT_TOPLEVEL_FIELDS)
+  const filtered = all.filter((f) => keys.has(f.key))
+  if (isHttp) {
+    // Insert the headers supplement right after `method` (its natural position).
+    const idx = filtered.findIndex((f) => f.key === 'method')
+    const out = [...filtered]
+    out.splice(idx + 1, 0, HEADERS_SUPPLEMENT)
+    return out
+  }
+  return filtered
 }
 
 function parseHeaders(raw: string): Record<string, string> {
@@ -280,7 +129,7 @@ function parseHeaders(raw: string): Record<string, string> {
 
 /** Serialize an existing config value into the string form the edit form uses.
  *  Handles objects (e.g. headers) and numbers. [C-2] */
-function configValueToString(f: TransportEditField, src: unknown): string {
+function configValueToString(f: RegistryEditField, src: unknown): string {
   if (src === undefined || src === null) return ''
   if (f.key === 'headers' && typeof src === 'object' && !Array.isArray(src)) {
     return Object.entries(src as Record<string, unknown>)
@@ -293,7 +142,7 @@ function configValueToString(f: TransportEditField, src: unknown): string {
 
 function buildTransportEntry(
   transport: TransportStatus,
-  fields: readonly TransportEditField[],
+  fields: readonly RegistryEditField[],
   values: Record<string, string>,
 ): Record<string, unknown> {
   const settings: Record<string, unknown> = {}
@@ -326,7 +175,7 @@ function buildTransportEntry(
 
 function buildTransportYaml(
   transport: TransportStatus,
-  fields: readonly TransportEditField[],
+  fields: readonly RegistryEditField[],
   values: Record<string, string>,
 ): string {
   return dump(
@@ -354,13 +203,13 @@ const TransportEditConfigSection: React.FC<{ transport: TransportStatus }> = ({ 
   )
 
   const buildPreviewYaml = useCallback(
-    (flds: readonly TransportEditField[], vals: Record<string, string>) =>
+    (flds: readonly RegistryEditField[], vals: Record<string, string>) =>
       buildTransportYaml(transport, flds, vals),
     [transport],
   )
 
   const buildApplyYaml = useCallback(
-    (raw: string, flds: readonly TransportEditField[], vals: Record<string, string>): string => {
+    (raw: string, flds: readonly RegistryEditField[], vals: Record<string, string>): string => {
       const fullConfig = parseConfigYaml(raw)
       const existing = fullConfig.transports?.find((tp) => tp.name === transport.name)
       const entry = buildTransportEntry(transport, flds, vals)
@@ -375,7 +224,7 @@ const TransportEditConfigSection: React.FC<{ transport: TransportStatus }> = ({ 
     [transport],
   )
 
-  const edit = useEntityEditConfig<TransportEditField>({
+  const edit = useEntityEditConfig<RegistryEditField>({
     entityName: transport.name,
     fields,
     prefillValues,

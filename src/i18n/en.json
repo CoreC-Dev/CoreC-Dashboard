@@ -972,7 +972,9 @@
     "key": "Key",
     "value": "Value",
     "addEntry": "Add Entry",
-    "noEntries": "No entries. Click add to create one."
+    "noEntries": "No entries. Click add to create one.",
+    "tagsFile": "Tags File",
+    "tagsInterval": "Tags Interval"
   },
   "alerts": {
     "title": "Alerts & Events",

@@ -137,7 +137,27 @@ for (const importer of files) {
 // --- 报告 ---
 const unusedExemptions = EXEMPTIONS.filter((e) => !usedExemptions.has(e.td));
 
-if (violations.length === 0) {
+// --- TD-ARCH-011 / TD-DUP-001: detail pages must single-source field metadata
+//     from the registry adapter (no local *_FIELDS arrays). ---
+const SINGLE_SOURCE_FILES = [
+  'features/admin/DriverDetailPage.tsx',
+  'features/admin/TransportDetailPage.tsx',
+];
+const singleSourceViolations = [];
+for (const rel of SINGLE_SOURCE_FILES) {
+  const abs = resolve(src, rel);
+  if (!existsSync(abs)) continue;
+  const text = readFileSync(abs, 'utf8');
+  if (!/from ['"]@\/lib\/registryAdapter['"]/.test(text)) {
+    singleSourceViolations.push(`${rel}: must import @/lib/registryAdapter (single source)`);
+  }
+  // Local field-metadata arrays are the duplication this TD removes.
+  for (const m of text.matchAll(/const\s+(\w*_FIELDS)\s*:\s*readonly\s+\w*EditField\[\]/g)) {
+    singleSourceViolations.push(`${rel}: defines local field array ${m[1]} (use registry adapter)`);
+  }
+}
+
+if (violations.length === 0 && singleSourceViolations.length === 0) {
   console.log(`✅ structure-lint 通过：分层依赖方向合规。`);
   if (usedExemptions.size > 0) {
     console.log(`   已登记豁免（阶段 4 移除）：${[...usedExemptions].sort().join(', ')}`);
@@ -152,6 +172,9 @@ if (violations.length === 0) {
     console.error(`  - ${v.importerRel} [${v.importerLayer}] → ${v.importeeRel} [${v.importeeLayer}]  (import '${v.spec}')`);
   }
   if (violations.length > 30) console.error(`  ... 还有 ${violations.length - 30} 处`);
+  for (const v of singleSourceViolations) {
+    console.error(`  - [TD-ARCH-011/DUP-001] ${v}`);
+  }
   console.error(`\n修复指引：将共享逻辑下沉到更底层（lib/api/hooks/stores/components），或在 EXEMPTIONS 登记已知技术债（含 TD ID + 批次）。`);
   process.exit(1);
 }
