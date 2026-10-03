@@ -1,12 +1,13 @@
 // @vitest-environment jsdom
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { act } from 'react'
 import { MemoryRouter } from 'react-router-dom'
-import { describe, expect, it, vi } from 'vitest'
-import '@/i18n'
+import { beforeAll, describe, expect, it, vi } from 'vitest'
 import { RulesPage } from '@/features/admin/RulesPage'
 import { TransportsPage } from '@/features/admin/TransportsPage'
+import i18n from '@/i18n'
+import { useConnectionStore } from '@/stores/connectionStore'
 
 // Mock only the API layer (no real network). Stores are REAL — the test
 // validates that useConfigStore selectors don't create new references on
@@ -94,20 +95,42 @@ function wrap(el: React.ReactElement) {
   )
 }
 
+// Force English so content assertions are readable and deterministic,
+// independent of the localStorage-backed default locale (zh-CN).
+// Mark the connection as connected via the REAL connection store (kept real to
+// preserve the #185 selector-stability regression check) so useConnectedQuery
+// enables the mocked transports/rules queries instead of staying idle.
+beforeAll(async () => {
+  useConnectionStore.getState().setConnected(true)
+  await i18n.changeLanguage('en')
+})
+
 describe('render smoke (#185 regression)', () => {
-  it('TransportsPage renders without infinite loop', () => {
+  it('TransportsPage renders without infinite loop', async () => {
     let container: ReturnType<typeof render> | undefined
     act(() => {
       container = render(wrap(<TransportsPage />))
     })
     expect(container?.container).toBeTruthy()
+    // Static page chrome renders synchronously — an empty <div> would fail here.
+    expect(screen.getByText('Northbound Transports')).toBeTruthy()
+    expect(screen.getByText('Runtime Status')).toBeTruthy()
+    expect(screen.getByText('Create Transport')).toBeTruthy()
+    // Transport rows appear after the mocked useTransports query resolves.
+    expect(await screen.findByText('webhook-in')).toBeTruthy()
   })
 
-  it('RulesPage renders without infinite loop', () => {
+  it('RulesPage renders without infinite loop', async () => {
     let container: ReturnType<typeof render> | undefined
     act(() => {
       container = render(wrap(<RulesPage />))
     })
     expect(container?.container).toBeTruthy()
+    // Static page chrome renders synchronously — an empty <div> would fail here.
+    expect(screen.getByText('Rule Pipeline & Routing')).toBeTruthy()
+    expect(screen.getByText('Runtime Rules')).toBeTruthy()
+    expect(screen.getByText('Create Rule')).toBeTruthy()
+    // Rule rows appear after the mocked useRules query resolves.
+    expect(await screen.findByText('forward-all')).toBeTruthy()
   })
 })
