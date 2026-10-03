@@ -35,7 +35,7 @@
 | 维度 | 分 | 依据 |
 |---|---|---|
 | 安全 | **5/10** | 1 P0（SEC-003）+ 3 P1 + 8 P2；已确认无 XSS/SSRF/路径穿越；7 项决策已确认（见 architecture-decisions.md） |
-| 性能/可靠性 | **7/10** | 流式/超时/拆分已加固；2 P1（PERF-001/002）+ 10 P2（memo/虚拟化/防抖缺口）；已修复 InstanceSelector `useShallow` 致 React #185 无限循环（全实例路由崩溃，回归守卫 `InstanceSelector.test.tsx`） |
+| 性能/可靠性 | **7.5/10** | 流式/超时/拆分已加固；2 P1（PERF-001/002）+ 10 P2（memo/虚拟化/防抖缺口）；已修复 InstanceSelector `useShallow` 致 React #185 无限循环（全实例路由崩溃，回归守卫 `InstanceSelector.test.tsx`）；arch-perf-slim 轮：移除 useTags 冗余 5s 轮询、useDeadLetters 4s→15s、closeTrend/CountUpNumber memo、6 测试文件补 cleanup() 消除 unhandled error |
 | 门禁/CI | **3/10** | 仅 deploy.yml push-main；无 PR 门禁/覆盖率/hook/结构测试（GATE-001..004） |
 | 文档 | **4/10** | 阶段 2 前无 AGENTS/ARCHITECTURE/docs 结构（DOC-001..003）；本阶段补齐后预期 → 8 |
 

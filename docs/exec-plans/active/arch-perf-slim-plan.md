@@ -8,10 +8,10 @@
 ## 一、审查方法
 
 4 个并行 agent 分方位深度审查 + 架构师亲自逐文件复核：
-- **性能 agent** → `PERFORMANCE_AUDIT.md`（13 findings）
-- **交互/响应式 agent** → `UX_AUDIT_REPORT.md`（21 findings）
-- **架构 agent** → 层级 / 耦合 / 状态边界 / 过度设计（进行中）
-- **瘦身 agent** → 死代码 / 重复 / 冗余 / 过度抽象（进行中）
+- **性能 agent** → `PERFORMANCE_AUDIT.md`（13 findings）✅
+- **交互/响应式 agent** → `UX_AUDIT_REPORT.md`（21 findings）✅
+- **架构 agent** → 层级 / 耦合 / 状态边界 / 过度设计 ✅
+- **瘦身 agent** → `CODE_SLIMMING_AUDIT.md`（死代码 / 重复 / 冗余 / 过度抽象）✅
 
 ## 二、架构问题
 
@@ -69,36 +69,45 @@
 
 ## 六、实施计划（分批，单一职责提交）
 
-### 批次 1 — 安全性能修复（无行为变更）
-- P1: useTags 移除 refetchInterval
-- P3: RulesPage 虚拟化
-- P6: closeTrend useCallback
-- P7: CountUpNumber memo
-- S1: 删除死导出 ArithValidationResult
+### 批次 1 — 安全性能修复（无行为变更）✅ 已完成
+- P1: useTags 移除 refetchInterval ✅
+- P6: closeTrend useCallback ✅
+- P7: CountUpNumber memo ✅
+- S1: 删除死导出 ArithValidationResult ✅
+- P3: RulesPage 虚拟化 — 暂缓（风险/收益比不足，列表通常 <50 行）
 
-### 批次 2 — 响应式布局优化
-- U1: TagTable 手机横向滚动
-- U2: 平板断点 3 档
-- U3: 对话框手机边距
-- U4: 触控目标尺寸
-- U9: DriverWizard 网格溢出
-- U15: 响应式网格断点
+### 批次 2 — 响应式布局优化 ✅ 已完成
+- U1: TagTable 手机横向滚动（min-w-[860px]）✅
+- U2: 平板断点 3 档（isTablet 768–1023px，自动折叠侧栏）✅
+- U3: 对话框手机边距（w-[calc(100%-1.5rem)] sm:w-full）✅
+- U4: 触控目标尺寸 — 暂缓（涉及多文件布局微调，风险较高）
+- U9: DriverWizard 网格溢出 — 暂缓
+- U15: 响应式网格断点 — 暂缓
 
-### 批次 3 — 交互/可访问性/i18n
-- U5: status-error 对比度
-- U6/U7/U8: 硬编码字符串 i18n
-- U11: TagRow tab stop
-- U12: aria-live
-- U13/U14/U16/U17: 小项
+### 批次 3 — 交互/可访问性/i18n ✅ 已完成
+- U5: status-error 对比度（354 70% 54%→45%，3 个浅色主题）✅
+- U6: 硬编码 "Loading…" → t('common.loading') ✅
+- U7/U8: 其他硬编码字符串 — 暂缓
+- U11/U12/U13/U14/U16/U17: 暂缓（低优先级小项）
+- 测试清理: 6 个测试文件补 afterEach(cleanup())，消除 2 个 unhandled error ✅
 
-### 批次 4 — 行为变更（显式登记）
-- P2: useDeadLetters 4s → 15s
+### 批次 4 — 行为变更（显式登记）✅ 已完成
+- P2: useDeadLetters 4s → 15s ✅
 
-### 批次 5 — 新功能（可选）
+### 批次 5 — 代码瘦身 ✅ 已完成
+- S1: ArithValidationResult 死别名删除 ✅
+- S2: ExprValidationResult 死别名删除 ✅
+- settingsRegistry.ts 4 个死桶重导出修剪（FieldGroup/FieldType/MODBUS_CONNECTION_FIELDS/RECONNECT_GROUP）✅
+- deepEqual/yamlScalar 移除 export（仅内部使用）✅
+- Wizard/WizardProps/WizardDialogProps 移除 export（仅内部使用）✅
+- useFormField 死重导出移除 ✅
+
+### 批次 6 — 新功能（可选，暂缓）
 - U10: toast 系统（sonner）
 
 ### 暂缓项（高风险行为变更）
 - P4: recharts → lightweight-charts（视觉变更，需单独评估）
+- DiffLine/computeLineDiff 重复合并（涉及测试断言修改，风险/收益比不足）
 
 ## 七、交叉审计
 
