@@ -128,7 +128,7 @@ export const InstancePanel: React.FC = () => {
           <img src="/logo-animated.svg" alt="CoreC" className="w-8 h-8 shrink-0" />
           <span className="font-extrabold text-lg tracking-tight">CoreC</span>
           <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">
-            {t('nav.dashboard')}
+            Dashboard
           </span>
         </div>
         <div className="flex items-center space-x-1 sm:space-x-2">
