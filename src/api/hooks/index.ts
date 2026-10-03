@@ -128,10 +128,13 @@ export function useConfigRaw() {
 }
 
 export function useDeadLetters() {
+  // Poll every 15s (was 4s). Dead letters are a low-urgency diagnostic queue —
+  // 4s was excessively aggressive (~15 req/min) for data that changes slowly.
+  // [behavior change: refetchInterval 4000→15000, registered in plan doc §六-B4]
   return useConnectedQuery({
     queryKey: ['deadLetters'],
     queryFn: api.getDeadLetters,
-    refetchInterval: 4000,
+    refetchInterval: 15000,
   })
 }
 

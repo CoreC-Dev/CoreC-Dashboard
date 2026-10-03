@@ -265,7 +265,7 @@ export const DriversPage: React.FC = () => {
           {isLoading && drivers.length === 0 ? (
             <div className="col-span-full py-12 flex items-center justify-center gap-2 text-xs text-muted-foreground">
               <Loader2 className="w-4 h-4 animate-spin" />
-              <span>Loading…</span>
+              <span>{t('common.loading')}</span>
             </div>
           ) : isError ? (
             <Card className="col-span-full p-8 text-center space-y-3">
