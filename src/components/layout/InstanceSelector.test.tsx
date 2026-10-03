@@ -15,6 +15,13 @@ import { useInstanceStore } from '@/stores/instanceStore'
 // objects. The loop only kicks in once the store is updated after mount (e.g.
 // a connection probe writes lastKnownInfo), which is why it surfaced on every
 // instance-scoped route in production but not in a plain render.
+//
+// Fake timers: rendering Radix Select + triggering a store-driven re-render
+// schedules React scheduler macrotasks (setTimeout/setImmediate via
+// performWorkUntilDeadline). Under Node 24 these can fire after the jsdom
+// window is torn down → "ReferenceError: window is not defined" attributed to
+// the next test file. Fake timers keep those tasks in the fake queue (cleared
+// on useRealTimers) so no orphaned macrotask escapes the test.
 
 vi.mock('@/contexts/ConnectionContext', () => ({
   useConnection: () => ({
@@ -39,6 +46,7 @@ beforeAll(async () => {
   await i18n.changeLanguage('en')
 })
 beforeEach(() => {
+  vi.useFakeTimers()
   consoleErrors.length = 0
   vi.spyOn(console, 'error').mockImplementation((...args: unknown[]) => {
     consoleErrors.push(args.map(String).join(' '))
@@ -46,6 +54,7 @@ beforeEach(() => {
   useInstanceStore.setState({ instances: [], probing: {}, probeErrors: {} })
 })
 afterEach(() => {
+  vi.useRealTimers()
   useInstanceStore.setState({ instances: [], probing: {}, probeErrors: {} })
 })
 
