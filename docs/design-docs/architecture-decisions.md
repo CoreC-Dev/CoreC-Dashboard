@@ -61,3 +61,18 @@
 - **决策**：所有 harness 改造提交仅落 `harnessing` 分支，不提交 `main`（§7.1）。
 - **理由**：隔离改造风险；main 保持可发布。
 - **日期**：2026-10-02
+
+## ADR-010 字段元数据单一真相源：采纳 settingsRegistry（TD-ARCH-011 / TD-DUP-001）
+- **决策**：以 `settingsRegistry` 为字段元数据唯一源；DriverDetailPage / TransportDetailPage 经 `registryToEditFields` 适配器派生编辑字段，删除本地 `*_FIELDS` 数组。两源在 5 类分歧上以 registry 为准落地。
+- **分歧与处置（行为变更，已登记）**：
+  1. registry 的 reconnect 组对全部驱动存在，4/5 详情数组缺失 → 全类型显示 reconnect 字段。
+  2. `retry`：registry 仅 modbus-tcp/rtu 有，udp 变体无 → udp 变体详情表单移除 retry。
+  3. OPCUA security-policy：registry 4 选项 vs 详情 6 选项 → 采用 4（移除 Basic128Rsa15/Basic256）。
+  4. ~10 处占位符差异 → 采用 registry（含 modbus-tls 端口 502→802 bug 修复）。
+  5. 2 处 zh-CN 标签措辞（retry、caFile）→ 采用 registry 措辞。
+  6. **bug 修复**：driver `tags-file`/`tags-interval` 改写为顶层（原误入 `settings`，与 configSchema + wizard 冲突）。
+  7. transport 标签改用 registry `settings.*` 措辞（如 broker「Broker」→「Broker URL」）。
+- **transport 范围**：详情快编表单保留精选字段集（呈现选择；高级/动态字段如 TLS 证书、command 转发、fallback 动态选择留 wizard）；元数据单源。`headers`（map 字段，registry 尚无 map 类型）保留为显式补充，登记为 TD-ARCH-011 后续。
+- **理由**：消除三真相源（registry + 详情数组 + schema）的手工镜像风险；registry 已为 wizard 单源，详情页对齐之。
+- **日期**：2026-10-03
+- **提交**：`17c722c`

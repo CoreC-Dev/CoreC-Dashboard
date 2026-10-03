@@ -15,7 +15,7 @@
 ## 按业务域
 | 域 | 测试 | 文档 | 复杂度 | 依赖 | 重复 | 综合 | 主要差距（→ 台账 ID） |
 |---|---|---|---|---|---|---|---|
-| admin | 3 | 4 | 3 | 6 | 3 | **3.8** | 3 God 组件（CPLX-001/003/007）、三真相源（ARCH-011）、CRUD/apply 重复（DUP-003/005）、14/16 端点无测（TEST-008） |
+| admin | 3 | 4 | 3 | 6 | 4 | **4.0** | 3 God 组件（CPLX-001/003/007）、CRUD/apply 重复（DUP-003/005）、14/16 端点无测（TEST-008）；ARCH-011/DUP-001 已结清（单源派生，commit 17c722c） |
 | monitor | 3 | 4 | 4 | 7 | 5 | **4.6** | TagExplorer God 组件（CPLX-002）、AlertsPage 死信未封顶（PERF-004）、WS 无测（TEST-004） |
 | home | 2 | 4 | 6 | 7 | 6 | **5.0** | instanceStore 无测（TEST-002）、InstanceDialog 校验无测（TEST-007）、useHomepageProbe 无测（TEST-006） |
 | settings | 3 | 4 | 7 | 8 | 7 | **5.8** | 导出泄密（SEC-003 P0）、导入未校验（SEC-011） |
@@ -29,7 +29,7 @@
 | stores | 6 | 5 | **5** | 8 | 8 | **6.4** | configStore 29 方法 God Object（ARCH-003） |
 | hooks/contexts | 2 | 4 | 7 | 7 | 8 | **5.6** | ConnectionContext 无测（TEST-005）、api/hooks 无测（TEST-009） |
 | components | 4 | 5 | 5 | 8 | 7 | **5.8** | AppShell 537 行（CPLX-005）、count-up 引 hooks（ARCH-005）、EntityEditConfig 17 props（ARCH-012） |
-| features | 3 | 4 | **3** | 8 | **4** | **4.4** | 6 God 组件（CPLX-001/002/003/005/006/007）、重复 DUP-001..006 |
+| features | 3 | 4 | **3** | 8 | **5** | **4.6** | 6 God 组件（CPLX-001/002/003/005/006/007）、重复 DUP-002..006（DUP-001 已结清，单源派生） |
 
 ## 横切
 | 维度 | 分 | 依据 |

@@ -39,13 +39,12 @@
 
 | 状态 | 条数 | 说明 |
 |---|---|---|
-| 已完成 | 56 | 阶段 2 文档 + 阶段 3 门禁 + 阶段 4 批次 A/B/C/E/F/G/H/I/J 重构与修复 + TD-ARCH-010 + TD-GATE-004 + TD-SEC-012 |
+| 已完成 | 58 | 阶段 2 文档 + 阶段 3 门禁 + 阶段 4 批次 A/B/C/D/E/F/G/H/I/J 重构与修复 + TD-ARCH-010 + TD-GATE-004 + TD-SEC-012 |
 | 已核实 | 2 | TD-SEC-004（js-yaml integrity 匹配官方）、TD-SEC-008（bleeding-edge 已核实）——安全风险经核实可接受，视同关闭 |
 | 已豁免 | 2 | TD-SEC-010、TD-PERF-011——用户决策豁免，登记留痕 |
-| 基礎完成 | 2 | TD-ARCH-011、TD-DUP-001——adapter 基础已落（commit 70b2675），全量单一真相源迁移待阶段 4 收尾 |
 | 待处理 | 15 | 阶段 5 测试 15 条（TD-TEST-002..016） |
 
-- **剩余 P1 ×9**：TD-ARCH-011、TD-DUP-001（基礎完成，待全量迁移）+ TD-TEST-002..008,010（阶段 5 未启动）
+- **剩余 P1 ×7**：TD-TEST-002..008,010（阶段 5 未启动）
 - **剩余 P2 ×8**：TD-TEST-009/011..016
 - **P0 已归零**。
 
@@ -65,7 +64,7 @@
 | TD-ARCH-008 | P2 | 架构 | feature 越过 hooks 直引 api/client | 批次B | 已完成 |
 | TD-ARCH-009 | P2 | 架构 | lib 依赖 i18n 单例 | 批次A | 已完成 |
 | TD-ARCH-010 | P2 | 架构 | @/ 别名与相对导入混用 | 阶段3 | 已完成 |
-| TD-ARCH-011 | P1 | 架构 | 字段元数据三处真相源 | 批次D | 基础完成 |
+| TD-ARCH-011 | P1 | 架构 | 字段元数据三处真相源 | 批次D | 已完成 |
 | TD-ARCH-012 | P2 | 架构 | EntityEditConfigCard 17 props 透传 | 批次D | 已完成 |
 | TD-ARCH-013 | P2 | 架构 | settingsRegistry 878 行数据 God Object | 批次D | 已完成 |
 | TD-CPLX-001 | P1 | 复杂度 | ConfigCenterPage God 组件（~886 行） | 批次F | 已完成 |
@@ -78,7 +77,7 @@
 | TD-CPLX-008 | P2 | 复杂度 | getActionBadge 5 分支 switch | 批次E | 已完成 |
 | TD-CPLX-009 | P2 | 复杂度 | TagExplorerPage WS effect 隐式 ref 状态 | 批次G | 已完成 |
 | TD-CPLX-010 | P2 | 复杂度 | ConfigCenterPage auto-load ref guard + getState | 批次G | 已完成 |
-| TD-DUP-001 | P1 | 重复 | Driver/TransportDetailPage 字段数组并行重复 | 批次D | 基础完成 |
+| TD-DUP-001 | P1 | 重复 | Driver/TransportDetailPage 字段数组并行重复 | 批次D | 已完成 |
 | TD-DUP-002 | P1 | 重复 | Driver/TransportEditConfigSection 逻辑重复 | 批次D | 已完成 |
 | TD-DUP-003 | P1 | 重复 | apply-confirmation+mutation 模式重复 4× | 批次E | 已完成 |
 | TD-DUP-004 | P2 | 重复 | reset-on-open wizard 模式重复 3× | 批次H | 已完成 |
@@ -203,7 +202,7 @@
 - 位置：`src/lib/settingsRegistry.ts:141-852`、`src/features/admin/DriverDetailPage.tsx:49-288`、`src/lib/configSchema.ts:90-300`
 - 证据：同一 per-driver/per-transport 字段集在三处描述：(1) `DRIVER_SETTINGS_REGISTRY` 供 wizard 表单；(2) `MODBUS_TCP_FIELDS` 供详情编辑表单；(3) zod `superRefine` 必填校验。`settingsRegistry.ts:11-13` 头注释明确承认手工镜像。
 - 修复建议：以 `settingsRegistry.ts` 为唯一源：详情编辑字段经适配器派生，zod 必填校验由 `required:true` 标志生成。configSchema 仅保留跨实体规则。
-- 业务行为影响：无 ｜ 批次D ｜ 验收：结构测试断言字段集单源 + parity 测试 ｜ 状态：基础完成（adapter+parity 已落，全量迁移待批次I）
+- 业务行为影响：是（5 类分歧按 registry 落地 + tags-file 顶层 bug 修复，见 ADR-010） ｜ 批次D ｜ 验收：结构测试断言字段集单源 + parity 测试 ｜ 状态：已完成（Driver/TransportDetailPage 经 registryToEditFields 派生，本地 *_FIELDS 删除；structure-lint 增单源规则；adapter parity 测试；commit 17c722c）。后续：`headers` map 字段待 registry 增 map 类型后纳入单源。
 
 **TD-ARCH-012** ｜ EntityEditConfigCard 17 props 透传，逻辑未同置 ｜ P2
 - 位置：`src/components/admin/DetailPageParts.tsx:120-139`
@@ -285,7 +284,7 @@
 - 位置：`src/features/admin/DriverDetailPage.tsx:49-288`、`src/features/admin/TransportDetailPage.tsx:54-260`
 - 证据：DriverDetailPage 定义 MODBUS_TCP_FIELDS、MODBUS_TLS_FIELDS、MODBUS_RTU_FIELDS、S7_FIELDS、OPCUA_FIELDS（49-273）+ getDriverFields（275-288）；TransportDetailPage 定义 MQTT_FIELDS、HTTP_FIELDS 等 + getTransportFields（261）。与 settingsRegistry.ts:141+ 的 DRIVER/TRANSPORT_SETTINGS_REGISTRY 平行——同 key 不同 shape。加字段需改两处。
 - 修复建议：详情编辑字段从 getDriverFieldRegistry(type)/getTransportFieldRegistry(type) 经 registryToEditFields() 适配器派生。删除本地 *_FIELDS 数组。
-- 业务行为影响：无 ｜ 批次D ｜ 验收：本地字段数组删除 + 行为守恒 ｜ 状态：基础完成（adapter+parity 已落，全量迁移待批次I）
+- 业务行为影响：是（见 ADR-010） ｜ 批次D ｜ 验收：本地字段数组删除 + 行为守恒 ｜ 状态：已完成（本地 *_FIELDS 全删，经 registryToEditFields 派生；structure-lint 断言无本地数组；commit 17c722c）
 
 **TD-DUP-002** ｜ DriverEditConfigSection ≈ TransportEditConfigSection（逻辑未抽，仅 JSX） ｜ P1
 - 位置：`src/features/admin/DriverDetailPage.tsx:329-460`、`src/features/admin/TransportDetailPage.tsx:337-460`
