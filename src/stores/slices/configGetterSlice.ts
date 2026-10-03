@@ -11,7 +11,7 @@ import {
   isRuleProviderNameUnique,
   isTransportNameUnique,
 } from '@/lib/configYaml'
-import type { ConfigStoreState } from '../configStore'
+import type { ConfigStoreState } from '@/stores/configStore'
 
 /** Derived-getter keys extracted from the God Object (TD-ARCH-003). */
 export type GetterSlice = Pick<

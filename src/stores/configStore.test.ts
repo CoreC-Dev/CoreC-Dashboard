@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
+import { useConfigStore } from '@/stores/configStore'
 import type {
   CoreCConfig,
   DriverConfig,
@@ -6,7 +7,6 @@ import type {
   RuleProviderConfig,
   TransportConfig,
 } from '@/types/config'
-import { useConfigStore } from './configStore'
 
 // A minimal valid config for testing.
 const baseConfig: CoreCConfig = {

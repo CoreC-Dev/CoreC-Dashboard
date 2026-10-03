@@ -19,7 +19,7 @@
  *  - 2 zh-CN label wording differences (retry, caFile)
  */
 
-import type { SettingsField, TypeFieldRegistry } from './settingsRegistry'
+import type { SettingsField, TypeFieldRegistry } from '@/lib/settingsRegistry'
 
 /** Flat edit-field shape (mirrors EditField from DetailPageParts, but defined
  *  here to respect layer boundaries — lib/ cannot import from components/). */

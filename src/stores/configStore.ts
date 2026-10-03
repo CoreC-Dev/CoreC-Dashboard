@@ -27,6 +27,8 @@
 import { create } from 'zustand'
 import { configEqual, setNestedPath } from '@/lib/configHelpers'
 import { parseConfigYaml } from '@/lib/configYaml'
+import { createCrudSlice } from '@/stores/slices/configCrudSlice'
+import { createGetterSlice } from '@/stores/slices/configGetterSlice'
 import type {
   CoreCConfig,
   DriverConfig,
@@ -34,8 +36,6 @@ import type {
   RuleProviderConfig,
   TransportConfig,
 } from '@/types/config'
-import { createCrudSlice } from './slices/configCrudSlice'
-import { createGetterSlice } from './slices/configGetterSlice'
 
 export interface ConfigStoreState {
   /** The config the user is currently editing (may have unsaved changes). */

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { VALID_FIELDS, validateRuleExpression } from './ruleExprValidator'
+import { VALID_FIELDS, validateRuleExpression } from '@/lib/ruleExprValidator'
 
 describe('validateRuleExpression', () => {
   // ─── Special keywords ──────────────────────────────────────────

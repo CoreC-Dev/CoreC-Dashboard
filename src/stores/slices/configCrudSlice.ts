@@ -11,6 +11,7 @@ import {
   upsertRuleProvider,
   upsertTransport,
 } from '@/lib/configYaml'
+import type { ConfigStoreState } from '@/stores/configStore'
 import type {
   CoreCConfig,
   DriverConfig,
@@ -18,7 +19,6 @@ import type {
   RuleProviderConfig,
   TransportConfig,
 } from '@/types/config'
-import type { ConfigStoreState } from '../configStore'
 
 /** CRUD keys extracted from the God Object (TD-ARCH-003). */
 export type CrudSlice = Pick<

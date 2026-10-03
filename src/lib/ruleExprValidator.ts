@@ -1,4 +1,4 @@
-import { checkBalancedParens, type ValidationResult } from './exprShared'
+import { checkBalancedParens, type ValidationResult } from '@/lib/exprShared'
 
 /**
  * Rule expression syntax validator

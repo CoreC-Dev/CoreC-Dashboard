@@ -1,4 +1,4 @@
-import { getActiveConnection } from './activeConnection'
+import { getActiveConnection } from '@/api/activeConnection'
 
 export type WSStatus = 'connecting' | 'open' | 'closed' | 'error' | 'rejected'
 

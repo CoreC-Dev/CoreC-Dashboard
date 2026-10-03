@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import type { CoreCConfig, DriverConfig, RuleConfig, TransportConfig } from '@/types/config'
 import {
   validateDriverInContext,
   validateRuleInContext,
   validateTransportInContext,
-} from './entityValidation'
+} from '@/lib/entityValidation'
+import type { CoreCConfig, DriverConfig, RuleConfig, TransportConfig } from '@/types/config'
 
 // ─── Fixtures ──────────────────────────────────────────────────────
 

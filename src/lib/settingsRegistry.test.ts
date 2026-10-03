@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest'
-import { DRIVER_TYPES, TRANSPORT_TYPES } from '@/types/config'
 import {
   buildDefaultSettings,
   DRIVER_SETTINGS_REGISTRY,
@@ -7,7 +6,8 @@ import {
   getTransportFieldRegistry,
   TRANSPORT_SETTINGS_REGISTRY,
   TRANSPORT_TOPLEVEL_FIELDS,
-} from './settingsRegistry'
+} from '@/lib/settingsRegistry'
+import { DRIVER_TYPES, TRANSPORT_TYPES } from '@/types/config'
 
 describe('settingsRegistry — driver coverage', () => {
   it('has a registry entry for every registered driver type', () => {

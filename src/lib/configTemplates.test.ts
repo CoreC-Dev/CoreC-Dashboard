@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { validateFullConfig } from './configSchema'
-import { CONFIG_TEMPLATES } from './configTemplates'
-import { parseConfigYaml } from './configYaml'
+import { validateFullConfig } from '@/lib/configSchema'
+import { CONFIG_TEMPLATES } from '@/lib/configTemplates'
+import { parseConfigYaml } from '@/lib/configYaml'
 
 describe('configTemplates', () => {
   // ─── Template registry ──────────────────────────────────────────

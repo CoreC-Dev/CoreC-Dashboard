@@ -6,21 +6,24 @@
  */
 
 // Registries
-export { DRIVER_SETTINGS_REGISTRY, DRIVER_TOPLEVEL_FIELDS } from './settingsRegistryDriver'
-export { TRANSPORT_SETTINGS_REGISTRY, TRANSPORT_TOPLEVEL_FIELDS } from './settingsRegistryTransport'
+export { DRIVER_SETTINGS_REGISTRY, DRIVER_TOPLEVEL_FIELDS } from '@/lib/settingsRegistryDriver'
+export {
+  TRANSPORT_SETTINGS_REGISTRY,
+  TRANSPORT_TOPLEVEL_FIELDS,
+} from '@/lib/settingsRegistryTransport'
 // Types & shared fragments
 export type {
   FieldGroup,
   FieldType,
   SettingsField,
   TypeFieldRegistry,
-} from './settingsRegistryTypes'
-export { MODBUS_CONNECTION_FIELDS, RECONNECT_GROUP } from './settingsRegistryTypes'
+} from '@/lib/settingsRegistryTypes'
+export { MODBUS_CONNECTION_FIELDS, RECONNECT_GROUP } from '@/lib/settingsRegistryTypes'
 
-import { DRIVER_SETTINGS_REGISTRY } from './settingsRegistryDriver'
-import { TRANSPORT_SETTINGS_REGISTRY } from './settingsRegistryTransport'
+import { DRIVER_SETTINGS_REGISTRY } from '@/lib/settingsRegistryDriver'
+import { TRANSPORT_SETTINGS_REGISTRY } from '@/lib/settingsRegistryTransport'
 // Local imports for helpers
-import type { TypeFieldRegistry } from './settingsRegistryTypes'
+import type { TypeFieldRegistry } from '@/lib/settingsRegistryTypes'
 
 // ─── Lookup helpers ──────────────────────────────────────────────────
 

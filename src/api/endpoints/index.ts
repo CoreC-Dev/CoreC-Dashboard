@@ -1,3 +1,4 @@
+import { ApiError, apiRequest } from '@/api/client'
 import type {
   ConfigSummaryResponse,
   DeadLetterResponse,
@@ -11,7 +12,6 @@ import type {
   WriteResponse,
 } from '@/types/api'
 import type { DriverStatus, TransportStatus, WriteCommand } from '@/types/models'
-import { ApiError, apiRequest } from '../client'
 
 // Public endpoints
 export const getServerInfo = () => apiRequest<ServerInfoResponse>('/')

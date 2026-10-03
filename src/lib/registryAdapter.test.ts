@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { registryToEditFields } from './registryAdapter'
+import { registryToEditFields } from '@/lib/registryAdapter'
 import {
   DRIVER_TOPLEVEL_FIELDS,
   getDriverFieldRegistry,
   getTransportFieldRegistry,
   TRANSPORT_TOPLEVEL_FIELDS,
-} from './settingsRegistry'
+} from '@/lib/settingsRegistry'
 
 describe('registryToEditFields', () => {
   it('returns empty array for undefined registry', () => {

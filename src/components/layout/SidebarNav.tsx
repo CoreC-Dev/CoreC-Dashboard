@@ -2,11 +2,11 @@ import { ArrowLeft, ChevronLeft, ChevronRight, Globe, Unplug } from 'lucide-reac
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, NavLink, useNavigate, useParams } from 'react-router-dom'
+import { InstanceSelector } from '@/components/layout/InstanceSelector'
+import { buildAdminItems, buildMonitorItems, type RailItem } from '@/components/layout/navItems'
+import { ThemeSelector } from '@/components/layout/ThemeSelector'
 import { setLocale } from '@/i18n'
 import { cn } from '@/lib/cn'
-import { InstanceSelector } from './InstanceSelector'
-import { buildAdminItems, buildMonitorItems, type RailItem } from './navItems'
-import { ThemeSelector } from './ThemeSelector'
 
 interface SidebarNavProps {
   collapsed: boolean

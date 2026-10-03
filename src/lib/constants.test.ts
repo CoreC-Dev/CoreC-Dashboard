@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { ConnState, ConnStateLabel, DEFAULT_COREC_URL, Quality, QualityLabel } from './constants'
+import {
+  ConnState,
+  ConnStateLabel,
+  DEFAULT_COREC_URL,
+  Quality,
+  QualityLabel,
+} from '@/lib/constants'
 
 describe('Quality', () => {
   it('has correct numeric values', () => {

@@ -3,7 +3,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import './i18n'
-import App from './App'
+import App from '@/App'
 
 // Monaco core is self-hosted from /monaco/min/vs (TD-PERF-010, D7).
 // In dev, vite.config.ts monacoSelfHostPlugin serves from node_modules6monaco-editor.

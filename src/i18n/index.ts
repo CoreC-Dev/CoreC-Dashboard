@@ -1,7 +1,7 @@
 import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
-import en from './en.json'
-import zhCN from './zh-CN.json'
+import en from '@/i18n/en.json'
+import zhCN from '@/i18n/zh-CN.json'
 
 const STORAGE_KEY = 'corec_locale'
 const savedLocale =

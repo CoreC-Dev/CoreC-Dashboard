@@ -39,14 +39,14 @@
 
 | 状态 | 条数 | 说明 |
 |---|---|---|
-| 已完成 | 53 | 阶段 2 文档 + 阶段 3 门禁 + 阶段 4 批次 A/B/C/E/F/G/H/I/J 重构与修复 |
+| 已完成 | 54 | 阶段 2 文档 + 阶段 3 门禁 + 阶段 4 批次 A/B/C/E/F/G/H/I/J 重构与修复 + TD-ARCH-010 导入统一 |
 | 已核实 | 2 | TD-SEC-004（js-yaml integrity 匹配官方）、TD-SEC-008（bleeding-edge 已核实）——安全风险经核实可接受，视同关闭 |
 | 已豁免 | 2 | TD-SEC-010、TD-PERF-011——用户决策豁免，登记留痕 |
 | 基礎完成 | 2 | TD-ARCH-011、TD-DUP-001——adapter 基础已落（commit 70b2675），全量单一真相源迁移待阶段 4 收尾 |
-| 待处理 | 18 | 阶段 5 测试 15 条（TD-TEST-002..016）+ TD-ARCH-010 + TD-SEC-012 + TD-GATE-004 |
+| 待处理 | 17 | 阶段 5 测试 15 条（TD-TEST-002..016）+ TD-SEC-012 + TD-GATE-004 |
 
 - **剩余 P1 ×9**：TD-ARCH-011、TD-DUP-001（基礎完成，待全量迁移）+ TD-TEST-002..008,010（阶段 5 未启动）
-- **剩余 P2 ×11**：TD-ARCH-010、TD-TEST-009/011..016、TD-SEC-012、TD-GATE-004
+- **剩余 P2 ×10**：TD-TEST-009/011..016、TD-SEC-012、TD-GATE-004
 - **P0 已归零**。
 
 > 说明：多条安全发现标记"变更行为"——修复会改变产品行为（如限制可连接的后端、导出不再含密钥），属产品决策，不可自行猜测后改造（契约 C7）。已集中列入计划 §6「待人工决策清单」，Phase 3/4 落地前逐条确认。
@@ -64,7 +64,7 @@
 | TD-ARCH-007 | P2 | 架构 | 无 WebSocket hook 抽象 | 批次B | 已完成 |
 | TD-ARCH-008 | P2 | 架构 | feature 越过 hooks 直引 api/client | 批次B | 已完成 |
 | TD-ARCH-009 | P2 | 架构 | lib 依赖 i18n 单例 | 批次A | 已完成 |
-| TD-ARCH-010 | P2 | 架构 | @/ 别名与相对导入混用 | 阶段3 | 待处理 |
+| TD-ARCH-010 | P2 | 架构 | @/ 别名与相对导入混用 | 阶段3 | 已完成 |
 | TD-ARCH-011 | P1 | 架构 | 字段元数据三处真相源 | 批次D | 基础完成 |
 | TD-ARCH-012 | P2 | 架构 | EntityEditConfigCard 17 props 透传 | 批次D | 已完成 |
 | TD-ARCH-013 | P2 | 架构 | settingsRegistry 878 行数据 God Object | 批次D | 已完成 |
@@ -197,7 +197,7 @@
 - 位置：`src/api/endpoints/index.ts:14`（`from '../client'` + `from '@/types/api'` :12）、`src/api/hooks/index.ts:4`、`src/features/home/InstancePanel.tsx:26-28`
 - 证据：3 文件混用别名与相对。`features/admin` 用别名引用兄弟（7 行），`features/home` 用相对（3 行）。无 Biome 规则约束。
 - 修复建议：加 Biome 规则统一跨文件导入用 `@/` 别名（或同目录用相对），全仓应用。
-- 业务行为影响：无 ｜ 阶段3 ｜ 验收：lint 规则上线且全仓通过 ｜ 状态：待处理
+- 业务行为影响：无 ｜ 阶段3 ｜ 验收：lint 规则上线且全仓通过 ｜ 状态：已完成（全仓 36 文件相对导入→@/ 别名；custom-lint 增 相对导入禁用规则，注入实测可拦截）
 
 **TD-ARCH-011** ｜ 字段元数据三处真相源（registry + 详情数组 + schema） ｜ P1
 - 位置：`src/lib/settingsRegistry.ts:141-852`、`src/features/admin/DriverDetailPage.tsx:49-288`、`src/lib/configSchema.ts:90-300`

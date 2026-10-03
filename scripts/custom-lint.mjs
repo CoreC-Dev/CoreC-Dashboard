@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // custom-lint.mjs —— 自定义品味 linter（阶段 3，§4.2 不变量 T1–T10）
-// 检查：文件大小上限（防 God 组件/文件）、生产代码无 console.log。
+// 检查：文件大小上限（防 God 组件/文件）、生产代码无 console.log、统一 @/ 别名导入（TD-ARCH-010）。
 // 已知超标文件作为显式豁免（含 TD ID + 阶段 4 批次）；新超标即失败。
 // 用法：node scripts/custom-lint.mjs   退出码 0=通过 1=失败
 
@@ -37,7 +37,16 @@ function walk(dir, acc = []) {
   }
   return acc;
 }
+// 含测试文件的全量收集（用于导入风格检查）
+function walkAll(dir, acc = []) {
+  for (const e of readdirSync(dir, { withFileTypes: true })) {
+    if (e.isDirectory()) walkAll(resolve(dir, e.name), acc);
+    else if (/\.(ts|tsx)$/.test(e.name)) acc.push(resolve(dir, e.name));
+  }
+  return acc;
+}
 const files = walk(src);
+const allFiles = walkAll(src);
 
 let errors = [];
 const usedExemptions = new Set();
@@ -63,6 +72,19 @@ for (const f of files) {
     if (logMatches) {
       errors.push(`${rel} 含 ${logMatches.length} 处 console.log（生产代码禁用；用 console.warn/error 或移除）`);
     }
+  }
+}
+
+// 3. 统一 @/ 别名导入（TD-ARCH-010）：禁止相对导入（from './' / from '../'）
+const RELATIVE_IMPORT_RE = /\bfrom\s+['"](\.\.?\/[^'"]+)['"]/g;
+for (const f of allFiles) {
+  const rel = relative(src, f).replace(/\\/g, '/');
+  if (rel.startsWith('test/')) continue;
+  const text = readFileSync(f, 'utf8');
+  RELATIVE_IMPORT_RE.lastIndex = 0;
+  const matches = text.match(RELATIVE_IMPORT_RE);
+  if (matches) {
+    errors.push(`${rel} 含 ${matches.length} 处相对导入（TD-ARCH-010：统一用 @/ 别名）`);
   }
 }
 

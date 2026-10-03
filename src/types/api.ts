@@ -5,7 +5,7 @@ import type {
   EngineStats,
   RuleStat,
   TransportStatus,
-} from './models'
+} from '@/types/models'
 
 export interface ServerInfoResponse {
   name: string

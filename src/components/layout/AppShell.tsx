@@ -2,12 +2,12 @@ import { Menu } from 'lucide-react'
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, Outlet, useLocation } from 'react-router-dom'
+import { SidebarNav } from '@/components/layout/SidebarNav'
+import { TopProgressBar } from '@/components/layout/TopProgressBar'
+import { useSidebarState } from '@/components/layout/useSidebarState'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { useConnection } from '@/contexts/ConnectionContext'
 import { cn } from '@/lib/cn'
-import { SidebarNav } from './SidebarNav'
-import { TopProgressBar } from './TopProgressBar'
-import { useSidebarState } from './useSidebarState'
 
 export const AppShell: React.FC = () => {
   const { t } = useTranslation()

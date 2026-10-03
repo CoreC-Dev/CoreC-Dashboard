@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { estimateQuantile, extractHistograms, parsePrometheusMetrics } from './prometheus'
+import { estimateQuantile, extractHistograms, parsePrometheusMetrics } from '@/lib/prometheus'
 
 describe('parsePrometheusMetrics', () => {
   it('parses gauge and counter metrics correctly', () => {

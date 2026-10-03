@@ -1,9 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef } from 'react'
+import * as api from '@/api/endpoints'
+import { CoreCWebSocket, type WSStatus } from '@/api/websocket'
 import { useConnectionStore } from '@/stores/connectionStore'
 import type { WriteCommand } from '@/types/models'
-import * as api from '../endpoints'
-import { CoreCWebSocket, type WSStatus } from '../websocket'
 
 function useConnectedQuery<T>({
   queryKey,
@@ -218,7 +218,7 @@ export function useMetrics(refetchInterval: number | false = 12_000) {
 
 // Re-export ApiError so features don't reach into the raw HTTP client (TD-ARCH-008).
 // api/client is an internal transport detail; consumers should catch ApiError via this surface.
-export { ApiError } from '../client'
+export { ApiError } from '@/api/client'
 
 // Re-export CoreCWebSocket + WSStatus for consumers that need direct lifecycle control
 // (complex useEffect with intertwined local state). Simple consumers should use

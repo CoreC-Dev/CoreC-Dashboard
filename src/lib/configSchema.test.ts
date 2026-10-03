@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import type { CoreCConfig } from '@/types/config'
 import {
   coreCConfigSchema,
   isValidGoDuration,
   validateConfig,
   validateFullConfig,
-} from './configSchema'
+} from '@/lib/configSchema'
+import type { CoreCConfig } from '@/types/config'
 
 // Narrow safeParse result to the error issues when expecting failure.
 // Throws if parse unexpectedly succeeded, so res.error is guaranteed non-null.

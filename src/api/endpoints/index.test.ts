@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { setActiveConnection } from '@/api/activeConnection'
-import { ApiError } from '../client'
-import { getConfigsRaw, validateConfigs } from './index'
+import { ApiError } from '@/api/client'
+import { getConfigsRaw, validateConfigs } from '@/api/endpoints/index'
 
 // Mock fetch — each test configures the response it expects.
 const mockFetch = vi.fn()

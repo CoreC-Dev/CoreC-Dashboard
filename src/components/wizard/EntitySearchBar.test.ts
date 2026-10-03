@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { filterEntities } from './EntitySearchBar'
+import { filterEntities } from '@/components/wizard/EntitySearchBar'
 
 interface TestEntity {
   name: string

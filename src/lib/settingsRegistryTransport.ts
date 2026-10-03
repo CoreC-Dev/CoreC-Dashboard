@@ -3,7 +3,7 @@
  *
  * (Split from settingsRegistry.ts — TD-ARCH-013.)
  */
-import type { SettingsField, TypeFieldRegistry } from './settingsRegistryTypes'
+import type { SettingsField, TypeFieldRegistry } from '@/lib/settingsRegistryTypes'
 
 // ─── Transport settings registries ───────────────────────────────────
 export const TRANSPORT_SETTINGS_REGISTRY: Record<string, TypeFieldRegistry> = {

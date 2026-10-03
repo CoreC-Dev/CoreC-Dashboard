@@ -20,13 +20,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { InstanceCard } from '@/features/home/InstanceCard'
+import { InstanceDialog } from '@/features/home/InstanceDialog'
+import { useHomepageProbe } from '@/features/home/useHomepageProbe'
 import i18n, { setLocale } from '@/i18n'
 import { useInstanceStore } from '@/stores/instanceStore'
 import { THEME_I18N_KEYS, THEME_VARIANTS, useThemeStore } from '@/stores/themeStore'
 import type { CoreCInstance } from '@/types/models'
-import { InstanceCard } from './InstanceCard'
-import { InstanceDialog } from './InstanceDialog'
-import { useHomepageProbe } from './useHomepageProbe'
 
 export const InstancePanel: React.FC = () => {
   const { t } = useTranslation()

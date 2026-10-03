@@ -8,7 +8,7 @@ import {
   RECONNECT_GROUP,
   type SettingsField,
   type TypeFieldRegistry,
-} from './settingsRegistryTypes'
+} from '@/lib/settingsRegistryTypes'
 
 // ─── Driver settings registries ──────────────────────────────────────
 export const DRIVER_SETTINGS_REGISTRY: Record<string, TypeFieldRegistry> = {

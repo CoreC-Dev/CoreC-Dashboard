@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { validateTransformExpression } from './transformExprValidator'
+import { validateTransformExpression } from '@/lib/transformExprValidator'
 
 describe('validateTransformExpression', () => {
   // ─── Valid expressions ─────────────────────────────────────────
