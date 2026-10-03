@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-// any-ratchet.mjs —— noExplicitAny 棘轮（阶段 3，TD-GATE-004）
-// biome 当前 noExplicitAny=warn（存量 15 处未清）。本脚本锁定基线，新增 any 即失败。
-// 阶段 4/5 清理存量后，下调 BASELINE 并最终在 biome.json 提 error。
+// any-ratchet.mjs —— noExplicitAny 二级守卫（阶段 3→4，TD-GATE-004）
+// biome.json 已将 noExplicitAny 提为 error（主门禁）。本脚本为冗余二级守卫，
+// 准确统计非注释代码中的 explicit any，BASELINE=0；任一新增即失败。
 // 用法：node scripts/any-ratchet.mjs   退出码 0=通过 1=失败
 
 import { readFileSync, readdirSync } from 'node:fs';
@@ -11,7 +11,7 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, '..');
 const src = resolve(root, 'src');
-const BASELINE = 2; // 2026-10-02 基线（非测试、非注释代码中的 explicit any）
+const BASELINE = 0; // biome noExplicitAny=error 已为主门禁；本守卫基线 0
 
 function walk(dir, acc = []) {
   for (const e of readdirSync(dir, { withFileTypes: true })) {
@@ -31,7 +31,7 @@ for (const f of walk(src)) {
   const text = readFileSync(f, 'utf8');
   for (const line of text.split('\n')) {
     const trimmed = line.trim();
-    if (trimmed.startsWith('//') || trimmed.startsWith('*')) continue; // 跳过注释
+    if (trimmed.startsWith('//') || trimmed.startsWith('*') || trimmed.startsWith('/*') || trimmed.startsWith('{/*')) continue; // 跳过注释
     if (/\bany\b/.test(line)) {
       count++;
       if (hits.length < 10) hits.push(`${rel}: ${trimmed.slice(0, 80)}`);

@@ -24,7 +24,7 @@
         "noLabelWithoutControl": "off"
       },
       "suspicious": {
-        "noExplicitAny": "warn",
+        "noExplicitAny": "error",
         "noArrayIndexKey": "off",
         "noAssignInExpressions": "off"
       },
