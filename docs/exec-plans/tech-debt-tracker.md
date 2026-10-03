@@ -29,11 +29,25 @@
 
 ## 汇总
 
-- 已登记：**77 条**（5 域并行审计 76 条 + 阶段 3 audit 新增 TD-SEC-013；其中 **1 已豁免**：TD-SEC-010，用户决策维持公网无鉴权现状）
-- 严重度分布：**P0 ×1** ｜ **P1 ×24** ｜ **P2 ×51**
+- 已登记：**77 条**（5 域并行审计 76 条 + 阶段 3 audit 新增 TD-SEC-013；其中 **2 已豁免**：TD-SEC-010 用户决策维持公网无鉴权现状、TD-PERF-011 首页探测并发上限经评估豁免）
+- 阶段 1 初态严重度分布：**P0 ×1** ｜ **P1 ×24** ｜ **P2 ×51**
 - 类别分布：架构 13 ｜ 复杂度 10 ｜ 重复 6 ｜ 测试 16 ｜ 安全 12 ｜ 门禁 4 ｜ 文档 3 ｜ 性能 10 ｜ 可靠性 2
 - 业务行为影响：**变更行为 ×10**（均需人工决策后单独提交，见 `harness-migration.md` §6）｜ 修复bug ×0 ｜ 无 ×66
-- **P0**：TD-SEC-003（实例导出明文泄露 API 密钥）
+- **P0**：TD-SEC-003（实例导出明文泄露 API 密钥）→ **已关闭**
+
+### 当前完成度（随改造进度更新）
+
+| 状态 | 条数 | 说明 |
+|---|---|---|
+| 已完成 | 53 | 阶段 2 文档 + 阶段 3 门禁 + 阶段 4 批次 A/B/C/E/F/G/H/I/J 重构与修复 |
+| 已核实 | 2 | TD-SEC-004（js-yaml integrity 匹配官方）、TD-SEC-008（bleeding-edge 已核实）——安全风险经核实可接受，视同关闭 |
+| 已豁免 | 2 | TD-SEC-010、TD-PERF-011——用户决策豁免，登记留痕 |
+| 基礎完成 | 2 | TD-ARCH-011、TD-DUP-001——adapter 基础已落（commit 70b2675），全量单一真相源迁移待阶段 4 收尾 |
+| 待处理 | 18 | 阶段 5 测试 15 条（TD-TEST-002..016）+ TD-ARCH-010 + TD-SEC-012 + TD-GATE-004 |
+
+- **剩余 P1 ×9**：TD-ARCH-011、TD-DUP-001（基礎完成，待全量迁移）+ TD-TEST-002..008,010（阶段 5 未启动）
+- **剩余 P2 ×11**：TD-ARCH-010、TD-TEST-009/011..016、TD-SEC-012、TD-GATE-004
+- **P0 已归零**。
 
 > 说明：多条安全发现标记"变更行为"——修复会改变产品行为（如限制可连接的后端、导出不再含密钥），属产品决策，不可自行猜测后改造（契约 C7）。已集中列入计划 §6「待人工决策清单」，Phase 3/4 落地前逐条确认。
 
@@ -60,7 +74,7 @@
 | TD-CPLX-004 | P2 | 复杂度 | configSchema.validateConfig 165 行高圈复杂度 | 批次G | 已完成 |
 | TD-CPLX-005 | P2 | 复杂度 | AppShell 混杂 7 类关注点 | 批次F | 已完成 |
 | TD-CPLX-006 | P2 | 复杂度 | GlobalConfigEditor 手写渲染非数据驱动 | 批次F | 已完成 |
-| TD-CPLX-007 | P2 | 复杂度 | WriteControlPage 混杂 4 类关注点 | 批次F | 待处理 |
+| TD-CPLX-007 | P2 | 复杂度 | WriteControlPage 混杂 4 类关注点 | 批次F | 已完成 |
 | TD-CPLX-008 | P2 | 复杂度 | getActionBadge 5 分支 switch | 批次E | 已完成 |
 | TD-CPLX-009 | P2 | 复杂度 | TagExplorerPage WS effect 隐式 ref 状态 | 批次G | 已完成 |
 | TD-CPLX-010 | P2 | 复杂度 | ConfigCenterPage auto-load ref guard + getState | 批次G | 已完成 |
@@ -70,7 +84,7 @@
 | TD-DUP-004 | P2 | 重复 | reset-on-open wizard 模式重复 3× | 批次H | 已完成 |
 | TD-DUP-005 | P2 | 重复 | handleCreate/Edit/Delete 重复 3× | 批次E | 已完成 |
 | TD-DUP-006 | P2 | 重复 | 内联 connection-summary 渲染重复 4× | 批次E | 已完成 |
-| TD-TEST-001 | P1 | 测试 | 无 vitest 配置，覆盖率从不测量 | 阶段3 | 待处理 |
+| TD-TEST-001 | P1 | 测试 | 无 vitest 配置，覆盖率从不测量 | 阶段3 | 已完成 |
 | TD-TEST-002 | P1 | 测试 | instanceStore 完全无测试 | 阶段5 | 待处理 |
 | TD-TEST-003 | P1 | 测试 | api/client.ts 无测试 | 阶段5 | 待处理 |
 | TD-TEST-004 | P1 | 测试 | api/websocket.ts 无测试 | 阶段5 | 待处理 |
@@ -99,9 +113,9 @@
 | TD-SEC-010 | P2 | 安全 | 公网部署无仪表盘级鉴权 | 批次I | 已豁免 |
 | TD-SEC-011 | P2 | 安全 | importInstances 未校验 JSON 即 spread | 批次I | 已完成 |
 | TD-SEC-012 | P2 | 安全 | ErrorBoundary 日志输出完整 ApiError.body | 阶段3 | 待处理 |
-| TD-GATE-001 | P1 | 门禁 | 质量门禁仅在 push main 部署时跑 | 阶段3 | 待处理 |
-| TD-GATE-002 | P1 | 门禁 | 双 lockfile（npm + pnpm），CI 用 npm | 阶段3 | 待处理 |
-| TD-GATE-003 | P2 | 门禁 | 无 pre-commit / pre-push hook | 阶段3 | 待处理 |
+| TD-GATE-001 | P1 | 门禁 | 质量门禁仅在 push main 部署时跑 | 阶段3 | 已完成 |
+| TD-GATE-002 | P1 | 门禁 | 双 lockfile（npm + pnpm），CI 用 npm | 阶段3 | 已完成 |
+| TD-GATE-003 | P2 | 门禁 | 无 pre-commit / pre-push hook | 阶段3 | 已完成 |
 | TD-GATE-004 | P2 | 门禁 | biome noExplicitAny 为 warn 非 error | 阶段3 | 待处理 |
 | TD-DOC-001 | P1 | 文档 | 无 README.md | 阶段2 | 已完成 |
 | TD-DOC-002 | P1 | 文档 | 无 AGENTS.md / ARCHITECTURE.md / docs 结构 | 阶段2 | 已完成 |
@@ -245,7 +259,7 @@
 - 位置：`src/features/admin/WriteControlPage.tsx:84-590`
 - 证据：~506 行；14 useState。写入表单、success/error/replayError 消息、pending 确认、两个确认弹窗、clearedDlqKeys Set 持久化到 sessionStorage。extractApiError（63-72）局部 helper 应在 api/client。
 - 修复建议：抽 `<WriteForm>`、`<DeadLetterTable>`（含 useClearedDlqKeys() sessionStorage hook），extractApiError 移至 @/api/client。
-- 业务行为影响：无 ｜ 批次F ｜ 验收：单组件 <250 行 ｜ 状态：待处理
+- 业务行为影响：无 ｜ 批次F ｜ 验收：单组件 <250 行 ｜ 状态：已完成（c6ca423 拆为 WriteForm + DeadLetterTable + useClearedDlqKeys，extractApiError 移至 api/client；WriteControlPage 321 行编排）
 
 **TD-CPLX-008** ｜ getActionBadge 5 分支 switch 近似 Badge JSX ｜ P2
 - 位置：`src/features/admin/RulesPage.tsx:306-348`
@@ -311,7 +325,7 @@
 - 位置：`vite.config.ts`（无 test 块）；无 `vitest.config.ts`/`vitest.workspace.*`；无 setup 文件
 - 证据：`npm test` → `vitest run` 无 `--coverage`。jsdom 仅靠逐文件 `// @vitest-environment jsdom` 注释（4 文件）。`@testing-library/jest-dom` 在 devDeps 但从未 import/配置，`toBeInTheDocument` 等匹配器不可用。覆盖率缺口无法量化。
 - 修复建议：加 `vitest.config.ts`（`test:{ environment:'jsdom', setupFiles:['./src/test/setup.ts'], coverage:{ provider:'v8', reporter:['text','html'], include:['src/**/*.{ts,tsx}'], exclude:['**/*.test.*'] } }`）；建 `src/test/setup.ts` import `@testing-library/jest-dom`；加 `test:coverage` 脚本。
-- 业务行为影响：无 ｜ 阶段3 ｜ 验收：`npm run test:coverage` 产出报告 ｜ 状态：待处理
+- 业务行为影响：无 ｜ 阶段3 ｜ 验收：`npm run test:coverage` 产出报告 ｜ 状态：已完成（vitest.config.ts + src/test/setup.ts，v8 coverage，floor 阈值 lines26/stmt25/branch19/func18）
 
 **TD-TEST-002** ｜ instanceStore 完全无测试（密钥存储隔离 + 导入导出去重） ｜ P1
 - 位置：`src/stores/instanceStore.ts`（全 296 行）
@@ -491,19 +505,19 @@
 - 位置：`.github/workflows/deploy.yml`（唯一 workflow，触发 `push` to `main` + `workflow_dispatch`）
 - 证据：lint/build/test 三件套仅在 deploy.yml 的 build job，触发条件为 push main。PR、harnessing 分支或其他分支推送不触发任何自动化质量校验——缺陷仅在合入主干部署时暴露。无独立 ci.yml，质量与发布耦合。
 - 修复建议：新增 `.github/workflows/ci.yml` 在 PR 与所有分支推送触发，独立跑 lint + type-check + build + test + 覆盖率门禁；deploy.yml 改为 needs: ci 或复用产物。详见 `docs/CI.md` §4。
-- 业务行为影响：无 ｜ 阶段3 ｜ 验收：PR 触发 ci.yml 且故意越层依赖失败 ｜ 状态：待处理
+- 业务行为影响：无 ｜ 阶段3 ｜ 验收：PR 触发 ci.yml 且故意越层依赖失败 ｜ 状态：已完成（ci.yml PR+全分支触发 lint/typecheck/docs/结构/custom/any/build/test/coverage；deploy.yml 经 workflow_call 复用）
 
 **TD-GATE-002** ｜ 双 lockfile（package-lock.json + pnpm-lock.yaml），CI 用 npm ｜ P1
 - 位置：`package-lock.json`（178KB）、`pnpm-lock.yaml`（133KB）、`.github/workflows/deploy.yml`（`npm ci`、`cache: npm`）
 - 证据：两份 lockfile 并存，权威来源不明；CI 用 npm ci 依赖 package-lock.json。两份可漂移。
 - 修复建议：在 npm 与 pnpm 间确定唯一权威 lockfile，删除另一份，CI 与本地命令统一，决定写入 docs/CI.md。**需 Phase 3 落地前确认（见 §6 D1）。**
-- 业务行为影响：无 ｜ 阶段3 ｜ 验收：仅一份 lockfile + CI 一致 ｜ 状态：待处理
+- 业务行为影响：无 ｜ 阶段3 ｜ 验收：仅一份 lockfile + CI 一致 ｜ 状态：已完成（D1=npm，删除 pnpm-lock.yaml，CI/本地统一 npm）
 
 **TD-GATE-003** ｜ 无 pre-commit / pre-push hook ｜ P2
 - 位置：无 `.husky`、无 `lefthook.yml`、无 `.pre-commit-config.yaml`；`.git/hooks` 仅 sample
 - 证据：本地提交前无任何自动校验。
 - 修复建议：加 pre-commit hook（lint-staged / biome check on staged files）+ commit-msg hook（Conventional Commits 校验）。
-- 业务行为影响：无 ｜ 阶段3 ｜ 验收：本地提交触发 hook ｜ 状态：待处理
+- 业务行为影响：无 ｜ 阶段3 ｜ 验收：本地提交触发 hook ｜ 状态：已完成（.husky pre-commit 跑 biome+docs/结构/custom/any lint，commit-msg 校验 Conventional Commits）
 
 **TD-GATE-004** ｜ biome noExplicitAny 为 warn 非 error——any 未被拦截 ｜ P2
 - 位置：`biome.json`（`suspicious.noExplicitAny: "warn"`）

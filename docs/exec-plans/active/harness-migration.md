@@ -4,7 +4,7 @@
 - 项目 / 仓库：CoreC-Dashboard（CoreC 项目前端）
 - 分支：`harnessing`（从 `main` 切出，改造期间所有提交仅落此分支，§7.1）
 - 计划版本 / 日期：v1.0 / 2026-10-02
-- 状态：阶段 3（门禁审计与自动化质量校验）已完成，待指令启动阶段 4（重构落地，改 src/）
+- 状态：阶段 4（问题修复与重构落地）批次 A/B/C/E/F/G/H/I/J 已完成（~90%），剩 D 全量迁移（TD-ARCH-011/TD-DUP-001 基礎完成）+ TD-SEC-012 + TD-GATE-004 + TD-ARCH-010；阶段 5（测试补全）待启动
 - 规则母本：`docs/HARNESS-RULES.md`（§0 契约 C1–C7、§5 五阶段、附录 A/B/C/E/F）
 - 本轮范围：**仅阶段 1**（全量扫描 + 计划 + 问题清单）。阶段 2–5 待人工确认本计划后启动（契约 C2 串行、C1 计划先行）。
 
@@ -114,6 +114,8 @@
 - **产出物**：每批一组小提交 + 同步文档 + 更新 tracker + 计划进度日志。
 - **验收**：每批后门禁全绿+测试全过；重构行为守恒（对拍/测试证明改动前后同输入同输出）；行为变更/bug 修复在清单显式标注且单独提交；重复度量下降（前后数值）；复杂度指标下降（前后数值）；热点文件数下降；进度日志与 commit 可逐条对应。覆盖 TD-ARCH/CPLX/DUP/SEC/PERF 全部条目。
 
+> **🟡 阶段 4 进行中（截至 2026-10-03）**。已完成批次：A（TD-ARCH-001/004/005/009）、B（TD-ARCH-002/007/008，structure-lint 豁免清零）、C（TD-ARCH-003/006）、E（TD-CPLX-008、TD-DUP-003/005/006）、F（TD-CPLX-001/002/003/005/006/007）、G（TD-CPLX-004/009/010）、H（TD-DUP-004）、I（TD-SEC-001/002/003/005/006/009/011）、J（TD-PERF-001..010/012、TD-SEC-013）。God 组件收缩：ConfigCenterPage 886→197、TagExplorerPage 800→232、AppShell 537→160、GlobalConfigEditor 430→109、RulesPage 818→524。**剩余**：批次 D 全量迁移（TD-ARCH-011 三真相源 / TD-DUP-001 详情页并行，adapter 基礎已落 commit 70b2675，全量迁移待收尾）、TD-SEC-012（ErrorBoundary 生产脱敏，行为变更单独提交）、TD-GATE-004（noExplicitAny 收紧为 error）、TD-ARCH-010（@/ 与相对导入混用 5 文件）。每批后门禁全绿、测试全过（336 passed）、覆盖率过 floor。
+
 ### 阶段 5 · 测试补全与门禁接入  （前置：阶段 4 通过）
 - **子任务**：补关键路径端到端测试 → 补边界/异常（空值/超限/并发/超时/部分失败/幂等）→ 逐一补齐 tracker 中"无测试"模块（TD-TEST-002..016）→ 建测试分层（单元/集成/e2e + 时长上限）→ 接入覆盖率门禁（整体+关键模块下限）→ 接入结构测试 → 消除 flaky（修根因/登记）→ 测试可维护性规则（用例名描述行为/无魔法数字/不依赖执行序）→ 测试纳入同一套门禁。
 - **产出物**：测试代码 + fixture + 覆盖率报告 + 结构测试 + 测试策略文档。
@@ -146,7 +148,19 @@
 | 2026-10-02 | 1 | 人工确认 7 项决策 D1–D7，答案落盘 §6 | 0c11db2 | C7；D4=维持现状→TD-SEC-010 已豁免；其余 6 项驱动批次 I/J 修复方向 |
 | 2026-10-02 | 2 | 重写 AGENTS.md（67 行）+ ARCHITECTURE.md + docs/ 树 + core-beliefs.md + QUALITY_SCORE.md + 规范文档 + 工程化说明 | （待提交） | 附录 E/F；§2.1 必需项；ADR-002..009 落盘 |
 | 2026-10-02 | 2 | 建 scripts/docs-lint.mjs 文档防腐 linter；`node scripts/docs-lint.mjs` 通过 | （待提交） | TD-DOC-001..003 结清；阶段 2 验收全过 |
+| 2026-10-02 | 3 | 阶段 3 门禁全量落地（ci.yml/husky/vitest.config/4 linters/server headers） | 00e66a2 | 阶段 3 验收全过；TD-GATE-001/002/003、TD-TEST-001、TD-SEC-007/013 结清 |
+| 2026-10-03 | 4 | 批次 A 基础层治理（types→lib 反向、cn 抽离、lib 纯化、UI 原语不引 hooks） | ae367b2..92a287d | TD-ARCH-001/004/005/009 结清；structure-lint 去 4 豁免 |
+| 2026-10-03 | 4 | 批次 B api/contexts 解耦（connectionStore 断环、useCoreCWebSocket、ApiError re-export） | 75663d1..9c03a3b | TD-ARCH-002/007/008 结清；structure-lint 豁免清零 |
+| 2026-10-03 | 4 | 批次 C stores 治理（configStore 切 slice、CoreCInstance 移 types） | 852544b..56aa6cd | TD-ARCH-003/006 结清 |
+| 2026-10-03 | 4 | 批次 D 基礎（settingsRegistry 拆文件、useEntityEditConfig、EntityEditConfigCard 降 props、adapter+parity） | 9d34b24..6fd162a | TD-ARCH-013/012/DUP-002 结清；ARCH-011/DUP-001 基礎完成，全量迁移待收尾 |
+| 2026-10-03 | 4 | 批次 E 列表页去重（getActionBadge 查表、useApplyConfig/useEntityListPage/ConnectionSummary） | a294740..4b61689 | TD-CPLX-008、TD-DUP-003/005/006 结清 |
+| 2026-10-03 | 4 | 批次 F 大组件拆分（WriteControl/Rule/AppShell/GlobalConfig/ConfigCenter/TagExplorer） | c6ca423..1c360ce | TD-CPLX-001/002/003/005/006/007 结清 |
+| 2026-10-03 | 4 | 批次 G 复杂函数/effect 拆分（validateConfig 6 纯校验器、trendTag 入 hook、auto-load 响应式） | 751f9a5..e18a5b9 | TD-CPLX-004/009/010 结清 |
+| 2026-10-03 | 4 | 批次 H wizard 去重（useResetOnOpen） | 815457b | TD-DUP-004 结清 |
+| 2026-10-03 | 4 | 批次 I 安全修复（导出脱敏、同源代理+CSP、随机密钥、YAML 安全 schema、导入 zod 校验、WS token 文档） | a270536..6fdeff4 | TD-SEC-001/002/003/005/006/009/011 结清；每条单独提交（C4） |
+| 2026-10-03 | 4 | 批次 J 性能/可靠性（虚拟化/封顶、pprof 超时、memo、Monaco 自托管、Set 封顶） | 2bb156a..723dc9d | TD-PERF-001..010/012、TD-SEC-013 结清 |
+| 2026-10-03 | 4 | 文档同步：修正台账速查表 5 行过时状态 + 补完成度汇总 + 更新本计划 §0/§7 | （本次提交） | 防腐；台账与代码现状对齐 |
 
-> **下一步**：阶段 3 已完成，待指令启动阶段 4（问题修复与重构落地，改 src/）。阶段 4 按 §4 批次 A→J 推进，每批一域小粒度提交，行为守恒由测试证明。
+> **下一步**：阶段 4 收尾（TD-ARCH-011/TD-DUP-001 全量迁移、TD-SEC-012、TD-GATE-004、TD-ARCH-010）→ 启动阶段 5（测试补全，覆盖 TD-TEST-002..016 + 收紧覆盖率门禁）→ 阶段 5 通过即达 DoD（§11.1）→ 执行 §14 收官拆解归档 HARNESS-RULES.md。
 >
 > **决策已确认（2026-10-02）**：D1–D7 答案见 §6，已落 ADR-002..008。

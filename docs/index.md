@@ -9,7 +9,7 @@
 | `../AGENTS.md` | 入口地图（≤100 行） | ✅ |
 | `../ARCHITECTURE.md` | 领域与分层地图 + 依赖方向 | ✅ |
 | `QUALITY_SCORE.md` | 按域/层质量打分 + 差距 | ✅ |
-| `exec-plans/tech-debt-tracker.md` | 技术债台账（76 条） | ✅ |
+| `exec-plans/tech-debt-tracker.md` | 技术债台账（77 条） | ✅ |
 | `exec-plans/active/harness-migration.md` | 改造计划（阶段 1，决策已确认） | ✅ |
 | `CI.md` | 框架判定 + CI 现状 + 落地决定 | ✅ |
 
