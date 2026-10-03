@@ -76,7 +76,7 @@
 
     --status-running: 146 62% 38%;     /* #1f9e58 — readable as text + dot */
     --status-warning: 36 78% 44%;      /* #c8861a — readable as text + dot */
-    --status-error: 354 70% 54%;       /* #d8485a — readable as text + dot */
+    --status-error: 354 70% 45%;       /* #c32232 — WCAG AA 5.8:1 on white */
     --status-stale: 36 60% 42%;        /* dimmed amber */
     --status-queued: 210 80% 50%;      /* #2d88e0 — readable as text + dot */
     --status-idle: 219 6% 42%;         /* darker muted */
@@ -162,7 +162,7 @@
     --chart-grid: 40 18% 88%;
     --status-running: 146 62% 38%;
     --status-warning: 36 78% 44%;
-    --status-error: 354 70% 54%;
+    --status-error: 354 70% 45%;       /* WCAG AA on light bg */
     --status-stale: 36 60% 42%;
     --status-queued: 210 80% 50%;
     --status-idle: 35 8% 42%;
@@ -200,7 +200,7 @@
     --chart-grid: 220 14% 88%;
     --status-running: 146 62% 38%;
     --status-warning: 36 78% 44%;
-    --status-error: 354 70% 54%;
+    --status-error: 354 70% 45%;       /* WCAG AA on light bg */
     --status-stale: 36 60% 42%;
     --status-queued: 210 80% 50%;
     --status-idle: 220 10% 42%;

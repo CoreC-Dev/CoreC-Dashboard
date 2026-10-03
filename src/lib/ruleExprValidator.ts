@@ -29,8 +29,6 @@ import { checkBalancedParens, type ValidationResult } from '@/lib/exprShared'
  *
  * Valid fields: driver, device, group, tag, quality, type, value
  */
-// Re-exported alias so existing test imports (`ExprValidationResult`) stay valid.
-export type ExprValidationResult = ValidationResult
 
 /** Valid field names in the rule expression DSL. */
 export const VALID_FIELDS = [
@@ -47,7 +45,7 @@ export const VALID_FIELDS = [
  * Validates a CoreC rule match expression for basic syntax correctness.
  * Returns {valid, errors, warnings}. Pure function — no side effects.
  */
-export function validateRuleExpression(expr: string): ExprValidationResult {
+export function validateRuleExpression(expr: string): ValidationResult {
   const errors: string[] = []
   const warnings: string[] = []
 

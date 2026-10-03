@@ -196,7 +196,7 @@ export const RulesPage: React.FC = () => {
           <button
             type="button"
             onClick={clearToggleError}
-            aria-label="Dismiss"
+            aria-label={t('common.close')}
             className="ml-auto text-status-error/60 hover:text-status-error"
           >
             ×
@@ -305,7 +305,7 @@ export const RulesPage: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => handleEditRule(rl.name)}
-                          className="p-1.5 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground"
+                          className="p-2 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground"
                           title={t('common.edit')}
                           aria-label={t('common.edit')}
                         >
@@ -314,7 +314,7 @@ export const RulesPage: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => setDeleteTarget(rl.name)}
-                          className="p-1.5 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
+                          className="p-2 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
                           title={t('common.delete')}
                           aria-label={t('common.delete')}
                         >
@@ -448,7 +448,7 @@ export const RulesPage: React.FC = () => {
                               variant="outline"
                               size="sm"
                               onClick={() => openTest(rule)}
-                              className="h-7 text-xs"
+                              className="h-9 text-xs"
                             >
                               <Play className="w-3 h-3 mr-1" />
                               {t('rules.test')}
@@ -457,7 +457,7 @@ export const RulesPage: React.FC = () => {
                               variant="outline"
                               size="sm"
                               onClick={() => openEdit(rule)}
-                              className="h-7 text-xs"
+                              className="h-9 text-xs"
                             >
                               <Pencil className="w-3 h-3 mr-1" />
                               {t('common.edit')}

@@ -188,7 +188,7 @@ export const TransportsPage: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => handleEdit(tp.name)}
-                        className="p-1.5 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground"
+                        className="p-2 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground"
                         title={t('common.edit')}
                         aria-label={t('common.edit')}
                       >
@@ -197,7 +197,7 @@ export const TransportsPage: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => setDeleteTarget(tp.name)}
-                        className="p-1.5 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
+                        className="p-2 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
                         title={t('common.delete')}
                         aria-label={t('common.delete')}
                       >
@@ -248,7 +248,7 @@ export const TransportsPage: React.FC = () => {
           {isLoading && transports.length === 0 ? (
             <div className="col-span-full py-12 flex items-center justify-center gap-2 text-xs text-muted-foreground">
               <Loader2 className="w-4 h-4 animate-spin" />
-              <span>Loading…</span>
+              <span>{t('common.loading')}</span>
             </div>
           ) : isError ? (
             <Card className="col-span-full p-8 text-center space-y-3">

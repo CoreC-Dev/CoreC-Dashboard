@@ -124,7 +124,7 @@ export const TagRow = memo(function TagRow({
             e.stopPropagation()
             onWrite(point)
           }}
-          className="h-7 px-2 text-xs text-primary hover:bg-primary/10"
+          className="h-9 px-2 text-xs text-primary hover:bg-primary/10"
         >
           <Send className="w-3 h-3 mr-1" />
           <span>{t('tags.write')}</span>

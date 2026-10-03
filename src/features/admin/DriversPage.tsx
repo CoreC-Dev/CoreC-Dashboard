@@ -213,7 +213,7 @@ export const DriversPage: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => handleEdit(drv.name)}
-                        className="p-1.5 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground"
+                        className="p-2 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground"
                         title={t('common.edit')}
                         aria-label={t('common.edit')}
                       >
@@ -222,7 +222,7 @@ export const DriversPage: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => handleDelete(drv.name)}
-                        className="p-1.5 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
+                        className="p-2 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
                         title={t('common.delete')}
                         aria-label={t('common.delete')}
                       >
@@ -265,7 +265,7 @@ export const DriversPage: React.FC = () => {
           {isLoading && drivers.length === 0 ? (
             <div className="col-span-full py-12 flex items-center justify-center gap-2 text-xs text-muted-foreground">
               <Loader2 className="w-4 h-4 animate-spin" />
-              <span>Loading…</span>
+              <span>{t('common.loading')}</span>
             </div>
           ) : isError ? (
             <Card className="col-span-full p-8 text-center space-y-3">

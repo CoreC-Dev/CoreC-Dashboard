@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen } from '@testing-library/react'
+import { cleanup, render, screen } from '@testing-library/react'
 import { act } from 'react'
 import { MemoryRouter } from 'react-router-dom'
-import { beforeAll, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { RulesPage } from '@/features/admin/RulesPage'
 import { TransportsPage } from '@/features/admin/TransportsPage'
 import i18n from '@/i18n'
@@ -103,6 +103,12 @@ function wrap(el: React.ReactElement) {
 beforeAll(async () => {
   useConnectionStore.getState().setConnected(true)
   await i18n.changeLanguage('en')
+})
+
+// vitest runs without globals:true, so @testing-library/react's auto-cleanup
+// never registers — clean up explicitly between tests.
+afterEach(() => {
+  cleanup()
 })
 
 describe('render smoke (#185 regression)', () => {

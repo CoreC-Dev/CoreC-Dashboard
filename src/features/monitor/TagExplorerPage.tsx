@@ -124,7 +124,7 @@ export const TagExplorerPage: React.FC = () => {
     ],
   )
 
-  const closeTrend = () => {
+  const closeTrend = useCallback(() => {
     // Discard staged samples so a pending RAF doesn't flush them into a chart
     // that's about to unmount / already cleared. [H-8]
     discardPendingTrend()
@@ -132,7 +132,7 @@ export const TagExplorerPage: React.FC = () => {
     // stops staging samples immediately. [H-8]
     setTrendTag(null)
     setTrendSamples([])
-  }
+  }, [discardPendingTrend, setTrendTag, setTrendSamples])
 
   const handleRefresh = () => {
     // Allow a single re-seed from the next REST snapshot to pick up new tags.

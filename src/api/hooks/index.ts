@@ -77,10 +77,13 @@ export function useTransport(name: string) {
 }
 
 export function useTags() {
+  // No refetchInterval: TagExplorerPage seeds from this REST snapshot once,
+  // then the /tags/stream WebSocket owns live state (hasSeeded guard ignores
+  // subsequent polls). A 5s REST poll was pure waste — ~12 req/min eliminated.
+  // Manual Refresh calls refetch() explicitly. [perf: redundant poll removed]
   return useConnectedQuery({
     queryKey: ['tags'],
     queryFn: api.getTags,
-    refetchInterval: 5000,
   })
 }
 
@@ -125,10 +128,13 @@ export function useConfigRaw() {
 }
 
 export function useDeadLetters() {
+  // Poll every 15s (was 4s). Dead letters are a low-urgency diagnostic queue —
+  // 4s was excessively aggressive (~15 req/min) for data that changes slowly.
+  // [behavior change: refetchInterval 4000→15000, registered in plan doc §六-B4]
   return useConnectedQuery({
     queryKey: ['deadLetters'],
     queryFn: api.getDeadLetters,
-    refetchInterval: 4000,
+    refetchInterval: 15000,
   })
 }
 

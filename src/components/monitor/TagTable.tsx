@@ -82,7 +82,7 @@ export function TagTable({
         </div>
       ) : (
         <div ref={setScrollEl} className="overflow-auto max-h-[70vh]">
-          <table className="w-full text-xs text-left">
+          <table className="w-full min-w-[860px] text-xs text-left">
             <thead className="sticky top-0 z-10 block bg-muted/80 border-b border-border uppercase font-semibold text-xs text-muted-foreground tracking-wider">
               <tr className="flex items-center">
                 <th className="px-4 py-2.5 shrink-0 overflow-hidden" style={{ width: COLS.tag }}>

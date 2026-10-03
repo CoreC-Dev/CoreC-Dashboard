@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { memo, useEffect, useRef, useState } from 'react'
 
 interface CountUpNumberProps {
   value: number
@@ -14,7 +14,7 @@ interface CountUpNumberProps {
  * Animation logic inlined (TD-ARCH-005) — components/ui must not import
  * from hooks/. The former useCountUp hook had no other consumers.
  */
-export function CountUpNumber({
+export const CountUpNumber = memo(function CountUpNumber({
   value,
   duration = 800,
   format = (n) => n.toLocaleString(),
@@ -56,4 +56,4 @@ export function CountUpNumber({
   }, [value, duration])
 
   return <span className={className}>{format(Math.round(animated))}</span>
-}
+})

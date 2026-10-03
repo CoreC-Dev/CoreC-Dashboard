@@ -163,7 +163,7 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 shrink-0 opacity-60 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
+                  className="h-9 w-9 shrink-0 opacity-60 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
                   aria-label={t('common.moreActions')}
                 >
                   <MoreVertical className="w-3.5 h-3.5" />

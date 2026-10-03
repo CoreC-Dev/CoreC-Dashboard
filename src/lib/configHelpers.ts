@@ -37,7 +37,7 @@ export function setNestedPath(root: Record<string, unknown>, path: string, value
  * incorrect for objects with different key-insertion orders. This recursive
  * check is order-independent and allocation-free for equal objects.
  */
-export function deepEqual(a: unknown, b: unknown): boolean {
+function deepEqual(a: unknown, b: unknown): boolean {
   if (a === b) return true
   if (a === null || b === null) return false
   if (typeof a !== 'object' || typeof b !== 'object') return false
