@@ -754,6 +754,7 @@
     "history": "变更历史",
     "historyDesc": "最近的配置快照",
     "historyEmpty": "暂无保存的快照",
+    "previewSnapshot": "预览快照",
     "restore": "恢复",
     "restored": "快照已恢复到编辑器",
     "diff": "变更预览",

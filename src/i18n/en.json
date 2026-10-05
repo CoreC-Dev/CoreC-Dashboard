@@ -754,6 +754,7 @@
     "history": "Change History",
     "historyDesc": "Recent configuration snapshots",
     "historyEmpty": "No saved snapshots yet",
+    "previewSnapshot": "Preview Snapshot",
     "restore": "Restore",
     "restored": "Snapshot restored to editor",
     "diff": "Changes Preview",

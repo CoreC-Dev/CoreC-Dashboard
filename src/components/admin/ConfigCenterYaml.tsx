@@ -7,11 +7,27 @@
  * ConfigCenterForm.tsx (form-mode cards).
  */
 import Editor from '@monaco-editor/react'
-import { ChevronDown, ChevronRight, FileText, GitCompare, History, RotateCcw } from 'lucide-react'
+import {
+  ChevronDown,
+  ChevronRight,
+  Eye,
+  FileText,
+  GitCompare,
+  History,
+  RotateCcw,
+} from 'lucide-react'
 import type React from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import type { ConfigSnapshot } from '@/hooks/useConfigHistory'
 import type { DiffLine } from '@/lib/yamlDiff'
@@ -140,6 +156,8 @@ export const ChangeHistoryCard: React.FC<{
   onRestore: (snapshot: ConfigSnapshot) => void
 }> = ({ history, onRestore }) => {
   const { t } = useTranslation()
+  const { resolvedTheme } = useThemeStore()
+  const [previewSnap, setPreviewSnap] = useState<ConfigSnapshot | null>(null)
   return (
     <Card className="border-border bg-card">
       <CardHeader className="p-4 pb-2">
@@ -168,21 +186,66 @@ export const ChangeHistoryCard: React.FC<{
                     </div>
                     <div className="text-xs text-muted-foreground truncate">{snap.action}</div>
                   </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => onRestore(snap)}
-                    className="h-7 text-xs shrink-0"
-                  >
-                    <RotateCcw className="w-3 h-3 mr-1" />
-                    {t('config.restore')}
-                  </Button>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setPreviewSnap(snap)}
+                      className="h-7 px-2 text-xs"
+                      aria-label={t('config.previewSnapshot')}
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => onRestore(snap)}
+                      className="h-7 text-xs"
+                    >
+                      <RotateCcw className="w-3 h-3 mr-1" />
+                      {t('config.restore')}
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
           </ScrollArea>
         )}
       </CardContent>
+
+      {/* Snapshot preview dialog */}
+      <Dialog open={previewSnap !== null} onOpenChange={(open) => !open && setPreviewSnap(null)}>
+        <DialogContent className="max-w-3xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-sm">
+              <Eye className="w-4 h-4 text-primary" />
+              {t('config.previewSnapshot')}
+            </DialogTitle>
+            <DialogDescription className="text-xs">
+              {previewSnap
+                ? `${new Date(previewSnap.timestamp).toLocaleString()} — ${previewSnap.action}`
+                : ''}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="h-[55vh] min-h-[300px] rounded-lg border border-border overflow-hidden">
+            <Editor
+              height="100%"
+              defaultLanguage="yaml"
+              value={previewSnap?.yaml ?? ''}
+              theme={resolvedTheme === 'dark' ? 'vs-dark' : 'light'}
+              options={{
+                minimap: { enabled: false },
+                fontSize: 12,
+                fontFamily: "'JetBrains Mono', Consolas, monospace",
+                lineNumbers: 'on',
+                readOnly: true,
+                scrollBeyondLastLine: false,
+                tabSize: 2,
+              }}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </Card>
   )
 }
