@@ -136,7 +136,7 @@ export const ApiSection: React.FC<{
           <RotateCcw className="w-3 h-3 group-open:rotate-90 transition-transform" />
           {t('globalConfig.apiTimeouts')}
         </summary>
-        <div className={detailsGridCls}>
+        <div className={`${detailsGridCls} details-reveal`}>
           {(
             [
               ['read-header-timeout', t('globalConfig.readHeaderTimeout')],
@@ -163,7 +163,7 @@ export const ApiSection: React.FC<{
           <Bug className="w-3 h-3 group-open:rotate-90 transition-transform" />
           {t('globalConfig.apiPprof')}
         </summary>
-        <div className="space-y-3 p-3 mt-2 rounded-lg bg-muted/20 border border-border/30">
+        <div className="details-reveal space-y-3 p-3 mt-2 rounded-lg bg-muted/20 border border-border/30">
           <FieldRow
             label={t('globalConfig.pprofDisabled')}
             help={t('globalConfig.pprofDisabledHelp')}

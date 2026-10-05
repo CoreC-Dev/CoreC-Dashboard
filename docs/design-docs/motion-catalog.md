@@ -26,13 +26,16 @@
 | 11 | **横幅下滑入场** | `ValidationBanner`/`UnsavedChangesBanner`/`WizardContextValidationBanner` | `banner-enter` 自 translateY(-6px) 淡入 `--ease-spring` |
 | 18 | **骨架屏 shimmer** | `App.tsx` Suspense fallback | `Skeleton` 组件 + `skeleton-shimmer` 方向性扫光 |
 | 25 | **Switch 拨杆回弹** | `ui/switch` | thumb `transition-transform duration-300 ease-[var(--ease-spring)]` 过冲 |
+| 21 | **顶栏进度条辉光** | `TopProgressBar` | `.progress-bar-fill` box-shadow primary 辉光 |
+| 26 | **折叠区内容淡入** | `Wizard`/`GlobalConfigSections` 的 `<details>` | `details-reveal` 淡入+上移（chevron 旋转已有） |
+| 28 | **主题图标形变** | `ThemeSelector` sun/moon | `icon-morph` rotate+scale 入场，与圆形扩散互补 |
 
 ## 待实施（🟡，按收益/风险排序）
 
 ### 一、同源：共享指示器 / FLIP（最"类似"侧边栏滑动高亮）
 
 1. ~~模式切换滑动指示器~~ ✅
-2. **Tab 下划线/胶囊滑动** — 任何 `TabList`（监控子页签等）：单条 underline 用 `--ease-spring` 在 tab 间滑动，复用 `useSlidingIndicator`。
+2. **Tab 下划线/胶囊滑动** — 任何 `TabList`（监控子页签等）：单条 underline 用 `--ease-spring` 在 tab 间滑动，复用 `useSlidingIndicator`。（当前无 tabs 原语，待引入 Radix Tabs 后实施）
 3. **排序 FLIP 行重排** — `TagTable`：点列头改排序时行用 FLIP（测旧位→DOM 更新→invert→play `--ease-spring`）滑到新位置。
 4. **向导进度指示器滑动** — `Wizard.tsx`：步骤点间活动环/填充条 spring 滑动并缩放。
 5. **筛选/搜索结果集进出** — `TagTable`/`TagExplorerPage`：行集合变化时新增行错峰淡入、移除行淡出收缩（FLIP 或 stagger）。
@@ -63,7 +66,7 @@
 
 19. **连接态图标形变** — `InstanceSelector`/`AppShell` 徽章：离线→在线时图标旋转/淡出淡入 + 颜色交叉淡化。
 20. **按钮成功态形变** — 异步动作按钮（应用配置、写入）：成功瞬间 label 形变为对勾再恢复。
-21. **顶栏进度条拖尾光** — `TopProgressBar`：填充段带 trailing shimmer/glow（NProgress 风格）。
+21. ~~顶栏进度条拖尾光~~ ✅
 
 ### 六、首页卡片与微交互
 
@@ -71,9 +74,9 @@
 23. **探测雷达 ping** — `InstanceCard` 探测中：自卡片中心向外扩散的声纳环。
 24. **光标视差倾斜** — `InstanceCard` 悬浮：随光标的轻微 3D tilt。
 25. ~~Switch 拨杆回弹~~ ✅
-26. **折叠区高度自适** — `ConfigCenterParts` 可折叠区：`grid-template-rows 0fr→1fr` + 内容淡入 + chevron spring 旋转。
+26. ~~折叠区内容淡入~~ ✅
 27. **复制对勾弹出** — 复制按钮：成功时对勾 scale-pop。
-28. **主题图标形变** — `ThemeSelector`：sun⇔moon SVG path 形变（与圆形扩散互补）。
+28. ~~主题图标形变~~ ✅
 
 ## 实现约定
 

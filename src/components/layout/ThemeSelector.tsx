@@ -62,9 +62,9 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ eff }) => {
           aria-label={t('aria.selectTheme')}
         >
           {resolvedTheme === 'dark' ? (
-            <Moon className="w-[18px] h-[18px] shrink-0" />
+            <Moon className="w-[18px] h-[18px] shrink-0 icon-morph" />
           ) : (
-            <Sun className="w-[18px] h-[18px] shrink-0" />
+            <Sun className="w-[18px] h-[18px] shrink-0 icon-morph" />
           )}
           {!eff && (
             <>

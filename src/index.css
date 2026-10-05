@@ -472,6 +472,42 @@ body {
   animation: skeleton-shimmer 1.4s var(--ease-smooth) infinite;
 }
 
+/* Details/accordion content reveal — fades + slides in on open. Native
+   <details> can't animate close (content unmounts instantly), so open-only. */
+@keyframes details-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+details[open] > .details-reveal {
+  animation: details-reveal 0.25s var(--ease-smooth) both;
+}
+
+/* Top progress bar — primary glow on the fill. */
+.progress-bar-fill {
+  box-shadow: 0 0 6px 0 hsl(var(--primary) / 0.7);
+}
+
+/* Icon morph — rotate + scale in on mount (theme sun/moon swap). */
+@keyframes icon-morph {
+  from {
+    opacity: 0;
+    transform: rotate(-90deg) scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: rotate(0) scale(1);
+  }
+}
+.icon-morph {
+  animation: icon-morph 0.4s var(--ease-spring) both;
+}
+
 /* Sidebar collapse/expand smooth transition */
 .sidebar-transition {
   transition: width 0.2s ease-out;

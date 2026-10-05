@@ -202,7 +202,7 @@ const Wizard: React.FC<WizardProps> = ({
               <ChevronRight className="h-3 w-3 group-open:rotate-90 transition-transform" />
               {t('wizard.preview')}
             </summary>
-            <div className="mt-2 max-h-48 overflow-auto rounded-md bg-muted/40 border p-2">
+            <div className="details-reveal mt-2 max-h-48 overflow-auto rounded-md bg-muted/40 border p-2">
               {previewNode}
             </div>
           </details>
