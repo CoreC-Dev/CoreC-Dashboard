@@ -324,7 +324,16 @@
     "clickToOpenTrend": "点击任意行查看实时趋势",
     "liveTrend": "实时趋势 · 最近 {{count}} / {{max}} 个采样",
     "noTrendData": "非数值测点无趋势数据",
-    "trendTitle": "{{tag}} 趋势"
+    "trendTitle": "{{tag}} 趋势",
+    "pause": "暂停",
+    "resume": "继续",
+    "paused": "已暂停",
+    "exportCsv": "导出 CSV",
+    "fullscreen": "全屏",
+    "statCurrent": "当前",
+    "statMin": "最小",
+    "statMax": "最大",
+    "statAvg": "平均"
   },
   "write": {
     "title": "控制指令下发与死信审计",

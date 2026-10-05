@@ -38,6 +38,10 @@ interface UseTagExplorerStreamResult {
    *  onmessage callback sees the new value on the very next message —
    *  without the one-tick lag a passive effect would introduce. */
   setTrendTag: (tag: DataPoint | null) => void
+  /** Whether the trend chart is paused (stops staging new samples). */
+  trendPaused: boolean
+  /** Toggle pause/resume for the trend chart. */
+  setTrendPaused: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 /**
@@ -71,6 +75,14 @@ export function useTagExplorerStream({
     trendTagRef.current = tag
     setTrendTagState(tag)
   }, [])
+
+  // Pause/resume the trend chart. When paused, the WS callback skips staging
+  // new trend samples so the operator can inspect a frozen snapshot.
+  const [trendPaused, setTrendPaused] = useState(false)
+  const trendPausedRef = useRef(false)
+  useEffect(() => {
+    trendPausedRef.current = trendPaused
+  }, [trendPaused])
 
   // Seed-once guard so the 5s REST poll never clobbers fresher WS values.
   const hasSeeded = useRef(false)
@@ -185,7 +197,7 @@ export function useTagExplorerStream({
         scheduleFlush()
 
         const sel = trendTagRef.current
-        if (sel && tagKey(sel) === key && isNumericType(point.type)) {
+        if (sel && !trendPausedRef.current && tagKey(sel) === key && isNumericType(point.type)) {
           const num = Number(point.value)
           if (Number.isNaN(num)) return
           // Stage the trend sample for the next animation frame instead of
@@ -221,5 +233,7 @@ export function useTagExplorerStream({
     resetSeed,
     trendTag,
     setTrendTag,
+    trendPaused,
+    setTrendPaused,
   }
 }

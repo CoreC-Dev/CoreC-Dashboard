@@ -27,6 +27,8 @@ export const TagExplorerPage: React.FC = () => {
     resetSeed,
     trendTag,
     setTrendTag,
+    trendPaused,
+    setTrendPaused,
   } = useTagExplorerStream({
     initialTags: initialTagsData?.tags,
     selectedDriver,
@@ -164,7 +166,7 @@ export const TagExplorerPage: React.FC = () => {
   const showError = isError && filteredTags.length === 0
 
   return (
-    <div className={trendTag ? 'flex flex-col md:flex-row gap-4 md:items-start' : 'space-y-5'}>
+    <div className={trendTag ? 'flex flex-col md:flex-row gap-4 md:items-stretch' : 'space-y-5'}>
       <div className={trendTag ? 'flex-1 min-w-0 space-y-4' : 'space-y-5'}>
         {/* Greeting */}
         <div className="pt-1">
@@ -205,17 +207,27 @@ export const TagExplorerPage: React.FC = () => {
       </div>
 
       {/*
-       * Trend panel — right column in a two-column layout.
+       * Trend panel — right column on desktop, bottom sheet on mobile.
        * Clicking a tag row splits the page: tag list on the left,
        * live trend chart + details on the right. No fixed overlay.
        */}
       {trendTag && (
-        <TagTrendPanel
-          trendTag={trendTag}
-          trendLivePoint={trendLivePoint}
-          trendSamples={trendSamples}
-          onClose={closeTrend}
-        />
+        <>
+          {/* Mobile backdrop — tap to close the bottom sheet. */}
+          <div
+            className="md:hidden fixed inset-0 z-40 bg-black/30"
+            onClick={closeTrend}
+            aria-hidden
+          />
+          <TagTrendPanel
+            trendTag={trendTag}
+            trendLivePoint={trendLivePoint}
+            trendSamples={trendSamples}
+            trendPaused={trendPaused}
+            onTogglePause={() => setTrendPaused((p) => !p)}
+            onClose={closeTrend}
+          />
+        </>
       )}
 
       <TagWriteDialog

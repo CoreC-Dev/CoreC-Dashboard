@@ -324,7 +324,16 @@
     "clickToOpenTrend": "Click any row to open the live trend",
     "liveTrend": "Live trend · last {{count}} / {{max}} samples",
     "noTrendData": "No trend data available for non-numeric tags",
-    "trendTitle": "Trend for {{tag}}"
+    "trendTitle": "Trend for {{tag}}",
+    "pause": "Pause",
+    "resume": "Resume",
+    "paused": "Paused",
+    "exportCsv": "Export CSV",
+    "fullscreen": "Fullscreen",
+    "statCurrent": "Current",
+    "statMin": "Min",
+    "statMax": "Max",
+    "statAvg": "Avg"
   },
   "write": {
     "title": "Field Control & Dead Letter Queue",
