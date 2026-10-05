@@ -591,6 +591,26 @@ details[open] > .details-reveal {
   animation: diff-line-in 0.22s var(--ease-smooth) both;
 }
 
+/* #17 Danger pulse — subtle red ring on destructive confirm buttons,
+   reinforcing irreversible actions (industrial-safety cue). */
+@keyframes danger-pulse {
+  0%, 100% { opacity: 0; }
+  50% { opacity: 0.45; }
+}
+.danger-pulse {
+  position: relative;
+}
+.danger-pulse::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: inherit;
+  border: 2px solid hsl(var(--destructive));
+  opacity: 0;
+  animation: danger-pulse 2s var(--ease-smooth) infinite;
+  pointer-events: none;
+}
+
 /* Sidebar collapse/expand smooth transition */
 .sidebar-transition {
   transition: width 0.2s ease-out;

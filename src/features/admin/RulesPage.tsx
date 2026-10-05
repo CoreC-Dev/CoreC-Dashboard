@@ -507,7 +507,7 @@ export const RulesPage: React.FC = () => {
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDeleteRule}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 danger-pulse"
             >
               {t('common.delete')}
             </AlertDialogAction>

@@ -38,7 +38,7 @@ export const AppShell: React.FC = () => {
             <span
               role="status"
               className={cn(
-                'w-2.5 h-2.5 rounded-full shrink-0 ml-auto',
+                'w-2.5 h-2.5 rounded-full shrink-0 ml-auto transition-colors duration-300',
                 isConnecting
                   ? 'bg-status-warning'
                   : isConnected
@@ -70,7 +70,7 @@ export const AppShell: React.FC = () => {
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50 border border-border/60">
                   <span
                     className={cn(
-                      'w-2.5 h-2.5 rounded-full shrink-0',
+                      'w-2.5 h-2.5 rounded-full shrink-0 transition-colors duration-300',
                       isConnecting
                         ? 'bg-status-warning'
                         : isConnected

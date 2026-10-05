@@ -383,7 +383,7 @@ export const TransportsPage: React.FC = () => {
             <AlertDialogCancel className="h-8 text-xs">{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDelete}
-              className="h-8 text-xs bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="h-8 text-xs bg-destructive text-destructive-foreground hover:bg-destructive/90 danger-pulse"
             >
               {t('common.delete')}
             </AlertDialogAction>

@@ -35,6 +35,8 @@
 | 16 | **菜单项错峰入场** | `ThemeSelector` 下拉 | `.menu-stagger` opt-in，`[role=option]` nth-child 35ms 错峰淡入+上移 |
 | 14 | **YAML diff 行进出** | `ConfigCenterYaml` diff | `.diff-line-add`/`.diff-line-remove` 方向感知横滑+淡入 |
 | 6 | **数值方向性闪烁** | `TagRow` 数值格 | `lastValueRef` 比对前值，overlay 按升/降染 `bg-status-running`/`bg-status-error` |
+| 17 | **危险操作红色脉冲** | 删除/清空类 `AlertDialogAction` | `.danger-pulse` ::after 红色 ring 2s 缓慢脉冲（工业安全提示） |
+| 19 | **连接态颜色交叉淡化** | `AppShell` 连接圆点 | `transition-colors duration-300` 状态切换时背景色平滑过渡 |
 
 ## 待实施（🟡，按收益/风险排序）
 
@@ -65,12 +67,12 @@
 
 15. **Dialog 从触发点缩放** — `dialog`/`sheet`/`alert-dialog`：以触发元素位置为 `transform-origin`，scale+淡入（spring）。
 16. ~~菜单项错峰入场~~ ✅
-17. **危险操作红色脉冲** — 写控制/删除类 `alert-dialog`：外圈红色 ring 缓慢脉冲。
+17. ~~危险操作红色脉冲~~ ✅
 18. **Toast 体系** — 当前无 toast：新增自边缘滑入 + 自动消失进度条，用于异步反馈。
 
 ### 五、状态与加载
 
-19. **连接态图标形变** — `InstanceSelector`/`AppShell` 徽章：离线→在线时图标旋转/淡出淡入 + 颜色交叉淡化。
+19. ~~连接态颜色交叉淡化~~ ✅（背景色 `transition-colors` 平滑过渡；图标旋转待后续）
 20. **按钮成功态形变** — 异步动作按钮（应用配置、写入）：成功瞬间 label 形变为对勾再恢复。（当前成功即关闭弹窗，无残留成功态可形变）
 21. ~~顶栏进度条拖尾光~~ ✅
 

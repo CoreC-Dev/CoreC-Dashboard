@@ -498,7 +498,7 @@ const GroupCard: React.FC<GroupCardProps> = ({
                 onDelete(name)
                 setConfirmDelete(false)
               }}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 danger-pulse"
             >
               {t('common.delete')}
             </AlertDialogAction>
