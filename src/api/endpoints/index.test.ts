@@ -84,7 +84,7 @@ describe('getConfigsRaw (GET /configs/raw)', () => {
     expect(result).toBe(yamlText)
     // Verify the request was shaped correctly.
     const [url, init] = mockFetch.mock.calls[0]
-    expect(url).toBe('/corec-proxy/configs/raw?reveal=true')
+    expect(url).toBe('/corec-proxy/configs/raw')
     expect(init?.method).toBeUndefined() // GET is the default
     expect(init?.headers.get('X-CoreC-Target')).toBe('http://127.0.0.1:9090')
     expect(init?.headers.get('Authorization')).toBe('Bearer test-secret-token')

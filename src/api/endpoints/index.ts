@@ -31,18 +31,17 @@ export const patchConfigs = (data: { 'log-level'?: string }) =>
 
 // Path A — full config round-trip with secret redaction.
 //
-// getConfigsRaw returns the COMPLETE active config as YAML text with every
-// secret value redacted to "***" (api.secret, mqtt/http/driver passwords,
-// webhook-secrets, auth headers). Unlike getConfigs (a names-only summary),
-// this is what the Config Center YAML editor loads to show the server's real
-// config without exposing credentials. The executor's sentinel-merge restores
-// the real secret values when the edited config is submitted back via PUT.
+// getConfigsRaw returns the COMPLETE active config as YAML text with all
+// values in plaintext, including secrets (api.secret, mqtt/http/driver
+// passwords, webhook-secrets, auth headers). Unlike getConfigs (a names-only
+// summary), this is what the Config Center YAML editor loads to show the
+// server's real config.
 //
 // validateConfigs performs a server-side dry-run (parse + config validation,
 // no apply) so the operator can see whether a config is acceptable BEFORE
 // committing it. Returns { valid: true } or { valid: false, error: string }.
 export const getConfigsRaw = () =>
-  apiRequest<string>('/configs/raw?reveal=true', {
+  apiRequest<string>('/configs/raw', {
     headers: { Accept: 'application/yaml' },
   })
 

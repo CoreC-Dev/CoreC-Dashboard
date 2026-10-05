@@ -32,7 +32,6 @@ import {
   ON_BAD_QUALITY_POLICIES,
   PARITY_VALUES,
   RULE_ACTIONS,
-  SECRET_SENTINEL,
   TRANSPORT_TYPES,
 } from '@/types/config'
 
@@ -313,11 +312,7 @@ const apiConfigSchema = z
           path: ['secret'],
           message: 'api.secret is required when api.listen is set',
         })
-      } else if (a.secret !== SECRET_SENTINEL && a.secret.length < 8) {
-        // SECRET_SENTINEL ("***") marks an unchanged secret redacted by
-        // GET /configs/raw — the backend's MergeSentinels restores the real
-        // value before its own validate, so accept it locally. Only reject
-        // genuinely short user-entered values.
+      } else if (a.secret.length < 8) {
         ctx.addIssue({
           code: 'custom',
           path: ['secret'],

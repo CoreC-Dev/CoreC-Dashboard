@@ -396,7 +396,7 @@ describe('coreCConfigSchema — global validation', () => {
     })
     expect(res.success).toBe(false)
   })
-  it('accepts api.secret: "***" (redacted sentinel from GET /configs/raw)', () => {
+  it('rejects api.secret: "***" (too short, no longer a special sentinel)', () => {
     const res = coreCConfigSchema.safeParse({
       ...validConfig,
       global: {
@@ -404,9 +404,10 @@ describe('coreCConfigSchema — global validation', () => {
         api: { listen: '0.0.0.0:9090', secret: '***' },
       },
     })
-    expect(res.success).toBe(true)
+    expect(res.success).toBe(false)
+    expect(failIssues(res)).toContain('at least 8 characters')
   })
-  it('still rejects a genuinely short api.secret (not the sentinel)', () => {
+  it('still rejects a genuinely short api.secret', () => {
     const res = coreCConfigSchema.safeParse({
       ...validConfig,
       global: {

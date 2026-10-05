@@ -65,12 +65,6 @@ type LogLevel = (typeof LOG_LEVELS)[number]
 export const LOG_FORMATS = ['text', 'json'] as const
 type LogFormat = (typeof LOG_FORMATS)[number]
 
-// Mirrors CoreC's config.SentinelValue ("***"). GET /configs/raw redacts every
-// secret field to this placeholder; PUT /configs back-merges it via
-// MergeSentinels before validating/applying. The frontend schema must accept
-// it (not reject as "too short") so a round-tripped config validates locally.
-export const SECRET_SENTINEL = '***'
-
 export const ON_BAD_QUALITY_POLICIES = ['publish', 'drop', 'mark-and-publish', 'alert'] as const
 
 export const NODE_ROLES = ['collector', 'relay', 'aggregator', 'sink'] as const
