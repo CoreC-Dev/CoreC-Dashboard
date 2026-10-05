@@ -30,7 +30,7 @@ export const UnsavedChangesBanner: React.FC<UnsavedChangesBannerProps> = ({
   return (
     <>
       {dirty && (
-        <div className="rounded-md border border-status-warning/30 bg-status-warning/10 p-3 text-xs text-status-warning dark:text-status-warning flex items-center justify-between">
+        <div className="banner-enter rounded-md border border-status-warning/30 bg-status-warning/10 p-3 text-xs text-status-warning dark:text-status-warning flex items-center justify-between">
           <span>{unsavedChangesLabel}</span>
           <div className="flex gap-2">
             <Button

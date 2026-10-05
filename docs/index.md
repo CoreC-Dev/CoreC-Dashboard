@@ -21,6 +21,7 @@
 | `design-docs/architecture-decisions.md` | 架构决策记录（ADR：框架判定 + D1–D7） | ✅ |
 | `design-docs/doc-gardening.md` | 文档防腐规则与园丁任务 | ✅ |
 | `design-docs/gate-exemptions.md` | 门禁豁免/ratchet 机制 + npm audit 结果 | ✅ |
+| `design-docs/motion-catalog.md` | 前端动效目录（已有/待实施清单 + 实现约定） | ✅ |
 
 ## 规范文档
 | 文档 | 职责 | 状态 |

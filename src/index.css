@@ -435,6 +435,43 @@ body {
   box-shadow: var(--shadow-card-hover);
 }
 
+/* Banner slide-down — validation/unsaved banners enter from above with a
+   spring settle. */
+@keyframes banner-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.banner-enter {
+  animation: banner-enter 0.3s var(--ease-spring) both;
+}
+
+/* Skeleton shimmer — directional sweep for content placeholders (composited
+   background-position, no layout repaints). Replaces animate-pulse blocks. */
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--muted)) 25%,
+    hsl(var(--muted-foreground) / 0.12) 37%,
+    hsl(var(--muted)) 63%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s var(--ease-smooth) infinite;
+}
+
 /* Sidebar collapse/expand smooth transition */
 .sidebar-transition {
   transition: width 0.2s ease-out;

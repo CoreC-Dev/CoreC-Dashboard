@@ -22,8 +22,9 @@ import {
   Upload,
 } from 'lucide-react'
 import type React from 'react'
-import { type ChangeEvent, useRef } from 'react'
+import { type ChangeEvent, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useSlidingIndicator } from '@/components/layout/useSlidingIndicator'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import type { ConfigMode } from '@/hooks/useConfigCenter'
@@ -112,15 +113,31 @@ export const ModeSwitcher: React.FC<{
   onSetMode: (mode: ConfigMode) => void
 }> = ({ mode, onSetMode }) => {
   const { t } = useTranslation()
+  const containerRef = useRef<HTMLDivElement>(null)
+  const itemRefs = useRef<Map<string, HTMLElement>>(new Map())
+  const { visible, style } = useSlidingIndicator(containerRef, itemRefs, mode)
+  const registerForm = useCallback((el: HTMLButtonElement | null) => {
+    if (el) itemRefs.current.set('form', el)
+    else itemRefs.current.delete('form')
+  }, [])
+  const registerYaml = useCallback((el: HTMLButtonElement | null) => {
+    if (el) itemRefs.current.set('yaml', el)
+    else itemRefs.current.delete('yaml')
+  }, [])
   return (
-    <div className="flex items-center bg-muted p-0.5 rounded-lg border border-border text-xs">
+    <div
+      ref={containerRef}
+      className="relative flex items-center bg-muted p-0.5 rounded-lg border border-border text-xs"
+    >
+      {visible && <span aria-hidden className="absolute bg-background shadow-xs" style={style} />}
       <button
+        ref={registerForm}
         type="button"
         onClick={() => onSetMode('form')}
         aria-pressed={mode === 'form'}
-        className={`flex items-center space-x-1.5 px-3 py-1 rounded-md transition-colors ${
+        className={`relative flex items-center space-x-1.5 px-3 py-1 rounded-md transition-colors ${
           mode === 'form'
-            ? 'bg-background text-foreground font-semibold shadow-xs'
+            ? 'text-foreground font-semibold'
             : 'text-muted-foreground hover:text-foreground'
         }`}
       >
@@ -128,12 +145,13 @@ export const ModeSwitcher: React.FC<{
         <span>{t('config.formView')}</span>
       </button>
       <button
+        ref={registerYaml}
         type="button"
         onClick={() => onSetMode('yaml')}
         aria-pressed={mode === 'yaml'}
-        className={`flex items-center space-x-1.5 px-3 py-1 rounded-md transition-colors ${
+        className={`relative flex items-center space-x-1.5 px-3 py-1 rounded-md transition-colors ${
           mode === 'yaml'
-            ? 'bg-background text-foreground font-semibold shadow-xs'
+            ? 'text-foreground font-semibold'
             : 'text-muted-foreground hover:text-foreground'
         }`}
       >

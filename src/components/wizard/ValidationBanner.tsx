@@ -32,7 +32,7 @@ export const ValidationBanner: React.FC<{ maxErrors?: number }> = ({ maxErrors =
   }
 
   return (
-    <div className="rounded-md border border-status-error/30 bg-status-error/10 p-3 text-xs text-status-error dark:text-status-error space-y-1.5">
+    <div className="banner-enter rounded-md border border-status-error/30 bg-status-error/10 p-3 text-xs text-status-error dark:text-status-error space-y-1.5">
       <div className="font-semibold flex items-center gap-1.5">
         <AlertCircle className="w-3.5 h-3.5" />
         {t('config.validationErrorsTitle', { count: errorStrings.length })}

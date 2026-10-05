@@ -4,6 +4,7 @@ import { HashRouter, Navigate, Route, Routes, useLocation, useParams } from 'rea
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { AppShell } from '@/components/layout/AppShell'
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
 import { ConnectionProvider, useConnection } from '@/contexts/ConnectionContext'
 import i18n from '@/i18n'
 import { useInstanceStore } from '@/stores/instanceStore'
@@ -55,10 +56,13 @@ const DiagnosticsPage = lazy(() =>
 
 // Minimal Suspense fallback while a lazy chunk loads.
 const LoadingFallback: React.FC = () => (
-  <div className="flex items-center justify-center h-full min-h-[50vh]">
-    <div className="animate-pulse text-sm text-muted-foreground">
-      {i18n.t('common.loading', { defaultValue: 'Loading…' })}
-    </div>
+  <div
+    className="flex flex-col items-center justify-center h-full min-h-[50vh] gap-2"
+    role="status"
+    aria-label={i18n.t('common.loading', { defaultValue: 'Loading…' })}
+  >
+    <Skeleton className="h-4 w-40" />
+    <Skeleton className="h-3 w-28" />
   </div>
 )
 

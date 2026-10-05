@@ -33,7 +33,7 @@ export const WizardContextValidationBanner: React.FC<{
 
   return (
     <div
-      className={`rounded-md border p-2.5 text-xs space-y-1 ${
+      className={`banner-enter rounded-md border p-2.5 text-xs space-y-1 ${
         hasContextErrors
           ? 'border-status-error/30 bg-status-error/10 text-status-error dark:text-status-error'
           : 'border-status-running/30 bg-status-running/10 text-status-running dark:text-status-running'
