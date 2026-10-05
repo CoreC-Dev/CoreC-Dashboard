@@ -51,6 +51,7 @@ export const ConfigCenterPage: React.FC = () => {
     applyDialogProps,
     openApplyDialog,
     revertWorkingConfig,
+    getSavedYaml,
     mode,
     setMode,
     yamlContent,
@@ -75,6 +76,10 @@ export const ConfigCenterPage: React.FC = () => {
     handleLoadFromServer,
     handleDryRunValidate,
     handleRestore,
+    yamlApplyOpen,
+    setYamlApplyOpen,
+    yamlApplyError,
+    handleYamlApplyConfirm,
   } = useConfigCenter()
 
   return (
@@ -192,6 +197,19 @@ export const ConfigCenterPage: React.FC = () => {
 
       {/* Change History — persisted snapshots of every PUT /configs submission */}
       <ChangeHistoryCard history={history} onRestore={handleRestore} />
+
+      {/* YAML-mode apply confirmation — safety gate before PUT /configs
+          from the Monaco editor's "Hot Reload" button. Shows a diff
+          against the last saved YAML and requires explicit confirmation. */}
+      <ConfigApplyConfirmationDialog
+        open={yamlApplyOpen}
+        onOpenChange={(v) => !updateMutation.isPending && setYamlApplyOpen(v)}
+        beforeYaml={getSavedYaml()}
+        afterYaml={yamlContent}
+        applying={updateMutation.isPending}
+        onConfirm={handleYamlApplyConfirm}
+        applyError={yamlApplyError ?? undefined}
+      />
     </div>
   )
 }

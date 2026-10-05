@@ -181,6 +181,11 @@
     "addTag": "添加标签",
     "noTags": "暂无标签配置。点击\"添加标签\"创建一个。",
     "tagsRequired": "至少需要一个标签",
+    "tagAdvanced": "高级字段（缩放、偏移、死区、读取超时）",
+    "tagScale": "缩放",
+    "tagOffset": "偏移",
+    "tagDeadband": "死区",
+    "tagReadTimeout": "读取超时",
     "address": "地址",
     "type": "类型",
     "group": "分组",
@@ -197,6 +202,7 @@
     "description": "请在应用前审查以下变更。配置将被热重载。",
     "engineSuspendWarning": "警告：应用配置会暂停整个引擎进行短暂重载。重载期间所有数据采集和发布暂停。此操作非原子性——如果新配置加载失败，不会自动回滚。",
     "validationErrors": "校验错误——请在应用前修正：",
+    "validationWarnings": "Idle 模式告警——不阻塞，仍可应用配置：",
     "applyError": "应用失败——配置未重载：",
     "discardTitle": "放弃未保存的更改？",
     "discardDesc": "所有未保存的编辑都将丢失。此操作无法撤销。",
@@ -234,7 +240,8 @@
     "tagsIntervalHelp": "此驱动所有标签的全局轮询间隔覆盖（如 30s）。",
     "validationErrors": "发现 {{count}} 个校验错误",
     "validationMore": "...还有 {{count}} 个",
-    "validationPassed": "校验通过 — 可以保存"
+    "validationPassed": "校验通过 — 可以保存",
+    "validationWarnings": "{{count}} 条 idle 模式告警 — 不阻塞保存"
   },
   "connection": {
     "disconnect": "断开连接"
@@ -598,7 +605,10 @@
     "configSection": "配置",
     "runtimeSection": "运行状态",
     "deleteTitle": "删除传输",
-    "deleteConfirm": "确定要删除传输 \"{{name}}\" 吗？此变更将在保存配置时应用。"
+    "deleteConfirm": "确定要删除传输 \"{{name}}\" 吗？此变更将在保存配置时应用。",
+    "deleteDependentRules": "{{count}} 条规则引用了此传输：",
+    "deleteAndMore": "...还有 {{count}} 条",
+    "deleteDependentHint": "删除后这些规则的目标将悬空。请在应用前更新或删除相关规则。"
   },
   "rules": {
     "title": "规则编排与路由",
@@ -665,7 +675,14 @@
       "transformExpression": "转换表达式",
       "transformExpressionPlaceholder": "value * 2 + 1",
       "transformTagRename": "标签重命名",
-      "transformTagRenamePlaceholder": "new_tag_name"
+      "transformTagRenamePlaceholder": "new_tag_name",
+      "errNameRequired": "规则名称不能为空",
+      "errMatchRequired": "匹配表达式不能为空",
+      "errTargetRequired": "此操作需要目标传输",
+      "errTargetsRequired": "镜像操作至少需要一个目标",
+      "errExpressionRequired": "变换操作需要变换表达式",
+      "confirmWarning": "此操作将热重载引擎（短暂暂停）。请在确认前检查上方的 YAML。",
+      "confirmApply": "确认并应用"
     },
     "createRule": "创建规则",
     "applyChanges": "应用变更",
@@ -745,6 +762,7 @@
     "fileLoadFailed": "读取文件失败",
     "validationErrorsTitle": "{{count}} 个校验错误 — 请修复后再应用",
     "validationErrorsMore": "...还有 {{count}} 个",
+    "validationWarningsTitle": "{{count}} 条 idle 模式告警 — 不阻塞，仍可应用配置",
     "downloadFileHint": "将当前配置导出为 YAML 文件",
     "exportEmpty": "配置为空，无法导出",
     "exported": "配置已导出为 YAML 文件",
@@ -1175,6 +1193,10 @@
     "engineDefaultTagIntervalHelp": "未指定间隔的标签的回退轮询间隔。",
     "engineOnBadQuality": "坏质量处理策略",
     "engineOnBadQualityHelp": "质量差的数据点处理策略：publish、drop、mark-and-publish 或 alert。",
+    "engineErrorThrottleWindow": "错误抑制窗口",
+    "engineErrorThrottleWindowHelp": "调度器重复错误/超限日志的抑制时间窗口。默认：10s。",
+    "engineHighPriorityWorkers": "高优先级工作线程",
+    "engineHighPriorityWorkersHelp": "专用于高频数据的处理线程，防止批量读取饿死。默认：2。",
     "bufferEnabled": "启用缓冲区",
     "bufferEnabledHelp": "启用后，传输不可用时数据点将持久化到磁盘。",
     "bufferMaxSize": "最大缓冲区大小",

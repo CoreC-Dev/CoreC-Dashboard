@@ -425,14 +425,15 @@ describe('validateConfig — cross-entity rules', () => {
     expect(res.valid).toBe(true)
     expect(res.errors).toEqual([])
   })
-  it('rejects no data source (no drivers, no inbound transport, no discovery)', () => {
+  it('accepts no data source with a non-blocking warning (idle mode)', () => {
     const res = validateConfig({
       ...validConfig,
       drivers: [],
       transports: [{ name: 'm', type: 'mqtt', settings: { broker: 'tcp://x:1883' } }],
+      rules: [],
     })
-    expect(res.valid).toBe(false)
-    expect(res.errors.some((e) => e.message.includes('no data source'))).toBe(true)
+    expect(res.valid).toBe(true)
+    expect(res.warnings.some((e) => e.message.includes('no data source'))).toBe(true)
   })
   it('accepts relay node with inbound transport and no drivers', () => {
     // Relay: no drivers, but an inbound mqtt transport (data-topic) is the data source.
@@ -447,10 +448,10 @@ describe('validateConfig — cross-entity rules', () => {
     })
     expect(res.valid).toBe(true)
   })
-  it('rejects no transports', () => {
-    const res = validateConfig({ ...validConfig, transports: [] })
-    expect(res.valid).toBe(false)
-    expect(res.errors.some((e) => e.message.includes('at least one transport'))).toBe(true)
+  it('accepts no transports with a non-blocking warning (idle mode)', () => {
+    const res = validateConfig({ ...validConfig, transports: [], rules: [] })
+    expect(res.valid).toBe(true)
+    expect(res.warnings.some((e) => e.message.includes('at least one transport'))).toBe(true)
   })
   it('rejects duplicate driver names', () => {
     const res = validateConfig({

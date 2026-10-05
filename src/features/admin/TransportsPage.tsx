@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query'
 import { AlertCircle, ExternalLink, Pencil, Plus, RefreshCw, Send, Trash2 } from 'lucide-react'
 import type React from 'react'
 import { useState } from 'react'
@@ -25,7 +26,11 @@ import { UnsavedChangesBanner } from '@/components/wizard/UnsavedChangesBanner'
 import { ValidationBanner } from '@/components/wizard/ValidationBanner'
 import { TransportWizard } from '@/features/admin/TransportWizard'
 import { useApplyConfig } from '@/hooks/useApplyConfig'
-import { formatValidationErrors, useConfigValidation } from '@/hooks/useConfigValidation'
+import {
+  formatValidationErrors,
+  formatValidationWarnings,
+  useConfigValidation,
+} from '@/hooks/useConfigValidation'
 import { useEntityListPage } from '@/hooks/useEntityListPage'
 import { useParsedConfig } from '@/hooks/useParsedConfig'
 import { getTransportConnectionSummary } from '@/lib/connectionInfo'
@@ -39,6 +44,7 @@ export const TransportsPage: React.FC = () => {
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
   const adminBase = id ? `/corec/${id}/admin` : '/admin'
+  const queryClient = useQueryClient()
   const { data, refetch, isFetching, isLoading, isError, error } = useTransports()
   const transports = data?.transports || []
   const { data: rawYaml } = useConfigRaw()
@@ -57,6 +63,7 @@ export const TransportsPage: React.FC = () => {
   const markSaved = useConfigStore((s) => s.markSaved)
   const validation = useConfigValidation()
   const validationErrors = formatValidationErrors(validation)
+  const validationWarnings = formatValidationWarnings(validation)
 
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -65,6 +72,8 @@ export const TransportsPage: React.FC = () => {
     getSavedYaml,
     markSaved,
     validationErrors,
+    validationWarnings,
+    onApplySuccess: () => queryClient.invalidateQueries({ queryKey: ['transports'] }),
   })
 
   const {
@@ -85,6 +94,16 @@ export const TransportsPage: React.FC = () => {
 
   const configTransports = workingConfig?.transports ?? []
   const filteredConfigTransports = filterEntities(configTransports, searchQuery)
+
+  // When deleting a transport, find rules that reference it as a target so
+  // the operator is warned before removing a dependency. A rule depends on
+  // a transport if its `target` matches (forward/alert) or its `targets`
+  // array includes the transport name (mirror).
+  const dependentRules = deleteTarget
+    ? (parsedConfig?.rules ?? []).filter(
+        (r) => r.target === deleteTarget || (r.targets ?? []).includes(deleteTarget),
+      )
+    : []
 
   return (
     <div className="space-y-5">
@@ -379,6 +398,29 @@ export const TransportsPage: React.FC = () => {
               {t('transports.deleteConfirm', { name: deleteTarget ?? '' })}
             </AlertDialogDescription>
           </AlertDialogHeader>
+
+          {dependentRules.length > 0 && (
+            <div className="rounded-md border border-status-warning/30 bg-status-warning/10 p-3 text-xs space-y-1.5">
+              <div className="flex items-center gap-1.5 font-semibold text-status-warning">
+                <AlertCircle className="h-3.5 w-3.5" />
+                {t('transports.deleteDependentRules', { count: dependentRules.length })}
+              </div>
+              <ul className="list-disc list-inside text-status-warning/80 space-y-0.5">
+                {dependentRules.slice(0, 10).map((r) => (
+                  <li key={r.name} className="font-mono">
+                    {r.name} → {r.action}
+                  </li>
+                ))}
+                {dependentRules.length > 10 && (
+                  <li className="italic">
+                    {t('transports.deleteAndMore', { count: dependentRules.length - 10 })}
+                  </li>
+                )}
+              </ul>
+              <p className="text-status-warning/70">{t('transports.deleteDependentHint')}</p>
+            </div>
+          )}
+
           <AlertDialogFooter>
             <AlertDialogCancel className="h-8 text-xs">{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction

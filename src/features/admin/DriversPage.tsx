@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query'
 import { AlertCircle, Cpu, ExternalLink, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react'
 import type React from 'react'
 import { useMemo, useState } from 'react'
@@ -32,7 +33,11 @@ import { UnsavedChangesBanner } from '@/components/wizard/UnsavedChangesBanner'
 import { ValidationBanner } from '@/components/wizard/ValidationBanner'
 import { DriverWizard } from '@/features/admin/DriverWizard'
 import { useApplyConfig } from '@/hooks/useApplyConfig'
-import { formatValidationErrors, useConfigValidation } from '@/hooks/useConfigValidation'
+import {
+  formatValidationErrors,
+  formatValidationWarnings,
+  useConfigValidation,
+} from '@/hooks/useConfigValidation'
 import { useEntityListPage } from '@/hooks/useEntityListPage'
 import { useParsedConfig } from '@/hooks/useParsedConfig'
 import { getDriverConnectionSummary } from '@/lib/connectionInfo'
@@ -47,6 +52,7 @@ export const DriversPage: React.FC = () => {
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
   const adminBase = id ? `/corec/${id}/admin` : '/admin'
+  const queryClient = useQueryClient()
   const { data, refetch, isFetching, isLoading, isError, error } = useDrivers()
   const [selectedDriver, setSelectedDriver] = useState<DriverStatus | null>(null)
   const { data: rawYaml } = useConfigRaw()
@@ -63,6 +69,7 @@ export const DriversPage: React.FC = () => {
   const markSaved = useConfigStore((s) => s.markSaved)
   const validation = useConfigValidation()
   const validationErrors = formatValidationErrors(validation)
+  const validationWarnings = formatValidationWarnings(validation)
 
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -71,6 +78,8 @@ export const DriversPage: React.FC = () => {
     getSavedYaml,
     markSaved,
     validationErrors,
+    validationWarnings,
+    onApplySuccess: () => queryClient.invalidateQueries({ queryKey: ['drivers'] }),
   })
 
   const {

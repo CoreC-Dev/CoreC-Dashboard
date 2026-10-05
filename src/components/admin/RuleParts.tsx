@@ -281,6 +281,9 @@ interface RuleEditDialogProps {
   closeEdit: () => void
   handleGenerateAndReload: () => void
   isPending: boolean
+  editFormErrors: string[] | undefined
+  editConfirmOpen: boolean
+  setEditConfirmOpen: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 export const RuleEditDialog: React.FC<RuleEditDialogProps> = ({
@@ -291,6 +294,9 @@ export const RuleEditDialog: React.FC<RuleEditDialogProps> = ({
   closeEdit,
   handleGenerateAndReload,
   isPending,
+  editFormErrors,
+  editConfirmOpen,
+  setEditConfirmOpen,
 }) => {
   const { t } = useTranslation()
 
@@ -418,6 +424,52 @@ export const RuleEditDialog: React.FC<RuleEditDialogProps> = ({
                 <span className="break-all">{editStatus.text}</span>
               </div>
             )}
+
+            {/* Local validation errors */}
+            {editFormErrors && editFormErrors.length > 0 && (
+              <div className="rounded-md border border-destructive/30 bg-destructive/10 p-2.5 text-xs text-destructive space-y-1">
+                {editFormErrors.map((err, i) => (
+                  <div key={i} className="flex items-center gap-1.5">
+                    <AlertCircle className="h-3 w-3 shrink-0" />
+                    {err}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Confirmation step before PUT /configs */}
+            {editConfirmOpen && (
+              <div className="rounded-md border border-status-warning/30 bg-status-warning/10 p-3 text-xs space-y-3">
+                <div className="flex items-start gap-2 text-status-warning">
+                  <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                  <span>{t('rules.edit.confirmWarning')}</span>
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setEditConfirmOpen(false)}
+                    disabled={isPending}
+                    className="h-8 text-xs"
+                  >
+                    {t('common.cancel')}
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={handleGenerateAndReload}
+                    disabled={isPending}
+                    className="h-8 text-xs"
+                  >
+                    {isPending ? (
+                      <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                    ) : (
+                      <Check className="w-3.5 h-3.5 mr-1.5" />
+                    )}
+                    {t('rules.edit.confirmApply')}
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -425,7 +477,10 @@ export const RuleEditDialog: React.FC<RuleEditDialogProps> = ({
           <Button variant="outline" onClick={closeEdit}>
             {t('common.close')}
           </Button>
-          <Button onClick={handleGenerateAndReload} disabled={!editForm || isPending}>
+          <Button
+            onClick={() => setEditConfirmOpen(true)}
+            disabled={!editForm || isPending || !!editFormErrors || editConfirmOpen}
+          >
             {isPending ? (
               <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
             ) : (

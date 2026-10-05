@@ -125,6 +125,71 @@ drivers:
     expect(s.savedConfig).toBeNull()
     expect(s.dirty).toBe(true)
   })
+
+  it('resetToEmpty preserves global from savedConfig', () => {
+    useConfigStore.setState({
+      workingConfig: null,
+      savedConfig: baseConfig,
+      dirty: false,
+      error: null,
+    })
+    useConfigStore.getState().resetToEmpty()
+    const s = useConfigStore.getState()
+    expect(s.workingConfig).toEqual({ global: baseConfig.global })
+    expect(s.savedConfig).toEqual(baseConfig)
+    expect(s.dirty).toBe(true)
+  })
+
+  it('seedFromServer seeds both working and saved when store is empty', () => {
+    const yaml = `
+global:
+  log-level: debug
+  api:
+    listen: ':9090'
+    secret: secret123
+`
+    useConfigStore.getState().seedFromServer(yaml)
+    const s = useConfigStore.getState()
+    expect(s.workingConfig?.global?.['log-level']).toBe('debug')
+    expect(s.savedConfig?.global?.['log-level']).toBe('debug')
+    expect(s.dirty).toBe(false)
+  })
+
+  it('seedFromServer backfills savedConfig and merges global in race condition', () => {
+    // Simulate: resetToEmpty ran before auto-load completed
+    useConfigStore.setState({
+      workingConfig: {},
+      savedConfig: null,
+      dirty: true,
+      error: null,
+    })
+    const yaml = `
+global:
+  api:
+    listen: ':9090'
+    secret: secret123
+`
+    useConfigStore.getState().seedFromServer(yaml)
+    const s = useConfigStore.getState()
+    expect(s.savedConfig?.global?.api?.listen).toBe(':9090')
+    expect(s.workingConfig?.global?.api?.listen).toBe(':9090')
+  })
+
+  it('seedFromServer is a no-op when both working and saved are set', () => {
+    useConfigStore.setState({
+      workingConfig: baseConfig,
+      savedConfig: baseConfig,
+      dirty: false,
+      error: null,
+    })
+    const yaml = `
+global:
+  log-level: debug
+`
+    useConfigStore.getState().seedFromServer(yaml)
+    // Should not override existing config
+    expect(useConfigStore.getState().workingConfig).toEqual(baseConfig)
+  })
 })
 
 describe('configStore — driver CRUD', () => {
@@ -260,6 +325,7 @@ describe('configStore — save / revert', () => {
   })
 
   it('revert on never-saved config clears working to null', () => {
+    useConfigStore.getState().reset()
     useConfigStore.getState().resetToEmpty()
     useConfigStore.getState().upsertDriver(newDriver)
     useConfigStore.getState().revert()
@@ -491,7 +557,7 @@ describe('configStore — YAML output', () => {
   })
 
   it('getSavedYaml returns null when never saved', () => {
-    useConfigStore.getState().resetToEmpty()
+    useConfigStore.getState().reset()
     expect(useConfigStore.getState().getSavedYaml()).toBeNull()
   })
 })

@@ -32,7 +32,11 @@ import { UnsavedChangesBanner } from '@/components/wizard/UnsavedChangesBanner'
 import { ValidationBanner } from '@/components/wizard/ValidationBanner'
 import { RuleWizard } from '@/features/admin/RuleWizard'
 import { useApplyConfig } from '@/hooks/useApplyConfig'
-import { formatValidationErrors, useConfigValidation } from '@/hooks/useConfigValidation'
+import {
+  formatValidationErrors,
+  formatValidationWarnings,
+  useConfigValidation,
+} from '@/hooks/useConfigValidation'
 import { useEntityListPage } from '@/hooks/useEntityListPage'
 import { useRuleToggle } from '@/hooks/useRuleToggle'
 import { parseConfigYaml } from '@/lib/configYaml'
@@ -66,6 +70,7 @@ export const RulesPage: React.FC = () => {
   const markSaved = useConfigStore((s) => s.markSaved)
   const validation = useConfigValidation()
   const validationErrors = formatValidationErrors(validation)
+  const validationWarnings = formatValidationWarnings(validation)
 
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -74,6 +79,7 @@ export const RulesPage: React.FC = () => {
     getSavedYaml,
     markSaved,
     validationErrors,
+    validationWarnings,
     onApplySuccess: () => queryClient.invalidateQueries({ queryKey: ['rules'] }),
   })
 
@@ -109,6 +115,7 @@ export const RulesPage: React.FC = () => {
   const [editStatus, setEditStatus] = useState<{ type: 'success' | 'error'; text: string } | null>(
     null,
   )
+  const [editConfirmOpen, setEditConfirmOpen] = useState(false)
 
   const openTest = (rule: RuleStat) => {
     setTestRule(rule)
@@ -169,11 +176,38 @@ export const RulesPage: React.FC = () => {
     setEditRule(null)
     setEditForm(null)
     setEditStatus(null)
+    setEditConfirmOpen(false)
   }
+
+  // Local validation for the legacy rule edit form. Returns error strings
+  // or undefined when valid. This prevents sending malformed YAML to the
+  // server and gives immediate feedback before the confirmation step.
+  const validateEditForm = (form: EditFormData): string[] | undefined => {
+    const errs: string[] = []
+    if (!form.name.trim()) errs.push(t('rules.edit.errNameRequired'))
+    if (!form.match.trim()) errs.push(t('rules.edit.errMatchRequired'))
+    if (form.action === 'forward' || form.action === 'alert') {
+      if (!form.target.trim()) errs.push(t('rules.edit.errTargetRequired'))
+    }
+    if (form.action === 'mirror') {
+      const targets = form.targets
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
+      if (targets.length === 0) errs.push(t('rules.edit.errTargetsRequired'))
+    }
+    if (form.action === 'transform' && !form.transformExpression.trim()) {
+      errs.push(t('rules.edit.errExpressionRequired'))
+    }
+    return errs.length > 0 ? errs : undefined
+  }
+
+  const editFormErrors = editForm ? validateEditForm(editForm) : undefined
 
   const handleGenerateAndReload = async () => {
     if (!editForm) return
     setEditStatus(null)
+    setEditConfirmOpen(false)
     try {
       await updateMutation.mutateAsync({ payload: buildRuleYaml(editForm) })
       // PUT /configs hot-reloads the config; invalidate the rules list so the
@@ -489,6 +523,9 @@ export const RulesPage: React.FC = () => {
         closeEdit={closeEdit}
         handleGenerateAndReload={handleGenerateAndReload}
         isPending={updateMutation.isPending}
+        editFormErrors={editFormErrors}
+        editConfirmOpen={editConfirmOpen}
+        setEditConfirmOpen={setEditConfirmOpen}
       />
 
       {/* Rule create/edit wizard */}

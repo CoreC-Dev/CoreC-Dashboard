@@ -133,9 +133,11 @@ describe('validateConfigs (POST /configs/validate)', () => {
     // A validation failure is a normal outcome: the endpoint returns 400 with a
     // JSON {valid:false,error} body. The wrapper must normalize this into a
     // structured result so the UI can render the error rather than catching.
+    // (Uses a hard validation error — short api.secret — since "no data source"
+    // is now a non-blocking warning, not a 400.)
     const errBody = JSON.stringify({
       valid: false,
-      error: 'config validation failed: no data source',
+      error: 'config validation failed: api.secret must be at least 8 characters',
     })
     mockFetch.mockResolvedValueOnce(
       new Response(errBody, {
@@ -144,11 +146,11 @@ describe('validateConfigs (POST /configs/validate)', () => {
       }),
     )
 
-    const result = await validateConfigs('node:\n  id: edge\n')
+    const result = await validateConfigs('global:\n  api:\n    listen: ":9090"\n    secret: "x"\n')
 
     expect(result).toEqual({
       valid: false,
-      error: 'config validation failed: no data source',
+      error: 'config validation failed: api.secret must be at least 8 characters',
     })
   })
 

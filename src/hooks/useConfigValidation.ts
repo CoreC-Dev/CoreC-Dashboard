@@ -31,7 +31,7 @@ export function useConfigValidation(): ConfigValidationResult & { hasConfig: boo
 
   return useMemo(() => {
     if (!debouncedConfig) {
-      return { valid: true, errors: [], hasConfig: false }
+      return { valid: true, errors: [], warnings: [], hasConfig: false }
     }
     const result = validateFullConfig(debouncedConfig)
     return { ...result, hasConfig: true }
@@ -49,6 +49,21 @@ export function formatValidationErrors(
 ): string[] | undefined {
   return validation.hasConfig && !validation.valid
     ? validation.errors.map((e) => `${e.path}: ${e.message}`)
+    : undefined
+}
+
+/**
+ * Format a validation result's non-blocking warnings into a `path: message`
+ * string list, or `undefined` when there are no warnings. Used by
+ * apply-confirmation dialogs to show idle-mode hints (no data source / no
+ * transport) without blocking the apply.
+ */
+export function formatValidationWarnings(
+  validation: ConfigValidationResult & { hasConfig: boolean },
+): string[] | undefined {
+  const warnings = validation.warnings ?? []
+  return validation.hasConfig && warnings.length > 0
+    ? warnings.map((e) => `${e.path}: ${e.message}`)
     : undefined
 }
 

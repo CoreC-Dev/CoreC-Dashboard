@@ -50,11 +50,11 @@ describe('validateFullConfig — the function behind useConfigValidation', () =>
     expect(result.errors).toHaveLength(0)
   })
 
-  it('detects missing transports (cross-entity rule)', () => {
-    const bad: CoreCConfig = { ...validConfig, transports: [] }
+  it('detects missing transports as a non-blocking warning (idle mode)', () => {
+    const bad: CoreCConfig = { ...validConfig, transports: [], rules: [] }
     const result = validateFullConfig(bad)
-    expect(result.valid).toBe(false)
-    expect(result.errors.some((e) => e.path === 'transports')).toBe(true)
+    expect(result.valid).toBe(true)
+    expect(result.warnings.some((e) => e.path === 'transports')).toBe(true)
   })
 
   it('detects rule target referencing non-existent transport', () => {
@@ -87,7 +87,7 @@ describe('validateFullConfig — the function behind useConfigValidation', () =>
     expect(result.errors.some((e) => e.message.includes('duplicate driver name'))).toBe(true)
   })
 
-  it('detects no data source when drivers empty and no inbound transport', () => {
+  it('detects no data source as a non-blocking warning (idle mode)', () => {
     const bad: CoreCConfig = {
       ...validConfig,
       drivers: [],
@@ -101,8 +101,8 @@ describe('validateFullConfig — the function behind useConfigValidation', () =>
       ],
     }
     const result = validateFullConfig(bad)
-    expect(result.valid).toBe(false)
-    expect(result.errors.some((e) => e.path === 'drivers')).toBe(true)
+    expect(result.valid).toBe(true)
+    expect(result.warnings.some((e) => e.path === 'drivers')).toBe(true)
   })
 
   it('detects duplicate transport names', () => {
@@ -201,12 +201,14 @@ describe('validateFullConfig — integration with configStore', () => {
     const cfg = useConfigStore.getState().workingConfig!
     expect(validateFullConfig(cfg).valid).toBe(true)
 
-    // Remove the only transport → cross-entity validation should fail
+    // Remove the only transport → the rule still targets 'tp1', so the
+    // rule-target-ref check produces a hard error (the transport-presence
+    // check is now a non-blocking warning, not the error caught here).
     useConfigStore.getState().removeTransport('tp1')
     const cfg2 = useConfigStore.getState().workingConfig!
     const result = validateFullConfig(cfg2)
     expect(result.valid).toBe(false)
-    expect(result.errors.some((e) => e.path === 'transports')).toBe(true)
+    expect(result.errors.some((e) => e.message.includes('"tp1" not found'))).toBe(true)
   })
 
   it('validating after adding a rule with bad target catches the error', () => {

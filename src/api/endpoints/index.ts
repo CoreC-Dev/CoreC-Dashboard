@@ -49,6 +49,7 @@ export const getConfigsRaw = () =>
 export interface ValidateConfigResponse {
   valid: boolean
   error?: string
+  warnings?: string[]
 }
 
 export const validateConfigs = async (payload: string): Promise<ValidateConfigResponse> => {

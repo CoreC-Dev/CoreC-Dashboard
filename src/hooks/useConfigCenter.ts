@@ -18,7 +18,11 @@ import {
 } from '@/api/hooks'
 import { useApplyConfig } from '@/hooks/useApplyConfig'
 import { type ConfigSnapshot, useConfigHistory } from '@/hooks/useConfigHistory'
-import { formatValidationErrors, useConfigValidation } from '@/hooks/useConfigValidation'
+import {
+  formatValidationErrors,
+  formatValidationWarnings,
+  useConfigValidation,
+} from '@/hooks/useConfigValidation'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { useStatusMessage } from '@/hooks/useStatusMessage'
 import type { ConfigTemplate } from '@/lib/configTemplates'
@@ -98,6 +102,7 @@ export function useConfigCenter() {
   const getSavedYaml = useConfigStore((s) => s.getSavedYaml)
   const markSaved = useConfigStore((s) => s.markSaved)
   const loadFromYaml = useConfigStore((s) => s.loadFromYaml)
+  const seedFromServer = useConfigStore((s) => s.seedFromServer)
   const revertConfig = useConfigStore((s) => s.revert)
   const configWorkingExists = useConfigStore((s) => !!s.workingConfig)
   // Pre-apply validation: run zod schema + cross-entity checks on the
@@ -105,6 +110,7 @@ export function useConfigCenter() {
   // and block the apply button until resolved.
   const validation = useConfigValidation()
   const validationErrors = formatValidationErrors(validation)
+  const validationWarnings = formatValidationWarnings(validation)
   const hasValidationErrors = validationErrors !== undefined
 
   const { openDialog: openApplyDialog, dialogProps: applyDialogProps } = useApplyConfig({
@@ -112,6 +118,7 @@ export function useConfigCenter() {
     getSavedYaml,
     markSaved,
     validationErrors,
+    validationWarnings,
     onApplySuccess: () => refetch(),
   })
 
@@ -133,6 +140,12 @@ export function useConfigCenter() {
   // first successful fetch, so operators see the actual running config
   // instead of DEFAULT_SAMPLE_YAML without a manual "Load from Server" click.
   const [autoLoaded, setAutoLoaded] = useState(false)
+  // YAML-mode apply confirmation dialog state. The form-mode apply uses
+  // useApplyConfig's dialog (wired to the configStore), but YAML mode
+  // edits raw text in the Monaco editor — its "Hot Reload" must also
+  // pass through a confirmation gate before PUT /configs.
+  const [yamlApplyOpen, setYamlApplyOpen] = useState(false)
+  const [yamlApplyError, setYamlApplyError] = useState<string | null>(null)
 
   // Auto-load the live server config into the editor on first successful
   // fetch. Without this the editor shows DEFAULT_SAMPLE_YAML and the operator
@@ -147,8 +160,8 @@ export function useConfigCenter() {
     if (!yamlText?.trim()) return
     setAutoLoaded(true)
     setYamlContent(yamlText)
-    loadFromYaml(yamlText)
-  }, [rawConfigQuery.data, loadFromYaml, autoLoaded])
+    seedFromServer(yamlText)
+  }, [rawConfigQuery.data, seedFromServer, autoLoaded])
 
   // ── YAML ↔ Form bridge ─────────────────────────────────────────────
   // "Import YAML → Form": parse the current Monaco editor content into the
@@ -279,23 +292,29 @@ export function useConfigCenter() {
     }
   }
 
-  const handleHotReload = async () => {
+  const handleHotReload = () => {
+    // Open the YAML-mode apply confirmation dialog instead of PUT-ting
+    // directly. This gives the operator a diff preview and explicit
+    // confirmation before the engine is suspended for reload — same
+    // safety gate as the form-mode apply.
+    setYamlApplyError(null)
+    setYamlApplyOpen(true)
+  }
+
+  // Confirmed YAML-mode apply: called by the dialog's onConfirm.
+  const handleYamlApplyConfirm = async () => {
     setStatusMsg(null)
-    // Persist a snapshot of the YAML being submitted BEFORE the PUT, so the
-    // change history is recorded even if the server later rejects the reload.
     addSnapshot(yamlContent)
-    setStatusMsg({ type: 'success', text: t('config.snapshotSaved') })
     try {
       await updateMutation.mutateAsync({ payload: yamlContent })
       setLastSubmittedYaml(yamlContent)
-      setStatusMsg({
-        type: 'success',
-        text: t('config.reloadSuccess'),
-      })
+      setYamlApplyOpen(false)
+      markSaved()
+      setStatusMsg({ type: 'success', text: t('config.reloadSuccess') })
       refetch()
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : t('config.reloadFailed')
-      setStatusMsg({ type: 'error', text: msg || t('config.reloadFailed') })
+      setYamlApplyError(msg || t('config.reloadFailed'))
     }
   }
 
@@ -340,7 +359,15 @@ export function useConfigCenter() {
     try {
       const result = await validateMutation.mutateAsync(yamlContent)
       if (result.valid) {
-        setStatusMsg({ type: 'success', text: t('config.dryRunValid') })
+        const warnings = result.warnings
+        if (warnings && warnings.length > 0) {
+          setStatusMsg({
+            type: 'success',
+            text: `${t('config.dryRunValid')} — ${t('config.validationWarningsTitle')}: ${warnings.join('; ')}`,
+          })
+        } else {
+          setStatusMsg({ type: 'success', text: t('config.dryRunValid') })
+        }
       } else {
         setStatusMsg({
           type: 'error',
@@ -396,6 +423,7 @@ export function useConfigCenter() {
     applyDialogProps,
     openApplyDialog,
     revertWorkingConfig,
+    getSavedYaml,
     // state
     mode,
     setMode,
@@ -423,5 +451,10 @@ export function useConfigCenter() {
     handleLoadFromServer,
     handleDryRunValidate,
     handleRestore,
+    // YAML-mode apply dialog
+    yamlApplyOpen,
+    setYamlApplyOpen,
+    yamlApplyError,
+    handleYamlApplyConfirm,
   }
 }

@@ -7,6 +7,7 @@ import { TopProgressBar } from '@/components/layout/TopProgressBar'
 import { useSidebarState } from '@/components/layout/useSidebarState'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { useConnection } from '@/contexts/ConnectionContext'
+import { useAutoLoadConfig } from '@/hooks/useAutoLoadConfig'
 import { cn } from '@/lib/cn'
 
 export const AppShell: React.FC = () => {
@@ -14,6 +15,12 @@ export const AppShell: React.FC = () => {
   const location = useLocation()
   const { isConnected, isConnecting } = useConnection()
   const { isMobile, collapsed, setCollapsed, mobileOpen, setMobileOpen } = useSidebarState()
+
+  // Seed configStore from the live server config on first admin mount so
+  // list pages (Drivers/Transports/Rules) have a populated working config
+  // before the operator clicks "Create".  Without this, the first Create
+  // calls resetToEmpty() and silently drops global.api from the server config.
+  useAutoLoadConfig()
 
   const isMonitor = location.pathname.includes('/monitor')
 

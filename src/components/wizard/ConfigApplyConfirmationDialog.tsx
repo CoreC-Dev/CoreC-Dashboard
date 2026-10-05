@@ -215,6 +215,8 @@ export interface ConfigApplyConfirmationDialogProps {
   onConfirm: () => void
   /** Optional validation errors to display (from validateFullConfig). */
   validationErrors?: string[]
+  /** Optional non-blocking validation warnings (e.g. idle-mode hints). */
+  validationWarnings?: string[]
   /** Optional apply-time error to display when the PUT /configs failed. */
   applyError?: string
 }
@@ -228,6 +230,7 @@ export const ConfigApplyConfirmationDialog: React.FC<ConfigApplyConfirmationDial
   applying = false,
   onConfirm,
   validationErrors,
+  validationWarnings,
   applyError,
 }) => {
   const { t } = useTranslation()
@@ -252,6 +255,7 @@ export const ConfigApplyConfirmationDialog: React.FC<ConfigApplyConfirmationDial
   }, [diff, beforeYaml, afterYaml])
 
   const hasValidationErrors = validationErrors && validationErrors.length > 0
+  const hasValidationWarnings = validationWarnings && validationWarnings.length > 0
 
   return (
     <AlertDialog open={open} onOpenChange={(v) => !applying && onOpenChange(v)}>
@@ -279,6 +283,21 @@ export const ConfigApplyConfirmationDialog: React.FC<ConfigApplyConfirmationDial
             {validationErrors!.map((err, i) => (
               <div key={i} className="font-mono">
                 • {err}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Non-blocking validation warnings (idle-mode hints) */}
+        {hasValidationWarnings && (
+          <div className="rounded-md border border-status-warning/30 bg-status-warning/10 p-2.5 text-xs text-status-warning dark:text-status-warning space-y-1">
+            <div className="font-semibold flex items-center gap-1.5">
+              <AlertTriangle className="h-3.5 w-3.5" />
+              {t('applyDialog.validationWarnings')}
+            </div>
+            {validationWarnings!.map((warn, i) => (
+              <div key={i} className="font-mono">
+                • {warn}
               </div>
             ))}
           </div>

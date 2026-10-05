@@ -420,6 +420,8 @@ interface ConfigValidationError {
 export interface ConfigValidationResult {
   valid: boolean
   errors: ConfigValidationError[]
+  /** Non-blocking warnings (e.g. no data source / no transport in idle mode). */
+  warnings: ConfigValidationError[]
 }
 
 /** Inbound transport: mqtt with data-topic, or http with webhook-addr. */
@@ -675,8 +677,13 @@ export function validateConfig(config: unknown): ConfigValidationResult {
   const ruleGroups = cfg['rule-groups'] ?? {}
 
   const errors: ConfigValidationError[] = []
-  errors.push(...checkDataSourcePresence(drivers, transports, cfg.node))
-  errors.push(...checkTransportPresence(transports))
+  // Presence checks (data source / transport) are non-blocking warnings,
+  // not hard errors: an empty or API-only config is a valid idle startup
+  // state for the dashboard-driven workflow. Mirrors the server-side
+  // config.IdleWarnings (config/validate.go).
+  const warnings: ConfigValidationError[] = []
+  warnings.push(...checkDataSourcePresence(drivers, transports, cfg.node))
+  warnings.push(...checkTransportPresence(transports))
   errors.push(...checkDriverNames(drivers))
   const { names: transportNames, errors: transportNameErrors } = checkTransportNames(transports)
   errors.push(...transportNameErrors)
@@ -684,7 +691,7 @@ export function validateConfig(config: unknown): ConfigValidationResult {
   errors.push(...checkRuleTargetRefs(rules, transportNames, (name) => `rules[${name}]`))
   errors.push(...checkSubRuleCycles(ruleGroups, transportNames))
 
-  return { valid: errors.length === 0, errors }
+  return { valid: errors.length === 0, errors, warnings }
 }
 
 /**
@@ -705,5 +712,5 @@ export function validateFullConfig(config: unknown): ConfigValidationResult {
   }
   const cross = validateConfig(config)
   const errors = [...schemaErrors, ...cross.errors]
-  return { valid: errors.length === 0, errors }
+  return { valid: errors.length === 0, errors, warnings: cross.warnings }
 }

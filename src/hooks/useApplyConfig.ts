@@ -21,12 +21,21 @@ interface UseApplyConfigOptions {
   markSaved: () => void
   /** Validation errors from formatValidationErrors (undefined = valid). */
   validationErrors: string[] | undefined
+  /** Non-blocking validation warnings (idle-mode hints), undefined = none. */
+  validationWarnings?: string[]
   /** Extra action on successful apply (e.g. invalidateQueries, refetch). */
   onApplySuccess?: () => void
 }
 
 export function useApplyConfig(options: UseApplyConfigOptions) {
-  const { getWorkingYaml, getSavedYaml, markSaved, validationErrors, onApplySuccess } = options
+  const {
+    getWorkingYaml,
+    getSavedYaml,
+    markSaved,
+    validationErrors,
+    validationWarnings,
+    onApplySuccess,
+  } = options
   const updateConfig = useUpdateConfig()
   const [open, setOpen] = useState(false)
   const [applyError, setApplyError] = useState<string | null>(null)
@@ -47,6 +56,7 @@ export function useApplyConfig(options: UseApplyConfigOptions) {
     afterYaml: getWorkingYaml() ?? '',
     applying: updateConfig.isPending,
     validationErrors,
+    validationWarnings,
     applyError: applyError ?? undefined,
     onConfirm: () => {
       if (validationErrors) return

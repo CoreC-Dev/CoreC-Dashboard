@@ -53,7 +53,15 @@ export interface ConfigStoreState {
    *  Returns the error message on failure, or null on success — so callers
    *  can react to the result synchronously without reading store.getState(). */
   loadFromYaml: (yaml: string) => string | null
-  /** Start a new empty config (blank-slate creation). */
+  /** Seed the store from the live server config (auto-load on admin mount).
+   *  If workingConfig is null, seeds both workingConfig and savedConfig.
+   *  If workingConfig exists but savedConfig is null (race: resetToEmpty was
+   *  called before auto-load completed), backfills savedConfig and merges the
+   *  global section (api.listen/secret) into workingConfig so it is not
+   *  silently dropped on the next Apply. No-op if both are already set. */
+  seedFromServer: (yaml: string) => string | null
+  /** Start a new empty config, preserving the global section (api.listen/secret)
+   *  from savedConfig when available so infrastructure settings are not lost. */
   resetToEmpty: () => void
 
   // ─── Entity CRUD (delegate to configYaml.ts pure helpers) ─────────
@@ -138,10 +146,35 @@ export const useConfigStore = create<ConfigStoreState>((set, get) => {
       }
     },
 
+    seedFromServer: (yaml: string) => {
+      try {
+        const config = parseConfigYaml(yaml)
+        const { workingConfig, savedConfig } = get()
+        if (!workingConfig) {
+          // Store not initialised — seed both working and saved.
+          set({ workingConfig: config, savedConfig: config, dirty: false, error: null })
+        } else if (!savedConfig) {
+          // Race: resetToEmpty ran before auto-load completed.  Backfill
+          // savedConfig (diff baseline) and merge global so api.listen/secret
+          // are not silently dropped on the next Apply.
+          const global = workingConfig.global ?? config.global
+          set({ workingConfig: { ...workingConfig, global }, savedConfig: config, error: null })
+        }
+        // If both are already set, the store was seeded from a prior visit — no-op.
+        return null
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err)
+        set({ error: message })
+        return message
+      }
+    },
+
     resetToEmpty: () => {
+      const { savedConfig } = get()
+      const global = savedConfig?.global
       set({
-        workingConfig: {},
-        savedConfig: null,
+        workingConfig: global ? { global } : {},
+        savedConfig,
         dirty: true,
         error: null,
       })

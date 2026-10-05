@@ -343,6 +343,39 @@ export const EngineSection: React.FC<{
             </SelectContent>
           </Select>
         </FieldRow>
+
+        <FieldRow
+          label={t('globalConfig.engineErrorThrottleWindow')}
+          help={t('globalConfig.engineErrorThrottleWindowHelp')}
+          restartRequired
+        >
+          <Input
+            value={(engine['error-throttle-window'] as string) ?? ''}
+            onChange={(e) => update('engine.error-throttle-window', e.target.value || undefined)}
+            placeholder="10s"
+            className="h-8 text-xs font-mono"
+          />
+        </FieldRow>
+
+        <FieldRow
+          label={t('globalConfig.engineHighPriorityWorkers')}
+          help={t('globalConfig.engineHighPriorityWorkersHelp')}
+          restartRequired
+        >
+          <Input
+            type="number"
+            value={(engine['high-priority-workers'] as number) ?? ''}
+            onChange={(e) =>
+              update(
+                'engine.high-priority-workers',
+                e.target.value ? Number(e.target.value) : undefined,
+              )
+            }
+            placeholder="2"
+            min={0}
+            className="h-8 text-xs font-mono w-28"
+          />
+        </FieldRow>
       </div>
     </div>
   )

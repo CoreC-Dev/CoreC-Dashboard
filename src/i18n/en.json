@@ -181,6 +181,11 @@
     "addTag": "Add Tag",
     "noTags": "No tags configured. Click \"Add Tag\" to create one.",
     "tagsRequired": "At least one tag is required",
+    "tagAdvanced": "Advanced fields (scale, offset, deadband, read-timeout)",
+    "tagScale": "Scale",
+    "tagOffset": "Offset",
+    "tagDeadband": "Dead Band",
+    "tagReadTimeout": "Read Timeout",
     "address": "Address",
     "type": "Type",
     "group": "Group",
@@ -197,6 +202,7 @@
     "description": "Review the changes below before applying. The configuration will be hot-reloaded.",
     "engineSuspendWarning": "Warning: Applying config suspends the ENTIRE engine for a brief reload. All data collection and publishing pause during the reload. Non-atomic — there is no automatic rollback if the new config fails.",
     "validationErrors": "Validation errors — fix these before applying:",
+    "validationWarnings": "Idle-mode warnings — non-blocking, config can still be applied:",
     "applyError": "Apply failed — the config was not reloaded:",
     "discardTitle": "Discard unsaved changes?",
     "discardDesc": "All unsaved edits will be lost. This cannot be undone.",
@@ -234,7 +240,8 @@
     "tagsIntervalHelp": "Global polling interval override for all tags in this driver (e.g. 30s).",
     "validationErrors": "{{count}} validation error(s) found",
     "validationMore": "... and {{count}} more",
-    "validationPassed": "Validation passed — ready to save"
+    "validationPassed": "Validation passed — ready to save",
+    "validationWarnings": "{{count}} idle-mode warning(s) — non-blocking"
   },
   "connection": {
     "disconnect": "Disconnect"
@@ -598,7 +605,10 @@
     "configSection": "Configuration",
     "runtimeSection": "Runtime Status",
     "deleteTitle": "Delete Transport",
-    "deleteConfirm": "Are you sure you want to delete transport \"{{name}}\"? This change will be applied when you save the configuration."
+    "deleteConfirm": "Are you sure you want to delete transport \"{{name}}\"? This change will be applied when you save the configuration.",
+    "deleteDependentRules": "{{count}} rule(s) reference this transport:",
+    "deleteAndMore": "...and {{count}} more",
+    "deleteDependentHint": "These rules will have a dangling target after deletion. Update or remove them before applying."
   },
   "rules": {
     "title": "Rule Pipeline & Routing",
@@ -665,7 +675,14 @@
       "transformExpression": "Transform Expression",
       "transformExpressionPlaceholder": "value * 2 + 1",
       "transformTagRename": "Tag Rename",
-      "transformTagRenamePlaceholder": "new_tag_name"
+      "transformTagRenamePlaceholder": "new_tag_name",
+      "errNameRequired": "Rule name is required",
+      "errMatchRequired": "Match expression is required",
+      "errTargetRequired": "Target transport is required for this action",
+      "errTargetsRequired": "At least one target is required for mirror action",
+      "errExpressionRequired": "Transform expression is required for transform action",
+      "confirmWarning": "This will hot-reload the engine (brief suspension). Review the YAML above before confirming.",
+      "confirmApply": "Confirm & Apply"
     },
     "createRule": "Create Rule",
     "applyChanges": "Apply Changes",
@@ -745,6 +762,7 @@
     "fileLoadFailed": "Failed to read file",
     "validationErrorsTitle": "{{count}} validation error(s) — fix before applying",
     "validationErrorsMore": "... and {{count}} more",
+    "validationWarningsTitle": "{{count}} idle-mode warning(s) — non-blocking, config can still be applied",
     "downloadFileHint": "Export current configuration as a YAML file",
     "exportEmpty": "Configuration is empty, nothing to export",
     "exported": "Configuration exported as YAML file",
@@ -1175,6 +1193,10 @@
     "engineDefaultTagIntervalHelp": "Fallback polling interval for tags without an explicit interval.",
     "engineOnBadQuality": "On Bad Quality",
     "engineOnBadQualityHelp": "Policy for data points with bad quality: publish, drop, mark-and-publish, or alert.",
+    "engineErrorThrottleWindow": "Error Throttle Window",
+    "engineErrorThrottleWindowHelp": "Time window for suppressing repeated error/overrun log messages from the scheduler. Default: 10s.",
+    "engineHighPriorityWorkers": "High-Priority Workers",
+    "engineHighPriorityWorkersHelp": "Dedicated workers for high-frequency data, preventing starvation by bulk reads. Default: 2.",
     "bufferEnabled": "Buffer Enabled",
     "bufferEnabledHelp": "When enabled, data points are persisted to disk when transports are unavailable.",
     "bufferMaxSize": "Max Buffer Size",
