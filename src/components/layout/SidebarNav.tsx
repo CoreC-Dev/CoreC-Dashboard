@@ -1,10 +1,12 @@
 import { ArrowLeft, ChevronLeft, ChevronRight, Globe, Unplug } from 'lucide-react'
 import type React from 'react'
+import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link, NavLink, useNavigate, useParams } from 'react-router-dom'
+import { Link, matchPath, NavLink, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { InstanceSelector } from '@/components/layout/InstanceSelector'
 import { buildAdminItems, buildMonitorItems, type RailItem } from '@/components/layout/navItems'
 import { ThemeSelector } from '@/components/layout/ThemeSelector'
+import { useNavIndicator } from '@/components/layout/useNavIndicator'
 import { setLocale } from '@/i18n'
 import { cn } from '@/lib/cn'
 
@@ -32,6 +34,17 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ collapsed, setCollapsed,
   const monitorItems = buildMonitorItems(base)
   const adminItems = buildAdminItems(base)
 
+  // Sliding active-item indicator: measure the active nav link and overlay a
+  // rounded highlight that slides between items with a small bounce.
+  const { pathname } = useLocation()
+  const navItems = [...monitorItems, ...adminItems]
+  const activeItem = navItems.find((item) => matchPath(item.path, pathname))
+  const activeKey = activeItem?.path
+
+  const navContainerRef = useRef<HTMLDivElement>(null)
+  const itemRefs = useRef<Map<string, HTMLElement>>(new Map())
+  const indicator = useNavIndicator(navContainerRef, itemRefs, activeKey, eff)
+
   const toggleLanguage = () => {
     const nextLang = i18nInst.language.startsWith('zh') ? 'en' : 'zh-CN'
     setLocale(nextLang)
@@ -43,14 +56,18 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ collapsed, setCollapsed,
       <NavLink
         key={item.path}
         to={item.path}
+        ref={(el) => {
+          if (el) itemRefs.current.set(item.path, el)
+          else itemRefs.current.delete(item.path)
+        }}
         className={({ isActive }) =>
           cn(
-            'relative grid place-items-center transition-all duration-200 group',
+            'relative z-10 grid place-items-center transition-all duration-200 group',
             eff
               ? 'w-9 h-9 rounded-full'
               : 'w-full h-11 rounded-lg flex items-center px-2.5 gap-2.5',
             isActive
-              ? 'nav-indicator bg-foreground text-background shadow-md'
+              ? 'text-background'
               : 'text-muted-foreground hover:text-foreground hover:bg-muted hover:translate-x-0.5',
           )
         }
@@ -99,27 +116,32 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ collapsed, setCollapsed,
         )}
       >
         <div
-          className={cn(
-            'bg-card rounded-2xl border border-border/40',
-            eff ? 'p-2 flex flex-col items-center gap-1.5' : 'p-2.5 flex flex-col w-full gap-1',
-          )}
+          className={cn('bg-card rounded-2xl border border-border/40', eff ? 'p-2' : 'p-2.5')}
           style={{ boxShadow: 'var(--shadow-card)' }}
         >
-          {/* Monitor group label */}
-          {renderGroupLabel(t('nav.monitor'))}
+          <div
+            ref={navContainerRef}
+            className={cn('relative flex flex-col', eff ? 'items-center gap-1.5' : 'w-full gap-1')}
+          >
+            {/* Monitor group label */}
+            {renderGroupLabel(t('nav.monitor'))}
 
-          {/* Monitor nav group */}
-          <nav className={cn('flex flex-col w-full', eff ? 'gap-1.5 items-center' : 'gap-1')}>
-            {monitorItems.map(renderItem)}
-          </nav>
+            {/* Monitor nav group */}
+            <nav className={cn('flex flex-col w-full', eff ? 'gap-1.5 items-center' : 'gap-1')}>
+              {monitorItems.map(renderItem)}
+            </nav>
 
-          {/* Admin group label */}
-          {renderGroupLabel(t('nav.admin'))}
+            {/* Admin group label */}
+            {renderGroupLabel(t('nav.admin'))}
 
-          {/* Admin nav group */}
-          <nav className={cn('flex flex-col w-full', eff ? 'gap-1.5 items-center' : 'gap-1')}>
-            {adminItems.map(renderItem)}
-          </nav>
+            {/* Admin nav group */}
+            <nav className={cn('flex flex-col w-full', eff ? 'gap-1.5 items-center' : 'gap-1')}>
+              {adminItems.map(renderItem)}
+            </nav>
+
+            {/* Sliding active-item highlight — measured overlay behind the links */}
+            <div aria-hidden className="z-0 bg-foreground shadow-md" style={indicator.style} />
+          </div>
         </div>
         {/* Floating collapse/expand toggle — at the center height of the nav bubble */}
         {!isMobile && (
