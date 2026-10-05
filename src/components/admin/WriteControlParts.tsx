@@ -10,6 +10,7 @@ import {
   Trash2,
 } from 'lucide-react'
 import type React from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import {
@@ -32,6 +33,71 @@ import {
 import type { DataTypeString } from '@/lib/constants'
 import { DATA_TYPES } from '@/types/config'
 import type { DeadLetterEntry, WriteCommand } from '@/types/models'
+
+// ─── TagCombobox ────────────────────────────────────────────
+
+interface TagComboboxProps {
+  value: string
+  onChange: (v: string) => void
+  availableTags: { name: string; type: string }[]
+  onTypeChange?: (type: string) => void
+  placeholder?: string
+}
+
+/**
+ * Combobox for the Tag field: always editable free-text input with a
+ * dropdown of configured tag suggestions that filters as you type.
+ * Selecting a suggestion auto-fills the data type.
+ */
+const TagCombobox: React.FC<TagComboboxProps> = ({
+  value,
+  onChange,
+  availableTags,
+  onTypeChange,
+  placeholder,
+}) => {
+  const [open, setOpen] = useState(false)
+
+  const filtered = useMemo(() => {
+    if (!value) return availableTags
+    const lower = value.toLowerCase()
+    return availableTags.filter((tg) => tg.name.toLowerCase().includes(lower))
+  }, [availableTags, value])
+
+  return (
+    <div className="relative">
+      <Input
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setTimeout(() => setOpen(false), 150)}
+        required
+        className="h-9 font-mono text-xs"
+      />
+      {open && filtered.length > 0 && (
+        <div className="absolute z-50 left-0 right-0 mt-1 max-h-48 overflow-y-auto rounded-md border border-border bg-popover shadow-md">
+          {filtered.map((tg) => (
+            <button
+              key={tg.name}
+              type="button"
+              onMouseDown={(e) => {
+                e.preventDefault()
+                onChange(tg.name)
+                onTypeChange?.(tg.type)
+                setOpen(false)
+              }}
+              className="flex w-full items-center justify-between px-3 py-1.5 text-xs font-mono hover:bg-accent transition-colors"
+            >
+              <span>{tg.name}</span>
+              <span className="text-muted-foreground ml-2">({tg.type})</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
 // ─── WriteForm ───────────────────────────────────────────────
 
@@ -129,6 +195,9 @@ export const WriteForm: React.FC<WriteFormProps> = ({
                 onChange={(e) => setDevice(e.target.value)}
                 className="h-9 text-xs"
               />
+              <p className="text-[10px] text-muted-foreground leading-tight">
+                {t('write.deviceHint')}
+              </p>
             </div>
           </div>
 
@@ -137,36 +206,13 @@ export const WriteForm: React.FC<WriteFormProps> = ({
               <label className="text-xs font-semibold text-foreground">
                 {t('write.tagName')} *
               </label>
-              {availableTags.length > 0 ? (
-                <Select
-                  value={tag}
-                  onValueChange={(v) => {
-                    setTag(v)
-                    // Auto-set the data type from the tag's configured type.
-                    const selected = availableTags.find((tg) => tg.name === v)
-                    if (selected) setType(selected.type as DataTypeString)
-                  }}
-                >
-                  <SelectTrigger className="font-mono">
-                    <SelectValue placeholder={t('write.selectTag')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableTags.map((tg) => (
-                      <SelectItem key={tg.name} value={tg.name} className="font-mono">
-                        {tg.name} <span className="text-muted-foreground ml-1">({tg.type})</span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <Input
-                  placeholder={t('write.tagPlaceholder')}
-                  value={tag}
-                  onChange={(e) => setTag(e.target.value)}
-                  required
-                  className="h-9 font-mono text-xs"
-                />
-              )}
+              <TagCombobox
+                value={tag}
+                onChange={(v) => setTag(v)}
+                availableTags={availableTags}
+                onTypeChange={(ty) => setType(ty as DataTypeString)}
+                placeholder={t('write.tagPlaceholder')}
+              />
             </div>
 
             <div className="space-y-1.5">

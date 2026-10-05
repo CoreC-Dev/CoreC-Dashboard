@@ -354,6 +354,7 @@
     "selectTag": "选择测点...",
     "deviceOptional": "设备标识 (可选)",
     "devicePlaceholder": "例如 meter-01",
+    "deviceHint": "用于一个驱动连接多台子设备的协议（如 Modbus 网关下挂多个从站），指定写入目标子设备；单设备驱动留空即可",
     "tagPlaceholder": "例如 temperature_setpoint 或 40001",
     "boolPlaceholder": "true / false",
     "valuePlaceholder": "数值或字符串",

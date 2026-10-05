@@ -354,6 +354,7 @@
     "selectTag": "Select tag...",
     "deviceOptional": "Device Identifier (Optional)",
     "devicePlaceholder": "e.g. meter-01",
+    "deviceHint": "For protocols where one driver connects to multiple sub-devices (e.g. Modbus gateway with multiple slaves), specifies the target sub-device; leave empty for single-device drivers",
     "tagPlaceholder": "e.g. temperature_setpoint or 40001",
     "boolPlaceholder": "true / false",
     "valuePlaceholder": "Numeric or string value",
