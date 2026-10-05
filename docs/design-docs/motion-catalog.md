@@ -32,6 +32,8 @@
 | 4 | **向导进度滑动指示器** | `Wizard` 进度头 | `useSlidingIndicator` 在步骤按钮间 spring 滑动活动高亮 |
 | 10 | **向导步骤切换入场** | `Wizard` 步骤体 | `key={current}` 重挂 + `step-enter` 从右淡入（方向感知待后续） |
 | 23 | **探测雷达 ping** | `InstanceCard` 连接态圆点 | `.radar-ping` 自圆点向外扩散+淡出（替代 animate-pulse） |
+| 16 | **菜单项错峰入场** | `ThemeSelector` 下拉 | `.menu-stagger` opt-in，`[role=option]` nth-child 35ms 错峰淡入+上移 |
+| 14 | **YAML diff 行进出** | `ConfigCenterYaml` diff | `.diff-line-add`/`.diff-line-remove` 方向感知横滑+淡入 |
 
 ## 待实施（🟡，按收益/风险排序）
 
@@ -46,7 +48,7 @@
 ### 二、数据实时（监控域）
 
 6. **数值方向性闪烁** — `TagRow` 数值格：变化时按升/降短暂染绿/染红（现仅通用 primary 闪烁），叠加轻微数字 roll。
-7. **Sparkline 描线入场** — `TagRow`/`TagTrendPanel` 迷你曲线：`stroke-dashoffset` 由满到空描出。
+7. **Sparkline 描线入场** — `TagRow`/`TagTrendPanel` 迷你曲线：`stroke-dashoffset` 由满到空描出。（当前无 sparkline 组件，待引入后实施）
 8. **图表路径形变** — `MemoryChart`/`TrafficChart`：切换时间范围时插值/交叉淡化旧→新路径。
 9. **实时点脉冲环** — `TagTrendPanel` 最新数据点：恒定扩散+淡出的脉冲环。
 
@@ -56,12 +58,12 @@
 11. ~~横幅下滑入场~~ ✅
 12. **校验失败抖动** — `ExprValidationMessages`/表单：提交非法时字段/卡片横向往复抖动（spring）。
 13. **成功对勾描线** — `ConfigApplyConfirmationDialog`：应用成功时 SVG 对勾 `stroke-dashoffset` 描出 + 圆 scale。
-14. **YAML diff 行进出** — `ConfigCenterYaml`：新增行绿色右滑入、删除行红色左滑出。
+14. ~~YAML diff 行进出~~ ✅
 
 ### 四、浮层与菜单
 
 15. **Dialog 从触发点缩放** — `dialog`/`sheet`/`alert-dialog`：以触发元素位置为 `transform-origin`，scale+淡入（spring）。
-16. **菜单项错峰入场** — `dropdown-menu`/`select`：展开时每项 ~20ms 间隔淡入+上移。
+16. ~~菜单项错峰入场~~ ✅
 17. **危险操作红色脉冲** — 写控制/删除类 `alert-dialog`：外圈红色 ring 缓慢脉冲。
 18. **Toast 体系** — 当前无 toast：新增自边缘滑入 + 自动消失进度条，用于异步反馈。
 
@@ -78,7 +80,7 @@
 24. **光标视差倾斜** — `InstanceCard` 悬浮：随光标的轻微 3D tilt。
 25. ~~Switch 拨杆回弹~~ ✅
 26. ~~折叠区内容淡入~~ ✅
-27. **复制对勾弹出** — 复制按钮：成功时对勾 scale-pop。
+27. **复制对勾弹出** — 复制按钮：成功时对勾 scale-pop。（当前无复制按钮，待引入后实施）
 28. ~~主题图标形变~~ ✅
 
 ## 实现约定

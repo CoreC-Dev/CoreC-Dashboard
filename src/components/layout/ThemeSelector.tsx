@@ -76,7 +76,7 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ eff }) => {
           )}
         </button>
       </SelectPrimitive.Trigger>
-      <SelectContent side="right" align="start" className="w-40">
+      <SelectContent side="right" align="start" className="w-40 menu-stagger">
         <SelectItem value="system">{t(THEME_I18N_KEYS.system)}</SelectItem>
         {THEME_VARIANTS.map((variant) => (
           <SelectItem key={variant} value={variant}>

@@ -71,9 +71,9 @@ export const DiffPreview: React.FC<{
                       key={`diff-${idx}`}
                       className={`px-3 py-0.5 whitespace-pre-wrap break-all ${
                         line.type === 'added'
-                          ? 'bg-status-running/10 text-status-running'
+                          ? 'bg-status-running/10 text-status-running diff-line-add'
                           : line.type === 'removed'
-                            ? 'bg-status-error/10 text-status-error'
+                            ? 'bg-status-error/10 text-status-error diff-line-remove'
                             : 'text-muted-foreground'
                       }`}
                     >
