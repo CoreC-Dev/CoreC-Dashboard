@@ -2,15 +2,20 @@
 import { act, cleanup, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { useConfigHistory } from '@/hooks/useConfigHistory'
+import { useConfigHistoryStore } from '@/stores/configHistoryStore'
 
 describe('useConfigHistory', () => {
   beforeEach(() => {
     localStorage.clear()
+    // The Zustand store is a module-level singleton; reset its state so each
+    // test starts fresh after localStorage is cleared.
+    useConfigHistoryStore.setState({ history: [] })
   })
 
   afterEach(() => {
     cleanup()
     localStorage.clear()
+    useConfigHistoryStore.setState({ history: [] })
   })
 
   it('starts with empty history when localStorage is empty', () => {
@@ -46,6 +51,7 @@ describe('useConfigHistory', () => {
   it('loads existing history from localStorage on init', () => {
     const existing = [{ timestamp: 1000, yaml: 'old-yaml', action: 'PUT /configs' }]
     localStorage.setItem('corec_config_history', JSON.stringify(existing))
+    useConfigHistoryStore.getState().reset()
     const { result } = renderHook(() => useConfigHistory())
     expect(result.current.history).toHaveLength(1)
     expect(result.current.history[0].yaml).toBe('old-yaml')
@@ -53,6 +59,7 @@ describe('useConfigHistory', () => {
 
   it('tolerates malformed localStorage data', () => {
     localStorage.setItem('corec_config_history', 'not-json')
+    useConfigHistoryStore.getState().reset()
     const { result } = renderHook(() => useConfigHistory())
     expect(result.current.history).toEqual([])
   })
@@ -65,6 +72,7 @@ describe('useConfigHistory', () => {
       null,
     ]
     localStorage.setItem('corec_config_history', JSON.stringify(malformed))
+    useConfigHistoryStore.getState().reset()
     const { result } = renderHook(() => useConfigHistory())
     expect(result.current.history).toHaveLength(1)
     expect(result.current.history[0].yaml).toBe('valid')

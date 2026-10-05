@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useUpdateConfig } from '@/api/hooks'
+import { useConfigHistoryStore } from '@/stores/configHistoryStore'
 
 /**
  * Shared apply-config dialog state for list/detail pages.
@@ -37,6 +38,7 @@ export function useApplyConfig(options: UseApplyConfigOptions) {
     onApplySuccess,
   } = options
   const updateConfig = useUpdateConfig()
+  const addSnapshot = useConfigHistoryStore((s) => s.addSnapshot)
   const [open, setOpen] = useState(false)
   const [applyError, setApplyError] = useState<string | null>(null)
 
@@ -67,6 +69,7 @@ export function useApplyConfig(options: UseApplyConfigOptions) {
         { payload: yaml },
         {
           onSuccess: () => {
+            addSnapshot(yaml)
             markSaved()
             setOpen(false)
             onApplySuccess?.()

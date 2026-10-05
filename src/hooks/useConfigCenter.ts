@@ -130,8 +130,8 @@ export function useConfigCenter() {
   const debouncedYaml = useDebouncedValue(yamlContent, 300)
   const [currentLogLevel, setCurrentLogLevel] = useState<string>('info')
   const { statusMsg, setStatusMsg } = useStatusMessage(STATUS_AUTO_DISMISS_MS)
-  // Change-history state: snapshots persisted to localStorage before every PUT,
-  // plus the last successfully submitted YAML used to render the diff preview.
+  // Change-history state: snapshots persisted to localStorage after every
+  // successful PUT /configs, plus the last submitted YAML for the diff preview.
   const { history, addSnapshot } = useConfigHistory()
   const [lastSubmittedYaml, setLastSubmittedYaml] = useState<string | null>(null)
   const [diffOpen, setDiffOpen] = useState(true)
@@ -304,9 +304,9 @@ export function useConfigCenter() {
   // Confirmed YAML-mode apply: called by the dialog's onConfirm.
   const handleYamlApplyConfirm = async () => {
     setStatusMsg(null)
-    addSnapshot(yamlContent)
     try {
       await updateMutation.mutateAsync({ payload: yamlContent })
+      addSnapshot(yamlContent)
       setLastSubmittedYaml(yamlContent)
       setYamlApplyOpen(false)
       markSaved()

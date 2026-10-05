@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useConfigRaw, useUpdateConfig } from '@/api/hooks'
 import { parseConfigYaml } from '@/lib/configYaml'
+import { useConfigHistoryStore } from '@/stores/configHistoryStore'
 import type { CoreCConfig } from '@/types/config'
 
 /**
@@ -60,6 +61,7 @@ export function useEntityEditConfig<TField extends { key: string }>(
 
   const { t } = useTranslation()
   const updateConfig = useUpdateConfig()
+  const addSnapshot = useConfigHistoryStore((s) => s.addSnapshot)
   const { data: rawYaml } = useConfigRaw()
   const [open, setOpen] = useState(false)
   const [values, setValues] = useState<Record<string, string>>(() => {
@@ -103,6 +105,7 @@ export function useEntityEditConfig<TField extends { key: string }>(
     setStatusMsg(null)
     try {
       await updateConfig.mutateAsync({ payload: applyYaml })
+      addSnapshot(applyYaml)
       setStatusMsg({ type: 'success', text: t(successKey) })
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : ''

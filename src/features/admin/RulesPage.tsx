@@ -44,6 +44,7 @@ import { formatRelativeTime } from '@/lib/formatters'
 import { evaluateMatch, type SimDataPoint } from '@/lib/ruleMatchEvaluator'
 import { buildRuleYaml, type EditFormData } from '@/lib/ruleYaml'
 import { formatNumber, isZeroTime } from '@/lib/utils'
+import { useConfigHistoryStore } from '@/stores/configHistoryStore'
 import { useConfigStore } from '@/stores/configStore'
 import type { RuleConfig } from '@/types/config'
 import type { RuleStat } from '@/types/models'
@@ -52,6 +53,7 @@ export const RulesPage: React.FC = () => {
   const { t } = useTranslation()
   const { data, refetch, isFetching, isLoading, isError, error } = useRules()
   const updateMutation = useUpdateConfig()
+  const addSnapshot = useConfigHistoryStore((s) => s.addSnapshot)
   const queryClient = useQueryClient()
   // Raw config YAML — used to pre-fill transform config for transform rules,
   // since the runtime RuleStat does not include transform fields.
@@ -209,7 +211,9 @@ export const RulesPage: React.FC = () => {
     setEditStatus(null)
     setEditConfirmOpen(false)
     try {
-      await updateMutation.mutateAsync({ payload: buildRuleYaml(editForm) })
+      const yaml = buildRuleYaml(editForm)
+      await updateMutation.mutateAsync({ payload: yaml })
+      addSnapshot(yaml)
       // PUT /configs hot-reloads the config; invalidate the rules list so the
       // table reflects the edited rule immediately rather than on next poll.
       queryClient.invalidateQueries({ queryKey: ['rules'] })
