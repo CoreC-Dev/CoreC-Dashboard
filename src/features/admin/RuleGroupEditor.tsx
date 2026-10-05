@@ -43,6 +43,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -54,6 +55,7 @@ import {
 } from '@/components/ui/select'
 import { ExprValidationMessages } from '@/components/wizard/ExprValidationMessages'
 import { MatchExpressionChips } from '@/components/wizard/MatchExpressionChips'
+import { useTransportNames } from '@/hooks/useConfigValidation'
 import { validateRuleExpression } from '@/lib/ruleExprValidator'
 import { validateTransformExpression } from '@/lib/transformExprValidator'
 import { useConfigStore } from '@/stores/configStore'
@@ -84,6 +86,9 @@ const InlineRuleEditor: React.FC<InlineRuleEditorProps> = ({
 }) => {
   const { t } = useTranslation()
   const [draft, setDraft] = useState<RuleConfig>({ ...rule })
+  // Surface configured transport names so target fields are dropdowns, not
+  // free text — the operator should pick from what's already configured.
+  const transportNames = useTransportNames()
 
   const nameUnique = !existingNames.includes(draft.name.trim()) || !isNew
   const canSave =
@@ -176,12 +181,30 @@ const InlineRuleEditor: React.FC<InlineRuleEditorProps> = ({
       <div className="grid grid-cols-2 gap-2">
         <div className="space-y-1">
           <Label className="text-xs font-medium">{t('ruleGroup.ruleTarget')}</Label>
-          <Input
-            value={draft.target ?? ''}
-            onChange={(e) => setDraft({ ...draft, target: e.target.value || undefined })}
-            placeholder="cloud-mqtt"
-            className="h-7 text-xs font-mono"
-          />
+          {transportNames.length === 0 ? (
+            <Input
+              value={draft.target ?? ''}
+              onChange={(e) => setDraft({ ...draft, target: e.target.value || undefined })}
+              placeholder="cloud-mqtt"
+              className="h-7 text-xs font-mono"
+            />
+          ) : (
+            <Select
+              value={draft.target ?? ''}
+              onValueChange={(v) => setDraft({ ...draft, target: v || undefined })}
+            >
+              <SelectTrigger className="h-7 text-xs font-mono">
+                <SelectValue placeholder={t('common.none')} />
+              </SelectTrigger>
+              <SelectContent>
+                {transportNames.map((name) => (
+                  <SelectItem key={name} value={name} className="text-xs font-mono">
+                    {name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
         <div className="space-y-1">
           <Label className="text-xs font-medium">{t('ruleGroup.rulePriority')}</Label>
@@ -197,18 +220,44 @@ const InlineRuleEditor: React.FC<InlineRuleEditorProps> = ({
       {/* Multi-target (comma-separated) — used by mirror action */}
       <div className="space-y-1">
         <Label className="text-xs font-medium">{t('ruleGroup.ruleTargets')}</Label>
-        <Input
-          value={Array.isArray(draft.targets) ? draft.targets.join(', ') : ''}
-          onChange={(e) => {
-            const targets = e.target.value
-              .split(',')
-              .map((s) => s.trim())
-              .filter(Boolean)
-            setDraft({ ...draft, targets: targets.length > 0 ? targets : undefined })
-          }}
-          placeholder="mqtt-cloud, http-archive"
-          className="h-7 text-xs font-mono"
-        />
+        {transportNames.length === 0 ? (
+          <Input
+            value={Array.isArray(draft.targets) ? draft.targets.join(', ') : ''}
+            onChange={(e) => {
+              const targets = e.target.value
+                .split(',')
+                .map((s) => s.trim())
+                .filter(Boolean)
+              setDraft({ ...draft, targets: targets.length > 0 ? targets : undefined })
+            }}
+            placeholder="mqtt-cloud, http-archive"
+            className="h-7 text-xs font-mono"
+          />
+        ) : (
+          <div className="space-y-0.5 rounded-md border p-1.5 max-h-28 overflow-y-auto">
+            {transportNames.map((name) => {
+              const selected = Array.isArray(draft.targets) && draft.targets.includes(name)
+              return (
+                <label
+                  key={name}
+                  htmlFor={`grp-tgt-${name}`}
+                  className="flex items-center gap-2 cursor-pointer rounded px-1 py-0.5 hover:bg-accent/40"
+                >
+                  <Checkbox
+                    id={`grp-tgt-${name}`}
+                    checked={selected}
+                    onCheckedChange={() => {
+                      const current = Array.isArray(draft.targets) ? draft.targets : []
+                      const next = selected ? current.filter((n) => n !== name) : [...current, name]
+                      setDraft({ ...draft, targets: next.length > 0 ? next : undefined })
+                    }}
+                  />
+                  <span className="text-xs font-mono">{name}</span>
+                </label>
+              )
+            })}
+          </div>
+        )}
         <p className="text-xs text-muted-foreground">{t('ruleGroup.ruleTargetsHelp')}</p>
       </div>
       {/* Transform config — used by transform action */}

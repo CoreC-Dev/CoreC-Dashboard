@@ -4,6 +4,7 @@ import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Dialog,
   DialogContent,
@@ -20,8 +21,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { useTransportNames } from '@/hooks/useConfigValidation'
 import type { SimDataPoint } from '@/lib/ruleMatchEvaluator'
 import { buildRuleYaml, type EditFormData } from '@/lib/ruleYaml'
+import { useConfigStore } from '@/stores/configStore'
 import { DATA_TYPES } from '@/types/config'
 import type { RuleStat } from '@/types/models'
 
@@ -81,12 +84,13 @@ const LabeledSelect: React.FC<{
   value: string
   onChange: (v: string) => void
   options: { value: string; label: string }[]
-}> = ({ label, value, onChange, options }) => (
+  placeholder?: string
+}> = ({ label, value, onChange, options, placeholder }) => (
   <div className="space-y-1.5">
     <label className="text-xs font-semibold text-foreground">{label}</label>
     <Select value={value} onValueChange={onChange}>
       <SelectTrigger className="font-mono">
-        <SelectValue />
+        <SelectValue placeholder={placeholder} />
       </SelectTrigger>
       <SelectContent>
         {options.map((o) => (
@@ -164,6 +168,30 @@ export const RuleTestDialog: React.FC<RuleTestDialogProps> = ({
     [t],
   )
 
+  // Config-driven dropdowns: surface already-configured drivers and their
+  // tags/groups so the operator can pick from a list instead of retyping
+  // names that exist in the config file.
+  const workingConfig = useConfigStore((s) => s.workingConfig)
+  const configDrivers = workingConfig?.drivers ?? []
+  const driverNames = configDrivers.map((d) => d.name).filter(Boolean)
+
+  // Tags belonging to the currently selected driver.
+  const selectedDriverTags = useMemo(() => {
+    const drivers = workingConfig?.drivers ?? []
+    const driver = drivers.find((d) => d.name === testDp.driver)
+    return driver?.tags ?? []
+  }, [workingConfig, testDp.driver])
+  const tagNames = selectedDriverTags.map((tg) => tg.name).filter(Boolean)
+
+  // Unique group names across the selected driver's tags.
+  const groupNames = useMemo(() => {
+    const groups = new Set<string>()
+    for (const tg of selectedDriverTags) {
+      if (tg.group) groups.add(tg.group)
+    }
+    return Array.from(groups).sort()
+  }, [selectedDriverTags])
+
   return (
     <Dialog open={testRule !== null} onOpenChange={(o) => !o && closeTest()}>
       <DialogContent className="max-w-2xl">
@@ -183,30 +211,67 @@ export const RuleTestDialog: React.FC<RuleTestDialogProps> = ({
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <LabeledInput
-              label={t('common.driver')}
-              value={testDp.driver}
-              onChange={(v) => setTestDp({ ...testDp, driver: v })}
-              placeholder={t('rules.phDriver')}
-            />
+            {driverNames.length > 0 ? (
+              <LabeledSelect
+                label={t('common.driver')}
+                value={testDp.driver}
+                onChange={(v) => setTestDp({ ...testDp, driver: v, tag: '', group: '' })}
+                options={driverNames.map((n) => ({ value: n, label: n }))}
+                placeholder={t('common.select')}
+              />
+            ) : (
+              <LabeledInput
+                label={t('common.driver')}
+                value={testDp.driver}
+                onChange={(v) => setTestDp({ ...testDp, driver: v })}
+                placeholder={t('rules.phDriver')}
+              />
+            )}
             <LabeledInput
               label={t('common.device')}
               value={testDp.device}
               onChange={(v) => setTestDp({ ...testDp, device: v })}
               placeholder={t('rules.phDevice')}
             />
-            <LabeledInput
-              label={t('common.group')}
-              value={testDp.group}
-              onChange={(v) => setTestDp({ ...testDp, group: v })}
-              placeholder={t('rules.phGroup')}
-            />
-            <LabeledInput
-              label={t('common.tag')}
-              value={testDp.tag}
-              onChange={(v) => setTestDp({ ...testDp, tag: v })}
-              placeholder={t('rules.phTag')}
-            />
+            {groupNames.length > 0 ? (
+              <LabeledSelect
+                label={t('common.group')}
+                value={testDp.group}
+                onChange={(v) => setTestDp({ ...testDp, group: v })}
+                options={groupNames.map((n) => ({ value: n, label: n }))}
+                placeholder={t('common.none')}
+              />
+            ) : (
+              <LabeledInput
+                label={t('common.group')}
+                value={testDp.group}
+                onChange={(v) => setTestDp({ ...testDp, group: v })}
+                placeholder={t('rules.phGroup')}
+              />
+            )}
+            {tagNames.length > 0 ? (
+              <LabeledSelect
+                label={t('common.tag')}
+                value={testDp.tag}
+                onChange={(v) => {
+                  const selected = selectedDriverTags.find((tg) => tg.name === v)
+                  setTestDp({
+                    ...testDp,
+                    tag: v,
+                    ...(selected?.type ? { type: selected.type } : {}),
+                  })
+                }}
+                options={tagNames.map((n) => ({ value: n, label: n }))}
+                placeholder={t('common.select')}
+              />
+            ) : (
+              <LabeledInput
+                label={t('common.tag')}
+                value={testDp.tag}
+                onChange={(v) => setTestDp({ ...testDp, tag: v })}
+                placeholder={t('rules.phTag')}
+              />
+            )}
             <LabeledInput
               label={t('common.value')}
               value={testDp.value}
@@ -299,6 +364,9 @@ export const RuleEditDialog: React.FC<RuleEditDialogProps> = ({
   setEditConfirmOpen,
 }) => {
   const { t } = useTranslation()
+  // Surface configured transport names so the target field is a dropdown
+  // instead of free text — the operator should pick, not retype.
+  const transportNames = useTransportNames()
 
   return (
     <Dialog open={editRule !== null} onOpenChange={(o) => !o && closeEdit()}>
@@ -352,17 +420,64 @@ export const RuleEditDialog: React.FC<RuleEditDialogProps> = ({
 
             <div className="grid grid-cols-2 gap-3">
               {editForm.action === 'mirror' ? (
-                <LabeledInput
-                  label={t('rules.edit.targets')}
-                  value={editForm.targets}
-                  onChange={(v) => setEditForm({ ...editForm, targets: v })}
-                  placeholder={t('rules.edit.targetsPlaceholder')}
-                />
-              ) : (
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-foreground">
+                    {t('rules.edit.targets')}
+                  </label>
+                  {transportNames.length === 0 ? (
+                    <Input
+                      value={editForm.targets}
+                      onChange={(e) => setEditForm({ ...editForm, targets: e.target.value })}
+                      placeholder={t('rules.edit.targetsPlaceholder')}
+                      className="h-9 text-xs"
+                    />
+                  ) : (
+                    <div className="space-y-1 rounded-md border p-2 max-h-32 overflow-y-auto">
+                      {transportNames.map((name) => {
+                        const selected = editForm.targets
+                          .split(',')
+                          .map((s) => s.trim())
+                          .includes(name)
+                        return (
+                          <label
+                            key={name}
+                            htmlFor={`edit-tgt-${name}`}
+                            className="flex items-center gap-2 cursor-pointer rounded px-1 py-0.5 hover:bg-accent/40"
+                          >
+                            <Checkbox
+                              id={`edit-tgt-${name}`}
+                              checked={selected}
+                              onCheckedChange={() => {
+                                const current = editForm.targets
+                                  .split(',')
+                                  .map((s) => s.trim())
+                                  .filter(Boolean)
+                                const next = selected
+                                  ? current.filter((n) => n !== name)
+                                  : [...current, name]
+                                setEditForm({ ...editForm, targets: next.join(', ') })
+                              }}
+                            />
+                            <span className="text-xs font-mono">{name}</span>
+                          </label>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              ) : transportNames.length === 0 ? (
                 <LabeledInput
                   label={t('rules.edit.target')}
                   value={editForm.target}
                   onChange={(v) => setEditForm({ ...editForm, target: v })}
+                />
+              ) : (
+                <LabeledSelect
+                  label={t('rules.edit.target')}
+                  value={editForm.target}
+                  onChange={(v) => setEditForm({ ...editForm, target: v })}
+                  options={transportNames.map((n) => ({ value: n, label: n }))}
+                  placeholder={t('common.select')}
                 />
               )}
               <div className="space-y-1.5">
