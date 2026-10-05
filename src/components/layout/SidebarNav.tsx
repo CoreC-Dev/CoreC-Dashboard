@@ -36,9 +36,13 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ collapsed, setCollapsed,
 
   // Sliding active-item indicator: measure the active nav link and overlay a
   // rounded highlight that slides between items with a small bounce.
+  // matchPath defaults to end:true (exact), but NavLink defaults to end:false
+  // (prefix) — use end:false here so detail sub-routes (e.g. drivers/:name)
+  // still highlight the parent nav item, keeping the indicator and the text
+  // color in sync.
   const { pathname } = useLocation()
   const navItems = [...monitorItems, ...adminItems]
-  const activeItem = navItems.find((item) => matchPath(item.path, pathname))
+  const activeItem = navItems.find((item) => matchPath({ path: item.path, end: false }, pathname))
   const activeKey = activeItem?.path
 
   const navContainerRef = useRef<HTMLDivElement>(null)
