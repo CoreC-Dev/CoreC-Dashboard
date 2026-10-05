@@ -407,7 +407,7 @@ export const DriverDetailPage: React.FC = () => {
         {yamlOpen && (
           <CardContent>
             {yamlSnippet.trim() ? (
-              <pre className="max-h-96 overflow-auto rounded-lg border border-border bg-status-idle p-3 font-mono text-xs leading-relaxed whitespace-pre-wrap break-all text-status-idle">
+              <pre className="max-h-96 overflow-auto rounded-lg border border-border bg-muted/40 p-3 font-mono text-xs leading-relaxed whitespace-pre-wrap break-all text-foreground">
                 {yamlSnippet}
               </pre>
             ) : (
