@@ -31,6 +31,7 @@
 | 28 | **主题图标形变** | `ThemeSelector` sun/moon | `icon-morph` rotate+scale 入场，与圆形扩散互补 |
 | 4 | **向导进度滑动指示器** | `Wizard` 进度头 | `useSlidingIndicator` 在步骤按钮间 spring 滑动活动高亮 |
 | 10 | **向导步骤切换入场** | `Wizard` 步骤体 | `key={current}` 重挂 + `step-enter` 从右淡入（方向感知待后续） |
+| 23 | **探测雷达 ping** | `InstanceCard` 连接态圆点 | `.radar-ping` 自圆点向外扩散+淡出（替代 animate-pulse） |
 
 ## 待实施（🟡，按收益/风险排序）
 
@@ -73,7 +74,7 @@
 ### 六、首页卡片与微交互
 
 22. **实例增删 FLIP** — `InstancePanel` 网格：新增/删除实例时周围卡片 FLIP 滑入新位。
-23. **探测雷达 ping** — `InstanceCard` 探测中：自卡片中心向外扩散的声纳环。
+23. ~~探测雷达 ping~~ ✅
 24. **光标视差倾斜** — `InstanceCard` 悬浮：随光标的轻微 3D tilt。
 25. ~~Switch 拨杆回弹~~ ✅
 26. ~~折叠区内容淡入~~ ✅

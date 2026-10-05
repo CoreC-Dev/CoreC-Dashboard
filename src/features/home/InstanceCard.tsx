@@ -63,7 +63,7 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
   const statusColor = {
     connected: 'bg-status-running',
     error: 'bg-status-error',
-    connecting: 'bg-status-warning animate-pulse',
+    connecting: 'bg-status-warning',
     unknown: 'bg-status-idle',
   }[status]
 
@@ -155,7 +155,15 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
         <div className="p-4 pb-2">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-2 min-w-0">
-              <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${statusColor}`} />
+              <span className="relative w-2.5 h-2.5 shrink-0">
+                {status === 'connecting' && (
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute inset-0 rounded-full bg-status-warning/40 radar-ping"
+                  />
+                )}
+                <span className={`w-2.5 h-2.5 rounded-full ${statusColor}`} />
+              </span>
               <h3 className="font-semibold text-sm break-words">{instance.name}</h3>
             </div>
             <DropdownMenu>
