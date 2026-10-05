@@ -342,6 +342,7 @@
     "dispatch": "Dispatch Write Command",
     "dispatchDesc": "Direct Southbound control command through CoreC API",
     "selectDriver": "Select target driver...",
+    "selectTag": "Select tag...",
     "deviceOptional": "Device Identifier (Optional)",
     "devicePlaceholder": "e.g. meter-01",
     "tagPlaceholder": "e.g. temperature_setpoint or 40001",

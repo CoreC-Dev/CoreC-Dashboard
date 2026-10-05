@@ -342,6 +342,7 @@
     "dispatch": "下发控制指令",
     "dispatchDesc": "通过 CoreC API 直接下发南向控制指令",
     "selectDriver": "选择目标驱动...",
+    "selectTag": "选择测点...",
     "deviceOptional": "设备标识 (可选)",
     "devicePlaceholder": "例如 meter-01",
     "tagPlaceholder": "例如 temperature_setpoint 或 40001",

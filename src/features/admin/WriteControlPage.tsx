@@ -3,7 +3,7 @@ import type React from 'react'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { extractApiError } from '@/api/client'
-import { ApiError, useDeadLetters, useDrivers, useWriteTag } from '@/api/hooks'
+import { ApiError, useConfigRaw, useDeadLetters, useDrivers, useWriteTag } from '@/api/hooks'
 import { DeadLetterTable, WriteForm } from '@/components/admin/WriteControlParts'
 import {
   AlertDialog,
@@ -26,6 +26,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { useClearedDlqKeys } from '@/hooks/useClearedDlqKeys'
+import { useParsedConfig } from '@/hooks/useParsedConfig'
 import type { DataTypeString } from '@/lib/constants'
 import { validateValue } from '@/lib/writeValidation'
 import type { DeadLetterEntry, WriteCommand } from '@/types/models'
@@ -37,6 +38,8 @@ const dlqKeyOf = (dl: DeadLetterEntry): string =>
 export const WriteControlPage: React.FC = () => {
   const { t } = useTranslation()
   const { data: driversData } = useDrivers()
+  const { data: rawYaml } = useConfigRaw()
+  const parsedConfig = useParsedConfig(rawYaml)
   const {
     data: deadLettersData,
     refetch: refetchDeadLetters,
@@ -63,6 +66,24 @@ export const WriteControlPage: React.FC = () => {
 
   const drivers = driversData?.drivers || []
   const deadLetters = deadLettersData?.failed_writes || []
+
+  // Build a map of driver name → configured tags (name + type) from the
+  // parsed config so the Tag field can be a dropdown instead of free text.
+  const driverTags = useMemo(() => {
+    const map = new Map<string, { name: string; type: string }[]>()
+    if (!parsedConfig?.drivers) return map
+    for (const d of parsedConfig.drivers) {
+      if (!d.name || !d.tags) continue
+      map.set(
+        d.name,
+        d.tags.map((tag) => ({ name: tag.name, type: tag.type })),
+      )
+    }
+    return map
+  }, [parsedConfig])
+
+  // When the selected driver changes, reset the tag so it doesn't dangle.
+  const availableTags = driver ? (driverTags.get(driver) ?? []) : []
 
   // CoreC exposes no DELETE endpoint for dead letters, so "Clear All" is a
   // client-side hide: cleared entry keys are tracked locally and filtered out
@@ -178,11 +199,15 @@ export const WriteControlPage: React.FC = () => {
         <WriteForm
           drivers={drivers}
           driver={driver}
-          setDriver={setDriver}
+          setDriver={(v) => {
+            setDriver(v)
+            setTag('')
+          }}
           device={device}
           setDevice={setDevice}
           tag={tag}
           setTag={setTag}
+          availableTags={availableTags}
           type={type}
           setType={setType}
           value={value}

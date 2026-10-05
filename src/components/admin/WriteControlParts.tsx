@@ -43,6 +43,7 @@ interface WriteFormProps {
   setDevice: (v: string) => void
   tag: string
   setTag: (v: string) => void
+  availableTags: { name: string; type: string }[]
   type: DataTypeString
   setType: (v: DataTypeString) => void
   value: string
@@ -61,6 +62,7 @@ export const WriteForm: React.FC<WriteFormProps> = ({
   setDevice,
   tag,
   setTag,
+  availableTags,
   type,
   setType,
   value,
@@ -135,13 +137,36 @@ export const WriteForm: React.FC<WriteFormProps> = ({
               <label className="text-xs font-semibold text-foreground">
                 {t('write.tagName')} *
               </label>
-              <Input
-                placeholder={t('write.tagPlaceholder')}
-                value={tag}
-                onChange={(e) => setTag(e.target.value)}
-                required
-                className="h-9 font-mono text-xs"
-              />
+              {availableTags.length > 0 ? (
+                <Select
+                  value={tag}
+                  onValueChange={(v) => {
+                    setTag(v)
+                    // Auto-set the data type from the tag's configured type.
+                    const selected = availableTags.find((tg) => tg.name === v)
+                    if (selected) setType(selected.type as DataTypeString)
+                  }}
+                >
+                  <SelectTrigger className="font-mono">
+                    <SelectValue placeholder={t('write.selectTag')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableTags.map((tg) => (
+                      <SelectItem key={tg.name} value={tg.name} className="font-mono">
+                        {tg.name} <span className="text-muted-foreground ml-1">({tg.type})</span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input
+                  placeholder={t('write.tagPlaceholder')}
+                  value={tag}
+                  onChange={(e) => setTag(e.target.value)}
+                  required
+                  className="h-9 font-mono text-xs"
+                />
+              )}
             </div>
 
             <div className="space-y-1.5">
