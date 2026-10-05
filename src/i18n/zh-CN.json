@@ -1129,6 +1129,8 @@
     "nameExists": "已存在同名规则。",
     "matchExpression": "匹配表达式",
     "matchHelp": "字段：driver, device, group, tag, quality, type, value。运算符：==, !=, >, <, >=, <=, contains, =~ (正则), &&, ||, !。使用 \"ALL\" 匹配所有。",
+    "driverChips": "驱动",
+    "tagChips": "测点",
     "priority": "优先级",
     "priorityHelp": "数字越小优先级越高（先评估）。默认：100。",
     "actionForward": "转发",

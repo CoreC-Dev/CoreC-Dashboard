@@ -1129,6 +1129,8 @@
     "nameExists": "A rule with this name already exists.",
     "matchExpression": "Match Expression",
     "matchHelp": "Fields: driver, device, group, tag, quality, type, value. Operators: ==, !=, >, <, >=, <=, contains, =~ (regex), &&, ||, !. Use \"ALL\" to match everything.",
+    "driverChips": "Drivers",
+    "tagChips": "Tags",
     "priority": "Priority",
     "priorityHelp": "Lower number = higher priority (evaluated first). Default: 100.",
     "actionForward": "Forward",

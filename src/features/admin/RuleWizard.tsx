@@ -24,7 +24,6 @@
  *              contains, suffix, prefix, in (range), &&, ||, !
  *   Special: "ALL" matches everything
  */
-import { ArrowRight, GitBranch, Plus, Trash2, Zap } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -40,8 +39,10 @@ import {
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { ExprValidationMessages } from '@/components/wizard/ExprValidationMessages'
+import { MatchExpressionChips } from '@/components/wizard/MatchExpressionChips'
 import { WizardDialog, type WizardStep } from '@/components/wizard/Wizard'
 import { WizardContextValidationBanner } from '@/components/wizard/WizardContextValidationBanner'
+import { ACTION_META, MATCH_TEMPLATES } from '@/features/admin/ruleWizardMeta'
 import { useTransportNames } from '@/hooks/useConfigValidation'
 import { useResetOnOpen } from '@/hooks/useResetOnOpen'
 import { cn } from '@/lib/cn'
@@ -51,65 +52,6 @@ import { validateRuleExpression } from '@/lib/ruleExprValidator'
 import { validateTransformExpression } from '@/lib/transformExprValidator'
 import { useConfigStore } from '@/stores/configStore'
 import type { RuleAction, RuleConfig } from '@/types/config'
-
-// ─── Action metadata ──────────────────────────────────────────────────
-
-interface ActionMeta {
-  action: RuleAction
-  labelKey: string
-  icon: React.ReactNode
-  descKey: string
-  needsTarget: 'single' | 'multi' | 'none' | 'transform'
-}
-
-const ACTION_META: ActionMeta[] = [
-  {
-    action: 'forward',
-    labelKey: 'ruleWizard.actionForward',
-    icon: <ArrowRight className="h-4 w-4" />,
-    descKey: 'ruleWizard.actionForwardDesc',
-    needsTarget: 'single',
-  },
-  {
-    action: 'drop',
-    labelKey: 'ruleWizard.actionDrop',
-    icon: <Trash2 className="h-4 w-4" />,
-    descKey: 'ruleWizard.actionDropDesc',
-    needsTarget: 'none',
-  },
-  {
-    action: 'alert',
-    labelKey: 'ruleWizard.actionAlert',
-    icon: <Zap className="h-4 w-4" />,
-    descKey: 'ruleWizard.actionAlertDesc',
-    needsTarget: 'none',
-  },
-  {
-    action: 'transform',
-    labelKey: 'ruleWizard.actionTransform',
-    icon: <GitBranch className="h-4 w-4" />,
-    descKey: 'ruleWizard.actionTransformDesc',
-    needsTarget: 'transform',
-  },
-  {
-    action: 'mirror',
-    labelKey: 'ruleWizard.actionMirror',
-    icon: <Plus className="h-4 w-4" />,
-    descKey: 'ruleWizard.actionMirrorDesc',
-    needsTarget: 'multi',
-  },
-]
-
-// ─── Match DSL quick templates ────────────────────────────────────────
-
-const MATCH_TEMPLATES: { label: string; value: string }[] = [
-  { label: 'ALL', value: 'ALL' },
-  { label: 'driver == "plc-modbus"', value: 'driver == "plc-modbus"' },
-  { label: 'tag contains "temp"', value: 'tag contains "temp"' },
-  { label: 'value > 90', value: 'value > 90' },
-  { label: 'quality == "good"', value: 'quality == "good"' },
-  { label: 'driver == "x" && value > 50', value: 'driver == "x" && value > 50' },
-]
 
 // ─── Component ───────────────────────────────────────────────────────
 
@@ -285,6 +227,10 @@ export const RuleWizard: React.FC<RuleWizardProps> = ({
               ))}
             </div>
             <p className="text-xs text-muted-foreground">{t('ruleWizard.matchHelp')}</p>
+            {/* Quick-insert chips for configured driver/tag names */}
+            <MatchExpressionChips
+              onInsert={(fragment) => setMatch(match ? `${match} && ${fragment}` : fragment)}
+            />
             {/* Live expression syntax validation */}
             <ExprValidationMessages result={validateRuleExpression(match)} variant="icon" />
           </div>

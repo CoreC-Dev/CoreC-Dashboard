@@ -53,6 +53,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { ExprValidationMessages } from '@/components/wizard/ExprValidationMessages'
+import { MatchExpressionChips } from '@/components/wizard/MatchExpressionChips'
 import { validateRuleExpression } from '@/lib/ruleExprValidator'
 import { validateTransformExpression } from '@/lib/transformExprValidator'
 import { useConfigStore } from '@/stores/configStore'
@@ -145,6 +146,12 @@ const InlineRuleEditor: React.FC<InlineRuleEditorProps> = ({
           className="h-7 text-xs font-mono"
         />
         <p className="text-xs text-muted-foreground">{t('ruleGroup.ruleMatchHelp')}</p>
+        {/* Quick-insert chips for configured driver/tag names */}
+        <MatchExpressionChips
+          onInsert={(fragment) =>
+            setDraft({ ...draft, match: draft.match ? `${draft.match} && ${fragment}` : fragment })
+          }
+        />
         {/* Live expression syntax validation */}
         <ExprValidationMessages result={validateRuleExpression(draft.match)} variant="prefix" />
         {/* SUB-RULE quick-fill: insert a reference to another group */}
