@@ -17,8 +17,9 @@
  */
 import { Check, ChevronLeft, ChevronRight } from 'lucide-react'
 import type React from 'react'
-import { Fragment, useCallback, useMemo } from 'react'
+import { Fragment, useCallback, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useSlidingIndicator } from '@/components/layout/useSlidingIndicator'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -127,6 +128,19 @@ const Wizard: React.FC<WizardProps> = ({
     [allowJumpBack, current, onPrevious],
   )
 
+  // Sliding active-step highlight in the progress header — reuses the shared
+  // indicator hook (also used by the sidebar nav and ModeSwitcher).
+  const progressRef = useRef<HTMLDivElement>(null)
+  const stepBtnRefs = useRef<Map<string, HTMLElement>>(new Map())
+  const registerStepBtn = useCallback(
+    (id: string) => (el: HTMLButtonElement | null) => {
+      if (el) stepBtnRefs.current.set(id, el)
+      else stepBtnRefs.current.delete(id)
+    },
+    [],
+  )
+  const indicatorStyle = useSlidingIndicator(progressRef, stepBtnRefs, String(current))
+
   return (
     <DialogContent
       className={cn('max-w-3xl max-h-[90vh] flex flex-col', className)}
@@ -147,7 +161,12 @@ const Wizard: React.FC<WizardProps> = ({
       </DialogHeader>
 
       {/* Progress header */}
-      <div className="flex items-center gap-1 px-1 overflow-x-auto">
+      <div ref={progressRef} className="relative flex items-center gap-1 px-1 overflow-x-auto">
+        <span
+          aria-hidden
+          className="absolute bg-primary/10 border border-primary/30"
+          style={indicatorStyle.style}
+        />
         {steps.map((s, i) => {
           const done = i < current
           const active = i === current
@@ -155,12 +174,13 @@ const Wizard: React.FC<WizardProps> = ({
           return (
             <Fragment key={s.id}>
               <button
+                ref={registerStepBtn(String(i))}
                 type="button"
                 disabled={!clickable}
                 onClick={() => jumpTo(i)}
                 className={cn(
-                  'flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors whitespace-nowrap',
-                  active && 'bg-primary/10 text-primary border border-primary/30',
+                  'relative flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors whitespace-nowrap',
+                  active && 'text-primary',
                   done && !active && 'text-muted-foreground hover:bg-accent cursor-pointer',
                   !done && !active && 'text-muted-foreground/50',
                   !clickable && 'cursor-default',
@@ -188,10 +208,13 @@ const Wizard: React.FC<WizardProps> = ({
         })}
       </div>
 
-      {/* Step body */}
+      {/* Step body — keyed by step index so it remounts (and plays step-enter)
+          on navigation. */}
       <div className="flex-1 overflow-y-auto px-1 py-2 min-h-[200px]">
-        {step?.subtitle && <p className="text-xs text-muted-foreground mb-3">{step.subtitle}</p>}
-        {step?.render()}
+        <div key={current} className="step-enter">
+          {step?.subtitle && <p className="text-xs text-muted-foreground mb-3">{step.subtitle}</p>}
+          {step?.render()}
+        </div>
       </div>
 
       {/* Optional live preview */}

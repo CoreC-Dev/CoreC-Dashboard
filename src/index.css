@@ -508,6 +508,21 @@ details[open] > .details-reveal {
   animation: icon-morph 0.4s var(--ease-spring) both;
 }
 
+/* Wizard step transition — fade + slide in from the right on step change. */
+@keyframes step-enter {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+.step-enter {
+  animation: step-enter 0.28s var(--ease-smooth) both;
+}
+
 /* Sidebar collapse/expand smooth transition */
 .sidebar-transition {
   transition: width 0.2s ease-out;

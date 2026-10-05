@@ -29,6 +29,8 @@
 | 21 | **顶栏进度条辉光** | `TopProgressBar` | `.progress-bar-fill` box-shadow primary 辉光 |
 | 26 | **折叠区内容淡入** | `Wizard`/`GlobalConfigSections` 的 `<details>` | `details-reveal` 淡入+上移（chevron 旋转已有） |
 | 28 | **主题图标形变** | `ThemeSelector` sun/moon | `icon-morph` rotate+scale 入场，与圆形扩散互补 |
+| 4 | **向导进度滑动指示器** | `Wizard` 进度头 | `useSlidingIndicator` 在步骤按钮间 spring 滑动活动高亮 |
+| 10 | **向导步骤切换入场** | `Wizard` 步骤体 | `key={current}` 重挂 + `step-enter` 从右淡入（方向感知待后续） |
 
 ## 待实施（🟡，按收益/风险排序）
 
@@ -37,7 +39,7 @@
 1. ~~模式切换滑动指示器~~ ✅
 2. **Tab 下划线/胶囊滑动** — 任何 `TabList`（监控子页签等）：单条 underline 用 `--ease-spring` 在 tab 间滑动，复用 `useSlidingIndicator`。（当前无 tabs 原语，待引入 Radix Tabs 后实施）
 3. **排序 FLIP 行重排** — `TagTable`：点列头改排序时行用 FLIP（测旧位→DOM 更新→invert→play `--ease-spring`）滑到新位置。
-4. **向导进度指示器滑动** — `Wizard.tsx`：步骤点间活动环/填充条 spring 滑动并缩放。
+4. ~~向导进度指示器滑动~~ ✅
 5. **筛选/搜索结果集进出** — `TagTable`/`TagExplorerPage`：行集合变化时新增行错峰淡入、移除行淡出收缩（FLIP 或 stagger）。
 
 ### 二、数据实时（监控域）
@@ -49,7 +51,7 @@
 
 ### 三、表单与向导（admin 域）
 
-10. **向导步骤横向滑动** — `Wizard.tsx`：next/back 时步骤内容方向感知地横滑+淡入。
+10. ~~向导步骤横向滑动~~ ✅（从右淡入；方向感知待后续）
 11. ~~横幅下滑入场~~ ✅
 12. **校验失败抖动** — `ExprValidationMessages`/表单：提交非法时字段/卡片横向往复抖动（spring）。
 13. **成功对勾描线** — `ConfigApplyConfirmationDialog`：应用成功时 SVG 对勾 `stroke-dashoffset` 描出 + 圆 scale。
