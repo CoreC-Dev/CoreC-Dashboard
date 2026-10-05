@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { TopicTemplatePreview } from '@/components/wizard/TopicTemplatePreview'
 import type { SettingsField } from '@/lib/settingsRegistry'
 
 export const RegistryFieldGrid: React.FC<{
@@ -163,6 +164,9 @@ const RegistryFieldInput: React.FC<{
       </label>
       {renderControl()}
       {help && <p className="text-xs text-muted-foreground leading-tight">{help}</p>}
+      {field.key === 'topic-template' && (
+        <TopicTemplatePreview value={(value as string) ?? ''} onChange={(v) => onChange(v)} />
+      )}
     </div>
   )
 }

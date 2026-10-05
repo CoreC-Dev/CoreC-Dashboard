@@ -21,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { TopicTemplatePreview } from '@/components/wizard/TopicTemplatePreview'
 import type { EntityEditConfigState } from '@/hooks/useEntityEditConfig'
 import { isZeroTime } from '@/lib/utils'
 
@@ -216,6 +217,12 @@ export const EntityEditConfigCard: React.FC<EntityEditConfigCardProps> = ({
                       placeholder={f.placeholder}
                       onChange={(e) => edit.setField(f.key, e.target.value)}
                       className="h-9 text-xs"
+                    />
+                  )}
+                  {f.key === 'topic-template' && (
+                    <TopicTemplatePreview
+                      value={edit.values[f.key] ?? ''}
+                      onChange={(v) => edit.setField(f.key, v)}
                     />
                   )}
                 </div>
