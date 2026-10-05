@@ -1,5 +1,5 @@
 import { Send } from 'lucide-react'
-import { memo, useEffect, useRef } from 'react'
+import { memo, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -29,14 +29,34 @@ export const TagRow = memo(function TagRow({
 }: TagRowProps) {
   const { t } = useTranslation()
   const overlayRef = useRef<HTMLDivElement>(null)
+  // Last numeric value seen at a flash — used to tint the flash green (rise)
+  // or red (fall). Updated inside the flashTick effect so it stays in sync
+  // with the WAAPI replay. Ref (not state) to avoid extra re-renders.
+  const lastValueRef = useRef<number | null>(null)
+  const [flashDir, setFlashDir] = useState<'up' | 'down' | 'none'>('none')
 
-  // Replay a 1s primary-tint flash whenever this row receives a fresh WS
-  // update. WAAPI animates only opacity, so the tint color comes from the
-  // `bg-primary/10` Tailwind class and stays theme-aware.
+  // Replay a 1s tint flash whenever this row receives a fresh WS update.
+  // Direction (green rise / red fall) is derived from the numeric value
+  // delta; non-numeric or unchanged values fall back to the primary tint.
+  // WAAPI animates only opacity — the tint comes from the overlay class.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: point.value is coupled to flashTick (WS updates drive both); recompute only on flashTick.
   useEffect(() => {
     if (flashTick <= 0) return
     const el = overlayRef.current
     if (!el) return
+    const num =
+      typeof point.value === 'number'
+        ? point.value
+        : typeof point.value === 'boolean'
+          ? point.value
+            ? 1
+            : 0
+          : null
+    const prev = lastValueRef.current
+    setFlashDir(
+      num !== null && prev !== null && num !== prev ? (num > prev ? 'up' : 'down') : 'none',
+    )
+    lastValueRef.current = num
     const anim = el.animate([{ opacity: 1 }, { opacity: 0 }], {
       duration: 1000,
       easing: 'ease-out',
@@ -134,7 +154,14 @@ export const TagRow = memo(function TagRow({
         <div
           ref={overlayRef}
           aria-hidden
-          className="pointer-events-none absolute inset-0 bg-primary/10"
+          className={cn(
+            'pointer-events-none absolute inset-0',
+            flashDir === 'up'
+              ? 'bg-status-running/10'
+              : flashDir === 'down'
+                ? 'bg-status-error/10'
+                : 'bg-primary/10',
+          )}
         />
       )}
     </tr>

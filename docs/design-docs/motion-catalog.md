@@ -34,6 +34,7 @@
 | 23 | **探测雷达 ping** | `InstanceCard` 连接态圆点 | `.radar-ping` 自圆点向外扩散+淡出（替代 animate-pulse） |
 | 16 | **菜单项错峰入场** | `ThemeSelector` 下拉 | `.menu-stagger` opt-in，`[role=option]` nth-child 35ms 错峰淡入+上移 |
 | 14 | **YAML diff 行进出** | `ConfigCenterYaml` diff | `.diff-line-add`/`.diff-line-remove` 方向感知横滑+淡入 |
+| 6 | **数值方向性闪烁** | `TagRow` 数值格 | `lastValueRef` 比对前值，overlay 按升/降染 `bg-status-running`/`bg-status-error` |
 
 ## 待实施（🟡，按收益/风险排序）
 
@@ -47,16 +48,16 @@
 
 ### 二、数据实时（监控域）
 
-6. **数值方向性闪烁** — `TagRow` 数值格：变化时按升/降短暂染绿/染红（现仅通用 primary 闪烁），叠加轻微数字 roll。
+6. ~~数值方向性闪烁~~ ✅（升染绿/降染红；数字 roll 待后续）
 7. **Sparkline 描线入场** — `TagRow`/`TagTrendPanel` 迷你曲线：`stroke-dashoffset` 由满到空描出。（当前无 sparkline 组件，待引入后实施）
 8. **图表路径形变** — `MemoryChart`/`TrafficChart`：切换时间范围时插值/交叉淡化旧→新路径。
-9. **实时点脉冲环** — `TagTrendPanel` 最新数据点：恒定扩散+淡出的脉冲环。
+9. **实时点脉冲环** — `TagTrendPanel` 最新数据点：恒定扩散+淡出的脉冲环。（`TagTrendPanel` 为 canvas 渲染，无 HTML/SVG 锚点，待图表层支持后实施）
 
 ### 三、表单与向导（admin 域）
 
 10. ~~向导步骤横向滑动~~ ✅（从右淡入；方向感知待后续）
 11. ~~横幅下滑入场~~ ✅
-12. **校验失败抖动** — `ExprValidationMessages`/表单：提交非法时字段/卡片横向往复抖动（spring）。
+12. **校验失败抖动** — `ExprValidationMessages`/表单：提交非法时字段/卡片横向往复抖动（spring）。（当前校验门禁提交——非法时按钮禁用而非提交后抖动，无触发点）
 13. **成功对勾描线** — `ConfigApplyConfirmationDialog`：应用成功时 SVG 对勾 `stroke-dashoffset` 描出 + 圆 scale。
 14. ~~YAML diff 行进出~~ ✅
 
@@ -70,7 +71,7 @@
 ### 五、状态与加载
 
 19. **连接态图标形变** — `InstanceSelector`/`AppShell` 徽章：离线→在线时图标旋转/淡出淡入 + 颜色交叉淡化。
-20. **按钮成功态形变** — 异步动作按钮（应用配置、写入）：成功瞬间 label 形变为对勾再恢复。
+20. **按钮成功态形变** — 异步动作按钮（应用配置、写入）：成功瞬间 label 形变为对勾再恢复。（当前成功即关闭弹窗，无残留成功态可形变）
 21. ~~顶栏进度条拖尾光~~ ✅
 
 ### 六、首页卡片与微交互
