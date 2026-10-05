@@ -49,7 +49,7 @@ interface TagComboboxProps {
  * dropdown of configured tag suggestions that filters as you type.
  * Selecting a suggestion auto-fills the data type.
  */
-const TagCombobox: React.FC<TagComboboxProps> = ({
+export const TagCombobox: React.FC<TagComboboxProps> = ({
   value,
   onChange,
   availableTags,
