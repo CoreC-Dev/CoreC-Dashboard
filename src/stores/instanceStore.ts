@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { create } from 'zustand'
-import { safePersist, safePersistSession, safeReadSession } from '@/lib/storage'
+import { safePersist, safeRead } from '@/lib/storage'
 
 import type { CoreCInstance } from '@/types/models'
 
@@ -69,11 +69,9 @@ interface InstanceState {
 
 const STORAGE_KEY = 'corec_instances'
 /**
- * Secrets are stored in sessionStorage (per-tab, cleared on tab close)
- * instead of localStorage, so an XSS attack cannot harvest persisted
- * API credentials across browser sessions. The non-sensitive instance
- * metadata (name, baseUrl, color, etc.) remains in localStorage for
- * persistence across sessions; only the secret is ephemeral.
+ * Secrets are stored in localStorage alongside instance metadata so
+ * API keys persist across tabs and browser sessions. The operator
+ * explicitly opted into this convenience; clearAll() removes both.
  */
 const SECRETS_STORAGE_KEY = 'corec_instance_secrets'
 
@@ -103,10 +101,10 @@ function loadInstances(): CoreCInstance[] {
   return []
 }
 
-/** Load the id→secret map from sessionStorage. */
+/** Load the id→secret map from localStorage. */
 function loadSecrets(): Record<string, string> {
   try {
-    const raw = safeReadSession(SECRETS_STORAGE_KEY)
+    const raw = safeRead(SECRETS_STORAGE_KEY)
     if (raw) {
       const parsed = JSON.parse(raw)
       if (parsed && typeof parsed === 'object') return parsed
@@ -121,14 +119,14 @@ function persistInstances(instances: CoreCInstance[]): void {
   // Store non-sensitive metadata in localStorage (persistent).
   const safeInstances = instances.map((i) => stripSecret(i))
   safePersist(STORAGE_KEY, JSON.stringify(safeInstances))
-  // Store secrets in sessionStorage (ephemeral, per-tab).
+  // Store secrets in localStorage (persist across tabs and sessions).
   const secrets: Record<string, string> = {}
   for (const inst of instances) {
     if (inst.secret) {
       secrets[inst.id] = inst.secret
     }
   }
-  safePersistSession(SECRETS_STORAGE_KEY, JSON.stringify(secrets))
+  safePersist(SECRETS_STORAGE_KEY, JSON.stringify(secrets))
 }
 
 function generateId(): string {

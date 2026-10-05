@@ -38,35 +38,36 @@ beforeEach(() => {
   useInstanceStore.setState({ instances: [], probing: {}, probeErrors: {} })
 })
 
-describe('instanceStore — secret isolation', () => {
-  it('stores secrets in sessionStorage, never in localStorage', () => {
+describe('instanceStore — secret persistence', () => {
+  it('stores secrets in localStorage, stripped from the metadata entry', () => {
     const id = useInstanceStore.getState().addInstance(newInstanceData({ name: 'gw-1' }))
 
     const localRaw = localStorage.getItem(STORAGE_KEY)
-    const sessionRaw = sessionStorage.getItem(SECRETS_STORAGE_KEY)
+    const secretsRaw = localStorage.getItem(SECRETS_STORAGE_KEY)
     expect(localRaw).toBeTruthy()
-    expect(sessionRaw).toBeTruthy()
+    expect(secretsRaw).toBeTruthy()
 
     const localParsed = JSON.parse(localRaw as string) as Array<Record<string, unknown>>
-    const sessionParsed = JSON.parse(sessionRaw as string) as Record<string, string>
+    const secretsParsed = JSON.parse(secretsRaw as string) as Record<string, string>
 
     // Metadata persisted to localStorage, but the secret is stripped.
     expect(Array.isArray(localParsed)).toBe(true)
     expect(localParsed[0].id).toBe(id)
     expect(localParsed[0].secret).toBeUndefined()
 
-    // Secret persisted to sessionStorage keyed by instance id.
-    expect(sessionParsed[id]).toBe('secret-token')
+    // Secret persisted to localStorage keyed by instance id.
+    expect(secretsParsed[id]).toBe('secret-token')
   })
 
-  it('omits empty secrets from the sessionStorage map', () => {
+  it('omits empty secrets from the localStorage secrets map', () => {
     const id = useInstanceStore
       .getState()
       .addInstance(newInstanceData({ name: 'no-secret', secret: '' }))
-    const sessionParsed = JSON.parse(
-      sessionStorage.getItem(SECRETS_STORAGE_KEY) as string,
-    ) as Record<string, string>
-    expect(sessionParsed[id]).toBeUndefined()
+    const secretsParsed = JSON.parse(localStorage.getItem(SECRETS_STORAGE_KEY) as string) as Record<
+      string,
+      string
+    >
+    expect(secretsParsed[id]).toBeUndefined()
   })
 })
 
@@ -273,7 +274,7 @@ describe('instanceStore — clearAll', () => {
     useInstanceStore.getState().addInstance(newInstanceData({ name: 'a', secret: 's1' }))
     useInstanceStore.getState().addInstance(newInstanceData({ name: 'b', secret: 's2' }))
     expect(localStorage.getItem(STORAGE_KEY)).toBeTruthy()
-    expect(sessionStorage.getItem(SECRETS_STORAGE_KEY)).toBeTruthy()
+    expect(localStorage.getItem(SECRETS_STORAGE_KEY)).toBeTruthy()
 
     useInstanceStore.getState().clearAll()
 
@@ -283,8 +284,8 @@ describe('instanceStore — clearAll', () => {
 
     const localParsed = JSON.parse(localStorage.getItem(STORAGE_KEY) as string)
     expect(localParsed).toEqual([])
-    const sessionParsed = JSON.parse(sessionStorage.getItem(SECRETS_STORAGE_KEY) as string)
-    expect(sessionParsed).toEqual({})
+    const secretsParsed = JSON.parse(localStorage.getItem(SECRETS_STORAGE_KEY) as string)
+    expect(secretsParsed).toEqual({})
   })
 })
 
@@ -340,8 +341,8 @@ describe('instanceStore — loadInstances resilience', () => {
     expect(freshStore.getState().instances).toEqual([])
   })
 
-  it('merges secrets back from sessionStorage on load', async () => {
-    // Seed metadata (no secret) in localStorage and a secret map in sessionStorage,
+  it('merges secrets back from localStorage on load', async () => {
+    // Seed metadata (no secret) and a secret map in localStorage,
     // then reload the module so loadInstances() re-runs.
     const id = 'persisted-id'
     localStorage.setItem(
@@ -356,7 +357,7 @@ describe('instanceStore — loadInstances resilience', () => {
         },
       ]),
     )
-    sessionStorage.setItem(SECRETS_STORAGE_KEY, JSON.stringify({ [id]: 'restored-secret' }))
+    localStorage.setItem(SECRETS_STORAGE_KEY, JSON.stringify({ [id]: 'restored-secret' }))
     vi.resetModules()
     const { useInstanceStore: freshStore } = await import('@/stores/instanceStore')
     const instances = freshStore.getState().instances
