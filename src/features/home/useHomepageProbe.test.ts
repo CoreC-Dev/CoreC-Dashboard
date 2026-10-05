@@ -13,7 +13,7 @@ const INFO_URL = '/corec-proxy/'
 const STATS_URL = '/corec-proxy/stats'
 const TAGS_URL = '/corec-proxy/tags'
 const RULES_URL = '/corec-proxy/rules'
-const RAW_CFG_URL = '/corec-proxy/configs/raw'
+const RAW_CFG_URL = '/corec-proxy/configs/raw?reveal=true'
 
 function makeInstance(overrides: Partial<CoreCInstance> = {}): CoreCInstance {
   return {

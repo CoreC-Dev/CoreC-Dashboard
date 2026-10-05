@@ -95,7 +95,7 @@ async function probeInstance(
     fetchWithTimeout(`${urlPrefix}/stats`, { headers }, REQUEST_TIMEOUT, signal),
     fetchWithTimeout(`${urlPrefix}/tags`, { headers }, REQUEST_TIMEOUT, signal),
     fetchWithTimeout(`${urlPrefix}/rules`, { headers }, REQUEST_TIMEOUT, signal),
-    fetchWithTimeout(`${urlPrefix}/configs/raw`, { headers }, REQUEST_TIMEOUT, signal),
+    fetchWithTimeout(`${urlPrefix}/configs/raw?reveal=true`, { headers }, REQUEST_TIMEOUT, signal),
   ])
 
   // GET / must succeed — otherwise the instance is unreachable

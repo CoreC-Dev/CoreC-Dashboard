@@ -42,7 +42,7 @@ export const patchConfigs = (data: { 'log-level'?: string }) =>
 // no apply) so the operator can see whether a config is acceptable BEFORE
 // committing it. Returns { valid: true } or { valid: false, error: string }.
 export const getConfigsRaw = () =>
-  apiRequest<string>('/configs/raw', {
+  apiRequest<string>('/configs/raw?reveal=true', {
     headers: { Accept: 'application/yaml' },
   })
 
