@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type React from 'react'
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { setActiveConnection } from '@/api/activeConnection'
 import { getServerInfo } from '@/api/endpoints'
 import { useConfigStore } from '@/stores/configStore'
@@ -37,6 +37,10 @@ export function useConnection(): ConnectionContextValue {
 // Per-instance QueryClient cache. Keyed by instance ID so switching instances
 // gives a fresh cache and switching back restores the previous one.
 const queryClientCache = new Map<string, QueryClient>()
+
+// Track the last instance whose config store was reset, so navigating away
+// and returning to the same instance preserves in-progress edits.
+let lastResetInstanceId: string | null = null
 
 function getQueryClient(instanceId: string): QueryClient {
   let client = queryClientCache.get(instanceId)
@@ -89,16 +93,26 @@ export const ConnectionProvider: React.FC<{
 
   const queryClient = useMemo(() => getQueryClient(instanceId), [instanceId])
 
-  // Keep a ref to the current baseUrl+secret so the effect can detect changes.
-  const connRef = useRef({ baseUrl: instance?.baseUrl, secret: instance?.secret })
+  // Evict the per-instance QueryClient from the module-level cache when the
+  // provider unmounts, so deleted/removed instances don't leak QueryClient
+  // objects (each holds cached query data) indefinitely.
+  useEffect(() => {
+    return () => {
+      queryClientCache.delete(instanceId)
+    }
+  }, [instanceId])
 
   // Reset the config working-copy store when the active instance changes so a
   // stale dirty working config from the previous instance's admin pages doesn't
-  // leak into the new one. Keyed on instanceId only — must NOT fire on probe
-  // updates or within-instance navigation, which would wipe in-progress edits.
+  // leak into the new one. Track the last-reset instanceId at module scope so
+  // leaving and returning to the same instance preserves in-progress edits
+  // (the provider unmounts/remounts on navigation, but the store is module-level).
   // biome-ignore lint/correctness/useExhaustiveDependencies: instanceId is an intentional trigger — reset the store only when the instance actually changes, not a value read in the body.
   useEffect(() => {
-    useConfigStore.getState().reset()
+    if (lastResetInstanceId !== instanceId) {
+      useConfigStore.getState().reset()
+      lastResetInstanceId = instanceId
+    }
   }, [instanceId])
 
   // Set the active connection whenever the instance changes.
@@ -110,7 +124,6 @@ export const ConnectionProvider: React.FC<{
         secret: instance.secret,
         useProxy: instance.useProxy,
       })
-      connRef.current = { baseUrl: instance.baseUrl, secret: instance.secret }
     } else {
       setActiveConnection(null)
     }
@@ -141,7 +154,7 @@ export const ConnectionProvider: React.FC<{
     setIsConnecting(true)
     setProbing(instanceId, true)
 
-    getServerInfo()
+    getServerInfo({ signal: ctrl.signal })
       .then((info) => {
         if (cancelled) return
         setIsConnected(true)
