@@ -352,6 +352,7 @@
     "errBoolInvalid": "布尔值必须为 true、false、0 或 1",
     "errNotNumber": "值 \"{{raw}}\" 不是类型 {{dt}} 的有效数字",
     "errNotFinite": "值必须有限（不允许 Infinity）",
+    "errNotInteger": "值 \"{{raw}}\" 必须是整数，类型 {{dt}} 不接受小数",
     "errOutOfRange": "值 {{n}} 超出 {{dt}} 的范围（有效范围：{{min}} 到 {{max}}）",
     "clearAll": "全部清除",
     "clearAllConfirm": "确定要清除所有死信吗？",

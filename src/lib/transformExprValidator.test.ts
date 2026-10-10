@@ -105,6 +105,14 @@ describe('validateTransformExpression', () => {
     expect(r.errors.some((e) => e.includes('consecutive'))).toBe(true)
   })
 
+  // FL-1: binary operator followed by unary minus is valid (e.g. "value * -3")
+  it('accepts binary operator followed by unary minus', () => {
+    expect(validateTransformExpression('value * -3').valid).toBe(true)
+    expect(validateTransformExpression('value + -2').valid).toBe(true)
+    expect(validateTransformExpression('value - -1').valid).toBe(true)
+    expect(validateTransformExpression('value / -4').valid).toBe(true)
+  })
+
   it('rejects invalid characters', () => {
     const r = validateTransformExpression('value & 1')
     expect(r.valid).toBe(false)

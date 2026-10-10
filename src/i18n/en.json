@@ -352,6 +352,7 @@
     "errBoolInvalid": "Boolean value must be true, false, 0, or 1",
     "errNotNumber": "Value \"{{raw}}\" is not a valid number for type {{dt}}",
     "errNotFinite": "Value must be finite (Infinity is not allowed)",
+    "errNotInteger": "Value \"{{raw}}\" must be a whole number for integer type {{dt}}",
     "errOutOfRange": "Value {{n}} is out of range for {{dt}} (valid: {{min}} to {{max}})",
     "clearAll": "Clear All",
     "clearAllConfirm": "Are you sure you want to clear all dead letters?",

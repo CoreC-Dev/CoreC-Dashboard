@@ -66,10 +66,14 @@ describe('validateValue — int8 (-128..127)', () => {
     })
   })
 
-  // Notable: int types only range-check, they do NOT enforce integer-ness —
-  // a fractional value inside the range is accepted.
-  it('accepts a fractional value inside the range (10.5)', () => {
-    expect(validateValue('10.5', 'int8', t)).toBeNull()
+  // FL-4: int types now enforce integer-ness — a fractional value
+  // inside the range is rejected with errNotInteger.
+  it('rejects a fractional value inside the range (10.5)', () => {
+    validateValue('10.5', 'int8', t)
+    expect(tMock).toHaveBeenCalledWith('write.errNotInteger', {
+      raw: '10.5',
+      dt: 'int8',
+    })
   })
 
   // Notable: Number() parses hex literals, so "0x10" → 16 passes validation.

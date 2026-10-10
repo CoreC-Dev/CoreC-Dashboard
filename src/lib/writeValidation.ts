@@ -47,6 +47,12 @@ export const validateValue = (raw: string, dt: DataTypeString, t: TFunction): st
     if (!Number.isFinite(n)) {
       return t('write.errNotFinite')
     }
+    // Integer types must be whole numbers — a fractional value like 10.5
+    // for int8 passes the range check but would write a float to a physical
+    // actuator expecting an integer.
+    if ((dt.startsWith('int') || dt.startsWith('uint')) && !Number.isInteger(n)) {
+      return t('write.errNotInteger', { raw, dt })
+    }
     const range = NUMERIC_RANGES[dt]
     if (range && (n < range[0] || n > range[1])) {
       return t('write.errOutOfRange', { n, dt, min: range[0], max: range[1] })
