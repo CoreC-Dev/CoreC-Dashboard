@@ -312,9 +312,24 @@ function proxyDynamicUpgrade(req, socket, head) {
     return
   }
 
-  // Reconstruct the target path with query string (minus the `target` param).
+  // Reconstruct the target path with query string. The browser sets `token`
+  // and stream params (interval, tag, etc.) on the proxy URL — NOT inside the
+  // `target` param. We must forward them to the backend so WS auth and stream
+  // configuration work. Build the final path from the target's own search
+  // params plus all proxy-level params except `target`.
   const targetUrl = new URL(rawTarget)
-  const targetPath = targetUrl.pathname + (targetUrl.search || '')
+  const finalUrl = new URL(targetUrl.pathname, 'http://placeholder')
+  // Copy the target's own search params (if any).
+  for (const [k, v] of targetUrl.searchParams) {
+    finalUrl.searchParams.set(k, v)
+  }
+  // Forward proxy-level params (token, interval, tag, etc.) — skip `target`.
+  for (const [k, v] of urlObj.searchParams) {
+    if (k !== 'target') {
+      finalUrl.searchParams.set(k, v)
+    }
+  }
+  const targetPath = finalUrl.pathname + (finalUrl.search || '')
 
   const fwdHeaders = { ...req.headers }
   fwdHeaders.host = target.host
