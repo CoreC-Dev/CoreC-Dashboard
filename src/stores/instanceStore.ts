@@ -237,7 +237,8 @@ export const useInstanceStore = create<InstanceState>((set, get) => ({
         continue
       }
       const inst = parsed.data
-      // Skip duplicates by id or name
+      // Skip duplicates by id or name (check both pre-existing and
+      // already-added-from-this-payload entries to catch intra-payload dups)
       if (existingIds.has(inst.id) || existingNames.has(inst.name)) {
         skipped++
         continue
@@ -254,6 +255,9 @@ export const useInstanceStore = create<InstanceState>((set, get) => ({
         createdAt: inst.createdAt ?? new Date().toISOString(),
         sortOrder: inst.sortOrder ?? maxSort + 1,
       })
+      // Track newly added so subsequent payload items can't duplicate them.
+      existingIds.add(inst.id)
+      existingNames.add(inst.name)
       added++
     }
 
