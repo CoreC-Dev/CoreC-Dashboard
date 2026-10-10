@@ -104,6 +104,11 @@ async function probeInstance(
   }
 
   const info = await infoRes.value.json()
+  // Guard against non-object responses (e.g., plain string, number, null)
+  // which would cause TypeError on property access.
+  if (typeof info !== 'object' || info === null) {
+    throw new Error('Invalid server response')
+  }
   const result: CoreCInstance['lastKnownInfo'] = {
     name: info.name,
     version: info.version,

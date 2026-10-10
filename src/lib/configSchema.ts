@@ -276,6 +276,13 @@ const ruleConfigSchema = z
         message: 'mirror action requires at least one target in targets[]',
       })
     }
+    if (r.action === 'forward' && !r.target) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['target'],
+        message: 'forward action requires a target transport name',
+      })
+    }
   })
 
 const ruleProviderConfigSchema = z
