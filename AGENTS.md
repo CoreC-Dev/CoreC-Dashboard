@@ -29,7 +29,7 @@ src/
   lib/        纯函数：常量、工具、YAML、校验、连接摘要、模板
   api/        HTTP client、WebSocket、endpoints、react-query hooks
   stores/     Zustand：config / instance / config-history
-  hooks/      通用 hooks（useCountUp、useDebouncedValue、useConfigValidation…）
+  hooks/      通用 hooks（useDebouncedValue、useConfigValidation…）
   contexts/   ConnectionContext（连接探测与全局状态）
   components/ ui/（Radix 原语）+ layout + admin + charts 共享组件
   features/   admin / monitor / home / settings —— 按业务域切分
@@ -57,4 +57,3 @@ src/
 - 提交粒度单一职责（Conventional Commits）；改造仅落 `harnessing` 分支
 - 计划写在 `docs/exec-plans/active/`，完成后移入 `completed/`
 - 任何交互式决策确认后必须写入仓库文档（见 `docs/design-docs/architecture-decisions.md`）
-- 改造规则母本（已竣工归档）：`docs/exec-plans/completed/harness-2026-10-03.md`

@@ -21,14 +21,6 @@
 |---|---|---|---|---|
 | `.github/workflows/deploy.yml` | `push` 到 `main` + `workflow_dispatch` | `ubuntu-latest`（仅构建，非多平台打包） | 是（构建后部署到 GitHub Pages） | 单 `build` job 依次执行 `npm ci` → `npm run lint` → `npm run build` → `npm test` → 上传 Pages 产物；`deploy` job 部署。Node 24，`cache: npm`。 |
 
-**关键观察（Phase 1 审计，详见 `tech-debt-tracker.md`）**：
-
-1. **质量门禁只在部署时跑**：lint / build / test 三件套仅存在于 `deploy.yml` 的 `build` job 中，触发条件是 `push` 到 `main`。**PR、`harnessing` 分支或其他分支推送不会触发任何自动化质量校验**——缺陷只能在合入主干部署时才暴露。
-2. **双 lockfile**：仓库同时存在 `package-lock.json`（npm，178KB）与 `pnpm-lock.yaml`（pnpm，133KB）。CI 使用 `npm ci`（依赖 `package-lock.json`）。两份 lockfile 可能漂移，权威来源不明确。
-3. **无覆盖率门禁**：无 vitest 配置文件、无 `coverage` 配置，测试覆盖率既不测量也不拦截。
-4. **无 pre-commit / pre-push hook**：`.husky`、`lefthook.yml`、`.pre-commit-config.yaml` 均不存在；`.git/hooks` 仅有 sample。本地提交前无任何自动校验。
-5. **无独立 `ci.yml`**：质量校验与发布耦合在同一 workflow，无法在 PR 阶段单独跑质量门禁。
-
 ## 3. 交互确认记录（仅 Tauri 填写）
 
 > **不适用**。本项目框架判定为「其他」（§3.2），按 §3.4 跳过 §3.3 的三步交互询问（是否生成 GitHub CI / 目标平台多选 / Release 发布方式）。**不生成 `.github/workflows/` 的打包发布流水线。**
@@ -38,13 +30,13 @@
 ## 4. 落地说明（Phase 3 执行，此处先记录决定）
 
 - **框架判定**：其他 → 仅建基础门禁（lint / type-check / build / test / 依赖扫描），**不建**多平台打包与 Release 流水线。
-- **计划新增**（Phase 3）：
-  - `.github/workflows/ci.yml`：在 PR 与所有分支推送时触发，独立运行 lint + type-check + build + test + 覆盖率门禁，与 `deploy.yml` 解耦。
-  - `deploy.yml`：保留发布职责，但将其中的质量校验改为 `needs: ci` 依赖（或直接复用 ci.yml 的产物），避免重复编译；具体改造在 Phase 3 确定。
+- **已落地**（Phase 3 完成）：
+  - `.github/workflows/ci.yml`：PR 与所有分支推送时触发，独立运行 lint + type-check + build + test + 覆盖率门禁，与 `deploy.yml` 解耦。
+  - `deploy.yml`：保留发布职责，质量校验复用 ci.yml（`workflow_call`）。
   - pre-commit hook（lint-staged / biome check on staged files）+ commit-msg hook（Conventional Commits 校验）。
   - 覆盖率配置（vitest `coverage`，整体下限 + 关键模块下限）。
-- **lockfile 治理**（Phase 3 决策项）：在 npm 与 pnpm 之间确定唯一权威 lockfile，删除另一份并在 `docs/CI.md` 记录决定；CI 与本地命令统一。**此决策需在 Phase 3 落地前确认。**
-- **与现有配置的关系**：改造（非重建）。`deploy.yml` 的发布链路（GitHub Pages、custom domain、CNAME）经验证有效，保留；仅解耦质量校验并补齐 PR 门禁。
+  - lockfile 治理：已确定 npm（`package-lock.json`）为唯一权威 lockfile，`pnpm-lock.yaml` 已删除。
+- **与现有配置的关系**：改造（非重建）。`deploy.yml` 的发布链路（GitHub Pages、custom domain、CNAME）经验证有效，保留；质量校验已解耦并补齐 PR 门禁。
 
 ## 5. 变更历史
 

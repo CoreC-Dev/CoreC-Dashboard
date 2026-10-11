@@ -25,13 +25,13 @@ npm test                  # vitest run
 npm run test:coverage     # 覆盖率（阶段 3 接入门禁）
 ```
 - 配置：阶段 3 建 `vitest.config.ts`（jsdom + setup + v8 coverage）（TD-TEST-001）。
-- 现状：18 测试文件，强区 `lib/` + `configStore`；关键路径缺口见 `exec-plans/tech-debt-tracker.md` TD-TEST-*。
+- 现状：36 测试文件，强区 `lib/` + `configStore`；TD-TEST-001..016 均已完成。
 
 ## Lint / 格式化
 ```bash
 npm run lint      # Biome
 ```
-`biome.json`：`noExplicitAny` 当前 warn（阶段 3 提 error，TD-GATE-004）。
+`biome.json`：`noExplicitAny` 已设为 error（TD-GATE-004 已完成）。
 
 ## 生产运行
 ```bash

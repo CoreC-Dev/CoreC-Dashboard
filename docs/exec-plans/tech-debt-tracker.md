@@ -32,7 +32,7 @@
 - 已登记：**77 条**（5 域并行审计 76 条 + 阶段 3 audit 新增 TD-SEC-013；其中 **2 已豁免**：TD-SEC-010 用户决策维持公网无鉴权现状、TD-PERF-011 首页探测并发上限经评估豁免）
 - 阶段 1 初态严重度分布：**P0 ×1** ｜ **P1 ×24** ｜ **P2 ×51**
 - 类别分布：架构 13 ｜ 复杂度 10 ｜ 重复 6 ｜ 测试 16 ｜ 安全 12 ｜ 门禁 4 ｜ 文档 3 ｜ 性能 10 ｜ 可靠性 2
-- 业务行为影响：**变更行为 ×10**（均需人工决策后单独提交，见 `harness-migration.md` §6）｜ 修复bug ×0 ｜ 无 ×66
+- 业务行为影响：**变更行为 ×10**（均需人工决策后单独提交，见 `docs/design-docs/architecture-decisions.md` ADR-002..009）｜ 修复bug ×0 ｜ 无 ×66
 - **P0**：TD-SEC-003（实例导出明文泄露 API 密钥）→ **已关闭**
 
 ### 当前完成度（随改造进度更新）
@@ -315,8 +315,6 @@
 
 ### 测试（TEST）
 
-> 详见 `docs/exec-plans/.scratch/audit-tests.md`。以下为台账条目。
-
 **TD-TEST-001** ｜ 无 vitest 配置，覆盖率从不测量，无全局 jsdom setup ｜ P1
 - 位置：`vite.config.ts`（无 test 块）；无 `vitest.config.ts`/`vitest.workspace.*`；无 setup 文件
 - 证据：`npm test` → `vitest run` 无 `--coverage`。jsdom 仅靠逐文件 `// @vitest-environment jsdom` 注释（4 文件）。`@testing-library/jest-dom` 在 devDeps 但从未 import/配置，`toBeInTheDocument` 等匹配器不可用。覆盖率缺口无法量化。
@@ -414,8 +412,6 @@
 - 业务行为影响：无 ｜ 阶段5 ｜ 验收：字段元数据覆盖 ｜ 状态：待处理
 
 ### 安全（SEC）
-
-> 详见 `docs/exec-plans/.scratch/audit-security.md`。已确认安全项（路径穿越防护、无 SSRF、无 XSS sink、密钥存 sessionStorage、服务端密钥脱敏）不计入台账。
 
 **TD-SEC-001** ｜ CSP connect-src * 允许连任意源，削弱外泄防护 ｜ P1
 - 位置：`index.html:7-10`
@@ -525,7 +521,7 @@
 
 **TD-DOC-001** ｜ 无 README.md ｜ P1
 - 位置：仓库根（无 README）
-- 证据：全仓无 README（`find` 仅命中 docs/exec-plans/completed/harness-2026-10-03.md）。新工程师/智能体无入口说明。
+- 证据：阶段 1 扫描时全仓无 README。新工程师/智能体无入口说明。
 - 修复建议：Phase 2 撰写 README（一句话定位 + 快速开始 + 指向 AGENTS.md/ARCHITECTURE.md）。
 - 业务行为影响：无 ｜ 阶段2 ｜ 验收：README 存在且链接可解析 ｜ 状态：已完成（阶段 2 建 AGENTS.md 作入口地图，README 职责由 AGENTS.md 承载，符合 §2.2）
 
@@ -542,8 +538,6 @@
 - 业务行为影响：无 ｜ 阶段2 ｜ 验收：结构存在 + 分数可复算 ｜ 状态：已完成（阶段 2 建 QUALITY_SCORE.md + exec-plans/{active,completed,tracker} 结构）
 
 ### 性能（PERF）与可靠性
-
-> 详见 `docs/exec-plans/.scratch/audit-performance.md`。流式/图表/超时等高风险路径已加固（WebSocket 退避+限流+重连上限、图表窗口封顶、rAF 批处理、apiRequest 15s 超时、路由懒加载、manualChunks 充分拆分）——以下为剩余缺口。
 
 **TD-PERF-001** ｜ "View Tags" 弹窗渲染全量标签列表，无虚拟化/无封顶 ｜ P1
 - 位置：`src/features/admin/DriversPage.tsx:480,522`

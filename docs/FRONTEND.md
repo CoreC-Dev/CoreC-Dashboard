@@ -15,10 +15,10 @@
 react-hook-form + zodResolver。schema 与组件同域定义；校验分支必须有测试（TD-TEST-007）。边界输入（URL/密钥）经 zod 校验，不信任默认值。
 
 ## i18n
-i18next。**i18n 是 lib 的 peer 层而非 lib 的内部依赖**——`lib/utils` 当前模块级引 `@/i18n`（TD-ARCH-004/009），阶段 4 批次 A 将 `cn` 抽离解耦 16 个 UI 原语。格式化器接受 `t` 显式传入或隔离到 `lib/i18nFormatters.ts`。
+i18next。**i18n 是 lib 的 peer 层而非 lib 的内部依赖**——`cn` 已抽离到 `lib/cn.ts`，`lib/utils` 不再引 `@/i18n`。格式化器接受 `t` 显式传入或隔离到 `lib/i18nFormatters.ts`。
 
 ## UI 原语
-`components/ui` 保持纯展示：不引 `hooks`/`stores`/`features`/`api`。`cn`（className 合并）应零 src 依赖。例外 `count-up-number`（TD-ARCH-005）阶段 4 内联或移出。
+`components/ui` 保持纯展示：不引 `hooks`/`stores`/`features`/`api`。`cn`（className 合并）应零 src 依赖。
 
 ## 实时流
 WebSocket 经 `api/websocket.ts`（退避+抖动+重连上限 10+环形缓冲限流 500msg/s）。**消费者应经 `useCoreCWebSocket` hook**（TD-ARCH-007，阶段 4 批次 B 引入），不裸用 `CoreCWebSocket`。流式数据必须有界：图表窗口封顶、rAF 批处理、缓冲/列表/快照封顶（core-beliefs #17）。

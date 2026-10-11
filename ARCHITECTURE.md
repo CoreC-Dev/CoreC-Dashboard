@@ -24,8 +24,8 @@ types ← lib ← api ← stores ← hooks/contexts ← components ← features 
 
 **规则**：每层只能依赖左侧（更底层）。具体禁边：
 - `types/` → 不引 `lib`/`stores`/`api`/`hooks`/`components`/`features`
-- `lib/` → 不引 `stores`/`api`/`hooks`/`contexts`/`components`/`features`（注：`lib/utils`、`lib/writeValidation` 当前引 `@/i18n`，记为 TD-ARCH-009，批次 A 治理）
-- `api/` → 不引 `contexts`/`components`/`features`（注：`api/hooks`↔`contexts` 当前双向，记为 TD-ARCH-002，批次 B 治理）
+- `lib/` → 不引 `stores`/`api`/`hooks`/`contexts`/`components`/`features`
+- `api/` → 不引 `contexts`/`components`/`features`
 - `stores/` → 不引 `hooks`/`contexts`/`components`/`features`
 - `features/*` → 不直接引其他 `features/*`（跨域仅经共享层）
 - `components/ui` → 不引 `hooks`/`features`/`stores`（展示原语保持纯展示）
@@ -33,17 +33,9 @@ types ← lib ← api ← stores ← hooks/contexts ← components ← features 
 ## 已验证的健康不变量（审计确认，需用结构测试锁定）
 1. **零跨 feature 直连**：`features/admin` 仅自引 7 处，无跨域边；`monitor`/`home`/`settings` 同理。跨域共享仅经 `api/hooks`、`stores`、`components`、`lib`。
 2. **下层干净**：`stores` 不引 `components`/`features`；`lib` 不引 `components`/`features`/`stores`/`api`；`components` 不引 `features`。
-3. **UI 原语近纯展示**：`components/ui` 16/17 原语不引 `hooks`/`stores`/`features`（1 例外：`count-up-number`，TD-ARCH-005）。
+3. **UI 原语近纯展示**：`components/ui` 17 原语不引 `hooks`/`stores`/`features`。
 4. **流式路径已加固**：`CoreCWebSocket` 退避+抖动+重连上限+环形缓冲限流；图表窗口封顶；rAF 批处理；`apiRequest` 15s 超时；路由懒加载 + manualChunks 充分拆分。
 5. **无 XSS sink**：无 `dangerouslySetInnerHTML`/`innerHTML`/`eval`；无 SSRF（CoreC 目标固定）。
-
-## 已知层反转（技术债，阶段 4 治理）
-| ID | 位置 | 问题 | 批次 |
-|---|---|---|---|
-| TD-ARCH-001 | `types/models.ts:1` → `@/lib/constants` | types 反向依赖 lib | A |
-| TD-ARCH-002 | `api/hooks` ↔ `contexts/ConnectionContext` | api/contexts 层级环 | B |
-| TD-ARCH-004 | `lib/utils.ts` 模块级 `@/i18n` | lib 耦合 16 UI 原语到 i18n | A |
-| TD-ARCH-011 | settingsRegistry + 详情数组 + configSchema | 字段元数据三真相源 | D |
 
 ## 状态管理边界
 - **服务端状态** → @tanstack/react-query（`api/hooks`，staleTime 3s，按 hook 设 refetchInterval 4–30s；mutation 失效对应 query key）

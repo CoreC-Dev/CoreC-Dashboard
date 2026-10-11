@@ -10,13 +10,8 @@
 | 分层依赖方向 | `scripts/structure-lint.mjs` | `EXEMPTIONS` 数组（importer+importee+TD ID+批次） | 阶段 4 对应批次修复后从 EXEMPTIONS 删除 |
 | 文件大小 | `scripts/custom-lint.mjs` | `SIZE_EXEMPTIONS`（file+TD ID+批次），阈值 500 行 | 阶段 4 拆分 God 文件后删除 |
 | noExplicitAny | `scripts/any-ratchet.mjs` | `BASELINE` 计数，新增即失败 | 阶段 4/5 清理存量后下调 BASELINE，终态 biome.json 提 error |
-| 覆盖率 | `vitest.config.ts` | `thresholds` floor（lines 26/stmt 25/branch 19/func 18） | 阶段 5 补测试后上调 |
+| 覆盖率 | `vitest.config.ts` | `thresholds` floor（lines 41/stmt 40/branch 30/func 31） | 阶段 5 已上调 |
 | 文档 | `scripts/docs-lint.mjs` | 无豁免（硬性：链接可解析+必填节+索引完备） | —— |
-
-### 当前已登记豁免
-- **结构**：TD-ARCH-001（types→lib）、TD-ARCH-002（api↔contexts）、TD-ARCH-004/009（lib→i18n）、TD-ARCH-005（ui→hooks）——5 项，阶段 4 批次 A/B 移除。
-- **文件大小**：15 个 God 文件（ConfigCenterPage 1049、TagExplorerPage 1019、RulesPage 947、settingsRegistry 878…），阶段 4 批次 D/F/G/H 拆分后移除。
-- **any**：基线 2 处，阶段 4/5 清理后下调。
 
 ### ratchet 原则
 门禁只收紧不放松。每项豁免有明确移除条件（阶段 4 批次）。修复后删除豁免条目即收紧门禁——防止回退。CI 每次运行验证豁免仍需存在（若已修复，lint 提示"豁免可移除"）。

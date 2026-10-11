@@ -36,10 +36,10 @@
 |---|---|---|
 | 安全 | **5/10** | 1 P0（SEC-003）+ 3 P1 + 8 P2；已确认无 XSS/SSRF/路径穿越；7 项决策已确认（见 architecture-decisions.md） |
 | 性能/可靠性 | **7.5/10** | 流式/超时/拆分已加固；2 P1（PERF-001/002）+ 10 P2（memo/虚拟化/防抖缺口）；已修复 InstanceSelector `useShallow` 致 React #185 无限循环（全实例路由崩溃，回归守卫 `InstanceSelector.test.tsx`）；arch-perf-slim 轮：移除 useTags 冗余 5s 轮询、useDeadLetters 4s→15s、closeTrend/CountUpNumber memo、6 测试文件补 cleanup() 消除 unhandled error |
-| 门禁/CI | **3/10** | 仅 deploy.yml push-main；无 PR 门禁/覆盖率/hook/结构测试（GATE-001..004） |
-| 文档 | **4/10** | 阶段 2 前无 AGENTS/ARCHITECTURE/docs 结构（DOC-001..003）；本阶段补齐后预期 → 8 |
+| 门禁/CI | **8/10** | ci.yml PR+全分支门禁；.husky pre-commit+commit-msg；vitest 覆盖率门禁；结构/自定义 linter（GATE-001..004 已完成） |
+| 文档 | **8/10** | AGENTS.md + ARCHITECTURE.md + docs/ 结构完备（DOC-001..003 已完成） |
 
 ## 目标与差距
 - **阶段 5 DoD 目标**：每域/层综合 ≥ 7.0；安全 8+；门禁 8+；文档 8+。
-- **当前最大短板**：features 层复杂度（3.0，God 组件）、门禁/CI（3.0）、admin 域重复（4.0）。测试覆盖已大幅提升（610 tests，TD-TEST-002..016 全结清）。
+- **当前最大短板**：features 层复杂度（3.0，God 组件）、admin 域重复（4.0）。测试覆盖已大幅提升（610 tests，TD-TEST-002..016 全结清）。门禁/CI 与文档已达 8+。
 - **复算方式**：`npm run test:coverage`（阶段 3 接入）+ 结构测试（依赖方向/文件大小）+ 本台账计数。每次阶段 4 批次完成后重算本文件。
