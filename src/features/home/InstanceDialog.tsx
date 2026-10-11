@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Eye, EyeOff } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
@@ -85,8 +85,14 @@ export const InstanceDialog: React.FC<InstanceDialogProps> = ({
   const isEdit = !!instance
   const [showSecret, setShowSecret] = useState(false)
 
+  // Memoize the resolver so it's only recreated when the translation function
+  // changes (i.e., on language switch), not on every render. This ensures
+  // validation error messages update on language switch (FF-1) and avoids
+  // unnecessary allocations.
+  const resolver = useMemo(() => zodResolver(instanceSchema(t)), [t])
+
   const form = useForm<InstanceFormData>({
-    resolver: zodResolver(instanceSchema(t)),
+    resolver,
     defaultValues: {
       name: '',
       baseUrl: DEFAULT_COREC_URL,

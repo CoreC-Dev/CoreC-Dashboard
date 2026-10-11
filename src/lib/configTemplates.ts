@@ -41,7 +41,7 @@ global:
   log-format: json
   api:
     listen: ":8080"
-    secret: "change-me-please"
+    secret: "REPLACE_ME_WITH_A_STRONG_SECRET"
   engine:
     on-bad-quality: mark-and-publish
     default-tag-interval: 1s
@@ -101,7 +101,7 @@ global:
   log-format: json
   api:
     listen: ":8080"
-    secret: "change-me-please"
+    secret: "REPLACE_ME_WITH_A_STRONG_SECRET"
   engine:
     on-bad-quality: drop
 
@@ -157,7 +157,7 @@ global:
   log-format: json
   api:
     listen: ":8080"
-    secret: "change-me-please"
+    secret: "REPLACE_ME_WITH_A_STRONG_SECRET"
   engine:
     on-bad-quality: mark-and-publish
 
@@ -223,7 +223,7 @@ global:
   log-format: json
   api:
     listen: ":8080"
-    secret: "change-me-please"
+    secret: "REPLACE_ME_WITH_A_STRONG_SECRET"
   engine:
     on-bad-quality: publish
 
@@ -281,7 +281,7 @@ global:
   log-format: json
   api:
     listen: ":8080"
-    secret: "change-me-please"
+    secret: "REPLACE_ME_WITH_A_STRONG_SECRET"
   engine:
     on-bad-quality: mark-and-publish
   buffer:
@@ -353,7 +353,7 @@ global:
   log-format: json
   api:
     listen: ":8080"
-    secret: "change-me-please"
+    secret: "REPLACE_ME_WITH_A_STRONG_SECRET"
 
 drivers: []
 

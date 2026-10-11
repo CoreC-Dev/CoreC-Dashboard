@@ -14,7 +14,8 @@ import type {
 import type { DriverStatus, TransportStatus, WriteCommand } from '@/types/models'
 
 // Public endpoints
-export const getServerInfo = () => apiRequest<ServerInfoResponse>('/')
+export const getServerInfo = (options?: { signal?: AbortSignal }) =>
+  apiRequest<ServerInfoResponse>('/', options)
 
 // Configurations
 export const getConfigs = () => apiRequest<ConfigSummaryResponse>('/configs')

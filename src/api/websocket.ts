@@ -65,42 +65,42 @@ export class CoreCWebSocket<T = unknown> {
       return
     }
 
-    // Convert http/https to ws/wss
-    const wsBase = baseUrl.replace(/^http:\/\//i, 'ws://').replace(/^https:\/\//i, 'wss://')
-    const targetUrl = new URL(`${wsBase}${this.path}`)
-
-    const proxyMode = resolveProxyMode(conn?.useProxy)
-    let wsUrl: URL
-    if (proxyMode === 'proxy') {
-      // Same-origin WS proxy (ADR-004, D3): the browser connects to
-      // ws://<same-origin>/corec-ws?target=<backend>&token=...;
-      // server.mjs proxies the upgrade to the real backend.
-      wsUrl = new URL(`/corec-ws`, window.location.origin)
-      wsUrl.protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-      wsUrl.searchParams.set('target', targetUrl.toString())
-    } else {
-      // Direct WS connection (static-host fallback, ADR-004 addendum):
-      // connect to the backend WebSocket directly.
-      wsUrl = targetUrl
-    }
-
-    if (secret) {
-      // SECURITY NOTE (TD-SEC-005, D6): The token travels in the WS URL query
-      // string. In proxy mode the URL is same-origin (token not in backend
-      // logs). In direct mode the token is visible to the backend — this is
-      // the pre-ADR-004 behavior, accepted as a tradeoff for static hosting.
-      wsUrl.searchParams.set('token', secret)
-    }
-
-    Object.entries(this.params).forEach(([key, val]) => {
-      if (val !== undefined && val !== null) {
-        wsUrl.searchParams.set(key, val)
-      }
-    })
-
     this.onStatusCallback?.('connecting')
 
     try {
+      // Convert http/https to ws/wss
+      const wsBase = baseUrl.replace(/^http:\/\//i, 'ws://').replace(/^https:\/\//i, 'wss://')
+      const targetUrl = new URL(`${wsBase}${this.path}`)
+
+      const proxyMode = resolveProxyMode(conn?.useProxy)
+      let wsUrl: URL
+      if (proxyMode === 'proxy') {
+        // Same-origin WS proxy (ADR-004, D3): the browser connects to
+        // ws://<same-origin>/corec-ws?target=<backend>&token=...;
+        // server.mjs proxies the upgrade to the real backend.
+        wsUrl = new URL(`/corec-ws`, window.location.origin)
+        wsUrl.protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+        wsUrl.searchParams.set('target', targetUrl.toString())
+      } else {
+        // Direct WS connection (static-host fallback, ADR-004 addendum):
+        // connect to the backend WebSocket directly.
+        wsUrl = targetUrl
+      }
+
+      if (secret) {
+        // SECURITY NOTE (TD-SEC-005, D6): The token travels in the WS URL query
+        // string. In proxy mode the URL is same-origin (token not in backend
+        // logs). In direct mode the token is visible to the backend — this is
+        // the pre-ADR-004 behavior, accepted as a tradeoff for static hosting.
+        wsUrl.searchParams.set('token', secret)
+      }
+
+      Object.entries(this.params).forEach(([key, val]) => {
+        if (val !== undefined && val !== null) {
+          wsUrl.searchParams.set(key, val)
+        }
+      })
+
       this.ws = new WebSocket(wsUrl.toString())
 
       this.ws.onopen = () => {

@@ -189,6 +189,16 @@ export function useUpdateConfig() {
       // state on next read.
       queryClient.invalidateQueries({ queryKey: ['configs'] })
       queryClient.invalidateQueries({ queryKey: ['configsRaw'] })
+      // A config reload restarts the engine, so runtime state (drivers,
+      // transports, rules, stats, tags, dead letters) may all change.
+      // Invalidate them so the UI doesn't show stale data until the next
+      // polling interval.
+      queryClient.invalidateQueries({ queryKey: ['drivers'] })
+      queryClient.invalidateQueries({ queryKey: ['transports'] })
+      queryClient.invalidateQueries({ queryKey: ['rules'] })
+      queryClient.invalidateQueries({ queryKey: ['stats'] })
+      queryClient.invalidateQueries({ queryKey: ['tags'] })
+      queryClient.invalidateQueries({ queryKey: ['deadLetters'] })
     },
   })
 }

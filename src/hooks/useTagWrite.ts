@@ -64,7 +64,11 @@ export function useTagWrite(): UseTagWriteResult {
 
     let parsedVal: string | number | boolean = writeValue
     if (selectedTagForWrite.type === 'bool') {
-      parsedVal = writeValue.toLowerCase() === 'true' || writeValue === '1'
+      // Trim to match validateValue's behavior (writeValidation.ts trims
+      // before checking). Without this, "  true  " passes validation but
+      // coerces to false — a validation↔coercion inconsistency.
+      const v = writeValue.trim().toLowerCase()
+      parsedVal = v === 'true' || v === '1'
     } else if (isNumericType(selectedTagForWrite.type)) {
       parsedVal = Number(writeValue)
     }

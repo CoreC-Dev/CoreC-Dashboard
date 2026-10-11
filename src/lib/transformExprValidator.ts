@@ -55,8 +55,14 @@ export function validateTransformExpression(expr: string): ValidationResult {
   // Check for double operators (e.g. "value * * 2", "value + - 3" is OK as unary minus)
   if (/[+\-*/]{2,}/.test(trimmed.replace(/\s/g, ''))) {
     // Allow leading unary minus: "-value", "-(value + 1)"
+    // Allow binary-operator-followed-by-unary-minus: "value * -3", "value + -2"
     const withoutLeadingMinus = trimmed.replace(/^\s*-/, '')
-    if (/[+\-*/]{2,}/.test(withoutLeadingMinus.replace(/\s/g, '').replace(/\(-/g, '(~'))) {
+    // Mask unary minus after a binary operator or opening paren: "*-" → "*~", etc.
+    const masked = withoutLeadingMinus
+      .replace(/\s/g, '')
+      .replace(/\(-/g, '(~')
+      .replace(/[+\-*/]-/g, (m) => m[0] + '~')
+    if (/[+\-*/]{2,}/.test(masked)) {
       errors.push('consecutive operators detected (e.g. "value * * 2")')
     }
   }
