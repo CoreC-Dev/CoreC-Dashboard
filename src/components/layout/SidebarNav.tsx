@@ -130,7 +130,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ collapsed, setCollapsed,
           <div
             ref={navContainerRef}
             className={cn(
-              'relative flex flex-col min-h-0 overflow-y-auto',
+              'relative flex flex-col min-h-0 overflow-y-auto overflow-x-hidden',
               eff ? 'items-center gap-1.5' : 'w-full gap-1',
             )}
           >

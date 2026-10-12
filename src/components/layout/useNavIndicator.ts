@@ -47,7 +47,11 @@ export function useNavIndicator(
     }
     const c = container.getBoundingClientRect()
     const i = item.getBoundingClientRect()
-    setRect({ x: i.left - c.left, y: i.top - c.top, w: i.width, h: i.height })
+    // The indicator is absolutely positioned inside the scrollable nav
+    // container, so it needs the item's *layout* offset (relative to the
+    // content origin), not its *visual* offset. getBoundingClientRect is
+    // viewport-relative and shifts with scrollTop, so add it back.
+    setRect({ x: i.left - c.left, y: i.top - c.top + container.scrollTop, w: i.width, h: i.height })
   }, [containerRef, itemRefs])
 
   // Enable transitions after first paint so the indicator doesn't slide in
