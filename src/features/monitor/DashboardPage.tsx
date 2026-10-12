@@ -95,7 +95,7 @@ export const DashboardPage: React.FC = () => {
   return (
     <div className="space-y-5">
       {/* Greeting */}
-      <div className="pt-1">
+      <div>
         <h1 className="text-2xl font-bold tracking-tight">{t('nav.dashboard')}</h1>
         <p className="text-sm text-muted-foreground mt-1">
           {t('dashboard.realtimeMonitor', { defaultValue: 'Real-time monitoring & control' })}
