@@ -99,7 +99,9 @@ const HistTile: React.FC<{
   return (
     <div className="p-3 rounded-lg bg-muted/40 border border-border">
       <div className="text-xs text-muted-foreground uppercase font-semibold">{label}</div>
-      <div className={`text-xl font-bold font-mono mt-1 ${accent}`}>{fmtSec(p50 ?? avg, na)}</div>
+      <div className={`text-xl font-bold font-mono truncate mt-1 ${accent}`}>
+        {fmtSec(p50 ?? avg, na)}
+      </div>
       <div className="text-xs text-muted-foreground mt-1 font-mono">
         {t('diagnostics.p50')}={fmtSec(p50, na)} · {t('diagnostics.p95')}={fmtSec(p95, na)} ·{' '}
         {t('diagnostics.p99')}={fmtSec(p99, na)}
@@ -272,40 +274,44 @@ export const DiagnosticsPage: React.FC = () => {
         </CardHeader>
 
         <CardContent className="p-4 pt-0">
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-            <div className="p-3 rounded-lg bg-muted/40 border border-border text-center">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            <div className="min-w-0 overflow-hidden p-3 rounded-lg bg-muted/40 border border-border text-center">
               <div className="text-xs text-muted-foreground uppercase font-semibold">
                 {t('diagnostics.goroutines')}
               </div>
-              <div className="text-xl font-bold font-mono text-primary mt-1">{goroutines}</div>
+              <div className="text-xl font-bold font-mono truncate text-primary mt-1">
+                {goroutines}
+              </div>
             </div>
-            <div className="p-3 rounded-lg bg-muted/40 border border-border text-center">
+            <div className="min-w-0 overflow-hidden p-3 rounded-lg bg-muted/40 border border-border text-center">
               <div className="text-xs text-muted-foreground uppercase font-semibold">
                 {t('diagnostics.heapAllocated')}
               </div>
-              <div className="text-xl font-bold font-mono text-primary mt-1">
+              <div className="text-xl font-bold font-mono truncate text-primary mt-1">
                 {(heapAllocBytes / (1024 * 1024)).toFixed(1)} MB
               </div>
             </div>
-            <div className="p-3 rounded-lg bg-muted/40 border border-border text-center">
+            <div className="min-w-0 overflow-hidden p-3 rounded-lg bg-muted/40 border border-border text-center">
               <div className="text-xs text-muted-foreground uppercase font-semibold">
                 {t('diagnostics.gcCycles')}
               </div>
-              <div className="text-xl font-bold font-mono text-primary mt-1">{gcCount}</div>
+              <div className="text-xl font-bold font-mono truncate text-primary mt-1">
+                {gcCount}
+              </div>
             </div>
-            <div className="p-3 rounded-lg bg-muted/40 border border-border text-center">
+            <div className="min-w-0 overflow-hidden p-3 rounded-lg bg-muted/40 border border-border text-center">
               <div className="text-xs text-muted-foreground uppercase font-semibold">
                 {t('diagnostics.offlineBuffer')}
               </div>
-              <div className="text-xl font-bold font-mono text-status-running mt-1">
+              <div className="text-xl font-bold font-mono truncate text-status-running mt-1">
                 {offlinePending} {t('diagnostics.batches')}
               </div>
             </div>
-            <div className="p-3 rounded-lg bg-muted/40 border border-border text-center">
+            <div className="min-w-0 overflow-hidden p-3 rounded-lg bg-muted/40 border border-border text-center">
               <div className="text-xs text-muted-foreground uppercase font-semibold">
                 {t('diagnostics.busDropped')}
               </div>
-              <div className="text-xl font-bold font-mono text-status-error mt-1">
+              <div className="text-xl font-bold font-mono truncate text-status-error mt-1">
                 {totalDropped}
               </div>
             </div>
@@ -364,7 +370,7 @@ export const DiagnosticsPage: React.FC = () => {
               <div className="text-xs text-muted-foreground uppercase font-semibold">
                 {t('diagnostics.dataAge')}
               </div>
-              <div className="text-xl font-bold font-mono text-status-warning mt-1">
+              <div className="text-xl font-bold font-mono truncate text-status-warning mt-1">
                 {fmtSec(dataAge, t('diagnostics.notAvailable'))}
               </div>
               <div className="text-xs text-muted-foreground mt-1 font-mono">

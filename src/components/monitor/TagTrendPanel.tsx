@@ -168,31 +168,37 @@ export function TagTrendPanel({
             {/* Statistics bar */}
             {stats && (
               <div className="grid grid-cols-4 gap-2 text-xs">
-                <div className="rounded-md border border-border bg-muted/30 px-2 py-1.5 text-center">
+                <div className="min-w-0 overflow-hidden rounded-md border border-border bg-muted/30 px-2 py-1.5 text-center">
                   <div className="text-muted-foreground text-[10px] uppercase tracking-wider">
                     {t('tags.statCurrent')}
                   </div>
-                  <div className="font-mono font-semibold text-foreground">
+                  <div className="font-mono font-semibold text-foreground truncate">
                     {fmt(stats.current)}
                   </div>
                 </div>
-                <div className="rounded-md border border-border bg-muted/30 px-2 py-1.5 text-center">
+                <div className="min-w-0 overflow-hidden rounded-md border border-border bg-muted/30 px-2 py-1.5 text-center">
                   <div className="text-muted-foreground text-[10px] uppercase tracking-wider">
                     {t('tags.statMin')}
                   </div>
-                  <div className="font-mono font-semibold text-foreground">{fmt(stats.min)}</div>
+                  <div className="font-mono font-semibold text-foreground truncate">
+                    {fmt(stats.min)}
+                  </div>
                 </div>
-                <div className="rounded-md border border-border bg-muted/30 px-2 py-1.5 text-center">
+                <div className="min-w-0 overflow-hidden rounded-md border border-border bg-muted/30 px-2 py-1.5 text-center">
                   <div className="text-muted-foreground text-[10px] uppercase tracking-wider">
                     {t('tags.statMax')}
                   </div>
-                  <div className="font-mono font-semibold text-foreground">{fmt(stats.max)}</div>
+                  <div className="font-mono font-semibold text-foreground truncate">
+                    {fmt(stats.max)}
+                  </div>
                 </div>
-                <div className="rounded-md border border-border bg-muted/30 px-2 py-1.5 text-center">
+                <div className="min-w-0 overflow-hidden rounded-md border border-border bg-muted/30 px-2 py-1.5 text-center">
                   <div className="text-muted-foreground text-[10px] uppercase tracking-wider">
                     {t('tags.statAvg')}
                   </div>
-                  <div className="font-mono font-semibold text-foreground">{fmt(stats.avg)}</div>
+                  <div className="font-mono font-semibold text-foreground truncate">
+                    {fmt(stats.avg)}
+                  </div>
                 </div>
               </div>
             )}

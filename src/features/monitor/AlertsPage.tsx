@@ -341,12 +341,14 @@ export const AlertsPage: React.FC = () => {
                     key={retryKey}
                     className="p-3 rounded-lg border border-status-error/20 bg-status-error/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sm transition-colors hover:bg-status-error/10"
                   >
-                    <div className="space-y-1">
-                      <div className="font-mono font-semibold text-status-error text-sm">
+                    <div className="space-y-1 min-w-0">
+                      <div className="font-mono font-semibold text-status-error text-sm break-all">
                         [{entry.command.driver}] {t('common.tag')}: {entry.command.tag} ={' '}
                         {String(entry.command.value)}
                       </div>
-                      <div className="text-muted-foreground font-mono text-xs">{entry.error}</div>
+                      <div className="text-muted-foreground font-mono text-xs break-all">
+                        {entry.error}
+                      </div>
                       <div className="text-xs text-muted-foreground flex items-center space-x-2">
                         <Clock className="w-3 h-3" />
                         <span>{new Date(entry.failed_at).toLocaleString()}</span>

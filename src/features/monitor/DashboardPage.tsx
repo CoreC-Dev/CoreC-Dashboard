@@ -103,9 +103,9 @@ export const DashboardPage: React.FC = () => {
       </div>
 
       {/* Row 1 — KPI indicators */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 card-stagger">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 card-stagger">
         {/* Engine Status */}
-        <div className="rounded-lg border border-border bg-card p-3 card-hover card-enter">
+        <div className="min-w-0 overflow-hidden rounded-lg border border-border bg-card p-3 card-hover card-enter">
           <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
             <span>{t('dashboard.engineStatus')}</span>
             <Activity className="w-3.5 h-3.5 text-primary" />
@@ -122,12 +122,12 @@ export const DashboardPage: React.FC = () => {
           </div>
         </div>
         {/* Sample Rate */}
-        <div className="rounded-lg border border-border bg-card p-3 card-hover card-enter">
+        <div className="min-w-0 overflow-hidden rounded-lg border border-border bg-card p-3 card-hover card-enter">
           <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
             <span>{t('dashboard.sampleRate')}</span>
             <TrendingUp className="w-3.5 h-3.5 text-status-running" />
           </div>
-          <div className="text-lg font-bold font-mono tnum">
+          <div className="text-lg font-bold font-mono tnum truncate">
             <CountUpNumber
               value={stats?.points_per_sec ?? 0}
               duration={600}
@@ -139,12 +139,12 @@ export const DashboardPage: React.FC = () => {
           </div>
         </div>
         {/* Drivers */}
-        <div className="rounded-lg border border-border bg-card p-3 card-hover card-enter">
+        <div className="min-w-0 overflow-hidden rounded-lg border border-border bg-card p-3 card-hover card-enter">
           <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
             <span>{t('dashboard.drivers')}</span>
             <Cpu className="w-3.5 h-3.5 text-status-queued" />
           </div>
-          <div className="text-lg font-bold font-mono tnum">
+          <div className="text-lg font-bold font-mono tnum truncate">
             <CountUpNumber value={connectedDrivers} duration={600} />{' '}
             <span className="text-xs text-muted-foreground font-normal">/ {drivers.length}</span>
           </div>
@@ -155,12 +155,12 @@ export const DashboardPage: React.FC = () => {
           </div>
         </div>
         {/* Transports */}
-        <div className="rounded-lg border border-border bg-card p-3 card-hover card-enter">
+        <div className="min-w-0 overflow-hidden rounded-lg border border-border bg-card p-3 card-hover card-enter">
           <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
             <span>{t('dashboard.sinks')}</span>
             <Send className="w-3.5 h-3.5 text-primary" />
           </div>
-          <div className="text-lg font-bold font-mono tnum">
+          <div className="text-lg font-bold font-mono tnum truncate">
             <CountUpNumber value={connectedTransports} duration={600} />{' '}
             <span className="text-xs text-muted-foreground font-normal">/ {transports.length}</span>
           </div>
@@ -171,12 +171,12 @@ export const DashboardPage: React.FC = () => {
           </div>
         </div>
         {/* Total Read */}
-        <div className="rounded-lg border border-border bg-card p-3 card-hover card-enter">
+        <div className="min-w-0 overflow-hidden rounded-lg border border-border bg-card p-3 card-hover card-enter">
           <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
             <span>{t('dashboard.totalRead')}</span>
             <Database className="w-3.5 h-3.5 text-status-warning" />
           </div>
-          <div className="text-lg font-bold font-mono tnum">
+          <div className="text-lg font-bold font-mono tnum truncate">
             <CountUpNumber value={stats?.total_read ?? 0} duration={800} format={formatNumber} />
           </div>
           <div className="text-xs text-muted-foreground mt-0.5">
@@ -184,12 +184,12 @@ export const DashboardPage: React.FC = () => {
           </div>
         </div>
         {/* Dropped */}
-        <div className="rounded-lg border border-border bg-card p-3 card-hover card-enter">
+        <div className="min-w-0 overflow-hidden rounded-lg border border-border bg-card p-3 card-hover card-enter">
           <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
             <span>{t('dashboard.dropped')}</span>
             <TrendingDown className="w-3.5 h-3.5 text-status-error" />
           </div>
-          <div className="text-lg font-bold font-mono tnum text-status-error">
+          <div className="text-lg font-bold font-mono tnum truncate text-status-error">
             <CountUpNumber value={stats?.total_dropped ?? 0} duration={800} format={formatNumber} />
           </div>
           <div className="text-xs text-muted-foreground mt-0.5">
@@ -236,13 +236,13 @@ export const DashboardPage: React.FC = () => {
               {t('dashboard.noDrivers', { defaultValue: 'No drivers configured' })}
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-2.5">
               {drivers.map((drv) => {
                 const st = ConnStateLabel[drv.state] || ConnStateLabel[0]
                 return (
                   <div
                     key={drv.name}
-                    className="p-2.5 rounded-lg border border-border bg-card text-sm"
+                    className="min-w-0 overflow-hidden p-2.5 rounded-lg border border-border bg-card text-sm"
                   >
                     <div className="flex items-center space-x-2 mb-1.5">
                       <span className={`w-2 h-2 rounded-full ${st.dotColor}`} />
@@ -281,13 +281,13 @@ export const DashboardPage: React.FC = () => {
               {t('dashboard.noTransports', { defaultValue: 'No transports configured' })}
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-2.5">
               {transports.map((tr) => {
                 const st = ConnStateLabel[tr.state] || ConnStateLabel[0]
                 return (
                   <div
                     key={tr.name}
-                    className="p-2.5 rounded-lg border border-border bg-card text-sm"
+                    className="min-w-0 overflow-hidden p-2.5 rounded-lg border border-border bg-card text-sm"
                   >
                     <div className="flex items-center space-x-2 mb-1.5">
                       <span className={`w-2 h-2 rounded-full ${st.dotColor}`} />
