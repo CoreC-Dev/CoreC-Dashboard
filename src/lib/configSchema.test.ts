@@ -327,6 +327,28 @@ describe('coreCConfigSchema — rule validation', () => {
     })
     expect(res.success).toBe(true)
   })
+  it('accepts continue: true on non-drop action', () => {
+    const res = coreCConfigSchema.safeParse({
+      ...validConfig,
+      rules: [{ name: 'r', match: 'ALL', action: 'alert', target: 'cloud-mqtt', continue: true }],
+    })
+    expect(res.success).toBe(true)
+  })
+  it('rejects drop + continue: true', () => {
+    const res = coreCConfigSchema.safeParse({
+      ...validConfig,
+      rules: [{ name: 'r', match: 'ALL', action: 'drop', continue: true }],
+    })
+    expect(res.success).toBe(false)
+    expect(failIssues(res)).toContain('drop action cannot set continue')
+  })
+  it('accepts drop without continue (default terminal)', () => {
+    const res = coreCConfigSchema.safeParse({
+      ...validConfig,
+      rules: [{ name: 'r', match: 'ALL', action: 'drop' }],
+    })
+    expect(res.success).toBe(true)
+  })
 })
 
 describe('coreCConfigSchema — global validation', () => {

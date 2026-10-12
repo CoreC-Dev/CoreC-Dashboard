@@ -287,6 +287,11 @@ export const TopologyPage: React.FC = () => {
                 <Badge variant="outline" className="text-xs">
                   {rule.action}
                 </Badge>
+                {rule.continue && (
+                  <Badge variant="outline" className="text-xs text-primary">
+                    {t('rules.continue')}
+                  </Badge>
+                )}
                 {rule.disabled && (
                   <Badge variant="outline" className="text-xs text-muted-foreground">
                     {t('topology.off')}

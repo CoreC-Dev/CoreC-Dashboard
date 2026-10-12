@@ -89,6 +89,8 @@ export const RuleWizard: React.FC<RuleWizardProps> = ({
   // Transform config
   const [transformExpr, setTransformExpr] = useState(existingRule?.transform?.expression ?? '')
   const [tagRename, setTagRename] = useState(existingRule?.transform?.['tag-rename'] ?? '')
+  // Continue flag (ADR-010): keep evaluating after this rule matches
+  const [continueFlag, setContinueFlag] = useState(existingRule?.continue ?? false)
   const [currentStep, setCurrentStep] = useState(0)
 
   // Reset on open
@@ -101,6 +103,7 @@ export const RuleWizard: React.FC<RuleWizardProps> = ({
     setTargets(existingRule?.targets ?? [])
     setTransformExpr(existingRule?.transform?.expression ?? '')
     setTagRename(existingRule?.transform?.['tag-rename'] ?? '')
+    setContinueFlag(existingRule?.continue ?? false)
     setCurrentStep(0)
   })
 
@@ -127,9 +130,10 @@ export const RuleWizard: React.FC<RuleWizardProps> = ({
               },
             }
           : {}),
+        ...(continueFlag && action !== 'drop' ? { continue: true } : {}),
       }
     },
-    [match, action, priority, target, targets, transformExpr, tagRename],
+    [match, action, priority, target, targets, transformExpr, tagRename, continueFlag],
   )
 
   // ─── Preview YAML ────────────────────────────────────────────────
@@ -283,6 +287,18 @@ export const RuleWizard: React.FC<RuleWizardProps> = ({
               </div>
             </label>
           ))}
+          <div className="flex items-center gap-2 pt-2">
+            <Checkbox
+              id="wizard-continue"
+              checked={continueFlag}
+              onCheckedChange={(v) => setContinueFlag(v === true)}
+              disabled={action === 'drop'}
+            />
+            <label htmlFor="wizard-continue" className="text-sm font-medium cursor-pointer">
+              {t('rules.edit.continue')}
+            </label>
+          </div>
+          <p className="text-xs text-muted-foreground pl-6">{t('rules.edit.continueHint')}</p>
         </div>
       ),
     },

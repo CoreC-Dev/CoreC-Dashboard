@@ -24,6 +24,8 @@ export interface EditFormData {
   transformExpression: string
   /** Optional tag-rename (action === 'transform' only). */
   transformTagRename: string
+  /** iptables-style continue flag (ADR-010). */
+  continue: boolean
 }
 
 // Wrap a string as a YAML single-quoted scalar — internal single quotes are
@@ -62,6 +64,10 @@ export const buildRuleYaml = (data: EditFormData): string => {
     if (data.transformTagRename.trim()) {
       lines.push(`      tag-rename: ${yamlScalar(data.transformTagRename.trim())}`)
     }
+  }
+
+  if (data.continue) {
+    lines.push('    continue: true')
   }
 
   return lines.join('\n')

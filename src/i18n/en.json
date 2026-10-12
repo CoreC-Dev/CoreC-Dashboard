@@ -655,6 +655,7 @@
     "actionTransform": "TRANSFORM",
     "actionMirror": "MIRROR",
     "actionForward": "FORWARD",
+    "continue": "CONTINUE",
     "test": "Test",
     "testRule": "Test Rule: {{name}}",
     "testDesc": "Simulate a DataPoint and run a rough client-side match check against the rule's DSL.",
@@ -697,6 +698,9 @@
       "errTargetRequired": "Target transport is required for this action",
       "errTargetsRequired": "At least one target is required for mirror action",
       "errExpressionRequired": "Transform expression is required for transform action",
+      "errDropContinue": "Drop action cannot set continue: true (drop is terminal)",
+      "continue": "Continue evaluating after match",
+      "continueHint": "When enabled, this rule executes its action but does not stop evaluation — lower-priority rules are still assessed (iptables-style)",
       "confirmWarning": "This will hot-reload the engine (brief suspension). Review the YAML above before confirming.",
       "confirmApply": "Confirm & Apply"
     },

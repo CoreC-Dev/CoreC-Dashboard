@@ -217,6 +217,20 @@ const InlineRuleEditor: React.FC<InlineRuleEditorProps> = ({
           />
         </div>
       </div>
+      <div className="flex items-center gap-2">
+        <Checkbox
+          id={`grp-continue-${draft.name}`}
+          checked={draft.continue === true}
+          onCheckedChange={(v) => setDraft({ ...draft, continue: v === true ? true : undefined })}
+          disabled={draft.action === 'drop'}
+        />
+        <label
+          htmlFor={`grp-continue-${draft.name}`}
+          className="text-xs font-medium cursor-pointer"
+        >
+          {t('rules.edit.continue')}
+        </label>
+      </div>
       {/* Multi-target (comma-separated) — used by mirror action */}
       <div className="space-y-1">
         <Label className="text-xs font-medium">{t('ruleGroup.ruleTargets')}</Label>

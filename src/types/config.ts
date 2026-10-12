@@ -140,6 +140,10 @@ export interface RuleConfig {
   priority?: number
   /** Required when action === 'transform'. */
   transform?: TransformConfig
+  /** If true, keep evaluating lower-priority rules after this rule matches
+   *  (iptables-style). Defaults to false (first-match-wins / terminal).
+   *  Cannot be true when action === 'drop'. */
+  continue?: boolean
 }
 
 export interface RuleProviderConfig {

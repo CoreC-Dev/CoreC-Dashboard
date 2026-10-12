@@ -258,6 +258,7 @@ const ruleConfigSchema = z
     targets: z.array(z.string()).optional(),
     priority: z.number().int().optional(),
     transform: transformConfigSchema.optional(),
+    continue: z.boolean().optional(),
   })
   .passthrough()
   .superRefine((r, ctx) => {
@@ -280,6 +281,15 @@ const ruleConfigSchema = z
         code: 'custom',
         path: ['target'],
         message: 'forward action requires a target transport name',
+      })
+    }
+    // drop + continue is contradictory: drop means "discard and stop",
+    // continue means "keep evaluating" (ADR-010, mirrors config/validate.go).
+    if (r.action === 'drop' && r.continue === true) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['continue'],
+        message: 'drop action cannot set continue: true (drop is terminal)',
       })
     }
   })

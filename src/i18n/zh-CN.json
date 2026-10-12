@@ -655,6 +655,7 @@
     "actionTransform": "转换",
     "actionMirror": "镜像",
     "actionForward": "转发",
+    "continue": "继续",
     "test": "测试",
     "testRule": "测试规则：{{name}}",
     "testDesc": "模拟一个数据点，并对规则的 DSL 进行粗略的客户端匹配检查。",
@@ -697,6 +698,9 @@
       "errTargetRequired": "此操作需要目标传输",
       "errTargetsRequired": "镜像操作至少需要一个目标",
       "errExpressionRequired": "变换操作需要变换表达式",
+      "errDropContinue": "丢弃动作不能设置 continue: true（丢弃即终止）",
+      "continue": "命中后继续评估后续规则",
+      "continueHint": "启用后，此规则命中执行动作后不停止，继续评估优先级更低的规则（iptables 风格）",
       "confirmWarning": "此操作将热重载引擎（短暂暂停）。请在确认前检查上方的 YAML。",
       "confirmApply": "确认并应用"
     },

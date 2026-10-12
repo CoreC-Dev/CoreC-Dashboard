@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { useConfigRaw, useRules, useUpdateConfig } from '@/api/hooks'
 import {
   ActionBadge,
+  ContinueBadge,
   EMPTY_TEST_DP,
   getTargetDisplay,
   RuleEditDialog,
@@ -170,6 +171,7 @@ export const RulesPage: React.FC = () => {
       priority: rule.priority,
       transformExpression,
       transformTagRename,
+      continue: rule.continue,
     })
     setEditStatus(null)
   }
@@ -200,6 +202,9 @@ export const RulesPage: React.FC = () => {
     }
     if (form.action === 'transform' && !form.transformExpression.trim()) {
       errs.push(t('rules.edit.errExpressionRequired'))
+    }
+    if (form.action === 'drop' && form.continue) {
+      errs.push(t('rules.edit.errDropContinue'))
     }
     return errs.length > 0 ? errs : undefined
   }
@@ -334,7 +339,10 @@ export const RulesPage: React.FC = () => {
                       {rl.match}
                     </td>
                     <td className="px-3 py-2">
-                      <ActionBadge action={rl.action} />
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <ActionBadge action={rl.action} />
+                        {rl.continue && <ContinueBadge />}
+                      </div>
                     </td>
                     <td className="px-3 py-2 font-mono text-xs text-muted-foreground">
                       {rl.targets?.join(', ') || rl.target || '-'}
@@ -443,7 +451,10 @@ export const RulesPage: React.FC = () => {
                           </code>
                         </td>
                         <td className="px-4 py-3">
-                          <ActionBadge action={rule.action} />
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <ActionBadge action={rule.action} />
+                            {rule.continue && <ContinueBadge />}
+                          </div>
                         </td>
                         <td className="px-4 py-3 font-mono text-muted-foreground">
                           {getTargetDisplay(rule)}

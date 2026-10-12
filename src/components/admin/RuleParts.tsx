@@ -138,6 +138,16 @@ export const ActionBadge: React.FC<{ action: string }> = ({ action }) => {
   )
 }
 
+/** Small badge shown next to ActionBadge when a rule has continue: true. */
+export const ContinueBadge: React.FC = () => {
+  const { t } = useTranslation()
+  return (
+    <Badge variant="outline" className="border-primary/30 bg-primary/10 text-primary">
+      {t('rules.continue')}
+    </Badge>
+  )
+}
+
 // ─── RuleTestDialog ─────────────────────────────────────────
 
 interface RuleTestDialogProps {
@@ -416,6 +426,22 @@ export const RuleEditDialog: React.FC<RuleEditDialogProps> = ({
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="edit-continue"
+                checked={editForm.continue}
+                onCheckedChange={(v) => setEditForm({ ...editForm, continue: v === true })}
+                disabled={editForm.action === 'drop'}
+              />
+              <label
+                htmlFor="edit-continue"
+                className="text-xs font-semibold text-foreground cursor-pointer"
+              >
+                {t('rules.edit.continue')}
+              </label>
+              <span className="text-xs text-muted-foreground">{t('rules.edit.continueHint')}</span>
             </div>
 
             <div className="grid grid-cols-2 gap-3">

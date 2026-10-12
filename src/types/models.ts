@@ -55,6 +55,8 @@ export interface RuleStat {
   // CoreC serializes targets as null (not []) when empty.
   targets: string[] | null
   priority: number
+  /** iptables-style continue flag (ADR-010). */
+  continue: boolean
   disabled: boolean
   hit_count: number
   hit_at: string
