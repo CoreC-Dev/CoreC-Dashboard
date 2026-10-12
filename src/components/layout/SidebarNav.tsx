@@ -115,17 +115,24 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ collapsed, setCollapsed,
       <div
         className={cn(
           'flex flex-col relative',
-          isMobile ? '' : 'flex-1 justify-center',
+          isMobile ? '' : 'flex-1 justify-center min-h-0',
           eff ? 'items-center' : '',
         )}
       >
         <div
-          className={cn('bg-card rounded-2xl border border-border/40', eff ? 'p-2' : 'p-2.5')}
+          className={cn(
+            'bg-card rounded-2xl border border-border/40 flex flex-col',
+            eff ? 'p-2' : 'p-2.5',
+            !isMobile && 'max-h-full overflow-hidden',
+          )}
           style={{ boxShadow: 'var(--shadow-card)' }}
         >
           <div
             ref={navContainerRef}
-            className={cn('relative flex flex-col', eff ? 'items-center gap-1.5' : 'w-full gap-1')}
+            className={cn(
+              'relative flex flex-col min-h-0 overflow-y-auto',
+              eff ? 'items-center gap-1.5' : 'w-full gap-1',
+            )}
           >
             {/* Monitor group label */}
             {renderGroupLabel(t('nav.monitor'))}
