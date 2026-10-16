@@ -90,6 +90,10 @@ export const getDriverTags = (name: string) =>
 export const getTransports = () => apiRequest<TransportsListResponse>('/transports')
 export const getTransport = (name: string) =>
   apiRequest<TransportStatus>(`/transports/${encodeURIComponent(name)}`)
+export const testTransport = (name: string) =>
+  apiRequest<{ ok: boolean; message?: string }>(`/transports/${encodeURIComponent(name)}/test`, {
+    method: 'POST',
+  })
 
 // Realtime Tags & Control
 export const getTags = () => apiRequest<GlobalTagsResponse>('/tags')
