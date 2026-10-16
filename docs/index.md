@@ -32,7 +32,8 @@
 | `engineering.md` | 工程化说明：开发/构建/测试/调试/部署/排障 | ✅ |
 
 ## 执行计划
-- `exec-plans/active/` — 进行中（当前无）
+- `exec-plans/completed/derived-tags.md` — 派生标签前端（已完成）
+- `exec-plans/completed/notify-transport.md` — 通知传输前端（已完成）
 - `exec-plans/completed/` — 已完成归档（已清理）
 - `exec-plans/tech-debt-tracker.md` — 技术债台账
 

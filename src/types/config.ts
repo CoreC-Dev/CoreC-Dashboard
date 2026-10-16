@@ -53,7 +53,7 @@ export const DRIVER_TYPES = [
 ] as const
 export type DriverType = (typeof DRIVER_TYPES)[number]
 
-export const TRANSPORT_TYPES = ['mqtt', 'http'] as const
+export const TRANSPORT_TYPES = ['mqtt', 'http', 'notify'] as const
 export type TransportType = (typeof TRANSPORT_TYPES)[number]
 
 export const RULE_ACTIONS = ['forward', 'drop', 'alert', 'transform', 'mirror'] as const
@@ -66,6 +66,10 @@ export const LOG_FORMATS = ['text', 'json'] as const
 type LogFormat = (typeof LOG_FORMATS)[number]
 
 export const ON_BAD_QUALITY_POLICIES = ['publish', 'drop', 'mark-and-publish', 'alert'] as const
+
+export const ON_MISSING_POLICIES = ['skip', 'bad-quality', 'zero'] as const
+
+export const NOTIFY_CHANNELS = ['slack', 'teams', 'email', 'webhook'] as const
 
 export const NODE_ROLES = ['collector', 'relay', 'aggregator', 'sink'] as const
 
@@ -158,6 +162,22 @@ export interface RuleProviderConfig {
 /** rule-groups: named, reusable sub-rule groups keyed by group name. */
 type RuleGroups = Record<string, RuleConfig[]>
 
+// ─── DerivedTagConfig (core/derived.go) ──────────────────────────────
+export interface DerivedTagConfig {
+  name: string
+  /** Arithmetic expression; identifiers resolve to tag names in the cache. */
+  expr: string
+  type: DataType | string
+  group?: string
+  /** Evaluation period (e.g. "5s"). Must be >= 1s. */
+  interval: string
+  unit?: string
+  /** Behavior when a referenced tag is absent: skip | bad-quality | zero. */
+  'on-missing'?: (typeof ON_MISSING_POLICIES)[number] | string
+  /** Mark stale if any referenced tag is older than this duration. */
+  'stale-guard'?: string
+}
+
 // ─── Global config (core/engine.go) ──────────────────────────────────
 interface APIConfig {
   listen?: string
@@ -225,4 +245,5 @@ export interface CoreCConfig {
   rules?: RuleConfig[]
   'rule-providers'?: RuleProviderConfig[]
   'rule-groups'?: RuleGroups
+  'derived-tags'?: DerivedTagConfig[]
 }

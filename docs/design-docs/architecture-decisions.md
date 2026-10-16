@@ -85,3 +85,19 @@
 - **理由**：消除三真相源（registry + 详情数组 + schema）的手工镜像风险；registry 已为 wizard 单源，详情页对齐之。
 - **日期**：2026-10-03
 - **提交**：`17c722c`
+
+## ADR-011 派生标签归属：engine 组件而非 virtual driver
+- **背景**：派生/虚拟标签需读引擎 `LatestCache` 求值。可做成 `driver/virtual`（实现 `core.Driver`）或 engine 内部组件。
+- **决策**：做成 **engine 内部组件**（`engine/derived.go`），与 scheduler/batcher/discovery 同级。
+- **理由**：driver 只能依赖 `core`/`common`（ARCHITECTURE 依赖方向），无法访问 engine 的 `LatestCache`；做成 driver 需注入 `core.LatestValuesProvider` 反向依赖，破坏分层。engine 组件天然持有 cache + dataBus，零契约改动。`LatestCache.GetAll()` 已提供跨驱动按 tag 名索引的快照，正合需求。
+- **影响**：`engine/derived.go` 新增；`core.Config` 加 `DerivedTags` 字段；Start/Stop/Reload 接线。行为变更（新增可观测数据点），单独提交（R2）。
+- **日期**：2026-10-16
+- **计划**：`exec-plans/active/derived-tags.md`
+
+## ADR-012 通知传输路由：forward 目标而非增强 alert 动作
+- **背景**：告警需外发 Slack/Teams/email。可增强 `alert` 动作转发到 target transport，或直接用 `action: forward, target: notify-xxx`。
+- **决策**：MVP 用 **forward 目标**——notify 是普通 transport，规则 `action: forward, target: notify-slack` 即可，零引擎改动。
+- **理由**：forward 路径已存在且经规则引擎/批量/离线缓冲全链路；notify 作为 transport 自动享有 retry/offline-buffer/fallback。增强 alert 动作需改 engine 且与进程内 alertHandlers 语义重叠，复杂度上升。后续可选增强 alert 也转发（登记后续项，R4 不在本计划范围）。
+- **影响**：新增 `transport/notify` 插件；规则名经 `DataPoint.Metadata["rule"]` 注入（forward payload 新增可选字段，omitempty 不破坏现有消费者）。业务行为影响=无（纯新增插件）。
+- **日期**：2026-10-16
+- **计划**：`exec-plans/active/notify-transport.md`
