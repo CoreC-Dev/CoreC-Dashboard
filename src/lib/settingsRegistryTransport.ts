@@ -3,6 +3,8 @@
  *
  * (Split from settingsRegistry.ts — TD-ARCH-013.)
  */
+
+import { NOTIFY_SETTINGS_REGISTRY } from '@/lib/settingsRegistryNotify'
 import type { SettingsField, TypeFieldRegistry } from '@/lib/settingsRegistryTypes'
 
 // ─── Transport settings registries ───────────────────────────────────
@@ -327,6 +329,8 @@ export const TRANSPORT_SETTINGS_REGISTRY: Record<string, TypeFieldRegistry> = {
       },
     ],
   },
+
+  notify: NOTIFY_SETTINGS_REGISTRY,
 }
 
 // ─── Transport top-level (non-settings) fields ───────────────────────

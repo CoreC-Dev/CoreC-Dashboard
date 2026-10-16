@@ -30,6 +30,7 @@ import {
   LOG_LEVELS,
   NODE_ROLES,
   ON_BAD_QUALITY_POLICIES,
+  ON_MISSING_POLICIES,
   PARITY_VALUES,
   RULE_ACTIONS,
   TRANSPORT_TYPES,
@@ -237,6 +238,63 @@ const transportConfigSchema = z
         })
       }
     }
+    if (t.type === 'notify') {
+      const channel = s.channel
+      if (channel === undefined || channel === null || channel === '') {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['settings', 'channel'],
+          message: 'notify: channel is required (slack|teams|email|webhook)',
+        })
+      } else {
+        const ch = String(channel)
+        const validChannels = ['slack', 'teams', 'email', 'webhook']
+        if (!validChannels.includes(ch)) {
+          ctx.addIssue({
+            code: 'custom',
+            path: ['settings', 'channel'],
+            message: `notify: invalid channel "${ch}" (must be slack|teams|email|webhook)`,
+          })
+        }
+        if (ch === 'slack' || ch === 'teams') {
+          if (!s['webhook-url']) {
+            ctx.addIssue({
+              code: 'custom',
+              path: ['settings', 'webhook-url'],
+              message: `notify (${ch}): webhook-url is required`,
+            })
+          }
+        }
+        if (ch === 'email') {
+          for (const field of ['smtp-host', 'from']) {
+            if (!s[field]) {
+              ctx.addIssue({
+                code: 'custom',
+                path: ['settings', field],
+                message: `notify (email): ${field} is required`,
+              })
+            }
+          }
+          const to = s.to
+          if (!Array.isArray(to) || to.length === 0) {
+            ctx.addIssue({
+              code: 'custom',
+              path: ['settings', 'to'],
+              message: 'notify (email): to (recipient list) is required',
+            })
+          }
+        }
+        if (ch === 'webhook') {
+          if (!s.url) {
+            ctx.addIssue({
+              code: 'custom',
+              path: ['settings', 'url'],
+              message: 'notify (webhook): url is required',
+            })
+          }
+        }
+      }
+    }
   })
 
 // ─── Rule schema ─────────────────────────────────────────────────────
@@ -411,6 +469,30 @@ const nodeConfigSchema = z
   .passthrough()
 
 // ─── Top-level config schema (shape only; cross-entity via validateConfig) ──
+// ─── Derived tag schema ──────────────────────────────────────────────
+const requiredDuration = z
+  .string()
+  .min(1, { message: 'duration is required' })
+  .superRefine((v, ctx) => {
+    if (!isValidGoDuration(v)) {
+      ctx.addIssue({
+        code: 'custom',
+        message: `"${v}" is not a valid positive Go duration (e.g. "5s", "1m")`,
+      })
+    }
+  })
+
+export const derivedTagConfigSchema = z.object({
+  name: z.string().min(1, { message: 'derived tag name is required' }),
+  expr: z.string().min(1, { message: 'expr is required' }),
+  type: z.enum(DATA_TYPES, { message: 'invalid tag type' }),
+  group: z.string().optional(),
+  interval: requiredDuration,
+  unit: z.string().optional(),
+  'on-missing': z.enum(ON_MISSING_POLICIES).optional(),
+  'stale-guard': durationString,
+})
+
 export const coreCConfigSchema = z
   .object({
     node: nodeConfigSchema.optional(),
@@ -420,6 +502,7 @@ export const coreCConfigSchema = z
     rules: z.array(ruleConfigSchema).optional(),
     'rule-providers': z.array(ruleProviderConfigSchema).optional(),
     'rule-groups': z.record(z.string(), z.array(ruleConfigSchema)).optional(),
+    'derived-tags': z.array(derivedTagConfigSchema).optional(),
   })
   .passthrough()
 
