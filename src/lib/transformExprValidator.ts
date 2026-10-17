@@ -61,7 +61,7 @@ export function validateTransformExpression(expr: string): ValidationResult {
     const masked = withoutLeadingMinus
       .replace(/\s/g, '')
       .replace(/\(-/g, '(~')
-      .replace(/[+\-*/]-/g, (m) => m[0] + '~')
+      .replace(/[+\-*/]-/g, (m) => `${m[0]}~`)
     if (/[+\-*/]{2,}/.test(masked)) {
       errors.push('consecutive operators detected (e.g. "value * * 2")')
     }

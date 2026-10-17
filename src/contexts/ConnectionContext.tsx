@@ -107,7 +107,9 @@ export const ConnectionProvider: React.FC<{
   // leak into the new one. Track the last-reset instanceId at module scope so
   // leaving and returning to the same instance preserves in-progress edits
   // (the provider unmounts/remounts on navigation, but the store is module-level).
-  // biome-ignore lint/correctness/useExhaustiveDependencies: instanceId is an intentional trigger — reset the store only when the instance actually changes, not a value read in the body.
+  // No biome-ignore needed: the only reactive value read here is instanceId
+  // itself (lastResetInstanceId and useConfigStore are module-level), so the
+  // [instanceId] dep list is exhaustive.
   useEffect(() => {
     if (lastResetInstanceId !== instanceId) {
       useConfigStore.getState().reset()

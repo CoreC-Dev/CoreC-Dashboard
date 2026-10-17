@@ -4,6 +4,7 @@ import { cleanup, render, screen } from '@testing-library/react'
 import { act } from 'react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
+import { DiagnosticsPage } from '@/features/admin/DiagnosticsPage'
 import { RulesPage } from '@/features/admin/RulesPage'
 import { TransportsPage } from '@/features/admin/TransportsPage'
 import i18n from '@/i18n'
@@ -51,6 +52,45 @@ vi.mock('@/api/endpoints', () => ({
   updateConfigs: vi.fn().mockResolvedValue(undefined),
   getConfigsRaw: vi.fn().mockResolvedValue('node:\n  id: test\n'),
   validateConfigs: vi.fn().mockResolvedValue({ valid: true }),
+  // DiagnosticsPage surface: metrics text, write audit trail, and the
+  // public instance-health probes (version / healthz live+ready).
+  getMetricsText: vi
+    .fn()
+    .mockResolvedValue(
+      '# HELP corec_goroutines Goroutines\ncorec_goroutines 42\n' +
+        '# HELP corec_driver_read_total Reads\ncorec_driver_read_total{driver="plc1",type="modbus-tcp"} 100\n',
+    ),
+  getWriteHistory: vi.fn().mockResolvedValue({ writes: [], count: 0 }),
+  getVersion: vi.fn().mockResolvedValue({ version: '0.9.2-mock' }),
+  getHealthzLive: vi.fn().mockResolvedValue({ status: 'alive' }),
+  getHealthzReady: vi.fn().mockResolvedValue({ ready: true }),
+}))
+
+// The real-time terminal on the Diagnostics page is an xterm.js Terminal
+// fed by the /logs WebSocket — neither can run under jsdom (the renderer
+// stack needs real DOM measurement; jsdom has no WebSocket server to
+// connect to). Stub the three leaf modules; the REAL EventLogTerminal
+// component still mounts, so the page smoke covers everything around the
+// stream (banner, cards, tables) while the terminal/stream stay inert.
+vi.mock('@xterm/xterm', () => ({
+  Terminal: class {
+    open = vi.fn()
+    loadAddon = vi.fn()
+    writeln = vi.fn()
+    clear = vi.fn()
+    dispose = vi.fn()
+  },
+}))
+vi.mock('@xterm/addon-fit', () => ({
+  FitAddon: class {
+    fit = vi.fn()
+    dispose = vi.fn()
+  },
+}))
+vi.mock('@/api/websocket', () => ({
+  CoreCWebSocket: class {
+    destroy = vi.fn()
+  },
 }))
 
 // Mock the active connection module so apiRequest has credentials.
@@ -138,5 +178,32 @@ describe('render smoke (#185 regression)', () => {
     expect(screen.getByText('Create Rule')).toBeTruthy()
     // Rule rows appear after the mocked useRules query resolves.
     expect(await screen.findByText('forward-all')).toBeTruthy()
+  })
+
+  it('DiagnosticsPage renders with the WS terminal and stream stubbed', async () => {
+    // The page's own queries (metrics, version, healthz, write history)
+    // are served by the '@/api/endpoints' mock above; the xterm.js
+    // terminal and the /logs CoreCWebSocket are inert module stubs (see
+    // the vi.mock calls at the top) — jsdom can host neither. The REAL
+    // EventLogTerminal component still mounts, proving the page wires
+    // the terminal section without a real socket.
+    let container: ReturnType<typeof render> | undefined
+    act(() => {
+      container = render(wrap(<DiagnosticsPage />))
+    })
+    expect(container?.container).toBeTruthy()
+    // Static page chrome renders synchronously — an empty <div> would fail here.
+    expect(screen.getByText('Observability & Diagnostics')).toBeTruthy()
+    expect(screen.getByText('Prometheus Runtime Metrics')).toBeTruthy()
+    // The terminal card mounts against the stubbed Terminal/CoreCWebSocket.
+    expect(screen.getByText('CoreC Real-time Event Stream')).toBeTruthy()
+    // pprof download buttons render.
+    expect(screen.getByText('/debug/pprof/heap')).toBeTruthy()
+    // Metrics query resolved: the goroutines tile shows the scraped value
+    // and the per-driver read table gets its row.
+    expect(await screen.findByText('42')).toBeTruthy()
+    expect(await screen.findByText('plc1')).toBeTruthy()
+    // InstanceHealthBar resolved the mocked public probes.
+    expect(await screen.findByText('v0.9.2-mock')).toBeTruthy()
   })
 })
