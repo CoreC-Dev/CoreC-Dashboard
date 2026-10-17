@@ -437,7 +437,30 @@
     "perTransportPublishCounts": "Per-Transport Publish Counts",
     "perTransportPublishCountsDesc": "corec_transport_published_total{transport,type} counters",
     "noTransportPublishCounters": "N/A — no transport publish counters exposed",
-    "pprofFetchNote": "Profiles are fetched with the Authorization header and downloaded locally — direct links would receive a 401 because pprof is mounted inside CoreC's authed route group."
+    "pprofFetchNote": "Profiles are fetched with the Authorization header and downloaded locally — direct links would receive a 401 because pprof is mounted inside CoreC's authed route group.",
+    "instanceHealth": "Instance Health",
+    "instanceHealthDesc": "Version and liveness/readiness of the connected CoreC (GET /version, /healthz/live, /healthz/ready)",
+    "versionLabel": "Version",
+    "livenessLabel": "Liveness",
+    "readinessLabel": "Readiness",
+    "liveBadge": "alive",
+    "readyBadge": "ready",
+    "notReadyBadge": "not ready",
+    "unreachable": "unreachable",
+    "pathsUp": "{{up}}/{{total}} data paths connected",
+    "probeNote": "Public probe endpoints — readiness turns yellow when the process is alive but a data path is down; red only when the probe cannot be reached."
+  },
+  "writeHistory": {
+    "title": "Write Operation History",
+    "desc": "Every tag write recorded by CoreC — forward API writes and reverse stream commands (newest first, up to 1000 entries)",
+    "source": "Source",
+    "sourceApi": "API",
+    "sourceCommand": "Command",
+    "result": "Result",
+    "success": "Success",
+    "failed": "Failed",
+    "remote": "Remote",
+    "empty": "No write operations recorded yet"
   },
   "drivers": {
     "title": "Southbound Drivers",

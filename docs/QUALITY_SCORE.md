@@ -15,7 +15,7 @@
 ## 按业务域
 | 域 | 测试 | 文档 | 复杂度 | 依赖 | 重复 | 综合 | 主要差距（→ 台账 ID） |
 |---|---|---|---|---|---|---|---|
-| admin | 6 | 4 | 3 | 6 | 4 | **4.6** | 3 God 组件（CPLX-001/003/007）、CRUD/apply 重复（DUP-003/005）；ARCH-011/DUP-001 已结清（单源派生，commit 17c722c）；TEST-008 全 18 端点已测 |
+| admin | 6 | 4 | 3 | 6 | 4 | **4.6** | 3 God 组件（CPLX-001/003/007）、CRUD/apply 重复（DUP-003/005）；ARCH-011/DUP-001 已结清（单源派生，commit 17c722c）；TEST-008 全 22 端点已测（+write/history、/version、/healthz/live、/healthz/ready，含 zod 边界校验） |
 | monitor | 6 | 4 | 4 | 7 | 5 | **5.2** | TagExplorer God 组件（CPLX-002）、AlertsPage 死信未封顶（PERF-004）；TEST-004 WS 已测 |
 | home | 7 | 4 | 6 | 7 | 6 | **6.0** | TEST-002/006/007 已测（instanceStore/probe/dialog） |
 | settings | 6 | 4 | 7 | 8 | 7 | **6.4** | 导出泄密（SEC-003 P0）、导入未校验（SEC-011） |

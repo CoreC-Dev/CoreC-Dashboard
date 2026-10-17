@@ -8,6 +8,7 @@ import { act, cleanup, renderHook, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useConnectionStore } from '@/stores/connectionStore'
+import type { WriteHistoryResponse } from '@/types/api'
 
 // Mock the entire endpoint surface so no real network calls happen and we can
 // assert which functions the hooks invoke. The hooks import this module as a
@@ -26,6 +27,10 @@ vi.mock('@/api/endpoints', () => ({
   getConfigsRaw: vi.fn(),
   getDeadLetters: vi.fn(),
   getMetricsText: vi.fn(),
+  getWriteHistory: vi.fn(),
+  getVersion: vi.fn(),
+  getHealthzLive: vi.fn(),
+  getHealthzReady: vi.fn(),
   writeTag: vi.fn(),
   toggleRule: vi.fn(),
   patchConfigs: vi.fn(),
@@ -40,6 +45,7 @@ import {
   useServerInfo,
   useToggleRule,
   useUpdateConfig,
+  useWriteHistory,
   useWriteTag,
 } from '@/api/hooks'
 
@@ -161,7 +167,7 @@ describe('useConnectedQuery — connection gating (TD-TEST-009)', () => {
 })
 
 describe('mutation cache invalidation (TD-TEST-009)', () => {
-  it('useWriteTag invalidates tags, deadLetters, and the written driver tags+status', async () => {
+  it('useWriteTag invalidates tags, deadLetters, writeHistory, and the written driver tags+status', async () => {
     vi.mocked(api.writeTag).mockResolvedValue({ success: true })
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries')
 
@@ -180,6 +186,7 @@ describe('mutation cache invalidation (TD-TEST-009)', () => {
 
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['tags'] })
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['deadLetters'] })
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['writeHistory'] })
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['driverTags', 'plc1'] })
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['driver', 'plc1'] })
   })
@@ -229,5 +236,85 @@ describe('mutation cache invalidation (TD-TEST-009)', () => {
 
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['configs'] })
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['configsRaw'] })
+  })
+})
+
+describe('useWriteHistory — write audit trail', () => {
+  const history: WriteHistoryResponse = {
+    writes: [
+      {
+        timestamp: '2026-01-01T12:00:00Z',
+        driver: 'plc1',
+        device: '',
+        tag: 'temp',
+        value: 50,
+        type: 'float32',
+        success: true,
+        source: 'api',
+        remote: '192.168.1.10:51424',
+      },
+    ],
+    count: 1,
+  }
+
+  it('fetches the write history when connected and returns the parsed data', async () => {
+    vi.mocked(api.getWriteHistory).mockResolvedValue(history)
+    useConnectionStore.setState({ isConnected: true })
+
+    const { result } = renderHook(() => useWriteHistory(), {
+      wrapper: createWrapper(),
+    })
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect(api.getWriteHistory).toHaveBeenCalledTimes(1)
+    expect(result.current.data).toEqual(history)
+  })
+
+  it('skips the query when disconnected (useConnectedQuery gating)', async () => {
+    vi.mocked(api.getWriteHistory).mockResolvedValue(history)
+    useConnectionStore.setState({ isConnected: false })
+
+    const { result } = renderHook(() => useWriteHistory(), {
+      wrapper: createWrapper(),
+    })
+
+    await waitFor(() => expect(result.current.fetchStatus).toBe('idle'))
+    expect(api.getWriteHistory).not.toHaveBeenCalled()
+  })
+
+  it('surfaces an endpoint failure as isError (zod/transport errors alike)', async () => {
+    vi.mocked(api.getWriteHistory).mockRejectedValue(new Error('write history unavailable'))
+    useConnectionStore.setState({ isConnected: true })
+
+    const { result } = renderHook(() => useWriteHistory(), {
+      wrapper: createWrapper(),
+    })
+
+    await waitFor(() => expect(result.current.isError).toBe(true))
+    expect(result.current.error).toBeInstanceOf(Error)
+  })
+
+  it('useWriteTag invalidating writeHistory refetches the ACTIVE history query', async () => {
+    // The audit trail must reflect a fresh write immediately: the mutation
+    // invalidates ['writeHistory'], which refetches the mounted query
+    // without waiting for the 15s poll.
+    vi.mocked(api.getWriteHistory).mockResolvedValue(history)
+    vi.mocked(api.writeTag).mockResolvedValue({ success: true })
+    useConnectionStore.setState({ isConnected: true })
+
+    const { result: historyQuery } = renderHook(() => useWriteHistory(), {
+      wrapper: createWrapper(),
+    })
+    await waitFor(() => expect(historyQuery.current.isSuccess).toBe(true))
+    expect(api.getWriteHistory).toHaveBeenCalledTimes(1)
+
+    const { result: write } = renderHook(() => useWriteTag(), {
+      wrapper: createWrapper(),
+    })
+    await act(async () => {
+      await write.current.mutateAsync({ driver: 'plc1', tag: 'temp', value: 1, type: 'int16' })
+    })
+
+    await waitFor(() => expect(api.getWriteHistory).toHaveBeenCalledTimes(2))
   })
 })

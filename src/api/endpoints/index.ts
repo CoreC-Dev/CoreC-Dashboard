@@ -1,15 +1,23 @@
 import { ApiError, apiRequest } from '@/api/client'
-import type {
-  ConfigSummaryResponse,
-  DeadLetterResponse,
-  DriversListResponse,
-  DriverTagsResponse,
-  GlobalTagsResponse,
-  RulesListResponse,
-  ServerInfoResponse,
-  StatsResponse,
-  TransportsListResponse,
-  WriteResponse,
+import {
+  type ConfigSummaryResponse,
+  type DeadLetterResponse,
+  type DriversListResponse,
+  type DriverTagsResponse,
+  type GlobalTagsResponse,
+  type HealthzReadyResult,
+  healthzLiveResponseSchema,
+  healthzNotReadyResponseSchema,
+  healthzReadyResponseSchema,
+  type RulesListResponse,
+  type ServerInfoResponse,
+  type StatsResponse,
+  type TransportsListResponse,
+  type VersionResponse,
+  versionResponseSchema,
+  type WriteHistoryResponse,
+  type WriteResponse,
+  writeHistoryResponseSchema,
 } from '@/types/api'
 import type { DriverStatus, TransportStatus, WriteCommand } from '@/types/models'
 
@@ -117,3 +125,52 @@ export const toggleRule = (name: string, disabled: boolean) =>
 // Statistics & Metrics
 export const getStats = () => apiRequest<StatsResponse>('/stats')
 export const getMetricsText = () => apiRequest<string>('/metrics')
+
+// Write Operation History & Instance Health
+//
+// These responses are validated with zod at this boundary (AGENTS.md:
+// 后端响应不可信任) — the endpoints take `unknown` from apiRequest and
+// parse, so a contract drift surfaces here instead of rendering garbage
+// in the UI. Legacy endpoints above keep their TS type assertions.
+//
+// /version and /healthz/* are PUBLIC CoreC routes (registered outside the
+// auth group); apiRequest still attaches the Bearer token, which the
+// server ignores — the same /corec-proxy routing and header handling as
+// every other endpoint (see getStats / getServerInfo).
+export const getWriteHistory = async (): Promise<WriteHistoryResponse> =>
+  writeHistoryResponseSchema.parse(await apiRequest<unknown>('/write/history'))
+
+export const getVersion = async (): Promise<VersionResponse> =>
+  versionResponseSchema.parse(await apiRequest<unknown>('/version'))
+
+export const getHealthzLive = async () =>
+  healthzLiveResponseSchema.parse(await apiRequest<unknown>('/healthz/live'))
+
+/**
+ * Readiness probe, normalized: a 503 is the "not ready" OUTCOME, not a
+ * transport error — the body carries the reason and per-component
+ * connectivity, so parse it into { ready: false, ... } for a yellow
+ * badge. Genuine failures (5xx other than 503, malformed 503 body,
+ * timeouts) re-throw ApiError.
+ */
+export const getHealthzReady = async (): Promise<HealthzReadyResult> => {
+  try {
+    await healthzReadyResponseSchema.parse(await apiRequest<unknown>('/healthz/ready'))
+    return { ready: true }
+  } catch (err: unknown) {
+    if (err instanceof ApiError && err.status === 503 && err.body) {
+      try {
+        const parsed = healthzNotReadyResponseSchema.parse(JSON.parse(err.body))
+        return {
+          ready: false,
+          reason: parsed.reason,
+          components: parsed.components,
+        }
+      } catch {
+        // fall through to re-throw — an unparseable 503 body is a
+        // contract violation, not a readiness state.
+      }
+    }
+    throw err
+  }
+}

@@ -146,6 +146,9 @@ export function useWriteTag() {
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['tags'] })
       queryClient.invalidateQueries({ queryKey: ['deadLetters'] })
+      // The write audit trail must reflect the write immediately rather
+      // than waiting for the next 15s poll.
+      queryClient.invalidateQueries({ queryKey: ['writeHistory'] })
       // Invalidate the specific driver's tags and status so the UI reflects
       // the write immediately rather than waiting for the next poll.
       queryClient.invalidateQueries({ queryKey: ['driverTags', variables.driver] })
@@ -229,6 +232,62 @@ export function useMetrics(refetchInterval: number | false = 12_000) {
     queryKey: ['metrics'],
     queryFn: api.getMetricsText,
     refetchInterval,
+  })
+}
+
+/**
+ * Write operation history (GET /write/history) — the audit trail of every
+ * tag write (forward API + reverse stream commands), newest-first, capped
+ * server-side at 1000 entries. Polls at the 15s diagnostic cadence used by
+ * the other low-urgency queues (deadLetters, rules) — an audit log does
+ * not need the 5s stats cadence.
+ */
+export function useWriteHistory() {
+  return useConnectedQuery({
+    queryKey: ['writeHistory'],
+    queryFn: api.getWriteHistory,
+    refetchInterval: 15000,
+  })
+}
+
+/**
+ * CoreC version (GET /version, public). Static for the process lifetime —
+ * the 30s serverInfo cadence is plenty; exists mainly so the Diagnostics
+ * health strip shows an authoritative version even before/without a
+ * successful authed GET / probe.
+ */
+export function useVersion() {
+  return useConnectedQuery({
+    queryKey: ['version'],
+    queryFn: api.getVersion,
+    refetchInterval: 30000,
+  })
+}
+
+/**
+ * Liveness probe (GET /healthz/live, public) — 200 {"status":"alive"}
+ * whenever the process can serve HTTP. 15s matches the diagnostics
+ * cadence; k8s probes ~10s, but a UI badge does not need to be hotter.
+ */
+export function useHealthzLive() {
+  return useConnectedQuery({
+    queryKey: ['healthzLive'],
+    queryFn: api.getHealthzLive,
+    refetchInterval: 15000,
+  })
+}
+
+/**
+ * Readiness probe (GET /healthz/ready, public) — resolves to
+ * { ready: true } or { ready: false, reason, components } (the endpoint
+ * wrapper normalizes the 503 not-ready body). Only transport-level
+ * failures land in isError.
+ */
+export function useHealthzReady() {
+  return useConnectedQuery({
+    queryKey: ['healthzReady'],
+    queryFn: api.getHealthzReady,
+    refetchInterval: 15000,
   })
 }
 

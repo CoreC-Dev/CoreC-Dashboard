@@ -5,6 +5,8 @@ import { useTranslation } from 'react-i18next'
 import { getActiveConnection } from '@/api/activeConnection'
 import { useMetrics } from '@/api/hooks'
 import { EventLogTerminal } from '@/components/admin/EventLogTerminal'
+import { InstanceHealthBar } from '@/components/admin/InstanceHealthBar'
+import { WriteHistoryTable } from '@/components/admin/WriteHistoryTable'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Switch } from '@/components/ui/switch'
@@ -237,6 +239,9 @@ export const DiagnosticsPage: React.FC = () => {
         <h1 className="text-2xl font-bold tracking-tight">{t('diagnostics.title')}</h1>
         <p className="text-sm text-muted-foreground mt-1">{t('diagnostics.subtitle')}</p>
       </div>
+
+      {/* Instance version + liveness/readiness probes (public endpoints) */}
+      <InstanceHealthBar />
 
       {/* Real-time xterm.js Terminal */}
       <EventLogTerminal />
@@ -485,6 +490,9 @@ export const DiagnosticsPage: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Write Operation History (audit trail of every tag write) */}
+      <WriteHistoryTable />
 
       {/* pprof Debugging Downloads */}
       <Card className="border-border bg-card">

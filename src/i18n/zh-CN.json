@@ -437,7 +437,30 @@
     "perTransportPublishCounts": "各传输发布计数",
     "perTransportPublishCountsDesc": "corec_transport_published_total{transport,type} 计数器",
     "noTransportPublishCounters": "不可用 — 未暴露传输发布计数器",
-    "pprofFetchNote": "配置文件通过 Authorization 头获取并在本地下载 — 直接链接会收到 401，因为 pprof 挂载在 CoreC 的认证路由组内。"
+    "pprofFetchNote": "配置文件通过 Authorization 头获取并在本地下载 — 直接链接会收到 401，因为 pprof 挂载在 CoreC 的认证路由组内。",
+    "instanceHealth": "实例健康状态",
+    "instanceHealthDesc": "已连接 CoreC 的版本号与存活/就绪状态（GET /version、/healthz/live、/healthz/ready）",
+    "versionLabel": "版本",
+    "livenessLabel": "存活",
+    "readinessLabel": "就绪",
+    "liveBadge": "存活",
+    "readyBadge": "就绪",
+    "notReadyBadge": "未就绪",
+    "unreachable": "不可达",
+    "pathsUp": "{{up}}/{{total}} 条数据通路已连接",
+    "probeNote": "公开探针端点 — 进程存活但数据通路异常时就绪徽标为黄色；仅当探针无法访问时为红色。"
+  },
+  "writeHistory": {
+    "title": "写操作历史",
+    "desc": "CoreC 记录的每一次测点写入 — 正向 API 写入与反向流命令（最新在前，最多 1000 条）",
+    "source": "来源",
+    "sourceApi": "API",
+    "sourceCommand": "命令",
+    "result": "结果",
+    "success": "成功",
+    "failed": "失败",
+    "remote": "来源地址",
+    "empty": "暂无写操作记录"
   },
   "drivers": {
     "title": "南向驱动",

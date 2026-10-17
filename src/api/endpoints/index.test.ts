@@ -8,6 +8,8 @@ import {
   getDriver,
   getDrivers,
   getDriverTags,
+  getHealthzLive,
+  getHealthzReady,
   getMetricsText,
   getRules,
   getServerInfo,
@@ -15,6 +17,8 @@ import {
   getTags,
   getTransport,
   getTransports,
+  getVersion,
+  getWriteHistory,
   patchConfigs,
   toggleRule,
   updateConfigs,
@@ -659,5 +663,269 @@ describe('getMetricsText (GET /metrics)', () => {
 
     expect(result).toBe(metricsText)
     expectCorecRequest('/corec-proxy/metrics', undefined)
+  })
+})
+
+// ─── Write history & instance health ──────────────────────────────────
+// These endpoints zod-parse the response at the boundary (AGENTS.md:
+// backend responses are untrusted), so each describe also covers a
+// malformed-body rejection next to the happy path.
+
+describe('getWriteHistory (GET /write/history)', () => {
+  it('requests /write/history and parses the newest-first audit entries', async () => {
+    const history = {
+      writes: [
+        {
+          timestamp: '2026-01-01T12:00:00.123456789Z',
+          driver: 'plc1',
+          device: '',
+          tag: 'temp',
+          value: 50,
+          type: 'float32',
+          success: true,
+          source: 'api',
+          remote: '192.168.1.10:51424',
+        },
+        {
+          timestamp: '2026-01-01T11:00:00Z',
+          driver: 'plc1',
+          device: 'line1',
+          tag: 'pump',
+          value: true,
+          type: 'bool',
+          success: false,
+          error: 'driver disconnected',
+          source: 'command',
+        },
+      ],
+      count: 2,
+    }
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify(history), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }),
+    )
+
+    const result = await getWriteHistory()
+
+    expect(result).toEqual(history)
+    expectCorecRequest('/corec-proxy/write/history', undefined)
+  })
+
+  it('defaults a missing device field to an empty string (tolerant parse)', async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          writes: [
+            {
+              timestamp: '2026-01-01T12:00:00Z',
+              driver: 'plc1',
+              tag: 'temp',
+              value: '50',
+              type: 'string',
+              success: true,
+              source: 'command',
+            },
+          ],
+          count: 1,
+        }),
+        {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        },
+      ),
+    )
+
+    const result = await getWriteHistory()
+
+    expect(result.writes[0].device).toBe('')
+    expect(result.count).toBe(1)
+  })
+
+  it('rejects an entry whose type is outside the DataType enum (zod boundary)', async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          writes: [
+            {
+              timestamp: '2026-01-01T12:00:00Z',
+              driver: 'plc1',
+              tag: 'temp',
+              value: 1,
+              type: 'complex128', // not a CoreC DataType
+              success: true,
+              source: 'api',
+            },
+          ],
+          count: 1,
+        }),
+        {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        },
+      ),
+    )
+
+    await expect(getWriteHistory()).rejects.toThrow()
+  })
+
+  it('throws ApiError on a 500 server error', async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response('internal server error', {
+        status: 500,
+        headers: { 'content-type': 'text/plain' },
+      }),
+    )
+
+    await expect(getWriteHistory()).rejects.toThrow(ApiError)
+  })
+
+  it('surfaces a 501 from engines without write-history support as ApiError', async () => {
+    // CoreC answers 501 (not 500) when the engine does not implement the
+    // write auditor — the UI error state shows it like any transport error.
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ error: 'write history not supported by this engine' }), {
+        status: 501,
+        headers: { 'content-type': 'application/json' },
+      }),
+    )
+
+    let caught: unknown
+    try {
+      await getWriteHistory()
+    } catch (err) {
+      caught = err
+    }
+    expect(caught).toBeInstanceOf(ApiError)
+    expect((caught as ApiError).status).toBe(501)
+  })
+})
+
+describe('getVersion (GET /version)', () => {
+  it('requests the public /version endpoint and parses {"version"}', async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ version: '0.9.2' }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }),
+    )
+
+    const result = await getVersion()
+
+    expect(result).toEqual({ version: '0.9.2' })
+    // Public route, but the same proxy + Bearer headers as every other
+    // endpoint — CoreC ignores the token outside its auth group.
+    expectCorecRequest('/corec-proxy/version', undefined)
+  })
+
+  it('rejects a body without the version field', async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ status: 'ok' }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }),
+    )
+
+    await expect(getVersion()).rejects.toThrow()
+  })
+})
+
+describe('getHealthzLive (GET /healthz/live)', () => {
+  it('requests the public liveness probe and parses {"status":"alive"}', async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ status: 'alive' }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }),
+    )
+
+    const result = await getHealthzLive()
+
+    expect(result).toEqual({ status: 'alive' })
+    expectCorecRequest('/corec-proxy/healthz/live', undefined)
+  })
+
+  it('rejects an unexpected status value', async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ status: 'dead' }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }),
+    )
+
+    await expect(getHealthzLive()).rejects.toThrow()
+  })
+})
+
+describe('getHealthzReady (GET /healthz/ready)', () => {
+  it('normalizes the 200 ready body to { ready: true }', async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ status: 'ready' }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }),
+    )
+
+    const result = await getHealthzReady()
+
+    expect(result).toEqual({ ready: true })
+    expectCorecRequest('/corec-proxy/healthz/ready', undefined)
+  })
+
+  it('normalizes a 503 not-ready body into { ready: false, reason, components }', async () => {
+    const notReady = {
+      status: 'not_ready',
+      reason: 'no drivers connected',
+      components: {
+        drivers: [{ name: 'plc1', connected: false }],
+        transports: [{ name: 'wh1', connected: true }],
+      },
+    }
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify(notReady), {
+        status: 503,
+        headers: { 'content-type': 'application/json' },
+      }),
+    )
+
+    const result = await getHealthzReady()
+
+    expect(result).toEqual({
+      ready: false,
+      reason: 'no drivers connected',
+      components: notReady.components,
+    })
+  })
+
+  it('re-throws when the 503 body is not the not-ready shape', async () => {
+    // A 503 from a reverse proxy (HTML error page) is a contract
+    // violation, not a readiness state — surface it as an ApiError.
+    mockFetch.mockResolvedValueOnce(
+      new Response('<html>Bad Gateway</html>', {
+        status: 503,
+        headers: { 'content-type': 'text/html' },
+      }),
+    )
+
+    let caught: unknown
+    try {
+      await getHealthzReady()
+    } catch (err) {
+      caught = err
+    }
+    expect(caught).toBeInstanceOf(ApiError)
+    expect((caught as ApiError).status).toBe(503)
+  })
+
+  it('throws ApiError on a 500 server error', async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response('internal server error', {
+        status: 500,
+        headers: { 'content-type': 'text/plain' },
+      }),
+    )
+
+    await expect(getHealthzReady()).rejects.toThrow(ApiError)
   })
 })
