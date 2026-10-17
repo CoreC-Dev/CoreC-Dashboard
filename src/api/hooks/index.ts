@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react'
 import * as api from '@/api/endpoints'
 import { CoreCWebSocket, type WSStatus } from '@/api/websocket'
 import { useConnectionStore } from '@/stores/connectionStore'
+import type { DriverTestRequest } from '@/types/api'
 import type { WriteCommand } from '@/types/models'
 
 function useConnectedQuery<T>({
@@ -288,6 +289,22 @@ export function useHealthzReady() {
     queryKey: ['healthzReady'],
     queryFn: api.getHealthzReady,
     refetchInterval: 15000,
+  })
+}
+
+/**
+ * Driver connectivity test (POST /drivers/test) — spins up a THROWAWAY
+ * driver instance server-side with the wizard's current type+settings,
+ * measures the connection attempt, and always tears it down. Both
+ * outcomes are 200 (connected or not); a rejected request (400) is
+ * normalized into { outcome: 'rejected' } by the endpoint wrapper.
+ *
+ * Intentionally no cache invalidation: the probe registers nothing and
+ * persists nothing, so no query can go stale because of it.
+ */
+export function useDriverTest() {
+  return useMutation({
+    mutationFn: (req: DriverTestRequest) => api.postDriverTest(req.type, req.settings, req.name),
   })
 }
 

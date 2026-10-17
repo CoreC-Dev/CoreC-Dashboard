@@ -20,6 +20,7 @@ import {
   getVersion,
   getWriteHistory,
   patchConfigs,
+  postDriverTest,
   toggleRule,
   updateConfigs,
   validateConfigs,
@@ -927,5 +928,100 @@ describe('getHealthzReady (GET /healthz/ready)', () => {
     )
 
     await expect(getHealthzReady()).rejects.toThrow(ApiError)
+  })
+})
+
+describe('postDriverTest (POST /drivers/test)', () => {
+  const settings = { host: '10.0.0.5', port: 502, 'slave-id': 1 }
+
+  function mockJson(status: number, body: unknown) {
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify(body), {
+        status,
+        headers: { 'content-type': 'application/json' },
+      }),
+    )
+  }
+
+  it('sends type+settings and parses the connected 200 body', async () => {
+    mockJson(200, {
+      ok: true,
+      connected: true,
+      latency_ms: 12,
+      driver_type: 'modbus-tcp',
+    })
+
+    const result = await postDriverTest('modbus-tcp', settings)
+
+    expect(result).toEqual({
+      outcome: 'completed',
+      data: { ok: true, connected: true, latency_ms: 12, driver_type: 'modbus-tcp' },
+    })
+    const init = expectCorecRequest('/corec-proxy/drivers/test', 'POST')
+    expect((init!.headers as Headers).get('Content-Type')).toBe('application/json')
+    expect(JSON.parse(init?.body as string)).toEqual({ type: 'modbus-tcp', settings })
+  })
+
+  it('includes the optional name in the request body when provided', async () => {
+    mockJson(200, { ok: true, connected: true, latency_ms: 3, driver_type: 's7' })
+
+    await postDriverTest('s7', { rack: 0, slot: 1 }, 'plc-line-2-probe')
+
+    const init = mockFetch.mock.calls[0][1] as RequestInit
+    expect(JSON.parse(init.body as string)).toEqual({
+      type: 's7',
+      settings: { rack: 0, slot: 1 },
+      name: 'plc-line-2-probe',
+    })
+  })
+
+  it('normalizes a failed probe (200 ok:false) into completed with the verbatim error', async () => {
+    // A completed run with connected=false is a successful TEST, not a
+    // server error — the 5s server timeout surfaces the same way.
+    mockJson(200, {
+      ok: false,
+      connected: false,
+      error: 'driver test timed out after 5s',
+      latency_ms: 5001,
+      driver_type: 'modbus-tcp',
+    })
+
+    const result = await postDriverTest('modbus-tcp', settings)
+
+    expect(result.outcome).toBe('completed')
+    expect(result.outcome === 'completed' && result.data.connected).toBe(false)
+    expect(result.outcome === 'completed' && result.data.error).toBe(
+      'driver test timed out after 5s',
+    )
+  })
+
+  it('normalizes a 400 rejection into { outcome: rejected } with the server message', async () => {
+    // Unknown driver type / settings the factory refuses → 400 with the
+    // reason in the body. It is the answer, so it resolves (like
+    // validateConfigs normalizes its 400s) instead of throwing.
+    mockJson(400, { error: 'unknown driver type: no-such-type' })
+
+    const result = await postDriverTest('no-such-type', {})
+
+    expect(result).toEqual({ outcome: 'rejected', error: 'unknown driver type: no-such-type' })
+  })
+
+  it('throws ApiError on a 500 server error', async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response('internal server error', {
+        status: 500,
+        headers: { 'content-type': 'text/plain' },
+      }),
+    )
+
+    await expect(postDriverTest('modbus-tcp', settings)).rejects.toThrow(ApiError)
+  })
+
+  it('rejects a 200 body missing required fields (zod boundary)', async () => {
+    // Contract drift (e.g. a proxy returning a different shape) must
+    // surface at the boundary, not render garbage in the wizard.
+    mockJson(200, { ok: true })
+
+    await expect(postDriverTest('modbus-tcp', settings)).rejects.toThrow()
   })
 })

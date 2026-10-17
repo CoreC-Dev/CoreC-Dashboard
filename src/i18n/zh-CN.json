@@ -245,7 +245,15 @@
     "validationErrors": "发现 {{count}} 个校验错误",
     "validationMore": "...还有 {{count}} 个",
     "validationPassed": "校验通过 — 可以保存",
-    "validationWarnings": "{{count}} 条 idle 模式告警 — 不阻塞保存"
+    "validationWarnings": "{{count}} 条 idle 模式告警 — 不阻塞保存",
+    "testConnection": "测试连接",
+    "testConnectionDesc": "保存前在服务端用临时实例探测连通性。不注册实例、不写入配置。",
+    "testRunning": "测试中…",
+    "testConnected": "连接成功，耗时 {{ms}} ms",
+    "testFailed": "连接失败",
+    "testFailedHint": "请检查上方地址与参数后重试。探测仅为辅助，无论结果如何均可继续下一步。",
+    "testRejected": "服务器拒绝了测试请求",
+    "testRequestFailed": "测试请求失败"
   },
   "connection": {
     "disconnect": "断开连接"

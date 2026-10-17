@@ -245,7 +245,15 @@
     "validationErrors": "{{count}} validation error(s) found",
     "validationMore": "... and {{count}} more",
     "validationPassed": "Validation passed — ready to save",
-    "validationWarnings": "{{count}} idle-mode warning(s) — non-blocking"
+    "validationWarnings": "{{count}} idle-mode warning(s) — non-blocking",
+    "testConnection": "Test connection",
+    "testConnectionDesc": "Probe reachability with a throwaway server-side instance before saving. Nothing is registered or persisted.",
+    "testRunning": "Testing…",
+    "testConnected": "Connected in {{ms}} ms",
+    "testFailed": "Connection failed",
+    "testFailedHint": "Check the address and settings above, then retry. The probe is optional — you can continue either way.",
+    "testRejected": "Server rejected the test request",
+    "testRequestFailed": "Test request failed"
   },
   "connection": {
     "disconnect": "Disconnect"

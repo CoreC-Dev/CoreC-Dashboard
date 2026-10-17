@@ -172,3 +172,57 @@ export type HealthzReadyResult =
         transports: HealthComponent[]
       }
     }
+
+// ─── Driver connectivity test (POST /drivers/test) ────────────────────
+//
+// The backend instantiates a THROWAWAY driver from the request, drives it
+// through the same init→start lifecycle a configured driver follows,
+// measures the connect attempt, and always tears the instance down. Both
+// outcomes are 200 (hub/route/driver_check.go): a completed run with
+// connected=false is a successful TEST, not a server error.
+
+/**
+ * Request body of POST /drivers/test. The json field names are defined
+ * explicitly in the handler (core.DriverConfig only carries yaml tags), so
+ * they are pinned HERE too — `settings` mirrors drivers[].settings in the
+ * YAML config exactly.
+ */
+export interface DriverTestRequest {
+  /** Registered driver type to instantiate, e.g. "modbus-tcp". Empty → 400. */
+  type: string
+  /** Protocol-specific connection parameters, exactly as they will be saved. */
+  settings: Record<string, unknown>
+  /**
+   * Log label for the temporary instance (informational only — nothing is
+   * registered or persisted). Defaults to "driver-test" server-side.
+   */
+  name?: string
+}
+
+/** 200 body of POST /drivers/test, validated with zod at the boundary. */
+export const driverTestResponseSchema = z.object({
+  /** Lifecycle ended connected (equivalent to `connected`). */
+  ok: z.boolean(),
+  /** Init + Start (the connection attempt) succeeded. */
+  connected: z.boolean(),
+  /** Connect attempt duration (init+start, no teardown), milliseconds. */
+  latency_ms: z.number(),
+  /** Echo of the request `type`. */
+  driver_type: z.string(),
+  /** Failure message, only present when connected=false. */
+  error: z.string().optional(),
+})
+export type DriverTestResponse = z.infer<typeof driverTestResponseSchema>
+
+/**
+ * Normalized probe outcome. `completed` is a finished test run (connected
+ * OR not — both are 200). `rejected` mirrors the backend's own log wording
+ * for a request the server refused (unknown driver type, settings the
+ * factory rejects): the message is the answer the operator needs, shown
+ * verbatim, so it is a result rather than a thrown transport error — the
+ * same normalization validateConfigs applies to its 400s. Genuine
+ * transport failures (401/timeout/5xx/malformed body) still throw ApiError.
+ */
+export type DriverTestResult =
+  | { outcome: 'completed'; data: DriverTestResponse }
+  | { outcome: 'rejected'; error: string }

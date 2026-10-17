@@ -25,6 +25,7 @@ import { ChevronDown, FileText, Plus, Settings2, Trash2, Zap } from 'lucide-reac
 import type React from 'react'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { DriverConnectionTest } from '@/components/admin/DriverConnectionTest'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -342,6 +343,14 @@ export const DriverWizard: React.FC<DriverWizardProps> = ({
               ))}
             </div>
           )}
+
+          {/* Optional connectivity probe against the current type+settings.
+              Purely auxiliary — it does not gate this step's canProceed. */}
+          <DriverConnectionTest
+            type={selectedType}
+            settings={settings}
+            name={driverName.trim() || undefined}
+          />
         </div>
       ),
     },

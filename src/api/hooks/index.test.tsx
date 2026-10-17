@@ -36,11 +36,13 @@ vi.mock('@/api/endpoints', () => ({
   patchConfigs: vi.fn(),
   updateConfigs: vi.fn(),
   validateConfigs: vi.fn(),
+  postDriverTest: vi.fn(),
 }))
 
 import * as api from '@/api/endpoints'
 import {
   useDriver,
+  useDriverTest,
   usePatchConfig,
   useServerInfo,
   useToggleRule,
@@ -48,6 +50,7 @@ import {
   useWriteHistory,
   useWriteTag,
 } from '@/api/hooks'
+import type { DriverTestResult } from '@/types/api'
 
 // One QueryClient per test, provided via a wrapper. retry:false keeps failed
 // queries from looping; staleTime:0 lets invalidation/refetch assertions stay
@@ -316,5 +319,78 @@ describe('useWriteHistory — write audit trail', () => {
     })
 
     await waitFor(() => expect(api.getWriteHistory).toHaveBeenCalledTimes(2))
+  })
+})
+
+describe('useDriverTest — connectivity probe mutation', () => {
+  const connected: DriverTestResult = {
+    outcome: 'completed',
+    data: { ok: true, connected: true, latency_ms: 12, driver_type: 'modbus-tcp' },
+  }
+
+  it('calls postDriverTest with the wizard form values and surfaces the result', async () => {
+    vi.mocked(api.postDriverTest).mockResolvedValue(connected)
+
+    const { result } = renderHook(() => useDriverTest(), {
+      wrapper: createWrapper(),
+    })
+
+    await act(async () => {
+      await result.current.mutateAsync({
+        type: 'modbus-tcp',
+        settings: { host: '10.0.0.5', port: 502 },
+        name: 'plc-line-2-probe',
+      })
+    })
+
+    expect(api.postDriverTest).toHaveBeenCalledWith(
+      'modbus-tcp',
+      { host: '10.0.0.5', port: 502 },
+      'plc-line-2-probe',
+    )
+    await waitFor(() => expect(result.current.data).toEqual(connected))
+    expect(result.current.isError).toBe(false)
+  })
+
+  it('resolves a completed-but-disconnected probe as a normal result (not an error)', async () => {
+    // Both /drivers/test outcomes are 200: a failed connection is a
+    // finished test — the hook must not put it in the error state.
+    const failed: DriverTestResult = {
+      outcome: 'completed',
+      data: {
+        ok: false,
+        connected: false,
+        error: 'dial tcp 10.0.0.5:502: connection refused',
+        latency_ms: 3,
+        driver_type: 'modbus-tcp',
+      },
+    }
+    vi.mocked(api.postDriverTest).mockResolvedValue(failed)
+
+    const { result } = renderHook(() => useDriverTest(), {
+      wrapper: createWrapper(),
+    })
+
+    await act(async () => {
+      await result.current.mutateAsync({ type: 'modbus-tcp', settings: {} })
+    })
+
+    await waitFor(() => expect(result.current.data).toEqual(failed))
+    expect(result.current.isError).toBe(false)
+  })
+
+  it('surfaces transport-level failures as isError (no invalidation, no retry)', async () => {
+    vi.mocked(api.postDriverTest).mockRejectedValue(new Error('network unreachable'))
+
+    const { result } = renderHook(() => useDriverTest(), {
+      wrapper: createWrapper(),
+    })
+
+    await act(async () => {
+      await result.current.mutateAsync({ type: 'modbus-tcp', settings: {} }).catch(() => {})
+    })
+
+    await waitFor(() => expect(result.current.isError).toBe(true))
+    expect(api.postDriverTest).toHaveBeenCalledTimes(1)
   })
 })

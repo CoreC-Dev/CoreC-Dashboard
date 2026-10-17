@@ -1,9 +1,12 @@
-import { ApiError, apiRequest } from '@/api/client'
+import { ApiError, apiRequest, extractApiError } from '@/api/client'
 import {
   type ConfigSummaryResponse,
   type DeadLetterResponse,
   type DriversListResponse,
   type DriverTagsResponse,
+  type DriverTestRequest,
+  type DriverTestResult,
+  driverTestResponseSchema,
   type GlobalTagsResponse,
   type HealthzReadyResult,
   healthzLiveResponseSchema,
@@ -170,6 +173,41 @@ export const getHealthzReady = async (): Promise<HealthzReadyResult> => {
         // fall through to re-throw — an unparseable 503 body is a
         // contract violation, not a readiness state.
       }
+    }
+    throw err
+  }
+}
+
+/**
+ * Driver connectivity test (POST /drivers/test) — the backend spins up a
+ * throwaway instance of `type` with `settings`, runs the same init→start
+ * lifecycle a configured driver follows, and always tears it down. The
+ * instance is never registered and nothing is persisted, so the operator
+ * can validate a driver config BEFORE saving it.
+ *
+ * The 200 body is zod-parsed at this boundary. A 400 (unknown driver
+ * type, settings the driver factory rejects) is normalized into
+ * { outcome: 'rejected' } with the server message verbatim — it is the
+ * answer, not a transport error. The 5s server-side timeout surfaces as a
+ * 200 { ok: false, error: "driver test timed out after 5s" }.
+ */
+export const postDriverTest = async (
+  type: string,
+  settings: Record<string, unknown>,
+  name?: string,
+): Promise<DriverTestResult> => {
+  const req: DriverTestRequest = { type, settings, name }
+  try {
+    const data = driverTestResponseSchema.parse(
+      await apiRequest<unknown>('/drivers/test', {
+        method: 'POST',
+        body: JSON.stringify(req),
+      }),
+    )
+    return { outcome: 'completed', data }
+  } catch (err: unknown) {
+    if (err instanceof ApiError && err.status === 400 && err.body) {
+      return { outcome: 'rejected', error: extractApiError(err.body, err.message) }
     }
     throw err
   }
