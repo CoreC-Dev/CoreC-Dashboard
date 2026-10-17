@@ -101,3 +101,15 @@
 - **影响**：新增 `transport/notify` 插件；规则名经 `DataPoint.Metadata["rule"]` 注入（forward payload 新增可选字段，omitempty 不破坏现有消费者）。业务行为影响=无（纯新增插件）。
 - **日期**：2026-10-16
 - **计划**：`exec-plans/active/notify-transport.md`
+
+## ADR-013 schema 驱动表单：推迟至后端产出机器可读 schema（2026-10-17 处置登记）
+- **背景**：审计曾建议由后端配置结构生成前端表单与校验，消除前后端字段漂移（前端 `lib/configSchema.ts` 811 行手写 zod 需与 CoreC `config/validate.go` 人工保持一致）。
+- **决策**：**推迟**。触发条件：CoreC 输出 OpenAPI/JSON Schema（或等价机器可读契约）后，评估从 schema 生成 `configSchema.ts` 与表单注册表。
+- **理由**：(1) 在无机器可读源时"生成"只能换一套手写，收益为零；(2) 漂移已有部分防线——`config.example.yaml` 对齐测试（commit dcdfd1c"dashboard-yaml alignment fixes"）+ `POST /configs/validate` 服务端终审，前端校验仅是 UX 优化非安全边界；(3) 规则/驱动/传输三向契约最近两批端点（drivers/test、rules/preview、configs/backups）均已按"以后端源码为准逐字段核对"交付。
+- **影响**：无代码变更；本 ADR 即处置记录。到期重新评估时替换本条。
+
+## ADR-014 移动端适配/暗色图表主题等体验项：登记为产品 backlog，不排期（2026-10-17 处置登记）
+- **背景**：审计曾列为"低价值/锦上添花"建议（移动端布局、图表暗色主题、xterm 诊断命令扩展）。
+- **决策**：登记为 **backlog**，当前不排期。目标用户为运维/控制工程师的桌面工位场景，上述项不影响核心工作流。
+- **理由**：资源优先级原则——数据正确性/可观测性/控制安全类工作（本批：写审计、备份时间线、死信重放、批量写、实时面板）完成后才轮到体验增强。
+- **影响**：无代码变更；后续有用户反馈时从 backlog 提起。
