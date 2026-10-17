@@ -15,7 +15,7 @@
 ## 按业务域
 | 域 | 测试 | 文档 | 复杂度 | 依赖 | 重复 | 综合 | 主要差距（→ 台账 ID） |
 |---|---|---|---|---|---|---|---|
-| admin | 6 | 4 | 3 | 6 | 4 | **4.6** | 3 God 组件（CPLX-001/003/007）、CRUD/apply 重复（DUP-003/005）；ARCH-011/DUP-001 已结清（单源派生，commit 17c722c）；TEST-008 全 22 端点已测（+write/history、/version、/healthz/live、/healthz/ready，含 zod 边界校验） |
+| admin | 6 | 4 | 3 | 6 | 4 | **4.6** | 3 God 组件（CPLX-001/003/007）、CRUD/apply 重复（DUP-003/005）；ARCH-011/DUP-001 已结清（单源派生，commit 17c722c）；TEST-008 全 28 端点已测（+write/history、/version、/healthz/live、/healthz/ready、/drivers/test、/rules/preview、/configs/backups 列表/内容/恢复，含 zod 边界校验） |
 | monitor | 6 | 4 | 4 | 7 | 5 | **5.2** | TagExplorer God 组件（CPLX-002）、AlertsPage 死信未封顶（PERF-004）；TEST-004 WS 已测 |
 | home | 7 | 4 | 6 | 7 | 6 | **6.0** | TEST-002/006/007 已测（instanceStore/probe/dialog） |
 | settings | 6 | 4 | 7 | 8 | 7 | **6.4** | 导出泄密（SEC-003 P0）、导入未校验（SEC-011） |
@@ -41,5 +41,5 @@
 
 ## 目标与差距
 - **阶段 5 DoD 目标**：每域/层综合 ≥ 7.0；安全 8+；门禁 8+；文档 8+。
-- **当前最大短板**：features 层复杂度（3.0，God 组件）、admin 域重复（4.0）。测试覆盖已大幅提升（657 tests @ 2026-10-17 复测；TD-TEST-002..016 全结清——原文档写 610，为 2026-10-11 时点值，后由 dcdfd1c 与写历史面板两批提交增至 657）。门禁/CI 与文档已达 8+。
+- **当前最大短板**：features 层复杂度（3.0，God 组件）、admin 域重复（4.0）。测试覆盖已大幅提升（747 tests @ 2026-10-17 复测；TD-TEST-002..016 全结清——原文档写 610，为 2026-10-11 时点值，后由 dcdfd1c 与写历史面板两批提交增至 657）。门禁/CI 与文档已达 8+。
 - **复算方式**：`npm run test:coverage`（阶段 3 接入）+ 结构测试（依赖方向/文件大小）+ 本台账计数。每次阶段 4 批次完成后重算本文件。
