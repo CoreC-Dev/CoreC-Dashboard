@@ -25,6 +25,8 @@ vi.mock('@/api/endpoints', () => ({
   getStats: vi.fn(),
   getConfigs: vi.fn(),
   getConfigsRaw: vi.fn(),
+  getConfigBackups: vi.fn(),
+  restoreConfigBackup: vi.fn(),
   getDeadLetters: vi.fn(),
   getMetricsText: vi.fn(),
   getWriteHistory: vi.fn(),
@@ -42,9 +44,11 @@ vi.mock('@/api/endpoints', () => ({
 
 import * as api from '@/api/endpoints'
 import {
+  useConfigBackups,
   useDriver,
   useDriverTest,
   usePatchConfig,
+  useRestoreConfigBackup,
   useRulesPreview,
   useServerInfo,
   useToggleRule,
@@ -52,7 +56,7 @@ import {
   useWriteHistory,
   useWriteTag,
 } from '@/api/hooks'
-import type { DriverTestResult, RulesPreviewResult } from '@/types/api'
+import type { ConfigBackupRestoreResult, DriverTestResult, RulesPreviewResult } from '@/types/api'
 
 // One QueryClient per test, provided via a wrapper. retry:false keeps failed
 // queries from looping; staleTime:0 lets invalidation/refetch assertions stay
@@ -241,6 +245,104 @@ describe('mutation cache invalidation (TD-TEST-009)', () => {
 
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['configs'] })
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['configsRaw'] })
+    // Every reload snapshots the replaced on-disk config server-side, so
+    // the backup list may have gained an entry.
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['configBackups'] })
+  })
+})
+
+// ─── Server-side config backups ─────────────────────────────────────────
+
+describe('useConfigBackups / useRestoreConfigBackup — config backup timeline', () => {
+  const backups = {
+    backups: [{ name: '1767225600123456789.yaml', timestamp: '2026-01-01T00:00:00Z', size: 1024 }],
+  }
+
+  it('fetches the backup list when connected and returns the parsed data', async () => {
+    vi.mocked(api.getConfigBackups).mockResolvedValue(backups)
+    useConnectionStore.setState({ isConnected: true })
+
+    const { result } = renderHook(() => useConfigBackups(), {
+      wrapper: createWrapper(),
+    })
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect(api.getConfigBackups).toHaveBeenCalledTimes(1)
+    expect(result.current.data).toEqual(backups)
+  })
+
+  it('skips the backup list query when disconnected (useConnectedQuery gating)', async () => {
+    vi.mocked(api.getConfigBackups).mockResolvedValue(backups)
+    useConnectionStore.setState({ isConnected: false })
+
+    const { result } = renderHook(() => useConfigBackups(), {
+      wrapper: createWrapper(),
+    })
+
+    await waitFor(() => expect(result.current.fetchStatus).toBe('idle'))
+    expect(api.getConfigBackups).not.toHaveBeenCalled()
+  })
+
+  it('useRestoreConfigBackup invalidates the config surface AND the backup list on success', async () => {
+    // A restore reloads the engine (same chain as PUT /configs) and the
+    // server snapshots the replaced config — both the runtime views and
+    // the backup list go stale.
+    const restored: ConfigBackupRestoreResult = { outcome: 'restored' }
+    vi.mocked(api.restoreConfigBackup).mockResolvedValue(restored)
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries')
+
+    const { result } = renderHook(() => useRestoreConfigBackup(), {
+      wrapper: createWrapper(),
+    })
+
+    await act(async () => {
+      await result.current.mutateAsync('1767225600123456789.yaml')
+    })
+
+    expect(api.restoreConfigBackup).toHaveBeenCalledWith('1767225600123456789.yaml')
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['configs'] })
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['configsRaw'] })
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['configBackups'] })
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['drivers'] })
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['deadLetters'] })
+  })
+
+  it('useRestoreConfigBackup resolves a rejected restore as data and invalidates nothing', async () => {
+    // A 400 validation refusal leaves the running config untouched — no
+    // cache can have gone stale, so the mutation must not invalidate.
+    const rejected: ConfigBackupRestoreResult = {
+      outcome: 'rejected',
+      status: 400,
+      error: 'config backup failed validation: api.secret must be set',
+    }
+    vi.mocked(api.restoreConfigBackup).mockResolvedValue(rejected)
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries')
+
+    const { result } = renderHook(() => useRestoreConfigBackup(), {
+      wrapper: createWrapper(),
+    })
+
+    await act(async () => {
+      await result.current.mutateAsync('1767225600123456789.yaml')
+    })
+
+    await waitFor(() => expect(result.current.data).toEqual(rejected))
+    expect(result.current.isError).toBe(false)
+    expect(invalidateSpy).not.toHaveBeenCalled()
+  })
+
+  it('surfaces a transport-level restore failure as isError', async () => {
+    vi.mocked(api.restoreConfigBackup).mockRejectedValue(new Error('network unreachable'))
+
+    const { result } = renderHook(() => useRestoreConfigBackup(), {
+      wrapper: createWrapper(),
+    })
+
+    await act(async () => {
+      await result.current.mutateAsync('1767225600123456789.yaml').catch(() => {})
+    })
+
+    await waitFor(() => expect(result.current.isError).toBe(true))
   })
 })
 

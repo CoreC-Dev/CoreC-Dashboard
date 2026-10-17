@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { setActiveConnection } from '@/api/activeConnection'
 import { ApiError } from '@/api/client'
 import {
+  getConfigBackupContent,
+  getConfigBackups,
   getConfigs,
   getConfigsRaw,
   getDeadLetters,
@@ -22,6 +24,7 @@ import {
   patchConfigs,
   postDriverTest,
   postRulesPreview,
+  restoreConfigBackup,
   toggleRule,
   updateConfigs,
   validateConfigs,
@@ -666,6 +669,195 @@ describe('getMetricsText (GET /metrics)', () => {
 
     expect(result).toBe(metricsText)
     expectCorecRequest('/corec-proxy/metrics', undefined)
+  })
+})
+
+// ─── Server-side config backups (GET /configs/backups*) ────────────────
+
+describe('getConfigBackups (GET /configs/backups)', () => {
+  it('requests the list and zod-parses the metadata entries', async () => {
+    const backups = {
+      backups: [
+        {
+          name: '1767225600123456789.yaml',
+          timestamp: '2026-01-01T00:00:00.123456789Z',
+          size: 2048,
+        },
+        { name: '1767225500000000000.yaml', timestamp: '2025-12-31T23:58:20Z', size: 1987 },
+      ],
+    }
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify(backups), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }),
+    )
+
+    const result = await getConfigBackups()
+
+    expect(result).toEqual(backups)
+    expectCorecRequest('/corec-proxy/configs/backups', undefined)
+  })
+
+  it('parses an empty backup list', async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ backups: [] }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }),
+    )
+
+    const result = await getConfigBackups()
+
+    expect(result).toEqual({ backups: [] })
+  })
+
+  it('rejects a malformed body (zod boundary)', async () => {
+    // Contract drift must surface at the boundary, not render garbage rows.
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ backups: [{ name: 42 }] }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }),
+    )
+
+    await expect(getConfigBackups()).rejects.toThrow()
+  })
+
+  it('throws ApiError on a 500 server error', async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response('internal server error', {
+        status: 500,
+        headers: { 'content-type': 'text/plain' },
+      }),
+    )
+
+    await expect(getConfigBackups()).rejects.toThrow(ApiError)
+  })
+})
+
+describe('getConfigBackupContent (GET /configs/backups/{name})', () => {
+  it('returns the raw YAML text body with the yaml Accept header', async () => {
+    const yamlText = 'global:\n  api:\n    secret: "real-secret"\n'
+    mockFetch.mockResolvedValueOnce(
+      new Response(yamlText, {
+        status: 200,
+        headers: { 'content-type': 'application/yaml; charset=utf-8' },
+      }),
+    )
+
+    const result = await getConfigBackupContent('1767225600123456789.yaml')
+
+    expect(result).toBe(yamlText)
+    const init = expectCorecRequest(
+      '/corec-proxy/configs/backups/1767225600123456789.yaml',
+      undefined,
+    )
+    expect((init!.headers as Headers).get('Accept')).toBe('application/yaml')
+  })
+
+  it('encodes the backup name into the path', async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response('node:\n', {
+        status: 200,
+        headers: { 'content-type': 'application/yaml' },
+      }),
+    )
+
+    await getConfigBackupContent('17 67.yaml')
+
+    expect(mockFetch.mock.calls[0][0]).toBe('/corec-proxy/configs/backups/17%2067.yaml')
+  })
+
+  it('throws ApiError on a 404 unknown backup', async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ error: 'config backup not found' }), {
+        status: 404,
+        headers: { 'content-type': 'application/json' },
+      }),
+    )
+
+    await expect(getConfigBackupContent('999.yaml')).rejects.toThrow(ApiError)
+  })
+})
+
+describe('restoreConfigBackup (POST /configs/backups/{name}/restore)', () => {
+  it('resolves { outcome: restored } on a 204', async () => {
+    mockFetch.mockResolvedValueOnce(new Response(null, { status: 204 }))
+
+    const result = await restoreConfigBackup('1767225600123456789.yaml')
+
+    expect(result).toEqual({ outcome: 'restored' })
+    const init = expectCorecRequest(
+      '/corec-proxy/configs/backups/1767225600123456789.yaml/restore',
+      'POST',
+    )
+    // No request body — the server reads the backup file itself.
+    expect(init?.body).toBeUndefined()
+  })
+
+  it('normalizes a 400 validation failure into { outcome: rejected } with the verbatim message', async () => {
+    // A backup that no longer passes validation fails BEFORE anything is
+    // applied — the message is the answer, not a transport error.
+    mockFetch.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({ error: 'config backup failed validation: api.secret must be set' }),
+        { status: 400, headers: { 'content-type': 'application/json' } },
+      ),
+    )
+
+    const result = await restoreConfigBackup('1767225600123456789.yaml')
+
+    expect(result).toEqual({
+      outcome: 'rejected',
+      status: 400,
+      error: 'config backup failed validation: api.secret must be set',
+    })
+  })
+
+  it('normalizes a 404 unknown/pruned backup name into { outcome: rejected }', async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ error: 'config backup not found: 999.yaml' }), {
+        status: 404,
+        headers: { 'content-type': 'application/json' },
+      }),
+    )
+
+    const result = await restoreConfigBackup('999.yaml')
+
+    expect(result).toEqual({
+      outcome: 'rejected',
+      status: 404,
+      error: 'config backup not found: 999.yaml',
+    })
+  })
+
+  it('normalizes a 503 no-config-path into { outcome: rejected }', async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ error: 'no active config path; config backups unavailable' }), {
+        status: 503,
+        headers: { 'content-type': 'application/json' },
+      }),
+    )
+
+    const result = await restoreConfigBackup('1767225600123456789.yaml')
+
+    expect(result).toEqual({
+      outcome: 'rejected',
+      status: 503,
+      error: 'no active config path; config backups unavailable',
+    })
+  })
+
+  it('throws ApiError on a 500 server error', async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response('internal server error', {
+        status: 500,
+        headers: { 'content-type': 'text/plain' },
+      }),
+    )
+
+    await expect(restoreConfigBackup('1767225600123456789.yaml')).rejects.toThrow(ApiError)
   })
 })
 

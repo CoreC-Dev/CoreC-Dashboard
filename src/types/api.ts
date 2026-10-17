@@ -291,3 +291,49 @@ export interface RulesPreviewRequest {
   /** Sample data point; omitted → the backend evaluates against a zero-value point. */
   point?: PreviewDataPointInput
 }
+
+// ─── Server-side config backups (/configs/backups*) ─────────────────────
+//
+// CoreC snapshots the persisted config file before every reload and keeps
+// the newest 10 backups next to it (hub/executor/backups.go). The list
+// carries METADATA only — backup content holds the same plaintext secrets
+// as GET /configs/raw and is served solely through GET /configs/backups/{name}
+// (hub/route/configs_backups.go). All three endpoints zod-parse at the
+// boundary (AGENTS.md: 后端响应不可信任).
+
+/** One backup entry of GET /configs/backups — metadata only, never content. */
+export const configBackupInfoSchema = z.object({
+  /**
+   * Strict "<unix-nano>.yaml" generated file name — the identifier used
+   * by the content and restore endpoints. The server rejects anything
+   * else (traversal fragments, arbitrary paths) with 400/404.
+   */
+  name: z.string(),
+  /** RFC3339 UTC timestamp derived from the file name's unix-nano stamp. */
+  timestamp: z.string(),
+  /** Backup file size in bytes. */
+  size: z.number(),
+})
+export type ConfigBackupInfo = z.infer<typeof configBackupInfoSchema>
+
+/** GET /configs/backups → {backups:[…]}, newest first, server-capped at 10. */
+export const configBackupsResponseSchema = z.object({
+  backups: z.array(configBackupInfoSchema),
+})
+export type ConfigBackupsResponse = z.infer<typeof configBackupsResponseSchema>
+
+/**
+ * Normalized restore outcome (POST /configs/backups/{name}/restore).
+ * `restored` is the 204 success — the backup content went through the
+ * exact PUT /configs reload chain (parse → validate → ApplyConfig →
+ * persist), and the replaced on-disk state was snapshotted first, so the
+ * restore can itself be rolled back. `rejected` covers the statuses whose
+ * body IS the answer: 400 (backup no longer passes validation — nothing
+ * was applied), 404 (unknown/pruned backup name), 503 (no persisted
+ * config path). Same normalization family as validateConfigs and
+ * postDriverTest; genuine transport failures (401/timeout/5xx) throw
+ * ApiError from the endpoint wrapper.
+ */
+export type ConfigBackupRestoreResult =
+  | { outcome: 'restored' }
+  | { outcome: 'rejected'; status: number; error: string }

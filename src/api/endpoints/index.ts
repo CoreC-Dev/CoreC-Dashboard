@@ -1,6 +1,9 @@
 import { ApiError, apiRequest, extractApiError } from '@/api/client'
 import {
+  type ConfigBackupRestoreResult,
+  type ConfigBackupsResponse,
   type ConfigSummaryResponse,
+  configBackupsResponseSchema,
   type DeadLetterResponse,
   type DriversListResponse,
   type DriverTagsResponse,
@@ -88,6 +91,58 @@ export const validateConfigs = async (payload: string): Promise<ValidateConfigRe
         }
       } catch {
         // fall through to re-throw
+      }
+    }
+    throw err
+  }
+}
+
+// ─── Server-side config backups (hub/route/configs_backups.go) ─────────
+//
+// CoreC snapshots the persisted config file before every reload (newest 10
+// kept). The list endpoint returns metadata only; the content endpoint
+// mirrors GET /configs/raw's posture — the backup YAML carries the same
+// plaintext secrets and is reachable only through this authed path.
+
+/** GET /configs/backups — metadata of the retained backups, newest first. */
+export const getConfigBackups = async (): Promise<ConfigBackupsResponse> =>
+  configBackupsResponseSchema.parse(await apiRequest<unknown>('/configs/backups'))
+
+/**
+ * GET /configs/backups/{name} — the raw YAML text of one backup (plaintext
+ * secrets, same posture as /configs/raw). `name` must be an exact entry of
+ * the list endpoint; anything else is answered 400/404 by the server.
+ */
+export const getConfigBackupContent = (name: string) =>
+  apiRequest<string>(`/configs/backups/${encodeURIComponent(name)}`, {
+    headers: { Accept: 'application/yaml' },
+  })
+
+/**
+ * POST /configs/backups/{name}/restore — runs the backup content through
+ * the exact PUT /configs reload chain (parse → validate → apply → persist).
+ * 204 → { outcome: 'restored' }. A 400 (backup failed validation, nothing
+ * applied), 404 (unknown backup name), or 503 (no persisted config path) is
+ * the ANSWER, not a transport error: normalized into { outcome: 'rejected' }
+ * with the server message verbatim — same family as validateConfigs and
+ * postDriverTest. Genuine failures (401/timeout/5xx) throw ApiError.
+ */
+export const restoreConfigBackup = async (name: string): Promise<ConfigBackupRestoreResult> => {
+  try {
+    await apiRequest<void>(`/configs/backups/${encodeURIComponent(name)}/restore`, {
+      method: 'POST',
+    })
+    return { outcome: 'restored' }
+  } catch (err: unknown) {
+    if (
+      err instanceof ApiError &&
+      (err.status === 400 || err.status === 404 || err.status === 503) &&
+      err.body
+    ) {
+      return {
+        outcome: 'rejected',
+        status: err.status,
+        error: extractApiError(err.body, err.message),
       }
     }
     throw err

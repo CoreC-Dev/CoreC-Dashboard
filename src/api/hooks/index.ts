@@ -193,6 +193,9 @@ export function useUpdateConfig() {
       // state on next read.
       queryClient.invalidateQueries({ queryKey: ['configs'] })
       queryClient.invalidateQueries({ queryKey: ['configsRaw'] })
+      // Every reload also snapshots the replaced on-disk config server-side
+      // (hub/executor/backups.go), so a new backup may have appeared.
+      queryClient.invalidateQueries({ queryKey: ['configBackups'] })
       // A config reload restarts the engine, so runtime state (drivers,
       // transports, rules, stats, tags, dead letters) may all change.
       // Invalidate them so the UI doesn't show stale data until the next
@@ -321,6 +324,64 @@ export function useDriverTest() {
 export function useRulesPreview() {
   return useMutation({
     mutationFn: (req: RulesPreviewRequest) => api.postRulesPreview(req.match, req.point),
+  })
+}
+
+// ─── Server-side config backups (/configs/backups*) ─────────────────────
+
+/**
+ * Retained server-side config backups (GET /configs/backups), newest
+ * first. Not polled: the set changes only on reload-driven snapshots and
+ * manual restores, and useUpdateConfig/useRestoreConfigBackup invalidate
+ * this key whenever either happens.
+ */
+export function useConfigBackups() {
+  return useConnectedQuery({
+    queryKey: ['configBackups'],
+    queryFn: api.getConfigBackups,
+  })
+}
+
+/**
+ * Raw YAML text of one backup (GET /configs/backups/{name}) — same
+ * plaintext-secrets posture as useConfigRaw, fetched lazily only while
+ * the diff dialog for that backup is open (enabled gate).
+ */
+export function useConfigBackupContent(name: string | undefined) {
+  return useConnectedQuery({
+    queryKey: ['configBackupContent', name],
+    queryFn: () => api.getConfigBackupContent(name as string),
+    enabled: !!name,
+  })
+}
+
+/**
+ * Restore a server-side config backup (POST /configs/backups/{name}/restore).
+ * The backend replays the backup through the full PUT /configs reload chain,
+ * so a success invalidates the same broad runtime surface as useUpdateConfig
+ * — plus the backup list itself, which gains the snapshot the restore took
+ * of the replaced config. Rejected restores (400/404/503) resolve with
+ * { outcome: 'rejected' } instead of erroring, so the panel can show the
+ * server's message verbatim.
+ */
+export function useRestoreConfigBackup() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (name: string) => api.restoreConfigBackup(name),
+    onSuccess: (result) => {
+      if (result.outcome !== 'restored') return
+      // Mirror useUpdateConfig: a restore reloads the engine, so every
+      // runtime view may change.
+      queryClient.invalidateQueries({ queryKey: ['configs'] })
+      queryClient.invalidateQueries({ queryKey: ['configsRaw'] })
+      queryClient.invalidateQueries({ queryKey: ['configBackups'] })
+      queryClient.invalidateQueries({ queryKey: ['drivers'] })
+      queryClient.invalidateQueries({ queryKey: ['transports'] })
+      queryClient.invalidateQueries({ queryKey: ['rules'] })
+      queryClient.invalidateQueries({ queryKey: ['stats'] })
+      queryClient.invalidateQueries({ queryKey: ['tags'] })
+      queryClient.invalidateQueries({ queryKey: ['deadLetters'] })
+    },
   })
 }
 

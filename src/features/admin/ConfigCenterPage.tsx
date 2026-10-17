@@ -1,5 +1,6 @@
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
+import { ConfigBackupsPanel } from '@/components/admin/ConfigBackupsPanel'
 import { ActiveSummaryCard, RuntimeParamsCard } from '@/components/admin/ConfigCenterForm'
 import {
   FileTransferButtons,
@@ -198,6 +199,12 @@ export const ConfigCenterPage: React.FC = () => {
           <YamlEditorCard yamlContent={yamlContent} onYamlChange={setYamlContent} />
         </div>
       )}
+
+      {/* Server-side backups — restore timeline persisted by CoreC itself.
+          Sits next to the local ChangeHistoryCard: both are rollback
+          surfaces, but these survive browser resets and are taken by the
+          server on every reload, not only on Dashboard submissions. */}
+      <ConfigBackupsPanel />
 
       {/* Change History — persisted snapshots of every PUT /configs submission */}
       <ChangeHistoryCard history={history} onRestore={handleRestore} />
