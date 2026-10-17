@@ -47,7 +47,11 @@ async function submit() {
   })
 }
 
-describe('InstanceDialog form validation (TD-TEST-007)', () => {
+// Suite timeout raised from the 5s default: under v8 coverage
+// instrumentation on a loaded runner this file's render+act sequences
+// exceeded 5s intermittently (stage-A audit finding #5: 1 flaky
+// timeout in 2 coverage runs, 5/5 pass in isolation).
+describe('InstanceDialog form validation (TD-TEST-007)', { timeout: 15_000 }, () => {
   it('shows an error when name is empty on submit', async () => {
     renderDialog()
     await submit()
