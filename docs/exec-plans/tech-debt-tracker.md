@@ -325,91 +325,91 @@
 - 位置：`src/stores/instanceStore.ts`（全 296 行）
 - 证据：stripSecret/persistInstances 将密钥分到 sessionStorage、元数据到 localStorage（117-169，安全敏感）。importInstances（251-290）处理 merge/replace、按 id/name 去重、必填跳过、malformed-JSON→{added:0,skipped:0}。loadInstances（123-141）合并回密钥并容忍损坏存储。均无测试。
 - 修复建议：加 instanceStore.test.ts（jsdom）：密钥仅 sessionStorage / 不在 localStorage；add/update/delete/reorder；import merge vs replace；按 id/name 去重；跳过 malformed；非数组 JSON；clearAll；setProbeResult。
-- 业务行为影响：无 ｜ 阶段5 ｜ 验收：分支覆盖 + 注入缺陷测试失败 ｜ 状态：待处理
+- 业务行为影响：无 ｜ 阶段5 ｜ 验收：分支覆盖 + 注入缺陷测试失败 ｜ 状态：已完成（2026-10-17 阶段 A 审计状态同步：对应测试文件存在且在套件中全过，速查表与详细区此前不一致）
 
 **TD-TEST-003** ｜ api/client.ts apiRequest（timeout/abort/401/204/content-type 路由）无测试 ｜ P1
 - 位置：`src/api/client.ts:41-108`
 - 证据：AbortError+timeoutId→ApiError(408)（102-104）、204→undefined（90-92）、application/json vs text 路由（94-99）、无连接→ApiError(0)（46-48）、尊重调用方 signal 不自动 abort（66-72）。endpoints 测试在更高层 mock fetch，从未断言这些。
 - 修复建议：加 client.test.ts mock fetch + setActiveConnection：无连接抛；401→ApiError(401)；204→undefined；json→解析；text→字符串；timeout→ApiError(408)；调用方 signal 被尊重。
-- 业务行为影响：无 ｜ 阶段5 ｜ 验收：各分支断言 ｜ 状态：待处理
+- 业务行为影响：无 ｜ 阶段5 ｜ 验收：各分支断言 ｜ 状态：已完成（2026-10-17 阶段 A 审计状态同步：对应测试文件存在且在套件中全过，速查表与详细区此前不一致）
 
 **TD-TEST-004** ｜ api/websocket.ts（限流/退避/重连上限）无测试 ｜ P1
 - 位置：`src/api/websocket.ts`（全 187 行）
 - 证据：滑动窗口环形缓冲限流（99-112，>500 msg/s 丢弃）、指数退避 ±20% 抖动（164-171）、maxRetries=10 上限→'rejected'（159-162）、升级拒绝检测 1006/1008/1011（133-138）、secret 消失停止重连（151-155）、destroy 置空 handler（174-186）均无测试。
 - 修复建议：加 websocket.test.ts（WebSocket mock + fake timers）：>maxMsgPerSec 丢弃；退避 ~1.5× 增长；maxRetries 后 'rejected'；1008 未开→'rejected'；destroy 阻止排队事件。
-- 业务行为影响：无 ｜ 阶段5 ｜ 验收：fake timers 下各路径断言 ｜ 状态：待处理
+- 业务行为影响：无 ｜ 阶段5 ｜ 验收：fake timers 下各路径断言 ｜ 状态：已完成（2026-10-17 阶段 A 审计状态同步：对应测试文件存在且在套件中全过，速查表与详细区此前不一致）
 
 **TD-TEST-005** ｜ ConnectionContext 探测生命周期无测试 ｜ P1
 - 位置：`src/contexts/ConnectionContext.tsx:116-167`
 - 证据：探测 effect 处理 instance-not-found（117-122）、成功（133-140）、AbortError→"Connection timed out"（143-148）、unmount 清理（159-166）、probeNonce 重连触发（169）、实例切换 useConfigStore.reset()（89-91）。冒烟测试整体 mock 掉此 context。
 - 修复建议：加 ConnectionContext.test.tsx 渲染 ConnectionProvider + mock getServerInfo：成功→isConnected true；拒绝→错误信息；not-found→"Instance not found"；unmount→probing 清空；reconnect() 再探测。
-- 业务行为影响：无 ｜ 阶段5 ｜ 验收：各路径断言 ｜ 状态：待处理
+- 业务行为影响：无 ｜ 阶段5 ｜ 验收：各路径断言 ｜ 状态：已完成（2026-10-17 阶段 A 审计状态同步：对应测试文件存在且在套件中全过，速查表与详细区此前不一致）
 
 **TD-TEST-006** ｜ useHomepageProbe（并行多实例探测 + abort）无测试 ｜ P1
 - 位置：`src/features/home/useHomepageProbe.ts:75-239`
 - 证据：probeInstance 用 Promise.allSettled 跑 5 端点（83-89）、要求 GET / 成功否则抛"Unreachable"（92-94）、容忍部分失败、传播父 abort signal（64-67）、unmount abort+清 interval（234-238）。无测试覆盖部分失败/abort/15s interval。
 - 修复建议：加 useHomepageProbe.test.ts（fake timers + fetch mock）：全通→lastKnownInfo 填充；GET / 失败→"Connection failed"；stats 500 但 / ok→无 stats；unmount abort 在途请求。
-- 业务行为影响：无 ｜ 阶段5 ｜ 验收：各路径断言 ｜ 状态：待处理
+- 业务行为影响：无 ｜ 阶段5 ｜ 验收：各路径断言 ｜ 状态：已完成（2026-10-17 阶段 A 审计状态同步：对应测试文件存在且在套件中全过，速查表与详细区此前不一致）
 
 **TD-TEST-007** ｜ InstanceDialog 表单校验（zodResolver）无测试 ｜ P1
 - 位置：`src/features/home/InstanceDialog.tsx:79-80`
 - 证据：连接创建弹窗经 zod schema + react-hook-form 校验 baseUrl/secret/name。schema 与表单错误渲染/提交门控均无测试。畸形 baseUrl 或空 secret 可能静默创建不可用实例。
 - 修复建议：提取并直测 instanceSchema（空 name、非法 URL、短 secret）+ 渲染测试断言错误信息出现且非法时提交禁用。
-- 业务行为影响：无 ｜ 阶段5 ｜ 验收：各校验分支断言 ｜ 状态：待处理
+- 业务行为影响：无 ｜ 阶段5 ｜ 验收：各校验分支断言 ｜ 状态：已完成（2026-10-17 阶段 A 审计状态同步：对应测试文件存在且在套件中全过，速查表与详细区此前不一致）
 
 **TD-TEST-008** ｜ api/endpoints 16 个端点仅测 2 个 ｜ P1
 - 位置：`src/api/endpoints/index.ts:17-112`；`index.test.ts:4` 仅导入 2
 - 证据：仅 getConfigsRaw 与 validateConfigs 有测试。updateConfigs/patchConfigs/toggleRule/writeTag（写路径）、getStats/getMetricsText/getDeadLetters（监控）及列表端点无 shape/错误契约测试。writeTag 驱动 PLC 写入——错误 body 可能写坏值。
 - 修复建议：扩展 index.test.ts 覆盖各端点请求 shape（method/URL/headers/body）+ 每个写端点至少一个错误状态。
-- 业务行为影响：无 ｜ 阶段5 ｜ 验收：16 端点均有 shape 测试 ｜ 状态：待处理
+- 业务行为影响：无 ｜ 阶段5 ｜ 验收：16 端点均有 shape 测试 ｜ 状态：已完成（2026-10-17 阶段 A 审计状态同步：对应测试文件存在且在套件中全过，速查表与详细区此前不一致）
 
 **TD-TEST-009** ｜ api/hooks（全部 react-query hook + 缓存失效）无测试 ｜ P2
 - 位置：`src/api/hooks/index.ts`（全 215 行）
 - 证据：useConnectedQuery 按 isConnected && enabled 门控（21）；mutation 成功时失效特定 query key（138-185）。失效 key 正确性未验——错误 key 留陈旧 UI。
 - 修复建议：加 api/hooks/index.test.tsx（QueryClient + mock endpoints）：断言断连时 query 跳过；断言各 mutation 失效预期 key（spy invalidateQueries）。
-- 业务行为影响：无 ｜ 阶段5 ｜ 验收：各 mutation 失效 key 断言 ｜ 状态：待处理
+- 业务行为影响：无 ｜ 阶段5 ｜ 验收：各 mutation 失效 key 断言 ｜ 状态：已完成（2026-10-17 阶段 A 审计状态同步：对应测试文件存在且在套件中全过，速查表与详细区此前不一致）
 
 **TD-TEST-010** ｜ writeValidation.validateValue（按数据类型强转写值）无测试 ｜ P1
 - 位置：`src/lib/writeValidation.ts:37`
 - 证据：validateValue(raw, dt) 按数据类型（bool/int/float/string）校验写命令值。守护写入物理 PLC 的内容。无测试覆盖类型不匹配/溢出/bool 强转。
 - 修复建议：加 writeValidation.test.ts 覆盖各 DataTypeString：合法/非法值、边界（int max、float 精度）、bool 变体（"true"/1/"1"）。
-- 业务行为影响：无 ｜ 阶段5 ｜ 验收：各类型分支断言 ｜ 状态：待处理
+- 业务行为影响：无 ｜ 阶段5 ｜ 验收：各类型分支断言 ｜ 状态：已完成（2026-10-17 阶段 A 审计状态同步：对应测试文件存在且在套件中全过，速查表与详细区此前不一致）
 
 **TD-TEST-011** ｜ configYaml parse/dump 往返 + CRUD helper 无测试 ｜ P2
 - 位置：`src/lib/configYaml.ts:24-132`
 - 证据：parseConfigYaml/dumpConfigYaml 与 findDriver/upsertDriver/removeDriver/upsertTransport 被首页探测与编辑器使用。非幂等往返或坏 upsertDriver 会静默损坏配置。
 - 修复建议：加 configYaml.test.ts：代表性配置往返相等；upsert 增/改；按名 remove；畸形 YAML 抛错。
-- 业务行为影响：无 ｜ 阶段5 ｜ 验收：往返 + CRUD 断言 ｜ 状态：待处理
+- 业务行为影响：无 ｜ 阶段5 ｜ 验收：往返 + CRUD 断言 ｜ 状态：已完成（2026-10-17 阶段 A 审计状态同步：对应测试文件存在且在套件中全过，速查表与详细区此前不一致）
 
 **TD-TEST-012** ｜ connectionInfo 摘要无测试（喂首页拓扑行） ｜ P2
 - 位置：`src/lib/connectionInfo.ts:187-260`
 - 证据：getDriverConnectionSummary/getTransportConnectionSummary 从配置派生紧凑 host:port/broker/url 串供拓扑显示；extractDriverYaml/extractTransportYaml 切 YAML。错误摘要误导运维。
 - 修复建议：加 connectionInfo.test.ts 每 driver/transport 类型：已知摘要、缺设置→空、extractYaml 往返。
-- 业务行为影响：无 ｜ 阶段5 ｜ 验收：各类型断言 ｜ 状态：待处理
+- 业务行为影响：无 ｜ 阶段5 ｜ 验收：各类型断言 ｜ 状态：已完成（2026-10-17 阶段 A 审计状态同步：对应测试文件存在且在套件中全过，速查表与详细区此前不一致）
 
 **TD-TEST-013** ｜ ruleMatchEvaluator（规则模拟逻辑）无测试 ｜ P2
 - 位置：`src/lib/ruleMatchEvaluator.ts:30-113`
 - 证据：getFieldValue/evaluateClause/evaluateMatch 驱动规则测试/模拟 UI。子句解析、操作符求值、ALL/复合匹配无测试。
 - 修复建议：加 ruleMatchEvaluator.test.ts：ALL 匹配；`tag == 'x' && value > 95`；缺字段访问；无匹配子句。
-- 业务行为影响：无 ｜ 阶段5 ｜ 验收：各分支断言 ｜ 状态：待处理
+- 业务行为影响：无 ｜ 阶段5 ｜ 验收：各分支断言 ｜ 状态：已完成（2026-10-17 阶段 A 审计状态同步：对应测试文件存在且在套件中全过，速查表与详细区此前不一致）
 
 **TD-TEST-014** ｜ admin 页面冒烟测试不断言行为（假测试风险） ｜ P2
 - 位置：`src/features/admin/pages_render_smoke.test.tsx:98-112`
 - 证据：两测试均以 `expect(container?.container).toBeTruthy()` 结尾——仅确认 render() 返回容器。无 query/内容断言。使 RulesPage 渲染空 div 仍通过。真实价值仅 #185 无限循环守卫。
 - 修复建议：每页加至少一条内容断言（如 `expect(screen.getByText(/transports/i)).toBeInTheDocument()`）+ 用 findBy* 的 loading→data 转换。
-- 业务行为影响：无 ｜ 阶段5 ｜ 验收：注入渲染缺陷测试失败 ｜ 状态：待处理
+- 业务行为影响：无 ｜ 阶段5 ｜ 验收：注入渲染缺陷测试失败 ｜ 状态：已完成（2026-10-17 阶段 A 审计状态同步：对应测试文件存在且在套件中全过，速查表与详细区此前不一致）
 
 **TD-TEST-015** ｜ wizard 测试只覆盖纯 helper，未覆盖组件行为 ｜ P2
 - 位置：`ConfigApplyConfirmationDialog.test.ts:2-5`、`EntitySearchBar.test.ts:2`
 - 证据：两者仅导入导出函数（computeConfigDiff/computeLineDiff、filterEntities）。弹窗开/关、apply 按钮 totalChanges===0 时禁用、搜索栏输入→过滤列表渲染均未渲染。403 行 ConfigApplyConfirmationDialog 组件本身无测试。
 - 修复建议：加渲染测试（jsdom）：弹窗显示 diff 摘要；无变更时 apply 禁用；EntitySearchBar 随输入过滤 DOM 列表。
-- 业务行为影响：无 ｜ 阶段5 ｜ 验收：组件行为断言 ｜ 状态：待处理
+- 业务行为影响：无 ｜ 阶段5 ｜ 验收：组件行为断言 ｜ 状态：已完成（2026-10-17 阶段 A 审计状态同步：对应测试文件存在且在套件中全过，速查表与详细区此前不一致）
 
 **TD-TEST-016** ｜ settingsRegistry 测试仅结构级（79 行 vs 878 行源） ｜ P2
 - 位置：`src/lib/settingsRegistry.test.ts`（全 79 行）vs `settingsRegistry.ts`（878）
 - 证据：测试断言每类型有 registry 条目 + buildDefaultSettings 返回 3 类型硬编码默认。字段 required/enum/min/max/强转元数据、未测类型的 getDriverFieldRegistry/getTransportFieldRegistry、TRANSPORT_TOPLEVEL_FIELDS 超 5 命名 key 均未测。buildDefaultSettings 非法输入（仅 :76 测 undefined）未覆盖。
 - 修复建议：加字段元数据测试（required 标志、enum 值、数值边界）跨所有 driver/transport 类型 + buildDefaultSettings 部分/空 registry。
-- 业务行为影响：无 ｜ 阶段5 ｜ 验收：字段元数据覆盖 ｜ 状态：待处理
+- 业务行为影响：无 ｜ 阶段5 ｜ 验收：字段元数据覆盖 ｜ 状态：已完成（2026-10-17 阶段 A 审计状态同步：对应测试文件存在且在套件中全过，速查表与详细区此前不一致）
 
 ### 安全（SEC）
 
@@ -459,13 +459,13 @@
 - 位置：`package.json:15-64`
 - 证据：react ^19.3、vite ^8.3、typescript ~7.0、@biomejs/biome ^2.5、zod ^4、i18next ^26、@types/node ^26、vitest ^5、jsdom ^29。大版本很新，实战窗口短，传递 CVE 概率高。
 - 修复建议：Phase 3 对实时 registry 跑 npm audit + pnpm audit；CI 锁定精确版本；审查 Vite 8 rolldown 传递依赖。
-- 业务行为影响：无 ｜ 阶段3 ｜ 验收：audit 报告 + 无高危 CVE ｜ 状态：已核实（阶段 3：`npm audit --registry=https://registry.npmjs.org` 跑通，2 low severity（dompurify via monaco，见 TD-SEC-013），无 high/critical）
+- 业务行为影响：无 ｜ 阶段3 ｜ 验收：audit 报告 + 无高危 CVE ｜ 状态：已核实（阶段 3：`npm audit --registry=https://registry.npmjs.org` 跑通，2 low severity（dompurify via monaco，见 TD-SEC-013），无 high/critical；2026-10-17 更新：TD-SEC-013 override 修复后复跑为 0 vulnerabilities）
 
 **TD-SEC-013** ｜ dompurify 3.4.13-15 DOM XSS（经 monaco-editor 传递） ｜ P2
 - 位置：`node_modules/monaco-editor → dompurify`（传递依赖）
 - 证据：`npm audit --registry=https://registry.npmjs.org` 报 GHSA-p98j-92pf-mc4p（dompurify IN_PLACE hook DOM XSS，low）。monaco-editor >=0.57.0-rc.2 依赖受影响版本。
 - 修复建议：`npm audit fix` 升级 dompurify，或随批次 J 自托管 Monaco（ADR-008）时升级 monaco-editor 至修复版。低危：dompurify 用于 Monaco markdown 预览，非应用配置路径。
-- 业务行为影响：无 ｜ 批次J ｜ 验收：audit 无 dompurify 漏洞 ｜ 状态：待处理
+- 业务行为影响：无 ｜ 批次J ｜ 验收：audit 无 dompurify 漏洞 ｜ 状态：已完成（2026-10-17：package.json overrides 强制 dompurify ^3.4.16，实装 3.4.17，`npm audit --registry=https://registry.npmjs.org` → 0 vulnerabilities，验收标准真实达成；此前速查表标已完成但验收未满足，属阶段 A 审计发现 #2）
 
 **TD-SEC-009** ｜ js-yaml load() 未指定安全 schema（原型污染风险） ｜ P2（待核实）
 - 位置：`src/lib/configYaml.ts:24-32`，喂自服务配置（useHomepageProbe.ts:160、ConfigCenterPage）与用户粘贴 YAML（configStore.ts:190-204）
