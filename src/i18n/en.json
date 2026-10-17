@@ -393,7 +393,21 @@
     "clearAllDesc": "This will remove all failed write commands from the list.",
     "confirm": "Confirm",
     "cancel": "Cancel",
-    "deadLettersCleared": "Dead letters cleared"
+    "deadLettersCleared": "Dead letters cleared",
+    "modeSingle": "Single Write",
+    "modeBatch": "Batch Write",
+    "batchTitle": "Batch Write Commands",
+    "batchDesc": "Compose multiple (driver, tag, value, type) rows and dispatch them in one confirmed run, one command at a time",
+    "batchAddRow": "Add Row",
+    "batchRemoveRow": "Remove row",
+    "batchRowMissing": "driver and tag are required",
+    "batchRowError": "Row {{index}}: {{error}}",
+    "batchSubmit": "Submit Batch",
+    "batchConfirmTitle": "Confirm Batch Write",
+    "batchConfirmDesc": "The following {{count}} command(s) will be written to the PLC one by one.",
+    "batchConfirm": "Write All",
+    "batchWriting": "Writing...",
+    "batchResults": "Batch Results"
   },
   "diagnostics": {
     "title": "Observability & Diagnostics",

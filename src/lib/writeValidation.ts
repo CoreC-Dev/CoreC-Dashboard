@@ -62,3 +62,21 @@ export const validateValue = (raw: string, dt: DataTypeString, t: TFunction): st
   // string / bytes — any non-empty input is accepted (required attr guards empty)
   return null
 }
+
+/**
+ * Parses a validated raw input string into the JSON value the write
+ * command carries: bool → 0/1/true/false → boolean, numeric types →
+ * Number, string/bytes → the raw text. Pure relocation of the parseValue
+ * helper that lived in WriteControlPage so the single-write form and the
+ * batch-write table share ONE parse (same rules as validateValue above —
+ * callers validate first, this only converts).
+ */
+export const parseWriteValue = (raw: string, dt: DataTypeString): string | number | boolean => {
+  if (dt === 'bool') {
+    return raw.toLowerCase() === 'true' || raw === '1'
+  }
+  if (dt.startsWith('int') || dt.startsWith('uint') || dt.startsWith('float')) {
+    return Number(raw)
+  }
+  return raw
+}

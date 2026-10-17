@@ -393,7 +393,21 @@
     "clearAllDesc": "这将从列表中移除所有失败的下发指令。",
     "confirm": "确认",
     "cancel": "取消",
-    "deadLettersCleared": "死信已清除"
+    "deadLettersCleared": "死信已清除",
+    "modeSingle": "单条写入",
+    "modeBatch": "批量写入",
+    "batchTitle": "批量写入命令",
+    "batchDesc": "编排多行 (driver, tag, value, type)，一次确认后逐条下发",
+    "batchAddRow": "加一行",
+    "batchRemoveRow": "删除该行",
+    "batchRowMissing": "驱动和点位必填",
+    "batchRowError": "第 {{index}} 行：{{error}}",
+    "batchSubmit": "提交批量写入",
+    "batchConfirmTitle": "确认批量写入",
+    "batchConfirmDesc": "以下 {{count}} 条命令将逐条写入 PLC。",
+    "batchConfirm": "全部写入",
+    "batchWriting": "写入中...",
+    "batchResults": "批量结果"
   },
   "diagnostics": {
     "title": "系统可观测性与实时诊断",

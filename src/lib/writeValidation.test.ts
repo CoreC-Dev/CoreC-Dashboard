@@ -1,6 +1,7 @@
 import type { TFunction } from 'i18next'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { validateValue } from '@/lib/writeValidation'
+import type { DataTypeString } from '@/lib/constants'
+import { parseWriteValue, validateValue } from '@/lib/writeValidation'
 
 // A pure stand-in for i18next's TFunction. validateValue only depends on the
 // return being a non-null string for invalid input and null for valid input.
@@ -244,5 +245,28 @@ describe('validateValue — fallback for unknown non-numeric types', () => {
   // through to the accept-anything branch and returns null.
   it('accepts any value for an unrecognised type', () => {
     expect(validateValue('whatever', 'custom' as never, t)).toBeNull()
+  })
+})
+
+// parseWriteValue — the value conversion shared by the single-write form and
+// the batch-write table. Relocated verbatim from WriteControlPage's local
+// parseValue, so these cases pin the exact behavior both callers rely on.
+describe('parseWriteValue', () => {
+  it.each([
+    ['true', 'bool', true],
+    ['TRUE', 'bool', true],
+    ['1', 'bool', true],
+    ['false', 'bool', false],
+    ['0', 'bool', false],
+    ['50', 'int16', 50],
+    ['-1.5', 'float32', -1.5],
+    ['hello', 'string', 'hello'],
+    ['deadbeef', 'bytes', 'deadbeef'],
+  ])('parses %p (%p) → %p', (raw, dt, expected) => {
+    expect(parseWriteValue(raw, dt as DataTypeString)).toEqual(expected)
+  })
+
+  it('returns the raw text for string types (no numeric coercion)', () => {
+    expect(parseWriteValue('123', 'string')).toBe('123')
   })
 })

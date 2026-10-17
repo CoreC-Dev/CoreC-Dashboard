@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { extractApiError } from '@/api/client'
 import { ApiError, useConfigRaw, useDeadLetters, useDrivers, useWriteTag } from '@/api/hooks'
+import { BatchWritePanel } from '@/components/admin/BatchWritePanel'
 import { DeadLetterTable, WriteForm } from '@/components/admin/WriteControlParts'
 import {
   AlertDialog,
@@ -28,7 +29,7 @@ import {
 import { useClearedDlqKeys } from '@/hooks/useClearedDlqKeys'
 import { useParsedConfig } from '@/hooks/useParsedConfig'
 import type { DataTypeString } from '@/lib/constants'
-import { validateValue } from '@/lib/writeValidation'
+import { parseWriteValue, validateValue } from '@/lib/writeValidation'
 import type { DeadLetterEntry, WriteCommand } from '@/types/models'
 
 /** Stable key for a dead-letter entry (driver + tag + failed_at). */
@@ -55,6 +56,9 @@ export const WriteControlPage: React.FC = () => {
   const [tag, setTag] = useState('')
   const [type, setType] = useState<DataTypeString>('float32')
   const [value, setValue] = useState('')
+  // Single ⇄ batch dispatch mode. Both share the same confirm-then-write
+  // safety gate; batch reuses the same POST /write mutation per row.
+  const [writeMode, setWriteMode] = useState<'single' | 'batch'>('single')
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [replayError, setReplayError] = useState<string | null>(null)
@@ -94,15 +98,8 @@ export const WriteControlPage: React.FC = () => {
     [deadLetters, clearedDlqKeys],
   )
 
-  const parseValue = (raw: string, dt: DataTypeString): string | number | boolean => {
-    if (dt === 'bool') {
-      return raw.toLowerCase() === 'true' || raw === '1'
-    }
-    if (dt.startsWith('int') || dt.startsWith('uint') || dt.startsWith('float')) {
-      return Number(raw)
-    }
-    return raw
-  }
+  // Value parsing lives in lib/writeValidation (parseWriteValue) so the
+  // single form and the batch table share ONE conversion — see handleSubmit.
 
   // Industrial safety: the form only stages the command and opens a
   // confirmation dialog. The actual write fires from handleConfirmWrite after
@@ -129,7 +126,7 @@ export const WriteControlPage: React.FC = () => {
       device: device || undefined,
       tag,
       type,
-      value: parseValue(value, type),
+      value: parseWriteValue(value, type),
     })
     setConfirmOpen(true)
   }
@@ -194,29 +191,55 @@ export const WriteControlPage: React.FC = () => {
         <p className="text-sm text-muted-foreground mt-1">{t('write.subtitle')}</p>
       </div>
 
+      {/* Single ⇄ batch dispatch mode toggle */}
+      <div className="flex items-center gap-1 p-1 rounded-lg border border-border bg-muted/40 w-fit">
+        <Button
+          variant={writeMode === 'single' ? 'default' : 'ghost'}
+          size="sm"
+          onClick={() => setWriteMode('single')}
+          aria-pressed={writeMode === 'single'}
+          className="h-7 text-xs"
+        >
+          {t('write.modeSingle')}
+        </Button>
+        <Button
+          variant={writeMode === 'batch' ? 'default' : 'ghost'}
+          size="sm"
+          onClick={() => setWriteMode('batch')}
+          aria-pressed={writeMode === 'batch'}
+          className="h-7 text-xs"
+        >
+          {t('write.modeBatch')}
+        </Button>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Left: Command Form */}
-        <WriteForm
-          drivers={drivers}
-          driver={driver}
-          setDriver={(v) => {
-            setDriver(v)
-            setTag('')
-          }}
-          device={device}
-          setDevice={setDevice}
-          tag={tag}
-          setTag={setTag}
-          availableTags={availableTags}
-          type={type}
-          setType={setType}
-          value={value}
-          setValue={setValue}
-          successMsg={successMsg}
-          errorMsg={errorMsg}
-          onSubmit={handleWriteSubmit}
-          confirmOpen={confirmOpen}
-        />
+        {/* Left: Command Form (single) or batch table */}
+        {writeMode === 'single' ? (
+          <WriteForm
+            drivers={drivers}
+            driver={driver}
+            setDriver={(v) => {
+              setDriver(v)
+              setTag('')
+            }}
+            device={device}
+            setDevice={setDevice}
+            tag={tag}
+            setTag={setTag}
+            availableTags={availableTags}
+            type={type}
+            setType={setType}
+            value={value}
+            setValue={setValue}
+            successMsg={successMsg}
+            errorMsg={errorMsg}
+            onSubmit={handleWriteSubmit}
+            confirmOpen={confirmOpen}
+          />
+        ) : (
+          <BatchWritePanel drivers={drivers} driverTags={driverTags} />
+        )}
 
         {/* Right: Info Card */}
         <Card className="border-border bg-card">
