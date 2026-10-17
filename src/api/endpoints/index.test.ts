@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { setActiveConnection } from '@/api/activeConnection'
 import { ApiError } from '@/api/client'
 import {
+  createConfigBackup,
   getConfigBackupContent,
   getConfigBackups,
   getConfigs,
@@ -778,6 +779,67 @@ describe('getConfigBackupContent (GET /configs/backups/{name})', () => {
     )
 
     await expect(getConfigBackupContent('999.yaml')).rejects.toThrow(ApiError)
+  })
+})
+
+describe('createConfigBackup (POST /configs/backups)', () => {
+  it('resolves { outcome: created } with the name on a 201', async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ name: '1767225600123456789.yaml' }), {
+        status: 201,
+        headers: { 'content-type': 'application/json' },
+      }),
+    )
+
+    const result = await createConfigBackup()
+
+    expect(result).toEqual({ outcome: 'created', name: '1767225600123456789.yaml' })
+    expectCorecRequest('/corec-proxy/configs/backups', 'POST')
+  })
+
+  it('normalizes a 404 (no config file on disk) into { outcome: rejected }', async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ error: 'active config file not found on disk' }), {
+        status: 404,
+        headers: { 'content-type': 'application/json' },
+      }),
+    )
+
+    const result = await createConfigBackup()
+
+    expect(result).toEqual({
+      outcome: 'rejected',
+      status: 404,
+      error: 'active config file not found on disk',
+    })
+  })
+
+  it('normalizes a 503 (no persisted config path) into { outcome: rejected }', async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ error: 'no active config path; config backups unavailable' }), {
+        status: 503,
+        headers: { 'content-type': 'application/json' },
+      }),
+    )
+
+    const result = await createConfigBackup()
+
+    expect(result).toEqual({
+      outcome: 'rejected',
+      status: 503,
+      error: 'no active config path; config backups unavailable',
+    })
+  })
+
+  it('throws ApiError on a 500 server error', async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response('internal server error', {
+        status: 500,
+        headers: { 'content-type': 'text/plain' },
+      }),
+    )
+
+    await expect(createConfigBackup()).rejects.toThrow(ApiError)
   })
 })
 

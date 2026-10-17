@@ -1,6 +1,7 @@
 import {
   AlertCircle,
   Archive,
+  Camera,
   CheckCircle2,
   GitCompare,
   RefreshCw,
@@ -14,6 +15,7 @@ import {
   useConfigBackupContent,
   useConfigBackups,
   useConfigRaw,
+  useCreateConfigBackup,
   useRestoreConfigBackup,
 } from '@/api/hooks'
 import {
@@ -73,6 +75,7 @@ export const ConfigBackupsPanel: React.FC = () => {
   const backupsQuery = useConfigBackups()
   const rawConfigQuery = useConfigRaw()
   const restoreMutation = useRestoreConfigBackup()
+  const snapshotMutation = useCreateConfigBackup()
 
   // Diff dialog: the backup being compared (content fetched lazily while open).
   const [diffTarget, setDiffTarget] = useState<ConfigBackupInfo | null>(null)
@@ -96,6 +99,26 @@ export const ConfigBackupsPanel: React.FC = () => {
   const startRestore = (backup: ConfigBackupInfo) => {
     setRestoreMsg(null)
     setRestoreTarget(backup)
+  }
+
+  // Manual snapshot: an explicit operator checkpoint of the current
+  // on-disk config (the automatic pre-overwrite snapshots are separate).
+  // Rejected results (404 no file yet / 503 no config path) surface the
+  // server message verbatim in the same feedback strip as restores.
+  const takeSnapshot = async () => {
+    setRestoreMsg(null)
+    const result = await snapshotMutation.mutateAsync()
+    if (result.outcome === 'created') {
+      setRestoreMsg({
+        type: 'success',
+        text: t('config.backupsSnapshotCreated', { name: result.name }),
+      })
+    } else {
+      setRestoreMsg({
+        type: 'error',
+        text: `${t('config.backupsSnapshotFailed')} (${result.status}): ${result.error}`,
+      })
+    }
   }
 
   const handleRestoreConfirm = async () => {
@@ -139,18 +162,31 @@ export const ConfigBackupsPanel: React.FC = () => {
           </CardTitle>
           <CardDescription className="text-xs">{t('config.backupsDesc')}</CardDescription>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => backupsQuery.refetch()}
-          disabled={backupsQuery.isFetching}
-          className="h-8 text-xs"
-        >
-          <RefreshCw
-            className={`w-3.5 h-3.5 mr-1.5 ${backupsQuery.isFetching ? 'animate-spin' : ''}`}
-          />
-          <span>{t('common.refresh')}</span>
-        </Button>
+        <div className="flex items-center gap-1.5">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={takeSnapshot}
+            disabled={snapshotMutation.isPending}
+            className="h-8 text-xs"
+            data-testid="backup-snapshot-now"
+          >
+            <Camera className="w-3.5 h-3.5 mr-1.5" />
+            <span>{t('config.backupsSnapshotNow')}</span>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => backupsQuery.refetch()}
+            disabled={backupsQuery.isFetching}
+            className="h-8 text-xs"
+          >
+            <RefreshCw
+              className={`w-3.5 h-3.5 mr-1.5 ${backupsQuery.isFetching ? 'animate-spin' : ''}`}
+            />
+            <span>{t('common.refresh')}</span>
+          </Button>
+        </div>
       </CardHeader>
 
       <CardContent className="p-4 pt-0">

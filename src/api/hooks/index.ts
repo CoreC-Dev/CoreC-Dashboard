@@ -356,6 +356,23 @@ export function useConfigBackupContent(name: string | undefined) {
 }
 
 /**
+ * Manually snapshot the current on-disk config (POST /configs/backups).
+ * Distinct from the automatic pre-overwrite snapshots: this is an explicit
+ * operator checkpoint. On created, only the backup list goes stale (the
+ * running config did not change).
+ */
+export function useCreateConfigBackup() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: () => api.createConfigBackup(),
+    onSuccess: (result) => {
+      if (result.outcome !== 'created') return
+      queryClient.invalidateQueries({ queryKey: ['configBackups'] })
+    },
+  })
+}
+
+/**
  * Restore a server-side config backup (POST /configs/backups/{name}/restore).
  * The backend replays the backup through the full PUT /configs reload chain,
  * so a success invalidates the same broad runtime surface as useUpdateConfig

@@ -874,7 +874,10 @@
     "backupsRestoreConfirm": "Restore Now",
     "backupsRestoreSuccess": "Backup restored — configuration hot-reloaded",
     "backupsRestoreRejected": "Restore refused (HTTP {{status}}): {{error}}",
-    "backupsRestoreFailed": "Restore failed: {{error}}"
+    "backupsRestoreFailed": "Restore failed: {{error}}",
+    "backupsSnapshotNow": "Snapshot now",
+    "backupsSnapshotCreated": "Backup created: {{name}}",
+    "backupsSnapshotFailed": "Snapshot rejected"
   },
   "topology": {
     "title": "Chained-Core Mesh Topology",

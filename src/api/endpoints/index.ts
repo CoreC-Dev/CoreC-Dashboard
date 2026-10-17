@@ -1,9 +1,11 @@
 import { ApiError, apiRequest, extractApiError } from '@/api/client'
 import {
+  type ConfigBackupCreateResult,
   type ConfigBackupRestoreResult,
   type ConfigBackupsResponse,
   type ConfigSummaryResponse,
   configBackupsResponseSchema,
+  createdBackupSchema,
   type DeadLetterResponse,
   type DriversListResponse,
   type DriverTagsResponse,
@@ -127,6 +129,31 @@ export const getConfigBackupContent = (name: string) =>
  * with the server message verbatim — same family as validateConfigs and
  * postDriverTest. Genuine failures (401/timeout/5xx) throw ApiError.
  */
+/**
+ * POST /configs/backups — manual snapshot of the CURRENT on-disk config
+ * (distinct from the automatic pre-overwrite snapshots every reload takes).
+ * 201 → { outcome: 'created', name }. A 404 (no config file on disk yet) or
+ * 503 (no persisted config path) is the ANSWER, not a transport error:
+ * normalized into { outcome: 'rejected' } with the server message verbatim.
+ * Genuine failures (401/timeout/5xx) throw ApiError.
+ */
+export const createConfigBackup = async (): Promise<ConfigBackupCreateResult> => {
+  try {
+    const res = await apiRequest<unknown>('/configs/backups', { method: 'POST' })
+    const body = createdBackupSchema.parse(res)
+    return { outcome: 'created', name: body.name }
+  } catch (err: unknown) {
+    if (err instanceof ApiError && (err.status === 404 || err.status === 503) && err.body) {
+      return {
+        outcome: 'rejected',
+        status: err.status,
+        error: extractApiError(err.body, err.message),
+      }
+    }
+    throw err
+  }
+}
+
 export const restoreConfigBackup = async (name: string): Promise<ConfigBackupRestoreResult> => {
   try {
     await apiRequest<void>(`/configs/backups/${encodeURIComponent(name)}/restore`, {

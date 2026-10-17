@@ -338,6 +338,23 @@ export type ConfigBackupRestoreResult =
   | { outcome: 'restored' }
   | { outcome: 'rejected'; status: number; error: string }
 
+/**
+ * Normalized manual-snapshot outcome (POST /configs/backups). `created` is
+ * the 201 success carrying the new backup's name. `rejected` covers the
+ * statuses whose body IS the answer: 404 (no config file on disk yet),
+ * 503 (no persisted config path). Same normalization family as
+ * restoreConfigBackup; genuine transport failures throw ApiError.
+ */
+export type ConfigBackupCreateResult =
+  | { outcome: 'created'; name: string }
+  | { outcome: 'rejected'; status: number; error: string }
+
+/** POST /configs/backups 201 body — the freshly created backup's name. */
+export const createdBackupSchema = z.object({
+  name: z.string(),
+})
+export type CreatedBackup = z.infer<typeof createdBackupSchema>
+
 // ─── Realtime WS push frames (/traffic, /memory) ─────────────────────────
 //
 // CoreC pushes these JSON frames on a ticker (default 1s, tunable via

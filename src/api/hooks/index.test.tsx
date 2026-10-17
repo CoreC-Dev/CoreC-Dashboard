@@ -25,6 +25,7 @@ vi.mock('@/api/endpoints', () => ({
   getStats: vi.fn(),
   getConfigs: vi.fn(),
   getConfigsRaw: vi.fn(),
+  createConfigBackup: vi.fn(),
   getConfigBackups: vi.fn(),
   restoreConfigBackup: vi.fn(),
   getDeadLetters: vi.fn(),
@@ -45,6 +46,7 @@ vi.mock('@/api/endpoints', () => ({
 import * as api from '@/api/endpoints'
 import {
   useConfigBackups,
+  useCreateConfigBackup,
   useDriver,
   useDriverTest,
   usePatchConfig,
@@ -56,7 +58,12 @@ import {
   useWriteHistory,
   useWriteTag,
 } from '@/api/hooks'
-import type { ConfigBackupRestoreResult, DriverTestResult, RulesPreviewResult } from '@/types/api'
+import type {
+  ConfigBackupCreateResult,
+  ConfigBackupRestoreResult,
+  DriverTestResult,
+  RulesPreviewResult,
+} from '@/types/api'
 
 // One QueryClient per test, provided via a wrapper. retry:false keeps failed
 // queries from looping; staleTime:0 lets invalidation/refetch assertions stay
@@ -328,6 +335,52 @@ describe('useConfigBackups / useRestoreConfigBackup — config backup timeline',
 
     await waitFor(() => expect(result.current.data).toEqual(rejected))
     expect(result.current.isError).toBe(false)
+    expect(invalidateSpy).not.toHaveBeenCalled()
+  })
+
+  it('useCreateConfigBackup invalidates only the backup list on created', async () => {
+    // A manual snapshot does not touch the running config, so only the
+    // backup list goes stale.
+    const created: ConfigBackupCreateResult = {
+      outcome: 'created',
+      name: '1767225600123456789.yaml',
+    }
+    vi.mocked(api.createConfigBackup).mockResolvedValue(created)
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries')
+
+    const { result } = renderHook(() => useCreateConfigBackup(), {
+      wrapper: createWrapper(),
+    })
+
+    await act(async () => {
+      await result.current.mutateAsync()
+    })
+
+    expect(api.createConfigBackup).toHaveBeenCalledTimes(1)
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['configBackups'] })
+    expect(invalidateSpy).not.toHaveBeenCalledWith({ queryKey: ['configs'] })
+  })
+
+  it('useCreateConfigBackup resolves a rejected snapshot as data and invalidates nothing', async () => {
+    const rejected: ConfigBackupCreateResult = {
+      outcome: 'rejected',
+      status: 404,
+      error: 'active config file not found on disk',
+    }
+    vi.mocked(api.createConfigBackup).mockResolvedValue(rejected)
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries')
+
+    const { result } = renderHook(() => useCreateConfigBackup(), {
+      wrapper: createWrapper(),
+    })
+
+    await act(async () => {
+      await result.current.mutateAsync()
+    })
+
+    await waitFor(() => expect(result.current.data).toEqual(rejected))
+    expect(result.current.isError).toBe(false)
+    expect(invalidateSpy).not.toHaveBeenCalled()
     expect(invalidateSpy).not.toHaveBeenCalled()
   })
 

@@ -874,7 +874,10 @@
     "backupsRestoreConfirm": "立即恢复",
     "backupsRestoreSuccess": "备份已恢复 — 配置已热重载",
     "backupsRestoreRejected": "恢复被拒绝（HTTP {{status}}）：{{error}}",
-    "backupsRestoreFailed": "恢复失败: {{error}}"
+    "backupsRestoreFailed": "恢复失败: {{error}}",
+    "backupsSnapshotNow": "立即快照",
+    "backupsSnapshotCreated": "备份已创建：{{name}}",
+    "backupsSnapshotFailed": "快照被拒绝"
   },
   "topology": {
     "title": "链式核心网格拓扑",
