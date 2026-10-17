@@ -76,6 +76,18 @@ describe('settingsRegistry — buildDefaultSettings', () => {
   it('returns empty object for undefined registry', () => {
     expect(buildDefaultSettings(undefined)).toEqual({})
   })
+
+  it('builds nested parser defaults for mqtt', () => {
+    const defaults = buildDefaultSettings(getTransportFieldRegistry('mqtt'))
+    expect(defaults.parser).toBeDefined()
+    expect((defaults.parser as Record<string, unknown>).type).toBe('default')
+  })
+
+  it('builds nested parser defaults for http', () => {
+    const defaults = buildDefaultSettings(getTransportFieldRegistry('http'))
+    expect(defaults.parser).toBeDefined()
+    expect((defaults.parser as Record<string, unknown>).type).toBe('default')
+  })
 })
 
 // ─── TD-TEST-016: field metadata coverage across all types ──────────
@@ -102,6 +114,32 @@ describe('settingsRegistry — field metadata (all driver types)', () => {
     const slaveId = allFields.find((f) => f.key === 'slave-id')!
     expect(slaveId.min).toBe(0)
     expect(slaveId.max).toBe(247)
+  })
+
+  it('retry field exists for all modbus-tcp-family drivers', () => {
+    for (const type of [
+      'modbus-tcp',
+      'modbus-rtu',
+      'modbus-rtuovertcp',
+      'modbus-udp',
+      'modbus-rtuoverudp',
+      'modbus-tls',
+    ]) {
+      const reg = getDriverFieldRegistry(type)!
+      const fields = reg.groups.flatMap((g) => g.fields)
+      const retry = fields.find((f) => f.key === 'retry')
+      expect(retry, `${type} retry field`).toBeDefined()
+      expect(retry!.type).toBe('number')
+      expect(retry!.default).toBe(3)
+    }
+  })
+
+  it('modbus-rtu stop-bits has 3 options (0=auto, 1, 2) with default 0', () => {
+    const reg = getDriverFieldRegistry('modbus-rtu')!
+    const stopBits = reg.groups.flatMap((g) => g.fields).find((f) => f.key === 'stop-bits')!
+    expect(stopBits.type).toBe('enum')
+    expect(stopBits.options).toEqual(['0', '1', '2'])
+    expect(stopBits.default).toBe(0)
   })
 
   it('opcua security-policy is an enum with 4 options', () => {

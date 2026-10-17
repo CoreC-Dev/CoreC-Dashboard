@@ -18,6 +18,16 @@ describe('validateRuleExpression', () => {
     expect(r.errors[0]).toContain('requires a group name')
   })
 
+  it('accepts RULE-SET:provider-name', () => {
+    expect(validateRuleExpression('RULE-SET:safety-rules').valid).toBe(true)
+  })
+
+  it('rejects RULE-SET: without provider name', () => {
+    const r = validateRuleExpression('RULE-SET:')
+    expect(r.valid).toBe(false)
+    expect(r.errors[0]).toContain('requires a provider name')
+  })
+
   // ─── Empty ──────────────────────────────────────────────────────
   it('rejects empty expression', () => {
     expect(validateRuleExpression('').valid).toBe(false)

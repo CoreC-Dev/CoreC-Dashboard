@@ -152,10 +152,24 @@ describe('registryToEditFields', () => {
     expect(cleanSession.group).toBe('settings')
   })
 
-  it('transport curated edit keys all resolve in the registry (except headers)', () => {
-    // Guards the TransportDetailPage curated key list: every key (bar `headers`,
-    // which is a map supplement) must exist in the registry so no field silently
-    // disappears from the edit form when the registry evolves.
+  it('skips object (composite) fields like parser', () => {
+    // The parser field is type 'object' — it should NOT appear in the flat
+    // edit-field list (detail pages use Monaco YAML for nested objects).
+    const mqttFields = registryToEditFields(getTransportFieldRegistry('mqtt')!)
+    expect(mqttFields.some((f) => f.key === 'parser')).toBe(false)
+
+    const httpFields = registryToEditFields(getTransportFieldRegistry('http')!)
+    expect(httpFields.some((f) => f.key === 'parser')).toBe(false)
+  })
+
+  it('http headers field is present in edit fields', () => {
+    const httpFields = registryToEditFields(getTransportFieldRegistry('http')!)
+    expect(httpFields.some((f) => f.key === 'headers')).toBe(true)
+  })
+
+  it('transport curated edit keys all resolve in the registry', () => {
+    // Guards the TransportDetailPage curated key list: every key must exist
+    // in the registry so no field silently disappears from the edit form.
     const mqttKeys = new Set([
       'broker',
       'topic-template',
@@ -177,6 +191,7 @@ describe('registryToEditFields', () => {
     const httpKeys = new Set([
       'url',
       'method',
+      'headers',
       'webhook-addr',
       'webhook-path',
       'webhook-secret',
