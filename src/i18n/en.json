@@ -456,7 +456,16 @@
     "notReadyBadge": "not ready",
     "unreachable": "unreachable",
     "pathsUp": "{{up}}/{{total}} data paths connected",
-    "probeNote": "Public probe endpoints — readiness turns yellow when the process is alive but a data path is down; red only when the probe cannot be reached."
+    "probeNote": "Public probe endpoints — readiness turns yellow when the process is alive but a data path is down; red only when the probe cannot be reached.",
+    "liveStreams": "Live Runtime Streams",
+    "liveStreamsDesc": "Pushed every second by the /traffic and /memory WebSockets; traffic counters are cumulative and diffed client-side into rates",
+    "liveTraffic": "Traffic",
+    "readsPerSec": "Reads /s",
+    "publishesPerSec": "Publishes /s",
+    "droppedPerSec": "Dropped /s",
+    "liveMemory": "Memory",
+    "sysMemory": "System Memory",
+    "liveWaiting": "Waiting for first frames…"
   },
   "writeHistory": {
     "title": "Write Operation History",

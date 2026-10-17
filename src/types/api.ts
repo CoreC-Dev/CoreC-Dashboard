@@ -337,3 +337,34 @@ export type ConfigBackupsResponse = z.infer<typeof configBackupsResponseSchema>
 export type ConfigBackupRestoreResult =
   | { outcome: 'restored' }
   | { outcome: 'rejected'; status: number; error: string }
+
+// ─── Realtime WS push frames (/traffic, /memory) ─────────────────────────
+//
+// CoreC pushes these JSON frames on a ticker (default 1s, tunable via
+// ?interval= — hub/route/traffic.go / memory.go). The CoreCWebSocket layer
+// only JSON.parses, so consumers validate each frame against these schemas
+// at the boundary (AGENTS.md: 后端响应不可信任) and drop malformed pushes
+// instead of rendering garbage. The shapes mirror the existing
+// models.TrafficFrame / models.MemoryFrame.
+
+/** /traffic frame — CUMULATIVE monotonic counters, not per-second rates. */
+export const trafficFrameSchema = z.object({
+  read: z.number(),
+  publish: z.number(),
+  dropped: z.number(),
+})
+export type TrafficFrameMessage = z.infer<typeof trafficFrameSchema>
+
+/**
+ * /memory frame — zero-STW runtime/metrics analogs of runtime.ReadMemStats:
+ * heap objects bytes (≈HeapAlloc), total allocs, total memory class (≈Sys),
+ * completed GC cycles, plus the live goroutine count.
+ */
+export const memoryFrameSchema = z.object({
+  alloc: z.number(),
+  total_alloc: z.number(),
+  sys: z.number(),
+  num_gc: z.number(),
+  goroutines: z.number(),
+})
+export type MemoryFrameMessage = z.infer<typeof memoryFrameSchema>

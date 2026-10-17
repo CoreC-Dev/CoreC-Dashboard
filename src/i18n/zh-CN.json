@@ -456,7 +456,16 @@
     "notReadyBadge": "未就绪",
     "unreachable": "不可达",
     "pathsUp": "{{up}}/{{total}} 条数据通路已连接",
-    "probeNote": "公开探针端点 — 进程存活但数据通路异常时就绪徽标为黄色；仅当探针无法访问时为红色。"
+    "probeNote": "公开探针端点 — 进程存活但数据通路异常时就绪徽标为黄色；仅当探针无法访问时为红色。",
+    "liveStreams": "实时运行数据流",
+    "liveStreamsDesc": "由 /traffic 与 /memory WebSocket 每秒直推；流量为累计计数器，在前端差分为速率",
+    "liveTraffic": "数据流量",
+    "readsPerSec": "读取 /s",
+    "publishesPerSec": "发布 /s",
+    "droppedPerSec": "丢弃 /s",
+    "liveMemory": "内存",
+    "sysMemory": "系统内存",
+    "liveWaiting": "等待首批数据…"
   },
   "writeHistory": {
     "title": "写操作历史",

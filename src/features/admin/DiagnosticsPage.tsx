@@ -6,6 +6,7 @@ import { getActiveConnection } from '@/api/activeConnection'
 import { useMetrics } from '@/api/hooks'
 import { EventLogTerminal } from '@/components/admin/EventLogTerminal'
 import { InstanceHealthBar } from '@/components/admin/InstanceHealthBar'
+import { RealtimeStreamsPanel } from '@/components/admin/RealtimeStreamsPanel'
 import { WriteHistoryTable } from '@/components/admin/WriteHistoryTable'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -242,6 +243,10 @@ export const DiagnosticsPage: React.FC = () => {
 
       {/* Instance version + liveness/readiness probes (public endpoints) */}
       <InstanceHealthBar />
+
+      {/* Live /traffic + /memory push tiles (WS, 1s) — compact; the
+          Prometheus card below stays the deep-dive surface. */}
+      <RealtimeStreamsPanel />
 
       {/* Real-time xterm.js Terminal */}
       <EventLogTerminal />
