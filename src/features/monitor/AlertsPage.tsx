@@ -1,26 +1,21 @@
 import {
-  AlertCircle,
   AlertOctagon,
   AlertTriangle,
   Bell,
   BellOff,
   BellRing,
-  CheckCircle2,
-  Clock,
-  RefreshCw,
-  RotateCcw,
   Search,
   ShieldAlert,
 } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { CoreCWebSocket, useDeadLetters, useRules, useWriteTag } from '@/api/hooks'
+import { CoreCWebSocket, useDeadLetters, useRules } from '@/api/hooks'
+import { DeadLetterReplayList } from '@/components/monitor/DeadLetterReplayList'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { LoadingState } from '@/components/ui/loading-state'
 import {
   Select,
   SelectContent,
@@ -29,7 +24,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { safePersist, safeRead } from '@/lib/storage'
-import type { LogEvent, WriteCommand } from '@/types/models'
+import type { LogEvent } from '@/types/models'
 
 const SOUND_KEY = 'corec_alert_sound'
 const NOTIF_KEY = 'corec_alert_notification'
@@ -82,11 +77,8 @@ export const AlertsPage: React.FC = () => {
   const { t } = useTranslation()
   const { data: deadLettersData, refetch, isFetching, isLoading, isError, error } = useDeadLetters()
   const { data: rulesData } = useRules()
-  const writeMutation = useWriteTag()
 
   const [liveLogs, setLiveLogs] = useState<LogEvent[]>([])
-  const [retryError, setRetryError] = useState<string | null>(null)
-  const [pendingRetryKey, setPendingRetryKey] = useState<string | null>(null)
   const [soundEnabled, setSoundEnabled] = useState(() => readPref(SOUND_KEY))
   const [notifEnabled, setNotifEnabled] = useState(() => readPref(NOTIF_KEY))
 
@@ -179,7 +171,6 @@ export const AlertsPage: React.FC = () => {
   }, [])
 
   const deadLetters = useMemo(() => deadLettersData?.failed_writes || [], [deadLettersData])
-  const visibleDeadLetters = deadLetters.slice(0, 100) // Cap DOM (TD-PERF-004)
   const alertRules = useMemo(
     () => (rulesData?.rules || []).filter((r) => r.action === 'alert'),
     [rulesData],
@@ -197,19 +188,6 @@ export const AlertsPage: React.FC = () => {
       return true
     })
   }, [liveLogs, logFilter, logLevel])
-
-  const handleRetryDeadLetter = async (cmd: WriteCommand, retryKey: string) => {
-    setRetryError(null)
-    setPendingRetryKey(retryKey)
-    try {
-      await writeMutation.mutateAsync(cmd)
-      await refetch()
-    } catch (err: unknown) {
-      setRetryError(err instanceof Error ? err.message : t('alerts.retryFailed'))
-    } finally {
-      setPendingRetryKey(null)
-    }
-  }
 
   return (
     <div className="space-y-5">
@@ -273,112 +251,17 @@ export const AlertsPage: React.FC = () => {
         </Card>
       </div>
 
-      {/* Dead Letters List */}
-      <Card className="border-border bg-card card-enter">
-        <CardHeader className="p-4 flex flex-row items-center justify-between">
-          <div>
-            <CardTitle className="text-sm font-semibold flex items-center space-x-2 text-status-error">
-              <AlertOctagon className="w-4 h-4" />
-              <span>{t('alerts.deadLetterControlQueue')}</span>
-            </CardTitle>
-            <CardDescription className="text-xs">{t('alerts.deadLetterDesc')}</CardDescription>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => refetch()}
-            disabled={isFetching}
-            className="h-8 text-xs"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 mr-1 ${isFetching ? 'animate-spin' : ''}`} />
-            <span>{t('common.refresh')}</span>
-          </Button>
-        </CardHeader>
-        <CardContent className="p-4 pt-0">
-          {retryError && (
-            <div className="mb-3 p-2 rounded-lg bg-status-error/10 border border-status-error/20 text-status-error text-xs flex items-center space-x-2">
-              <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-              <span>{retryError}</span>
-            </div>
-          )}
-          {isLoading && deadLetters.length === 0 ? (
-            <LoadingState className="py-8" />
-          ) : isError ? (
-            <div className="space-y-3 py-8 text-center">
-              <AlertCircle className="mx-auto h-8 w-8 text-status-error" />
-              <div className="text-sm font-semibold">{t('common.error')}</div>
-              {error instanceof Error && error.message && (
-                <div className="mx-auto max-w-md break-all font-mono text-xs text-status-error/80">
-                  {error.message}
-                </div>
-              )}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => refetch()}
-                disabled={isFetching}
-                className="h-8 text-xs"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${isFetching ? 'animate-spin' : ''}`} />
-                {t('common.retry')}
-              </Button>
-            </div>
-          ) : deadLetters.length === 0 ? (
-            <div className="py-8 text-center text-xs text-muted-foreground flex flex-col items-center space-y-1">
-              <CheckCircle2 className="w-6 h-6 text-status-running mb-1" />
-              <span>
-                {t('alerts.noDeadLetters', {
-                  defaultValue: 'No failed dead letter commands recorded.',
-                })}
-              </span>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {visibleDeadLetters.map((entry) => {
-                const retryKey = `${entry.command.driver}-${entry.command.tag}-${entry.failed_at}-${entry.attempts}`
-                return (
-                  <div
-                    key={retryKey}
-                    className="p-3 rounded-lg border border-status-error/20 bg-status-error/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sm transition-colors hover:bg-status-error/10"
-                  >
-                    <div className="space-y-1 min-w-0">
-                      <div className="font-mono font-semibold text-status-error text-sm break-all">
-                        [{entry.command.driver}] {t('common.tag')}: {entry.command.tag} ={' '}
-                        {String(entry.command.value)}
-                      </div>
-                      <div className="text-muted-foreground font-mono text-xs break-all">
-                        {entry.error}
-                      </div>
-                      <div className="text-xs text-muted-foreground flex items-center space-x-2">
-                        <Clock className="w-3 h-3" />
-                        <span>{new Date(entry.failed_at).toLocaleString()}</span>
-                        <span>•</span>
-                        <span>{t('alerts.attemptsExhausted', { count: entry.attempts })}</span>
-                      </div>
-                    </div>
-
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleRetryDeadLetter(entry.command, retryKey)}
-                      disabled={pendingRetryKey === retryKey}
-                      className="shrink-0 text-xs border-status-error/30 text-status-error hover:bg-status-error/10"
-                    >
-                      <RotateCcw className="w-3.5 h-3.5 mr-1" />
-                      <span>{t('write.retry')}</span>
-                    </Button>
-                  </div>
-                )
-              })}
-            </div>
-          )}
-          {deadLetters.length > 100 && (
-            <p className="text-xs text-muted-foreground text-center py-2">
-              {t('common.showing', { shown: 100, total: deadLetters.length })}
-            </p>
-          )}
-        </CardContent>
-      </Card>
+      {/* Dead Letters List — selection + per-batch-confirmed replay
+          (component extracted to keep this page under the 500-line lint
+          ceiling; per-entry retry behavior is unchanged). */}
+      <DeadLetterReplayList
+        deadLetters={deadLetters}
+        isLoading={isLoading}
+        isError={isError}
+        error={error}
+        isFetching={isFetching}
+        onRefresh={() => refetch()}
+      />
 
       {/* Live Warning / Error Feed */}
       <Card className="border-border bg-card card-enter">
