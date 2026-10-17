@@ -193,7 +193,7 @@ describe('mutation cache invalidation (TD-TEST-009)', () => {
     })
 
     await act(async () => {
-      await result.current.mutateAsync({ index: 2, disabled: true })
+      await result.current.mutateAsync({ name: 'overtemp-alarm', disabled: true })
     })
 
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['rules'] })

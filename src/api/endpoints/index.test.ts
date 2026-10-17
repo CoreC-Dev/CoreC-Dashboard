@@ -593,15 +593,15 @@ describe('getRules (GET /rules)', () => {
 })
 
 describe('toggleRule (PATCH /rules/disable)', () => {
-  it('sends a PATCH with the { index, disabled } body', async () => {
+  it('sends a PATCH with the { name, disabled } body', async () => {
     mockFetch.mockResolvedValueOnce(new Response(null, { status: 204 }))
 
-    const result = await toggleRule(2, true)
+    const result = await toggleRule('overtemp-alarm', true)
 
     expect(result).toBeUndefined()
     const init = expectCorecRequest('/corec-proxy/rules/disable', 'PATCH')
     expect((init!.headers as Headers).get('Content-Type')).toBe('application/json')
-    expect(JSON.parse(init?.body as string)).toEqual({ index: 2, disabled: true })
+    expect(JSON.parse(init?.body as string)).toEqual({ name: 'overtemp-alarm', disabled: true })
   })
 
   it('throws ApiError on a 500 server error', async () => {
@@ -612,7 +612,7 @@ describe('toggleRule (PATCH /rules/disable)', () => {
       }),
     )
 
-    await expect(toggleRule(0, false)).rejects.toThrow(ApiError)
+    await expect(toggleRule('overtemp-alarm', false)).rejects.toThrow(ApiError)
   })
 })
 

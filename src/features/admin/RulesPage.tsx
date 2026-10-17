@@ -109,7 +109,7 @@ export const RulesPage: React.FC = () => {
   // disabled while mutations are in flight (not every switch on the page).
   // Uses a Set so multiple rules can toggle concurrently without one's
   // Per-row toggle in-flight tracking + error surface. [M-5]
-  const { togglingIndices, toggleError, handleToggle, clearToggleError } = useRuleToggle()
+  const { togglingNames, toggleError, handleToggle, clearToggleError } = useRuleToggle()
   const [testRule, setTestRule] = useState<RuleStat | null>(null)
   const [testDp, setTestDp] = useState<SimDataPoint>(EMPTY_TEST_DP)
   const [testResult, setTestResult] = useState<boolean | null>(null)
@@ -485,8 +485,8 @@ export const RulesPage: React.FC = () => {
                         <td className="px-4 py-3 text-right">
                           <Switch
                             checked={!rule.disabled}
-                            onCheckedChange={() => handleToggle(rule.index, rule.disabled)}
-                            disabled={togglingIndices.has(rule.index)}
+                            onCheckedChange={() => handleToggle(rule.name, rule.disabled)}
+                            disabled={togglingNames.has(rule.name)}
                           />
                         </td>
                         <td className="px-4 py-3 text-right">

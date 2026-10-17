@@ -157,8 +157,8 @@ export function useWriteTag() {
 export function useToggleRule() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ index, disabled }: { index: number; disabled: boolean }) =>
-      api.toggleRule(index, disabled),
+    mutationFn: ({ name, disabled }: { name: string; disabled: boolean }) =>
+      api.toggleRule(name, disabled),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['rules'] })
     },

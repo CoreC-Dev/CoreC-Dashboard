@@ -106,10 +106,12 @@ export const getDeadLetters = () => apiRequest<DeadLetterResponse>('/write/faile
 
 // Rules Engine
 export const getRules = () => apiRequest<RulesListResponse>('/rules')
-export const toggleRule = (index: number, disabled: boolean) =>
+// Rule name is the stable identifier across config reloads (an index can
+// shift when rules are reordered); the backend resolves it server-side.
+export const toggleRule = (name: string, disabled: boolean) =>
   apiRequest<void>('/rules/disable', {
     method: 'PATCH',
-    body: JSON.stringify({ index, disabled }),
+    body: JSON.stringify({ name, disabled }),
   })
 
 // Statistics & Metrics
