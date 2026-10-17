@@ -83,6 +83,28 @@ const HTTP_EDIT_KEYS = new Set([
   'retry-count',
   'buffer-size',
 ])
+const NOTIFY_EDIT_KEYS = new Set([
+  'channel',
+  'cooldown',
+  'webhook-url',
+  'template',
+  'smtp-host',
+  'smtp-port',
+  'smtp-user',
+  'smtp-pass',
+  'from',
+  'to',
+  'subject',
+  'body',
+  'url',
+  'method',
+  'headers',
+  'body-template',
+  'batch-size',
+  'flush-interval',
+  'retry-count',
+  'buffer-size',
+])
 
 // `headers` is a map field not yet modeled by the registry (SettingsField has no
 // map/object type); retained as an explicit supplement until the registry gains
@@ -102,8 +124,9 @@ function getTransportFields(type: string): readonly RegistryEditField[] {
   const lower = type.toLowerCase()
   const isMqtt = lower.includes('mqtt')
   const isHttp = lower.includes('http')
-  if (!isMqtt && !isHttp) return []
-  const keys = isMqtt ? MQTT_EDIT_KEYS : HTTP_EDIT_KEYS
+  const isNotify = lower.includes('notify')
+  if (!isMqtt && !isHttp && !isNotify) return []
+  const keys = isMqtt ? MQTT_EDIT_KEYS : isHttp ? HTTP_EDIT_KEYS : NOTIFY_EDIT_KEYS
   const all = registryToEditFields(getTransportFieldRegistry(type), TRANSPORT_TOPLEVEL_FIELDS)
   const filtered = all.filter((f) => keys.has(f.key))
   if (isHttp) {

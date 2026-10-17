@@ -12,6 +12,7 @@
 import { dump, JSON_SCHEMA, load } from 'js-yaml'
 import type {
   CoreCConfig,
+  DerivedTagConfig,
   DriverConfig,
   RuleConfig,
   RuleProviderConfig,
@@ -254,4 +255,31 @@ export function removeRuleGroup(config: CoreCConfig, name: string): CoreCConfig 
 /** Check rule-group name uniqueness. */
 export function isRuleGroupNameUnique(config: CoreCConfig, name: string): boolean {
   return !(config['rule-groups'] && name in config['rule-groups'])
+}
+
+// ─── Derived Tags (derived-tags[]) ───────────────────────────────────
+
+const derivedTagHelpers = makeArrayEntityHelpers<DerivedTagConfig>({
+  read: (config) => config['derived-tags'],
+  write: (config, tags) => ({ ...config, 'derived-tags': tags }),
+})
+
+/** Find a derived tag by name. */
+export function findDerivedTag(config: CoreCConfig, name: string): DerivedTagConfig | undefined {
+  return derivedTagHelpers.find(config, name)
+}
+
+/** Add or replace a derived tag (keyed by name). */
+export function upsertDerivedTag(config: CoreCConfig, tag: DerivedTagConfig): CoreCConfig {
+  return derivedTagHelpers.upsert(config, tag)
+}
+
+/** Remove a derived tag by name. */
+export function removeDerivedTag(config: CoreCConfig, name: string): CoreCConfig {
+  return derivedTagHelpers.remove(config, name)
+}
+
+/** Check derived-tag name uniqueness. */
+export function isDerivedTagNameUnique(config: CoreCConfig, name: string): boolean {
+  return derivedTagHelpers.isNameUnique(config, name)
 }

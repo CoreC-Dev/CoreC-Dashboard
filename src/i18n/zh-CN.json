@@ -1299,6 +1299,28 @@
     "intervalHelp": "重新读取文件以检测变更的频率（如 30s, 5m）。留空则禁用热重载。",
     "intervalLabel": "间隔"
   },
+  "derivedTag": {
+    "title": "派生标签",
+    "desc": "从缓存标签值的算术表达式计算的 KPI 标签（如 efficiency = output / input * 100）。通过 PUT /configs 热更新——无需重启。",
+    "add": "添加派生标签",
+    "empty": "未配置派生标签。点击\"添加派生标签\"创建一个。",
+    "name": "标签名称",
+    "nameExists": "已存在同名派生标签。",
+    "type": "数据类型",
+    "expr": "表达式",
+    "exprHelp": "基于标签名的算术表达式（如 (output / input) * 100）。标识符解析为缓存的标签值。",
+    "group": "分组",
+    "interval": "计算间隔",
+    "intervalHelp": "重新计算表达式的频率（如 5s, 1m）。必须 >= 1s。",
+    "intervalLabel": "间隔",
+    "unit": "单位",
+    "unitLabel": "单位",
+    "onMissing": "缺失策略",
+    "onMissingDefault": "skip",
+    "onMissingHelp": "引用标签不存在时的行为：skip（默认）、bad-quality 或 zero。",
+    "staleGuard": "过期保护",
+    "staleGuardHelp": "当任一引用标签早于此时长时标记派生标签为过期（如 30s）。留空则禁用。"
+  },
   "ruleGroup": {
     "title": "规则组",
     "desc": "命名子规则组，通过 match: \"SUB-RULE:组名\" 引用。每个组是独立的子引擎。循环引用在加载时检测。",

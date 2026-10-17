@@ -3,7 +3,7 @@
  *
  * Multi-step wizard for creating or editing a transport configuration.
  * Steps:
- *   Step 1 — Transport Type: choose protocol (mqtt or http)
+ *   Step 1 — Transport Type: choose protocol (mqtt, http, or notify)
  *   Step 2 — Connection: transport name + broker URL / HTTP endpoint settings
  *   Step 3 — Publishing: batch-size, flush-interval, retry-count, buffer-size, fallback
  *   Step 4 — Advanced: reconnect backoff, TLS, command channel (per type)
@@ -15,7 +15,7 @@
  * Decision-independent: works under both backend paths because it only
  * interacts with configStore.
  */
-import { Network, Zap } from 'lucide-react'
+import { Bell, Network, Zap } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -59,6 +59,12 @@ const TRANSPORT_TYPE_META: TransportTypeMeta[] = [
     label: 'HTTP / Webhook',
     icon: <Network className="h-5 w-5" />,
     description: 'POST to HTTP endpoint or receive webhooks',
+  },
+  {
+    type: 'notify',
+    label: 'Notify',
+    icon: <Bell className="h-5 w-5" />,
+    description: 'Push alerts to Slack, Teams, Email, or generic webhook',
   },
 ]
 

@@ -1,10 +1,12 @@
 import { configEqual } from '@/lib/configHelpers'
 import {
+  removeDerivedTag,
   removeDriver,
   removeRule,
   removeRuleGroup,
   removeRuleProvider,
   removeTransport,
+  upsertDerivedTag,
   upsertDriver,
   upsertRule,
   upsertRuleGroup,
@@ -14,6 +16,7 @@ import {
 import type { ConfigStoreState } from '@/stores/configStore'
 import type {
   CoreCConfig,
+  DerivedTagConfig,
   DriverConfig,
   RuleConfig,
   RuleProviderConfig,
@@ -33,6 +36,8 @@ export type CrudSlice = Pick<
   | 'removeRuleProvider'
   | 'upsertRuleGroup'
   | 'removeRuleGroup'
+  | 'upsertDerivedTag'
+  | 'removeDerivedTag'
 >
 
 // Internal: commit a new working config and recompute dirty.
@@ -140,6 +145,24 @@ export function createCrudSlice(
       const { workingConfig } = get()
       if (!workingConfig) return
       const next = removeRuleGroup(workingConfig, name)
+      commit(set, get, next)
+    },
+
+    upsertDerivedTag: (tag: DerivedTagConfig) => {
+      const { workingConfig } = get()
+      if (!workingConfig) {
+        set({ error: 'No working config loaded' })
+        return false
+      }
+      const next = upsertDerivedTag(workingConfig, tag)
+      commit(set, get, next)
+      return true
+    },
+
+    removeDerivedTag: (name: string) => {
+      const { workingConfig } = get()
+      if (!workingConfig) return
+      const next = removeDerivedTag(workingConfig, name)
       commit(set, get, next)
     },
   }

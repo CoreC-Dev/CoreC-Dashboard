@@ -14,6 +14,7 @@ import { EventLogTerminal } from '@/components/admin/EventLogTerminal'
 import { ConfigApplyConfirmationDialog } from '@/components/wizard/ConfigApplyConfirmationDialog'
 import { UnsavedChangesBanner } from '@/components/wizard/UnsavedChangesBanner'
 import { ValidationBanner } from '@/components/wizard/ValidationBanner'
+import { DerivedTagsEditor } from '@/features/admin/DerivedTagsEditor'
 import { GlobalConfigEditor } from '@/features/admin/GlobalConfigEditor'
 import { NodeConfigEditor } from '@/features/admin/NodeConfigEditor'
 import { RuleGroupEditor } from '@/features/admin/RuleGroupEditor'
@@ -175,6 +176,9 @@ export const ConfigCenterPage: React.FC = () => {
 
           {/* Rule groups editor */}
           <RuleGroupEditor />
+
+          {/* Derived tags editor */}
+          <DerivedTagsEditor />
 
           {/* Apply confirmation for configStore edits */}
           <ConfigApplyConfirmationDialog {...applyDialogProps} />

@@ -1,10 +1,12 @@
 import {
   dumpConfigYaml,
+  findDerivedTag,
   findDriver,
   findRule,
   findRuleGroup,
   findRuleProvider,
   findTransport,
+  isDerivedTagNameUnique,
   isDriverNameUnique,
   isRuleGroupNameUnique,
   isRuleNameUnique,
@@ -23,11 +25,13 @@ export type GetterSlice = Pick<
   | 'findRule'
   | 'findRuleProvider'
   | 'findRuleGroup'
+  | 'findDerivedTag'
   | 'isDriverNameUnique'
   | 'isTransportNameUnique'
   | 'isRuleNameUnique'
   | 'isRuleProviderNameUnique'
   | 'isRuleGroupNameUnique'
+  | 'isDerivedTagNameUnique'
 >
 
 export function createGetterSlice(
@@ -105,6 +109,18 @@ export function createGetterSlice(
       const { workingConfig } = get()
       if (!workingConfig) return true
       return isRuleGroupNameUnique(workingConfig, name)
+    },
+
+    findDerivedTag: (name: string) => {
+      const { workingConfig } = get()
+      if (!workingConfig) return undefined
+      return findDerivedTag(workingConfig, name)
+    },
+
+    isDerivedTagNameUnique: (name: string) => {
+      const { workingConfig } = get()
+      if (!workingConfig) return true
+      return isDerivedTagNameUnique(workingConfig, name)
     },
   }
 }

@@ -31,6 +31,7 @@ import { createCrudSlice } from '@/stores/slices/configCrudSlice'
 import { createGetterSlice } from '@/stores/slices/configGetterSlice'
 import type {
   CoreCConfig,
+  DerivedTagConfig,
   DriverConfig,
   RuleConfig,
   RuleProviderConfig,
@@ -76,6 +77,8 @@ export interface ConfigStoreState {
   removeRuleProvider: (name: string) => void
   upsertRuleGroup: (name: string, rules: RuleConfig[]) => boolean
   removeRuleGroup: (name: string) => void
+  upsertDerivedTag: (tag: DerivedTagConfig) => boolean
+  removeDerivedTag: (name: string) => void
 
   // ─── Section updates ──────────────────────────────────────────────
 
@@ -105,12 +108,14 @@ export interface ConfigStoreState {
   findRule: (name: string) => RuleConfig | undefined
   findRuleProvider: (name: string) => RuleProviderConfig | undefined
   findRuleGroup: (name: string) => RuleConfig[] | undefined
+  findDerivedTag: (name: string) => DerivedTagConfig | undefined
   /** Check name uniqueness in the working config. */
   isDriverNameUnique: (name: string) => boolean
   isTransportNameUnique: (name: string) => boolean
   isRuleNameUnique: (name: string) => boolean
   isRuleProviderNameUnique: (name: string) => boolean
   isRuleGroupNameUnique: (name: string) => boolean
+  isDerivedTagNameUnique: (name: string) => boolean
 }
 
 export const useConfigStore = create<ConfigStoreState>((set, get) => {

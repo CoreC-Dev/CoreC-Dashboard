@@ -1299,6 +1299,28 @@
     "intervalHelp": "How often to re-read the file for changes (e.g. 30s, 5m). Leave empty to disable hot-reload.",
     "intervalLabel": "Interval"
   },
+  "derivedTag": {
+    "title": "Derived Tags",
+    "desc": "Computed KPI tags from arithmetic expressions over cached tag values (e.g. efficiency = output / input * 100). Hot-updated via PUT /configs — no restart required.",
+    "add": "Add Derived Tag",
+    "empty": "No derived tags configured. Click \"Add Derived Tag\" to create one.",
+    "name": "Tag Name",
+    "nameExists": "A derived tag with this name already exists.",
+    "type": "Data Type",
+    "expr": "Expression",
+    "exprHelp": "Arithmetic expression over tag names (e.g. (output / input) * 100). Identifiers resolve to cached tag values.",
+    "group": "Group",
+    "interval": "Evaluation Interval",
+    "intervalHelp": "How often to re-evaluate the expression (e.g. 5s, 1m). Must be >= 1s.",
+    "intervalLabel": "Interval",
+    "unit": "Unit",
+    "unitLabel": "Unit",
+    "onMissing": "On Missing",
+    "onMissingDefault": "skip",
+    "onMissingHelp": "Behavior when a referenced tag is absent: skip (default), bad-quality, or zero.",
+    "staleGuard": "Stale Guard",
+    "staleGuardHelp": "Mark the derived tag stale if any referenced tag is older than this duration (e.g. 30s). Leave empty to disable."
+  },
   "ruleGroup": {
     "title": "Rule Groups",
     "desc": "Named sub-rule groups referenced via match: \"SUB-RULE:group-name\". Each group is a separate sub-engine. Circular references are detected at load time.",
