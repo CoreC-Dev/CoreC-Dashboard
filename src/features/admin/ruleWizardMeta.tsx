@@ -61,3 +61,19 @@ export const MATCH_TEMPLATES: { label: string; value: string }[] = [
   { label: 'quality == "good"', value: 'quality == "good"' },
   { label: 'driver == "x" && value > 50', value: 'driver == "x" && value > 50' },
 ]
+
+/**
+ * Default sample data point for the wizard's Playground (POST /rules/preview)
+ * mini form. Kept beside the other wizard metadata so the defaults stay
+ * feature-owned; the RulePlayground component itself stays generic and
+ * feature-agnostic (layering: components must not import features).
+ */
+export const PLAYGROUND_DEFAULTS = {
+  driver: 'plc1',
+  tag: 'temperature',
+  /** Raw input text — the component parses it to number when numeric. */
+  value: '96.5',
+  type: 'float64',
+  /** 0 = Good (core Quality). */
+  quality: 0,
+} as const

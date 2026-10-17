@@ -1244,7 +1244,16 @@
     "transformExpression": "Transform Expression",
     "transformExprHelp": "Arithmetic expression using variable \"value\". Supports +, -, *, /, parentheses. Example: value * 1.8 + 32",
     "tagRename": "Tag Rename",
-    "tagRenameHelp": "Optional new tag name for the transformed data point (literal, not a template)."
+    "tagRenameHelp": "Optional new tag name for the transformed data point (literal, not a template).",
+    "playground": "Playground",
+    "playgroundDesc": "Trial-run the match expression against a sample data point — no rules are touched.",
+    "playgroundSamplePoint": "Sample data point",
+    "playgroundRun": "Preview",
+    "playgroundNeedMatch": "Enter a match expression to run a preview.",
+    "playgroundMatched": "Matched",
+    "playgroundNotMatched": "Not matched",
+    "playgroundFailed": "Preview failed",
+    "playgroundUnsupported": "Rule preview is not supported by this engine"
   },
   "globalConfig": {
     "title": "Global Configuration",

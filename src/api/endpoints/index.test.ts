@@ -21,11 +21,13 @@ import {
   getWriteHistory,
   patchConfigs,
   postDriverTest,
+  postRulesPreview,
   toggleRule,
   updateConfigs,
   validateConfigs,
   writeTag,
 } from '@/api/endpoints/index'
+import type { PreviewDataPoint } from '@/types/api'
 
 // Mock fetch — each test configures the response it expects.
 const mockFetch = vi.fn()
@@ -1023,5 +1025,117 @@ describe('postDriverTest (POST /drivers/test)', () => {
     mockJson(200, { ok: true })
 
     await expect(postDriverTest('modbus-tcp', settings)).rejects.toThrow()
+  })
+})
+
+describe('postRulesPreview (POST /rules/preview)', () => {
+  const point: PreviewDataPoint = {
+    driver: 'plc1',
+    device: '',
+    group: 'g1',
+    tag: 'temperature',
+    value: 96.5,
+    type: 'float64',
+    quality: 0,
+    timestamp: '2024-09-08T10:30:00Z',
+  }
+
+  function mockJson(status: number, body: unknown) {
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify(body), {
+        status,
+        headers: { 'content-type': 'application/json' },
+      }),
+    )
+  }
+
+  it('sends match+point and parses {matched:true}', async () => {
+    mockJson(200, { matched: true })
+
+    const result = await postRulesPreview("tag == 'temperature' && value > 95", point)
+
+    expect(result).toEqual({ outcome: 'evaluated', matched: true })
+    const init = expectCorecRequest('/corec-proxy/rules/preview', 'POST')
+    expect((init!.headers as Headers).get('Content-Type')).toBe('application/json')
+    expect(JSON.parse(init?.body as string)).toEqual({
+      match: "tag == 'temperature' && value > 95",
+      point,
+    })
+  })
+
+  it('omits point from the body when none is provided (zero-value point server-side)', async () => {
+    mockJson(200, { matched: false })
+
+    const result = await postRulesPreview('value > 0')
+
+    expect(result).toEqual({ outcome: 'evaluated', matched: false })
+    const init = mockFetch.mock.calls[0][1] as RequestInit
+    expect(JSON.parse(init.body as string)).toEqual({ match: 'value > 0' })
+  })
+
+  it('defaults a missing device/group to "" (tolerant outgoing parse)', async () => {
+    mockJson(200, { matched: true })
+
+    await postRulesPreview('ALL', { ...point, device: undefined, group: undefined })
+
+    const init = mockFetch.mock.calls[0][1] as RequestInit
+    expect(JSON.parse(init.body as string).point).toEqual({ ...point, device: '', group: '' })
+  })
+
+  it('normalizes a 400 compile error into { outcome: error } with the verbatim message', async () => {
+    // The backend returns expr's compile error unmasked BY DESIGN — the
+    // frontend shows it next to the expression editor.
+    mockJson(400, {
+      error:
+        'failed to create rule preview: invalid match expression "tag ==": compile expression "tag ==" (translated: "tag =="): unexpected token EOF (1:6)',
+    })
+
+    const result = await postRulesPreview('tag ==', point)
+
+    expect(result).toEqual({
+      outcome: 'error',
+      status: 400,
+      error:
+        'failed to create rule preview: invalid match expression "tag ==": compile expression "tag ==" (translated: "tag =="): unexpected token EOF (1:6)',
+    })
+  })
+
+  it('normalizes a 501 unsupported-engine into { outcome: error }', async () => {
+    mockJson(501, { error: 'rule preview not supported by this engine' })
+
+    const result = await postRulesPreview('ALL')
+
+    expect(result).toEqual({
+      outcome: 'error',
+      status: 501,
+      error: 'rule preview not supported by this engine',
+    })
+  })
+
+  it('throws ApiError on a 500 server error', async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response('internal server error', {
+        status: 500,
+        headers: { 'content-type': 'text/plain' },
+      }),
+    )
+
+    await expect(postRulesPreview('ALL', point)).rejects.toThrow(ApiError)
+  })
+
+  it('rejects a malformed 200 body (zod boundary)', async () => {
+    mockJson(200, { result: true })
+
+    await expect(postRulesPreview('ALL', point)).rejects.toThrow()
+  })
+
+  it('rejects a sample point with an unknown DataType BEFORE any request is sent', async () => {
+    // The outgoing point is parsed at the boundary — a malformed form
+    // payload must never reach the backend.
+    await expect(
+      postRulesPreview('ALL', { ...point, type: 'complex128' as PreviewDataPoint['type'] }),
+    ).rejects.toThrow()
+
+    expect(mockFetch).not.toHaveBeenCalled()
   })
 })

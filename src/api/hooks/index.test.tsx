@@ -37,6 +37,7 @@ vi.mock('@/api/endpoints', () => ({
   updateConfigs: vi.fn(),
   validateConfigs: vi.fn(),
   postDriverTest: vi.fn(),
+  postRulesPreview: vi.fn(),
 }))
 
 import * as api from '@/api/endpoints'
@@ -44,13 +45,14 @@ import {
   useDriver,
   useDriverTest,
   usePatchConfig,
+  useRulesPreview,
   useServerInfo,
   useToggleRule,
   useUpdateConfig,
   useWriteHistory,
   useWriteTag,
 } from '@/api/hooks'
-import type { DriverTestResult } from '@/types/api'
+import type { DriverTestResult, RulesPreviewResult } from '@/types/api'
 
 // One QueryClient per test, provided via a wrapper. retry:false keeps failed
 // queries from looping; staleTime:0 lets invalidation/refetch assertions stay
@@ -392,5 +394,69 @@ describe('useDriverTest — connectivity probe mutation', () => {
 
     await waitFor(() => expect(result.current.isError).toBe(true))
     expect(api.postDriverTest).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('useRulesPreview — offline playground mutation', () => {
+  const point = {
+    driver: 'plc1',
+    device: '',
+    group: '',
+    tag: 'temperature',
+    value: 96.5,
+    type: 'float64' as const,
+    quality: 0,
+    timestamp: '2024-09-08T10:30:00Z',
+  }
+
+  it('calls postRulesPreview with the expression and the sample point', async () => {
+    const result: RulesPreviewResult = { outcome: 'evaluated', matched: true }
+    vi.mocked(api.postRulesPreview).mockResolvedValue(result)
+
+    const { result: hook } = renderHook(() => useRulesPreview(), {
+      wrapper: createWrapper(),
+    })
+
+    await act(async () => {
+      await hook.current.mutateAsync({ match: 'value > 95', point })
+    })
+
+    expect(api.postRulesPreview).toHaveBeenCalledWith('value > 95', point)
+    await waitFor(() => expect(hook.current.data).toEqual(result))
+    expect(hook.current.isError).toBe(false)
+  })
+
+  it('resolves a compile error as data (not isError) so the UI shows it verbatim', async () => {
+    const result: RulesPreviewResult = {
+      outcome: 'error',
+      status: 400,
+      error: 'failed to create rule preview: invalid match expression "tag =="',
+    }
+    vi.mocked(api.postRulesPreview).mockResolvedValue(result)
+
+    const { result: hook } = renderHook(() => useRulesPreview(), {
+      wrapper: createWrapper(),
+    })
+
+    await act(async () => {
+      await hook.current.mutateAsync({ match: 'tag ==' })
+    })
+
+    await waitFor(() => expect(hook.current.data).toEqual(result))
+    expect(hook.current.isError).toBe(false)
+  })
+
+  it('surfaces transport-level failures as isError', async () => {
+    vi.mocked(api.postRulesPreview).mockRejectedValue(new Error('network unreachable'))
+
+    const { result } = renderHook(() => useRulesPreview(), {
+      wrapper: createWrapper(),
+    })
+
+    await act(async () => {
+      await result.current.mutateAsync({ match: 'ALL' }).catch(() => {})
+    })
+
+    await waitFor(() => expect(result.current.isError).toBe(true))
   })
 })

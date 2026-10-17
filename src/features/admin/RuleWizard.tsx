@@ -27,6 +27,7 @@
 import type React from 'react'
 import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { RulePlayground } from '@/components/admin/RulePlayground'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -42,7 +43,7 @@ import { ExprValidationMessages } from '@/components/wizard/ExprValidationMessag
 import { MatchExpressionChips } from '@/components/wizard/MatchExpressionChips'
 import { WizardDialog, type WizardStep } from '@/components/wizard/Wizard'
 import { WizardContextValidationBanner } from '@/components/wizard/WizardContextValidationBanner'
-import { ACTION_META, MATCH_TEMPLATES } from '@/features/admin/ruleWizardMeta'
+import { ACTION_META, MATCH_TEMPLATES, PLAYGROUND_DEFAULTS } from '@/features/admin/ruleWizardMeta'
 import { useTransportNames } from '@/hooks/useConfigValidation'
 import { useResetOnOpen } from '@/hooks/useResetOnOpen'
 import { cn } from '@/lib/cn'
@@ -237,6 +238,9 @@ export const RuleWizard: React.FC<RuleWizardProps> = ({
             />
             {/* Live expression syntax validation */}
             <ExprValidationMessages result={validateRuleExpression(match)} variant="icon" />
+            {/* Offline playground: trial-run the expression against a sample
+                point in a scratch engine — never touches the rule set. */}
+            <RulePlayground match={match} defaults={PLAYGROUND_DEFAULTS} />
           </div>
 
           <div className="space-y-1.5">

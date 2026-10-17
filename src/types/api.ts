@@ -226,3 +226,68 @@ export type DriverTestResponse = z.infer<typeof driverTestResponseSchema>
 export type DriverTestResult =
   | { outcome: 'completed'; data: DriverTestResponse }
   | { outcome: 'rejected'; error: string }
+
+// ─── Rule preview (POST /rules/preview) ───────────────────────────────
+//
+// Offline trial-run of a match expression against a sample data point in
+// a scratch rule engine — the active rule set is never touched, so rule
+// authors can validate syntax and semantics BEFORE saving (hub/route/
+// rules_preview.go).
+
+/**
+ * The sample data point of POST /rules/preview, zod-shaped after the
+ * DataPoint the /tags API returns (models.DataPoint ↔ core.DataPoint):
+ * string DataType vocabulary, numeric quality. The endpoint parses the
+ * outgoing point through this schema so a malformed form payload surfaces
+ * at the boundary instead of reaching the backend.
+ */
+export const previewDataPointSchema = z.object({
+  driver: z.string(),
+  /** Tolerant default: contract-required, but device-less drivers omit it. */
+  device: z.string().default(''),
+  group: z.string().default(''),
+  tag: z.string(),
+  /** JSON payloads carry number/bool/string (and null); never `any`. */
+  value: writeAuditValueSchema,
+  /** Same DataType vocabulary as tag configs (core/types.go). */
+  type: z.enum(DATA_TYPES),
+  /** 0=Good, 1=Bad, 2=Uncertain (core Quality). */
+  quality: z.number().int().min(0).max(2),
+  /** RFC3339, e.g. "2024-09-08T10:30:00Z". */
+  timestamp: z.string(),
+  metadata: z.record(z.string(), z.string()).optional(),
+  is_stale: z.boolean().optional(),
+})
+export type PreviewDataPoint = z.infer<typeof previewDataPointSchema>
+/**
+ * Input-side shape of the sample point: device/group/metadata optional
+ * (zod fills the tolerant defaults), so callers can pass DataPoint-shaped
+ * objects the way the /tags API returns them.
+ */
+export type PreviewDataPointInput = z.input<typeof previewDataPointSchema>
+
+/** 200 body of POST /rules/preview, validated with zod at the boundary. */
+export const rulesPreviewResponseSchema = z.object({
+  /** Whether a rule with this match expression would hit on the sample point. */
+  matched: z.boolean(),
+})
+
+/**
+ * Normalized preview outcome. `error` covers the two response codes whose
+ * body IS the answer the rule author asked for: 400 compile/eval errors
+ * (returned verbatim by the backend precisely so the UI can show them
+ * next to the editor) and 501 "engine without preview support". Genuine
+ * transport failures (401/timeout/5xx/malformed body) still throw
+ * ApiError.
+ */
+export type RulesPreviewResult =
+  | { outcome: 'evaluated'; matched: boolean }
+  | { outcome: 'error'; status: number; error: string }
+
+/** Variables of the useRulesPreview mutation (the endpoint takes them positionally). */
+export interface RulesPreviewRequest {
+  /** Match expression under test; empty is rejected with 400 by the backend. */
+  match: string
+  /** Sample data point; omitted → the backend evaluates against a zero-value point. */
+  point?: PreviewDataPointInput
+}

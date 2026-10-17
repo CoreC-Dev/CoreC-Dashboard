@@ -12,7 +12,11 @@ import {
   healthzLiveResponseSchema,
   healthzNotReadyResponseSchema,
   healthzReadyResponseSchema,
+  type PreviewDataPointInput,
+  previewDataPointSchema,
   type RulesListResponse,
+  type RulesPreviewResult,
+  rulesPreviewResponseSchema,
   type ServerInfoResponse,
   type StatsResponse,
   type TransportsListResponse,
@@ -208,6 +212,46 @@ export const postDriverTest = async (
   } catch (err: unknown) {
     if (err instanceof ApiError && err.status === 400 && err.body) {
       return { outcome: 'rejected', error: extractApiError(err.body, err.message) }
+    }
+    throw err
+  }
+}
+
+/**
+ * Rule preview (POST /rules/preview) — trial-runs a match expression
+ * against a sample data point in a scratch rule engine. The active rule
+ * set is never touched, so rule authors can validate syntax and
+ * semantics BEFORE saving instead of discovering a compile error only
+ * when production data flows through a saved rule.
+ *
+ * The 200 body is zod-parsed at this boundary. A 400 (compile/eval
+ * error) is returned verbatim by the backend precisely so the UI can
+ * show it next to the expression editor — normalized here into
+ * { outcome: 'error' } rather than thrown; 501 (engine without preview
+ * support) lands there too. Genuine transport failures still throw
+ * ApiError.
+ */
+export const postRulesPreview = async (
+  match: string,
+  point?: PreviewDataPointInput,
+): Promise<RulesPreviewResult> => {
+  // Validate the outgoing sample point at the boundary: a malformed form
+  // payload (unknown DataType, out-of-range quality) must surface here,
+  // not on the backend.
+  const validatedPoint = point === undefined ? undefined : previewDataPointSchema.parse(point)
+  try {
+    const res = rulesPreviewResponseSchema.parse(
+      await apiRequest<unknown>('/rules/preview', {
+        method: 'POST',
+        body: JSON.stringify(
+          validatedPoint === undefined ? { match } : { match, point: validatedPoint },
+        ),
+      }),
+    )
+    return { outcome: 'evaluated', matched: res.matched }
+  } catch (err: unknown) {
+    if (err instanceof ApiError && (err.status === 400 || err.status === 501) && err.body) {
+      return { outcome: 'error', status: err.status, error: extractApiError(err.body, err.message) }
     }
     throw err
   }

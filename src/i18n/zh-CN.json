@@ -1244,7 +1244,16 @@
     "transformExpression": "转换表达式",
     "transformExprHelp": "使用变量 \"value\" 的算术表达式。支持 +, -, *, /, 括号。示例：value * 1.8 + 32",
     "tagRename": "标签重命名",
-    "tagRenameHelp": "可选，转换后数据点的新标签名称（字面值，非模板）。"
+    "tagRenameHelp": "可选，转换后数据点的新标签名称（字面值，非模板）。",
+    "playground": "试算",
+    "playgroundDesc": "用样例数据点试算当前匹配表达式——不触碰生产规则集。",
+    "playgroundSamplePoint": "样例数据点",
+    "playgroundRun": "试算",
+    "playgroundNeedMatch": "请先输入匹配表达式再试算。",
+    "playgroundMatched": "命中",
+    "playgroundNotMatched": "未命中",
+    "playgroundFailed": "试算失败",
+    "playgroundUnsupported": "当前引擎不支持规则试算"
   },
   "globalConfig": {
     "title": "全局配置",

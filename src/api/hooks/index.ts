@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react'
 import * as api from '@/api/endpoints'
 import { CoreCWebSocket, type WSStatus } from '@/api/websocket'
 import { useConnectionStore } from '@/stores/connectionStore'
-import type { DriverTestRequest } from '@/types/api'
+import type { DriverTestRequest, RulesPreviewRequest } from '@/types/api'
 import type { WriteCommand } from '@/types/models'
 
 function useConnectedQuery<T>({
@@ -305,6 +305,22 @@ export function useHealthzReady() {
 export function useDriverTest() {
   return useMutation({
     mutationFn: (req: DriverTestRequest) => api.postDriverTest(req.type, req.settings, req.name),
+  })
+}
+
+/**
+ * Rule preview (POST /rules/preview) — trial-runs the wizard's current
+ * match expression against a sample data point in a scratch engine; the
+ * active rule set is never touched. Compile/eval errors (400) and
+ * unsupported-engine 501s are normalized into { outcome: 'error' } by
+ * the endpoint wrapper so the playground can show the message verbatim;
+ * only transport-level failures land in isError.
+ *
+ * Intentionally no cache invalidation: a preview mutates nothing.
+ */
+export function useRulesPreview() {
+  return useMutation({
+    mutationFn: (req: RulesPreviewRequest) => api.postRulesPreview(req.match, req.point),
   })
 }
 
