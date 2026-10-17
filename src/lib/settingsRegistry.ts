@@ -46,7 +46,18 @@ export function buildDefaultSettings(
   const settings: Record<string, unknown> = {}
   for (const group of registry.groups) {
     for (const field of group.fields) {
-      if (field.default !== undefined) {
+      if (field.type === 'object' && field.subFields) {
+        // Build nested object from sub-field defaults
+        const sub: Record<string, unknown> = {}
+        for (const subField of field.subFields) {
+          if (subField.default !== undefined) {
+            sub[subField.key] = subField.default
+          }
+        }
+        if (Object.keys(sub).length > 0) {
+          settings[field.key] = sub
+        }
+      } else if (field.default !== undefined) {
         settings[field.key] = field.default
       }
     }

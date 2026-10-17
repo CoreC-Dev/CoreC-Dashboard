@@ -72,8 +72,8 @@ export const DRIVER_SETTINGS_REGISTRY: Record<string, TypeFieldRegistry> = {
             key: 'stop-bits',
             label: 'settings.stopBits',
             type: 'enum',
-            default: 1,
-            options: ['1', '2'],
+            default: 0,
+            options: ['0', '1', '2'],
             help: 'settings.stopBitsHelp',
           },
           {
@@ -110,7 +110,17 @@ export const DRIVER_SETTINGS_REGISTRY: Record<string, TypeFieldRegistry> = {
     groups: [
       {
         label: 'settings.connection',
-        fields: [...MODBUS_CONNECTION_FIELDS('192.168.1.80')],
+        fields: [
+          ...MODBUS_CONNECTION_FIELDS('192.168.1.80'),
+          {
+            key: 'retry',
+            label: 'settings.retry',
+            type: 'number',
+            default: 3,
+            min: 0,
+            help: 'settings.retryHelp',
+          },
+        ],
       },
       RECONNECT_GROUP,
     ],
@@ -120,7 +130,17 @@ export const DRIVER_SETTINGS_REGISTRY: Record<string, TypeFieldRegistry> = {
     groups: [
       {
         label: 'settings.connection',
-        fields: [...MODBUS_CONNECTION_FIELDS('192.168.1.90')],
+        fields: [
+          ...MODBUS_CONNECTION_FIELDS('192.168.1.90'),
+          {
+            key: 'retry',
+            label: 'settings.retry',
+            type: 'number',
+            default: 3,
+            min: 0,
+            help: 'settings.retryHelp',
+          },
+        ],
       },
       RECONNECT_GROUP,
     ],
@@ -130,7 +150,17 @@ export const DRIVER_SETTINGS_REGISTRY: Record<string, TypeFieldRegistry> = {
     groups: [
       {
         label: 'settings.connection',
-        fields: [...MODBUS_CONNECTION_FIELDS('192.168.1.91')],
+        fields: [
+          ...MODBUS_CONNECTION_FIELDS('192.168.1.91'),
+          {
+            key: 'retry',
+            label: 'settings.retry',
+            type: 'number',
+            default: 3,
+            min: 0,
+            help: 'settings.retryHelp',
+          },
+        ],
       },
       RECONNECT_GROUP,
     ],
@@ -145,6 +175,14 @@ export const DRIVER_SETTINGS_REGISTRY: Record<string, TypeFieldRegistry> = {
             default: 802,
             help: 'settings.portTlsHelp',
           }),
+          {
+            key: 'retry',
+            label: 'settings.retry',
+            type: 'number',
+            default: 3,
+            min: 0,
+            help: 'settings.retryHelp',
+          },
         ],
       },
       {

@@ -7,6 +7,83 @@
 import { NOTIFY_SETTINGS_REGISTRY } from '@/lib/settingsRegistryNotify'
 import type { SettingsField, TypeFieldRegistry } from '@/lib/settingsRegistryTypes'
 
+// ─── Parser field (chained-core inbound) ─────────────────────────────
+// Shared between MQTT and HTTP transports. The parser is a nested object
+// in the YAML config (settings.parser.type, settings.parser.driver, …),
+// modelled here as a composite 'object' field with sub-fields.
+const PARSER_FIELD: SettingsField = {
+  key: 'parser',
+  label: 'settings.parser',
+  type: 'object',
+  help: 'settings.parserHelp',
+  subFields: [
+    {
+      key: 'type',
+      label: 'settings.parserType',
+      type: 'enum',
+      default: 'default',
+      options: ['default', 'jsonpath', 'raw'],
+      help: 'settings.parserTypeHelp',
+    },
+    {
+      key: 'driver',
+      label: 'settings.parserDriver',
+      type: 'text',
+      placeholder: 'lora-gateway',
+      help: 'settings.parserDriverHelp',
+    },
+    {
+      key: 'tag',
+      label: 'settings.parserTag',
+      type: 'text',
+      placeholder: '{{ .payload.dev_id }}',
+      help: 'settings.parserTagHelp',
+    },
+    {
+      key: 'value',
+      label: 'settings.parserValue',
+      type: 'text',
+      placeholder: '{{ .payload.temp }}',
+      help: 'settings.parserValueHelp',
+    },
+    {
+      key: 'data-type',
+      label: 'settings.parserDataType',
+      type: 'text',
+      placeholder: 'float32',
+      help: 'settings.parserDataTypeHelp',
+    },
+    {
+      key: 'group',
+      label: 'settings.parserGroup',
+      type: 'text',
+      placeholder: 'sensors',
+      help: 'settings.parserGroupHelp',
+    },
+    {
+      key: 'timestamp',
+      label: 'settings.parserTimestamp',
+      type: 'text',
+      placeholder: '{{ .payload.ts }}',
+      help: 'settings.parserTimestampHelp',
+    },
+    {
+      key: 'timestamp-format',
+      label: 'settings.parserTimestampFormat',
+      type: 'text',
+      placeholder: 'unix',
+      help: 'settings.parserTimestampFormatHelp',
+    },
+    {
+      key: 'tag-from-topic',
+      label: 'settings.parserTagFromTopic',
+      type: 'number',
+      min: 0,
+      help: 'settings.parserTagFromTopicHelp',
+    },
+  ],
+}
+
 // ─── Transport settings registries ───────────────────────────────────
 export const TRANSPORT_SETTINGS_REGISTRY: Record<string, TypeFieldRegistry> = {
   mqtt: {
@@ -162,6 +239,7 @@ export const TRANSPORT_SETTINGS_REGISTRY: Record<string, TypeFieldRegistry> = {
             placeholder: 'upstream/factory/#',
             help: 'settings.dataTopicHelp',
           },
+          PARSER_FIELD,
         ],
       },
       {
@@ -256,6 +334,13 @@ export const TRANSPORT_SETTINGS_REGISTRY: Record<string, TypeFieldRegistry> = {
             default: '5s',
             help: 'settings.httpTimeoutHelp',
           },
+          {
+            key: 'headers',
+            label: 'settings.headers',
+            type: 'text',
+            placeholder: 'Authorization:Bearer token,X-Custom:value',
+            help: 'settings.headersHelp',
+          },
         ],
       },
       {
@@ -297,6 +382,11 @@ export const TRANSPORT_SETTINGS_REGISTRY: Record<string, TypeFieldRegistry> = {
             help: 'settings.webhookTlsKeyHelp',
           },
         ],
+      },
+      {
+        label: 'settings.chainedInbound',
+        advanced: true,
+        fields: [PARSER_FIELD],
       },
       {
         label: 'settings.connectionPool',

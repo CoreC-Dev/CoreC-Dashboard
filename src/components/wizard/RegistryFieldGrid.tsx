@@ -30,18 +30,44 @@ export const RegistryFieldGrid: React.FC<{
   transportNames?: string[]
   currentName?: string
 }> = ({ fields, settings, onChange, transportNames, currentName }) => {
+  const { t } = useTranslation()
   return (
     <div className="grid grid-cols-2 gap-x-3 gap-y-2.5">
-      {fields.map((field) => (
-        <RegistryFieldInput
-          key={field.key}
-          field={field}
-          value={settings[field.key]}
-          onChange={(v) => onChange(field.key, v)}
-          transportNames={transportNames}
-          currentName={currentName}
-        />
-      ))}
+      {fields.map((field) => {
+        // Composite 'object' field: render sub-fields as a full-width sub-grid.
+        if (field.type === 'object' && field.subFields) {
+          const objValue = (settings[field.key] as Record<string, unknown> | undefined) ?? {}
+          return (
+            <div key={field.key} className="col-span-2 space-y-2">
+              <label className="text-xs font-medium leading-none">{t(field.label)}</label>
+              <div className="rounded-lg border border-border bg-muted/10 p-3">
+                <RegistryFieldGrid
+                  fields={field.subFields}
+                  settings={objValue}
+                  onChange={(subKey, subVal) =>
+                    onChange(field.key, { ...objValue, [subKey]: subVal })
+                  }
+                  transportNames={transportNames}
+                  currentName={currentName}
+                />
+              </div>
+              {field.help && (
+                <p className="text-xs text-muted-foreground leading-tight">{t(field.help)}</p>
+              )}
+            </div>
+          )
+        }
+        return (
+          <RegistryFieldInput
+            key={field.key}
+            field={field}
+            value={settings[field.key]}
+            onChange={(v) => onChange(field.key, v)}
+            transportNames={transportNames}
+            currentName={currentName}
+          />
+        )
+      })}
     </div>
   )
 }

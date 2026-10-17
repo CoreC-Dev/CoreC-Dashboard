@@ -182,6 +182,23 @@ export const RuleProviderEditor: React.FC = () => {
                 </div>
               </div>
             ))}
+            {/* RULE-SET reference hints */}
+            <div className="flex flex-wrap gap-1 pt-1">
+              <span className="text-xs text-muted-foreground self-center">
+                {t('ruleProvider.ruleSetRef')}:
+              </span>
+              {providers.map((p) => (
+                <button
+                  type="button"
+                  key={p.name}
+                  onClick={() => navigator.clipboard?.writeText(`RULE-SET:${p.name}`)}
+                  className="text-xs px-1.5 py-0.5 rounded border border-border bg-muted/30 hover:bg-muted/60 font-mono transition-colors"
+                  title={t('common.copy')}
+                >
+                  RULE-SET:{p.name}
+                </button>
+              ))}
+            </div>
           </div>
         )}
 

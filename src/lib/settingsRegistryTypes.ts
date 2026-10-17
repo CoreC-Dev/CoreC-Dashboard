@@ -13,6 +13,7 @@ export type FieldType =
   | 'enum' // single-select from a fixed list of strings
   | 'select' // single-select from a dynamic list (e.g. transport names)
   | 'password' // text input with masked display
+  | 'object' // composite: nested sub-fields rendered as a sub-grid (e.g. parser)
 
 export interface FieldGroup {
   /** Group label shown as a section header (i18n key or literal). */
@@ -43,6 +44,8 @@ export interface SettingsField {
   /** Min/max for number fields. */
   min?: number
   max?: number
+  /** For object: sub-fields rendered as a nested sub-grid. */
+  subFields?: SettingsField[]
 }
 
 export interface TypeFieldRegistry {

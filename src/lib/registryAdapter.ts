@@ -59,6 +59,8 @@ function mapFieldType(type: SettingsField['type']): RegistryEditField['kind'] {
       return 'select'
     case 'boolean':
       return 'select'
+    case 'object':
+      return 'text'
   }
 }
 
@@ -95,6 +97,10 @@ export function registryToEditFields(
   if (registry) {
     for (const group of registry.groups) {
       for (const field of group.fields) {
+        // Skip composite 'object' fields — detail-page quick-edit uses flat
+        // fields only. The wizard renders them via RegistryFieldGrid; the
+        // YAML editor (Monaco) is always available as a catch-all.
+        if (field.type === 'object') continue
         fields.push(toEditField(field, 'settings'))
       }
     }

@@ -26,6 +26,7 @@ import { checkBalancedParens, type ValidationResult } from '@/lib/exprShared'
  *   (expr)                  grouping
  *   ALL                     special: match all
  *   SUB-RULE:group-name     special: delegate to sub-rule group
+ *   RULE-SET:provider-name  special: delegate to external rule provider
  *
  * Valid fields: driver, device, group, tag, quality, type, value
  */
@@ -64,6 +65,15 @@ export function validateRuleExpression(expr: string): ValidationResult {
     const groupName = trimmed.slice('SUB-RULE:'.length).trim()
     if (!groupName) {
       errors.push('SUB-RULE: requires a group name (e.g. SUB-RULE:my-group)')
+    }
+    return { valid: errors.length === 0, errors, warnings }
+  }
+
+  // Special case: RULE-SET:provider-name
+  if (/^RULE-SET:/i.test(trimmed)) {
+    const providerName = trimmed.slice('RULE-SET:'.length).trim()
+    if (!providerName) {
+      errors.push('RULE-SET: requires a provider name (e.g. RULE-SET:safety-rules)')
     }
     return { valid: errors.length === 0, errors, warnings }
   }
