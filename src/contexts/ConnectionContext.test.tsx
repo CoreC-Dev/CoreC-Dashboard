@@ -227,13 +227,15 @@ describe('ConnectionProvider (TD-TEST-005)', () => {
     expect(serverInfoName()).toBe('')
   })
 
-  it('missing instance sets "Instance not found" error', async () => {
+  it('missing instance reports the localized not-found error (D-05)', async () => {
     setInstances([])
 
     renderProvider()
 
     await waitFor(() => {
-      expect(errorText()).toBe('Instance not found')
+      // D-05: ConnectionGate renders `error` verbatim — it must be a
+      // translated string, not raw English.
+      expect(errorText()).toBe(i18n.t('connection.errInstance'))
     })
     expect(isConnected()).toBe('false')
     expect(isConnecting()).toBe('false')

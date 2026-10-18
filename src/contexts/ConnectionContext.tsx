@@ -293,7 +293,9 @@ export const ConnectionProvider: React.FC<{
     if (!instance) {
       setIsConnecting(false)
       setIsConnected(false)
-      setError('Instance not found')
+      // D-05: no raw English error strings in a localized UI — ConnectionGate
+      // renders this text verbatim, so it must come from the language pack.
+      setError(t('connection.errInstance'))
       return
     }
 
