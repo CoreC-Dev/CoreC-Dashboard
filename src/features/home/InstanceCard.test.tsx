@@ -79,3 +79,48 @@ describe('InstanceCard probe-error rendering (A-01)', () => {
     expect(container.querySelector('.bg-status-error')).toBeNull()
   })
 })
+
+// A-07 — the 15s background re-probe used to flip EVERY card to a yellow
+// "connecting" dot (dead instances alternated yellow/red forever). A probe
+// in flight must not disturb a card that already has a verdict; the yellow
+// radar state is reserved for the very first probe.
+describe('InstanceCard background re-probe stability (A-07)', () => {
+  it('keeps the green dot while re-probing an already-connected instance', () => {
+    useInstanceStore.setState({
+      instances: [{ ...baseInstance, lastConnectedAt: '2026-01-01T00:00:00.000Z' }],
+      probeErrors: { 'inst-1': null },
+      probing: { 'inst-1': true },
+    })
+
+    const { container } = renderCard({
+      ...baseInstance,
+      lastConnectedAt: '2026-01-01T00:00:00.000Z',
+    })
+
+    expect(container.querySelector('.bg-status-running')).not.toBeNull()
+    expect(container.querySelector('.bg-status-warning')).toBeNull()
+    expect(container.querySelector('.radar-ping')).toBeNull()
+  })
+
+  it('keeps the red dot while re-probing a failed instance', () => {
+    useInstanceStore.setState({
+      probeErrors: { 'inst-1': 'unauthorized' },
+      probing: { 'inst-1': true },
+    })
+
+    const { container } = renderCard(baseInstance)
+
+    expect(container.querySelector('.bg-status-error')).not.toBeNull()
+    expect(container.querySelector('.bg-status-warning')).toBeNull()
+    expect(container.querySelector('.radar-ping')).toBeNull()
+  })
+
+  it('still shows the yellow connecting dot + radar for a first probe', () => {
+    useInstanceStore.setState({ probing: { 'inst-1': true } })
+
+    const { container } = renderCard(baseInstance)
+
+    expect(container.querySelector('.bg-status-warning')).not.toBeNull()
+    expect(container.querySelector('.radar-ping')).not.toBeNull()
+  })
+})

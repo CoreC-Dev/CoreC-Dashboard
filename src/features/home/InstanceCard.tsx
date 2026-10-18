@@ -52,14 +52,20 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
 
   const stats = instance.lastKnownInfo?.stats
 
-  // Determine status: probing → connecting, probeError → error, lastConnectedAt → connected, else unknown
-  const status: 'connected' | 'error' | 'connecting' | 'unknown' = probing
-    ? 'connecting'
-    : probeError
-      ? 'error'
-      : instance.lastConnectedAt
-        ? 'connected'
-        : 'unknown'
+  // A-07: a background re-probe of an instance that already has a verdict
+  // (connected, or failed) must not flash the card back to a yellow
+  // "connecting" dot — every card used to blink yellow together every 15s,
+  // and a dead instance alternated yellow/red forever. The connecting state
+  // (yellow dot + radar ping) is reserved for the very first probe, before
+  // any result exists.
+  const status: 'connected' | 'error' | 'connecting' | 'unknown' =
+    probing && !instance.lastConnectedAt && !probeError
+      ? 'connecting'
+      : probeError
+        ? 'error'
+        : instance.lastConnectedAt
+          ? 'connected'
+          : 'unknown'
 
   const statusColor = {
     connected: 'bg-status-running',

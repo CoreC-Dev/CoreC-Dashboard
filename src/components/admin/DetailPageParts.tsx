@@ -4,11 +4,14 @@ import {
   ArrowLeft,
   CheckCircle2,
   ChevronDown,
+  Eye,
+  EyeOff,
   Flame,
   Loader2,
   Sliders,
 } from 'lucide-react'
 import type React from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -117,7 +120,7 @@ export const Param: React.FC<{ label: string; children: React.ReactNode }> = ({
 export interface EditField {
   key: string
   labelKey: string
-  kind: 'text' | 'number' | 'select'
+  kind: 'text' | 'number' | 'select' | 'password'
   options?: readonly string[]
   placeholder?: string
 }
@@ -136,6 +139,16 @@ export interface EntityEditConfigLabels {
   yamlPreviewLabel: string
   reloadingLabel: string
   reloadButtonLabel: string
+  /**
+   * Placeholder shown for a password field that has a STORED value while
+   * the form value is masked to '' (C-A4) — e.g. "Saved — leave blank
+   * to keep". Shown instead of the field's generic placeholder.
+   */
+  savedSecretPlaceholder: string
+  /** Aria/title label for the password reveal toggle (masked → shown). */
+  showSecretAriaLabel: string
+  /** Aria/title label for the password conceal toggle (shown → masked). */
+  hideSecretAriaLabel: string
 }
 
 interface EntityEditConfigCardProps {
@@ -155,124 +168,177 @@ export const EntityEditConfigCard: React.FC<EntityEditConfigCardProps> = ({
   fieldIdPrefix,
   labelFor,
   labels,
-}) => (
-  <Card className="bg-card">
-    <CardHeader className="flex-row items-center justify-between space-y-0 pb-3">
-      <div className="flex items-center gap-2">
-        <Sliders className="h-4 w-4 text-primary" />
-        <div>
-          <CardTitle className="text-sm font-semibold">{labels.title}</CardTitle>
-          <CardDescription>{labels.description}</CardDescription>
-        </div>
-      </div>
-      <Button
-        variant="ghost"
-        size="sm"
-        className="h-8 px-2 text-xs text-muted-foreground"
-        onClick={() => edit.setOpen((o) => !o)}
-        aria-label={labels.toggleAriaLabel}
-        aria-expanded={edit.open}
-      >
-        <ChevronDown className={`h-4 w-4 transition-transform ${edit.open ? 'rotate-180' : ''}`} />
-      </Button>
-    </CardHeader>
-    {edit.open && (
-      <CardContent className="space-y-4">
-        {fields.length === 0 ? (
-          <div className="rounded-lg border border-status-warning/20 bg-status-warning/10 p-3 text-xs text-status-warning">
-            {labels.unsupportedMessage}
+}) => {
+  // Per-field reveal state for password inputs (C-A4). Off by default —
+  // a stored secret is never echoed, and a freshly typed one is masked
+  // until the operator explicitly reveals it.
+  const [revealed, setRevealed] = useState<ReadonlySet<string>>(() => new Set())
+  const toggleReveal = (key: string) =>
+    setRevealed((prev) => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+
+  return (
+    <Card className="bg-card">
+      <CardHeader className="flex-row items-center justify-between space-y-0 pb-3">
+        <div className="flex items-center gap-2">
+          <Sliders className="h-4 w-4 text-primary" />
+          <div>
+            <CardTitle className="text-sm font-semibold">{labels.title}</CardTitle>
+            <CardDescription>{labels.description}</CardDescription>
           </div>
-        ) : (
-          <>
-            <div className="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2 md:grid-cols-3">
-              {fields.map((f) => (
-                <div key={f.key} className="space-y-1.5">
-                  <label
-                    htmlFor={`${fieldIdPrefix}${f.key}`}
-                    className="text-xs font-medium text-muted-foreground"
-                  >
-                    {labelFor(f)}
-                  </label>
-                  {f.kind === 'select' && f.options ? (
-                    <Select
-                      value={edit.values[f.key] ?? ''}
-                      onValueChange={(v) => edit.setField(f.key, v)}
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 px-2 text-xs text-muted-foreground"
+          onClick={() => edit.setOpen((o) => !o)}
+          aria-label={labels.toggleAriaLabel}
+          aria-expanded={edit.open}
+        >
+          <ChevronDown
+            className={`h-4 w-4 transition-transform ${edit.open ? 'rotate-180' : ''}`}
+          />
+        </Button>
+      </CardHeader>
+      {edit.open && (
+        <CardContent className="space-y-4">
+          {fields.length === 0 ? (
+            <div className="rounded-lg border border-status-warning/20 bg-status-warning/10 p-3 text-xs text-status-warning">
+              {labels.unsupportedMessage}
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2 md:grid-cols-3">
+                {fields.map((f) => (
+                  <div key={f.key} className="space-y-1.5">
+                    <label
+                      htmlFor={`${fieldIdPrefix}${f.key}`}
+                      className="text-xs font-medium text-muted-foreground"
                     >
-                      <SelectTrigger id={`${fieldIdPrefix}${f.key}`} className="h-9 text-xs">
-                        <SelectValue placeholder="—" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {f.options.map((opt) => (
-                          <SelectItem key={opt} value={opt} className="text-xs">
-                            {opt}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <Input
-                      id={`${fieldIdPrefix}${f.key}`}
-                      type={f.kind === 'number' ? 'number' : 'text'}
-                      value={edit.values[f.key] ?? ''}
-                      placeholder={f.placeholder}
-                      onChange={(e) => edit.setField(f.key, e.target.value)}
-                      className="h-9 text-xs"
-                    />
-                  )}
-                  {f.key === 'topic-template' && (
-                    <TopicTemplatePreview
-                      value={edit.values[f.key] ?? ''}
-                      onChange={(v) => edit.setField(f.key, v)}
-                    />
-                  )}
+                      {labelFor(f)}
+                    </label>
+                    {f.kind === 'select' && f.options ? (
+                      <Select
+                        value={edit.values[f.key] ?? ''}
+                        onValueChange={(v) => edit.setField(f.key, v)}
+                      >
+                        <SelectTrigger id={`${fieldIdPrefix}${f.key}`} className="h-9 text-xs">
+                          <SelectValue placeholder="—" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {f.options.map((opt) => (
+                            <SelectItem key={opt} value={opt} className="text-xs">
+                              {opt}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : f.kind === 'password' ? (
+                      <div className="relative">
+                        <Input
+                          id={`${fieldIdPrefix}${f.key}`}
+                          type={revealed.has(f.key) ? 'text' : 'password'}
+                          value={edit.values[f.key] ?? ''}
+                          placeholder={
+                            edit.secretSavedKeys.has(f.key)
+                              ? labels.savedSecretPlaceholder
+                              : f.placeholder
+                          }
+                          onChange={(e) => edit.setField(f.key, e.target.value)}
+                          autoComplete="new-password"
+                          className="h-9 text-xs pr-9"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => toggleReveal(f.key)}
+                          aria-label={
+                            revealed.has(f.key)
+                              ? labels.hideSecretAriaLabel
+                              : labels.showSecretAriaLabel
+                          }
+                          title={
+                            revealed.has(f.key)
+                              ? labels.hideSecretAriaLabel
+                              : labels.showSecretAriaLabel
+                          }
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        >
+                          {revealed.has(f.key) ? (
+                            <EyeOff className="h-3.5 w-3.5" />
+                          ) : (
+                            <Eye className="h-3.5 w-3.5" />
+                          )}
+                        </button>
+                      </div>
+                    ) : (
+                      <Input
+                        id={`${fieldIdPrefix}${f.key}`}
+                        type={f.kind === 'number' ? 'number' : 'text'}
+                        value={edit.values[f.key] ?? ''}
+                        placeholder={f.placeholder}
+                        onChange={(e) => edit.setField(f.key, e.target.value)}
+                        className="h-9 text-xs"
+                      />
+                    )}
+                    {f.key === 'topic-template' && (
+                      <TopicTemplatePreview
+                        value={edit.values[f.key] ?? ''}
+                        onChange={(v) => edit.setField(f.key, v)}
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <div className="space-y-1.5">
+                <div className="text-xs font-medium text-muted-foreground">
+                  {labels.yamlPreviewLabel}
                 </div>
-              ))}
-            </div>
-
-            <div className="space-y-1.5">
-              <div className="text-xs font-medium text-muted-foreground">
-                {labels.yamlPreviewLabel}
+                <pre className="max-h-56 overflow-auto rounded-lg border border-border bg-muted/40 p-3 font-mono text-xs leading-relaxed whitespace-pre-wrap break-all text-foreground">
+                  {edit.previewYaml}
+                </pre>
               </div>
-              <pre className="max-h-56 overflow-auto rounded-lg border border-border bg-muted/40 p-3 font-mono text-xs leading-relaxed whitespace-pre-wrap break-all text-foreground">
-                {edit.previewYaml}
-              </pre>
-            </div>
 
-            {edit.statusMsg && (
-              <div
-                className={`flex items-center gap-2 rounded-lg border p-3 text-xs ${
-                  edit.statusMsg.type === 'success'
-                    ? 'border-status-running/20 bg-status-running/10 text-status-running'
-                    : 'border-status-error/20 bg-status-error/10 text-status-error'
-                }`}
-              >
-                {edit.statusMsg.type === 'success' ? (
-                  <CheckCircle2 className="h-4 w-4 shrink-0" />
-                ) : (
-                  <AlertCircle className="h-4 w-4 shrink-0" />
-                )}
-                <span className="break-all">{edit.statusMsg.text}</span>
+              {edit.statusMsg && (
+                <div
+                  className={`flex items-center gap-2 rounded-lg border p-3 text-xs ${
+                    edit.statusMsg.type === 'success'
+                      ? 'border-status-running/20 bg-status-running/10 text-status-running'
+                      : 'border-status-error/20 bg-status-error/10 text-status-error'
+                  }`}
+                >
+                  {edit.statusMsg.type === 'success' ? (
+                    <CheckCircle2 className="h-4 w-4 shrink-0" />
+                  ) : (
+                    <AlertCircle className="h-4 w-4 shrink-0" />
+                  )}
+                  <span className="break-all">{edit.statusMsg.text}</span>
+                </div>
+              )}
+
+              <div className="flex justify-end">
+                <Button
+                  size="sm"
+                  onClick={edit.handleReload}
+                  disabled={edit.isReloading}
+                  className="h-8 text-xs"
+                >
+                  {edit.isReloading ? (
+                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Flame className="mr-1.5 h-3.5 w-3.5 text-status-warning" />
+                  )}
+                  <span>{edit.isReloading ? labels.reloadingLabel : labels.reloadButtonLabel}</span>
+                </Button>
               </div>
-            )}
-
-            <div className="flex justify-end">
-              <Button
-                size="sm"
-                onClick={edit.handleReload}
-                disabled={edit.isReloading}
-                className="h-8 text-xs"
-              >
-                {edit.isReloading ? (
-                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Flame className="mr-1.5 h-3.5 w-3.5 text-status-warning" />
-                )}
-                <span>{edit.isReloading ? labels.reloadingLabel : labels.reloadButtonLabel}</span>
-              </Button>
-            </div>
-          </>
-        )}
-      </CardContent>
-    )}
-  </Card>
-)
+            </>
+          )}
+        </CardContent>
+      )}
+    </Card>
+  )
+}

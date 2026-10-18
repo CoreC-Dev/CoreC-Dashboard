@@ -189,6 +189,9 @@ const DriverEditConfigSection: React.FC<{ driver: DriverStatus }> = ({ driver })
           yamlPreviewLabel: t('drivers.editConfig.yamlPreview'),
           reloadingLabel: t('drivers.editConfig.reloading'),
           reloadButtonLabel: t('drivers.editConfig.previewAndReload'),
+          savedSecretPlaceholder: t('drivers.editConfig.savedSecret'),
+          showSecretAriaLabel: t('drivers.editConfig.showSecret'),
+          hideSecretAriaLabel: t('drivers.editConfig.hideSecret'),
         }}
       />
       <ConfigApplyConfirmationDialog

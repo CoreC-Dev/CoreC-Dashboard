@@ -216,4 +216,19 @@ describe('registryToEditFields', () => {
     for (const k of mqttKeys) expect(mqttAll.has(k)).toBe(true)
     for (const k of httpKeys) expect(httpAll.has(k)).toBe(true)
   })
+
+  // ─── Secret fields (C-A4) ────────────────────────────────────────────
+
+  it('maps registry password fields to the password kind — never plain text (C-A4)', () => {
+    const mqtt = registryToEditFields(getTransportFieldRegistry('mqtt')!)
+    expect(mqtt.find((f) => f.key === 'password')?.kind).toBe('password')
+    // The username beside it stays a normal text field.
+    expect(mqtt.find((f) => f.key === 'username')?.kind).toBe('text')
+
+    const notify = registryToEditFields(getTransportFieldRegistry('notify')!)
+    expect(notify.find((f) => f.key === 'smtp-pass')?.kind).toBe('password')
+
+    const opcua = registryToEditFields(getDriverFieldRegistry('opcua')!)
+    expect(opcua.find((f) => f.key === 'password')?.kind).toBe('password')
+  })
 })

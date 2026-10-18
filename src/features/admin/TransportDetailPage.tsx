@@ -247,7 +247,18 @@ const TransportEditConfigSection: React.FC<{ transport: TransportStatus }> = ({ 
         type: transport.type,
         settings: {},
       }
-      const updatedTransport = { ...base, ...entry } as TransportConfig
+      // Deep-merge settings onto the saved transport: fields the quick-edit
+      // form leaves blank (masked secrets above all, C-A4) are omitted
+      // from `entry` and must keep the stored value — a shallow
+      // `{...base, ...entry}` would wipe them.
+      const updatedTransport = {
+        ...base,
+        ...entry,
+        settings: {
+          ...(base.settings ?? {}),
+          ...((entry.settings as Record<string, unknown>) ?? {}),
+        },
+      } as TransportConfig
       return dumpConfigYaml(upsertTransport(fullConfig, updatedTransport))
     },
     [transport],
@@ -294,6 +305,9 @@ const TransportEditConfigSection: React.FC<{ transport: TransportStatus }> = ({ 
           yamlPreviewLabel: t('transports.editConfig.yamlPreview'),
           reloadingLabel: t('transports.editConfig.reloading'),
           reloadButtonLabel: t('transports.editConfig.previewAndReload'),
+          savedSecretPlaceholder: t('transports.editConfig.savedSecret'),
+          showSecretAriaLabel: t('transports.editConfig.showSecret'),
+          hideSecretAriaLabel: t('transports.editConfig.hideSecret'),
         }}
       />
       <ConfigApplyConfirmationDialog

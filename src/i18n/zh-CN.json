@@ -38,7 +38,16 @@
     "secretMin": "密钥至少需要 8 个字符",
     "secretHint": "在 CoreC 服务端的 config.yaml 里：global.api.secret。若配置为 ${COREC_API_SECRET} 形式，填对应环境变量的值。",
     "secretStorageNote": "密钥将以明文保存在此浏览器的本地存储中，请勿在公用电脑上保存生产密钥。",
+    "showSecret": "显示密钥",
+    "hideSecret": "隐藏密钥",
     "color": "颜色标识",
+    "colorDefault": "默认",
+    "colorBlue": "蓝色",
+    "colorGreen": "绿色",
+    "colorAmber": "琥珀色",
+    "colorRed": "红色",
+    "colorPurple": "紫色",
+    "colorPink": "粉色",
     "tags": "分组标签",
     "tagsPlaceholder": "车间A, 生产线1（逗号分隔）",
     "notes": "备注",
@@ -50,6 +59,9 @@
     "proxyModeHint": "自动：启动时探测本站代理，可用则走代理。代理：请求经部署服务转发，适合后端无 CORS 或跨网段的场景。直连：浏览器直连后端，需后端允许跨域。",
     "add": "添加",
     "enter": "进入",
+    "testConnection": "测试连接",
+    "testRunning": "正在测试连接…",
+    "testSuccess": "连接成功 v{{version}}",
     "probeUnauthorized": "密钥无效（401）：请核对 API 密钥",
     "probeUnreachable": "无法连接：请检查地址与端口、CoreC 是否在运行",
     "probeTimeout": "连接超时",
@@ -87,6 +99,7 @@
     "importDrop": "拖拽 JSON 文件到此处，或",
     "importBrowse": "选择文件",
     "importOrPaste": "或直接粘贴 JSON 文本",
+    "clearAllConfirm": "确认清空（不可恢复）",
     "importFileError": "文件读取失败：{{error}}"
   },
   "common": {
@@ -272,11 +285,16 @@
     "authExpiredTitle": "认证已失效",
     "authExpiredDesc": "访问密钥被服务端拒绝，请重新输入以恢复连接。",
     "reconnect": "重新连接",
-    "backToInstances": "返回实例列表"
+    "backToInstances": "返回实例列表",
+    "technicalDetails": "技术详情",
+    "gateTitle": "无法连接到 {{name}}",
+    "editInstance": "编辑此实例",
+    "errInstance": "未找到实例，请返回首页重新选择"
   },
   "dashboard": {
     "title": "工业物联网监控大屏",
     "loadFailed": "加载仪表盘数据失败",
+    "refreshFailed": "数据刷新失败，正在显示 {{time}} 的快照",
     "enterFullscreen": "全屏投屏",
     "exitFullscreen": "退出全屏",
     "customize": "自定义编排",
@@ -314,6 +332,7 @@
     "sysMemMb": "系统内存 (MB)",
     "tags": "测点",
     "reads": "读取",
+    "realtimeMonitor": "实时监控与控制",
     "connected": "已连接"
   },
   "tags": {
@@ -358,6 +377,7 @@
     "statCurrent": "当前",
     "statMin": "最小",
     "statMax": "最大",
+    "explorerDesc": "实时浏览与写入测点",
     "statAvg": "平均"
   },
   "write": {
@@ -498,6 +518,7 @@
     "droppedPerSec": "丢弃 /s",
     "liveMemory": "内存",
     "sysMemory": "系统内存",
+    "autoRefresh": "自动刷新",
     "liveWaiting": "等待首批数据…"
   },
   "writeHistory": {
@@ -573,6 +594,9 @@
       "tagsInterval": "测点轮询间隔",
       "previewAndReload": "预览变更并重载",
       "reloading": "重载中...",
+      "savedSecret": "已保存 — 留空保持不变",
+      "showSecret": "显示密码",
+      "hideSecret": "隐藏密码",
       "reloadSuccess": "配置已生成并热重载成功。",
       "reloadFailed": "热重载配置失败。",
       "yamlPreview": "生成的 YAML 预览",
@@ -665,6 +689,9 @@
       "bufferSize": "缓冲区大小",
       "previewAndReload": "预览变更并重载",
       "reloading": "重载中...",
+      "savedSecret": "已保存 — 留空保持不变",
+      "showSecret": "显示密码",
+      "hideSecret": "隐藏密码",
       "reloadSuccess": "配置已生成并热重载成功。",
       "reloadFailed": "热重载配置失败。",
       "yamlPreview": "生成的 YAML 预览",
@@ -917,6 +944,10 @@
     "read": "读取",
     "pub": "发布",
     "rulePipelineActive": "规则管道 ({{active}}/{{total}} 活跃)",
+    "received": "接收",
+    "failed": "失败",
+    "queueSize": "队列",
+    "droppedCmds": "丢弃",
     "off": "关闭"
   },
   "settings": {
@@ -1196,6 +1227,11 @@
     "replayResults": "重放结果",
     "replayBatchDone": "{{ok}} 成功，{{failed}} 失败",
     "logLevelError": "错误",
+    "filterPlaceholder": "按内容筛选…",
+    "levelAll": "全部级别",
+    "levelWarning": "警告",
+    "levelError": "错误",
+    "noMatchingEvents": "当前筛选条件下没有事件",
     "logLevelWarn": "警告"
   },
   "dashboardEditor": {

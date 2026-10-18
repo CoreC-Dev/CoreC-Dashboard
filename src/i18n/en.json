@@ -38,7 +38,16 @@
     "secretMin": "Secret must be at least 8 characters",
     "secretHint": "Find it in CoreC's config.yaml under global.api.secret. If it's set to ${COREC_API_SECRET}, use that environment variable's value.",
     "secretStorageNote": "The key is stored in plain text in this browser's local storage. Avoid saving production keys on shared computers.",
+    "showSecret": "Show secret",
+    "hideSecret": "Hide secret",
     "color": "Color Label",
+    "colorDefault": "Default",
+    "colorBlue": "Blue",
+    "colorGreen": "Green",
+    "colorAmber": "Amber",
+    "colorRed": "Red",
+    "colorPurple": "Purple",
+    "colorPink": "Pink",
     "tags": "Group Tags",
     "tagsPlaceholder": "Workshop A, Line 1 (comma-separated)",
     "notes": "Notes",
@@ -50,6 +59,9 @@
     "proxyModeHint": "Auto: detect the proxy at startup. Proxy: forward via the deployment server — for backends without CORS or across network segments. Direct: the browser connects to the backend; requires CORS on CoreC.",
     "add": "Add",
     "enter": "Enter",
+    "testConnection": "Test connection",
+    "testRunning": "Testing connection…",
+    "testSuccess": "Connected — server v{{version}}",
     "probeUnauthorized": "Invalid API key (401) — check your API key",
     "probeUnreachable": "Cannot reach server — check the address/port and that CoreC is running",
     "probeTimeout": "Connection timed out",
@@ -87,6 +99,7 @@
     "importDrop": "Drop JSON file here, or",
     "importBrowse": "Browse file",
     "importOrPaste": "or paste JSON text directly",
+    "clearAllConfirm": "Yes, clear everything (irreversible)",
     "importFileError": "File read failed: {{error}}"
   },
   "common": {
@@ -272,11 +285,16 @@
     "authExpiredTitle": "Authentication expired",
     "authExpiredDesc": "The server rejected your access key. Re-enter it to reconnect.",
     "reconnect": "Reconnect",
-    "backToInstances": "Back to instances"
+    "backToInstances": "Back to instances",
+    "technicalDetails": "Technical details",
+    "gateTitle": "Could not connect to {{name}}",
+    "editInstance": "Edit instance",
+    "errInstance": "Instance not found — go back and pick one from the homepage"
   },
   "dashboard": {
     "title": "IIoT Gateway Operational Dashboard",
     "loadFailed": "Failed to load dashboard data",
+    "refreshFailed": "Refresh failed — showing snapshot from {{time}}",
     "enterFullscreen": "Fullscreen",
     "exitFullscreen": "Exit Fullscreen",
     "customize": "Customize Layout",
@@ -314,6 +332,7 @@
     "sysMemMb": "Sys Mem (MB)",
     "tags": "Tags",
     "reads": "Reads",
+    "realtimeMonitor": "Real-time monitoring & control",
     "connected": "Connected"
   },
   "tags": {
@@ -358,6 +377,7 @@
     "statCurrent": "Current",
     "statMin": "Min",
     "statMax": "Max",
+    "explorerDesc": "Browse & write tags in real time",
     "statAvg": "Avg"
   },
   "write": {
@@ -498,6 +518,7 @@
     "droppedPerSec": "Dropped /s",
     "liveMemory": "Memory",
     "sysMemory": "System Memory",
+    "autoRefresh": "Auto-refresh",
     "liveWaiting": "Waiting for first frames…"
   },
   "writeHistory": {
@@ -573,6 +594,9 @@
       "tagsInterval": "Tags Interval",
       "previewAndReload": "Preview changes & reload",
       "reloading": "Reloading...",
+      "savedSecret": "Saved — leave blank to keep",
+      "showSecret": "Show secret",
+      "hideSecret": "Hide secret",
       "reloadSuccess": "Configuration generated and hot-reloaded successfully.",
       "reloadFailed": "Failed to reload configuration.",
       "yamlPreview": "Generated YAML Preview",
@@ -665,6 +689,9 @@
       "bufferSize": "Buffer Size",
       "previewAndReload": "Preview changes & reload",
       "reloading": "Reloading...",
+      "savedSecret": "Saved — leave blank to keep",
+      "showSecret": "Show secret",
+      "hideSecret": "Hide secret",
       "reloadSuccess": "Configuration generated and hot-reloaded successfully.",
       "reloadFailed": "Failed to reload configuration.",
       "yamlPreview": "Generated YAML Preview",
@@ -917,6 +944,10 @@
     "read": "Read",
     "pub": "Pub",
     "rulePipelineActive": "Rule Pipeline ({{active}}/{{total}} active)",
+    "received": "rcv",
+    "failed": "fail",
+    "queueSize": "q",
+    "droppedCmds": "drop",
     "off": "OFF"
   },
   "settings": {
@@ -1196,6 +1227,11 @@
     "replayResults": "Replay Results",
     "replayBatchDone": "{{ok}} succeeded, {{failed}} failed",
     "logLevelError": "ERROR",
+    "filterPlaceholder": "Filter by content…",
+    "levelAll": "All levels",
+    "levelWarning": "Warning",
+    "levelError": "Error",
+    "noMatchingEvents": "No events match the current filter",
     "logLevelWarn": "WARN"
   },
   "dashboardEditor": {

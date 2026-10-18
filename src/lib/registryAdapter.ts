@@ -30,7 +30,7 @@ import type { SettingsField, TypeFieldRegistry } from '@/lib/settingsRegistry'
 export interface RegistryEditField {
   key: string
   labelKey: string
-  kind: 'text' | 'number' | 'select'
+  kind: 'text' | 'number' | 'select' | 'password'
   options?: readonly string[]
   placeholder?: string
   /** Whether this field lives inside `settings` or as a top-level sibling.
@@ -43,15 +43,18 @@ export interface RegistryEditField {
   boolean?: boolean
 }
 
-/** Map registry FieldType → edit-field kind (7→3). `boolean` is rendered as a
+/** Map registry FieldType → edit-field kind (7→4). `boolean` is rendered as a
  *  true/false select (EntityEditConfigCard has no checkbox); the caller can
- *  detect this via the `boolean` flag and convert on save. */
+ *  detect this via the `boolean` flag and convert on save. `password` keeps
+ *  its own kind so the detail-page form renders a masked input with a
+ *  show/hide toggle and never echoes the stored secret (C-A4). */
 function mapFieldType(type: SettingsField['type']): RegistryEditField['kind'] {
   switch (type) {
     case 'text':
     case 'duration':
-    case 'password':
       return 'text'
+    case 'password':
+      return 'password'
     case 'number':
       return 'number'
     case 'enum':

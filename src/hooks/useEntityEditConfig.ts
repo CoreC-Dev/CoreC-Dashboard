@@ -15,8 +15,14 @@ import type { CoreCConfig } from '@/types/config'
  *
  * The caller provides entity-specific logic via options; the hook manages
  * open/values/statusMsg state, pre-fill, preview/apply YAML, and reload.
+ *
+ * C-A4: fields tagged kind 'password' are never pre-filled with the
+ * stored secret. A saved value is recorded in `secretSavedKeys` and the
+ * form value stays '' — the card shows a "saved — leave blank to keep"
+ * placeholder, and the blank field is simply omitted from the generated
+ * YAML, so the apply merge keeps the server's stored value.
  */
-interface UseEntityEditConfigOptions<TField extends { key: string }> {
+interface UseEntityEditConfigOptions<TField extends { key: string; kind?: string }> {
   /** Entity name (used for React Query keys, not internally). */
   entityName: string
   /** Editable fields for this entity type. */
@@ -46,6 +52,13 @@ export interface EntityEditConfigState {
   setOpen: React.Dispatch<React.SetStateAction<boolean>>
   values: Record<string, string>
   setField: (key: string, v: string) => void
+  /**
+   * Password-kind fields that have a stored (server-side) value. The form
+   * value is masked to '' for these (C-A4); the card uses the set to show
+   * the "saved — leave blank to keep" placeholder instead of echoing the
+   * secret.
+   */
+  secretSavedKeys: ReadonlySet<string>
   previewYaml: string
   applyYaml: string
   statusMsg: { type: 'success' | 'error'; text: string } | null
@@ -61,7 +74,7 @@ export interface EntityEditConfigState {
   isReloading: boolean
 }
 
-export function useEntityEditConfig<TField extends { key: string }>(
+export function useEntityEditConfig<TField extends { key: string; kind?: string }>(
   options: UseEntityEditConfigOptions<TField>,
 ) {
   const { fields, prefillValues, buildPreviewYaml, buildApplyYaml, successKey, failureKey } =
@@ -83,6 +96,8 @@ export function useEntityEditConfig<TField extends { key: string }>(
   // Last failed reload's message, kept separately so the confirmation dialog
   // can render it in place (applyError slot) while statusMsg feeds the card.
   const [reloadError, setReloadError] = useState<string | null>(null)
+  // Password-kind keys that carry a stored value (C-A4 masking).
+  const [secretSavedKeys, setSecretSavedKeys] = useState<ReadonlySet<string>>(() => new Set())
 
   // Pre-fill form from the existing server config.
   useEffect(() => {
@@ -90,11 +105,24 @@ export function useEntityEditConfig<TField extends { key: string }>(
     try {
       const cfg = parseConfigYaml(rawYaml)
       const filled = prefillValues(cfg)
-      if (filled) setValues(filled)
+      if (filled) {
+        // C-A4: mask stored secrets — a non-empty password field value is
+        // recorded as "saved" and replaced with '' so the secret never
+        // reaches the form state (nor the preview/apply YAML).
+        const saved = new Set<string>()
+        for (const f of fields) {
+          if (f.kind === 'password' && (filled[f.key] ?? '') !== '') {
+            saved.add(f.key)
+            filled[f.key] = ''
+          }
+        }
+        setSecretSavedKeys(saved)
+        setValues(filled)
+      }
     } catch {
       // If YAML parse fails, leave the form empty — don't crash the page.
     }
-  }, [rawYaml, prefillValues])
+  }, [rawYaml, prefillValues, fields])
 
   const previewYaml = useMemo(
     () => buildPreviewYaml(fields, values),
@@ -134,6 +162,7 @@ export function useEntityEditConfig<TField extends { key: string }>(
     setOpen,
     values,
     setField,
+    secretSavedKeys,
     previewYaml,
     applyYaml,
     statusMsg,
