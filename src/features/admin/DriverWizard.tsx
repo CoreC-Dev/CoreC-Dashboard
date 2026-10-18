@@ -46,6 +46,7 @@ import { dumpConfigYaml } from '@/lib/configYaml'
 import { validateDriverInContext } from '@/lib/entityValidation'
 import { buildDefaultSettings, getDriverFieldRegistry } from '@/lib/settingsRegistry'
 import { isDriverDraftDirty } from '@/lib/wizardDirty'
+import { missingRequiredSettingLabels } from '@/lib/wizardGate'
 import { useConfigStore } from '@/stores/configStore'
 import { DATA_TYPES, type DriverConfig, type DriverType } from '@/types/config'
 
@@ -126,7 +127,7 @@ export const DriverWizard: React.FC<DriverWizardProps> = ({
   existingDriver,
   onSaved,
 }) => {
-  const { t } = useTranslation()
+  const { t, i18n: i18nInst } = useTranslation()
   const upsertDriver = useConfigStore((s) => s.upsertDriver)
   const isDriverNameUnique = useConfigStore((s) => s.isDriverNameUnique)
   const workingConfig = useConfigStore((s) => s.workingConfig)
@@ -208,23 +209,24 @@ export const DriverWizard: React.FC<DriverWizardProps> = ({
   // ─── Step validation gates ───────────────────────────────────────
 
   const step0Valid = selectedType !== null
-  const step1Valid = useMemo(() => {
-    if (!selectedType || !driverName.trim()) return false
-    // Name uniqueness (allow same name in edit mode).
-    if (!isEdit && !isDriverNameUnique(driverName.trim())) return false
-    // Check required settings fields.
-    if (registry) {
-      for (const group of registry.groups) {
-        for (const field of group.fields) {
-          if (field.required) {
-            const val = settings[field.key]
-            if (val === undefined || val === null || val === '') return false
-          }
-        }
-      }
+
+  // C-A5: a concrete reason instead of the generic "fix the errors
+  // first" — the hint names the exact missing fields ("Missing
+  // required: Host, Port"), locale-aware via Intl.ListFormat.
+  const formatMissing = (fields: string[]): string =>
+    new Intl.ListFormat(i18nInst.resolvedLanguage ?? 'en', { type: 'conjunction' }).format(fields)
+  const step1Gate = (): boolean | { ok: false; reason: string } => {
+    if (!selectedType) return true // unreachable past the type step
+    const name = driverName.trim()
+    if (name && !isEdit && !isDriverNameUnique(name)) {
+      return { ok: false, reason: t('driverWizard.nameExists') }
     }
-    return true
-  }, [selectedType, driverName, settings, registry, isEdit, isDriverNameUnique])
+    const missing: string[] = []
+    if (!name) missing.push(t('driverWizard.driverName'))
+    missing.push(...missingRequiredSettingLabels(registry, settings).map((labelKey) => t(labelKey)))
+    if (missing.length === 0) return true
+    return { ok: false, reason: t('wizard.missingRequired', { fields: formatMissing(missing) }) }
+  }
 
   const step2Valid = tags.length > 0 || !!tagsFile.trim()
 
@@ -297,7 +299,7 @@ export const DriverWizard: React.FC<DriverWizardProps> = ({
       id: 'connection',
       title: t('driverWizard.stepConnection'),
       subtitle: t('driverWizard.stepConnectionDesc'),
-      canProceed: () => step1Valid,
+      canProceed: step1Gate,
       render: () => (
         <div className="space-y-4">
           {/* Driver name */}
@@ -359,7 +361,8 @@ export const DriverWizard: React.FC<DriverWizardProps> = ({
       id: 'tags',
       title: t('driverWizard.stepTags'),
       subtitle: t('driverWizard.stepTagsDesc'),
-      canProceed: () => step2Valid,
+      canProceed: () =>
+        step2Valid ? true : { ok: false as const, reason: t('wizard.tagsRequired') },
       render: () => (
         <div className="space-y-3">
           <TagListEditor tags={tags} onChange={setTags} required={true} />

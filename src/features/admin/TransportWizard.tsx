@@ -36,6 +36,7 @@ import {
   TRANSPORT_TOPLEVEL_FIELDS,
 } from '@/lib/settingsRegistry'
 import { isTransportDraftDirty } from '@/lib/wizardDirty'
+import { missingRequiredSettingLabels } from '@/lib/wizardGate'
 import { useConfigStore } from '@/stores/configStore'
 import type { TransportConfig, TransportType } from '@/types/config'
 
@@ -84,7 +85,7 @@ export const TransportWizard: React.FC<TransportWizardProps> = ({
   existingTransport,
   onSaved,
 }) => {
-  const { t } = useTranslation()
+  const { t, i18n: i18nInst } = useTranslation()
   const upsertTransport = useConfigStore((s) => s.upsertTransport)
   const isTransportNameUnique = useConfigStore((s) => s.isTransportNameUnique)
   const workingConfig = useConfigStore((s) => s.workingConfig)
@@ -186,21 +187,23 @@ export const TransportWizard: React.FC<TransportWizardProps> = ({
 
   // ─── Step validation gates ───────────────────────────────────────
   const step0Valid = selectedType !== null
-  const step1Valid = useMemo(() => {
-    if (!selectedType || !transportName.trim()) return false
-    if (!isEdit && !isTransportNameUnique(transportName.trim())) return false
-    if (registry) {
-      for (const group of registry.groups) {
-        for (const field of group.fields) {
-          if (field.required) {
-            const val = settings[field.key]
-            if (val === undefined || val === null || val === '') return false
-          }
-        }
-      }
+
+  // C-A5: a concrete reason instead of the generic "fix the errors
+  // first" — the hint names the exact missing fields.
+  const formatMissing = (fields: string[]): string =>
+    new Intl.ListFormat(i18nInst.resolvedLanguage ?? 'en', { type: 'conjunction' }).format(fields)
+  const step1Gate = (): boolean | { ok: false; reason: string } => {
+    if (!selectedType) return true // unreachable past the type step
+    const name = transportName.trim()
+    if (name && !isEdit && !isTransportNameUnique(name)) {
+      return { ok: false, reason: t('transportWizard.nameExists') }
     }
-    return true
-  }, [selectedType, transportName, settings, registry, isEdit, isTransportNameUnique])
+    const missing: string[] = []
+    if (!name) missing.push(t('transportWizard.transportName'))
+    missing.push(...missingRequiredSettingLabels(registry, settings).map((labelKey) => t(labelKey)))
+    if (missing.length === 0) return true
+    return { ok: false, reason: t('wizard.missingRequired', { fields: formatMissing(missing) }) }
+  }
 
   // ─── Save ────────────────────────────────────────────────────────
   const handleFinish = () => {
@@ -276,7 +279,7 @@ export const TransportWizard: React.FC<TransportWizardProps> = ({
       id: 'connection',
       title: t('transportWizard.stepConnection'),
       subtitle: t('transportWizard.stepConnectionDesc'),
-      canProceed: () => step1Valid,
+      canProceed: step1Gate,
       render: () => (
         <div className="space-y-4">
           <div className="space-y-1.5">

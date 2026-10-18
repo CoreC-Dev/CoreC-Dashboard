@@ -201,6 +201,7 @@
     "cancel": "Cancel",
     "preview": "Preview YAML",
     "stepHasErrors": "Please fix the errors before continuing",
+    "missingRequired": "Missing required: {{fields}}",
     "optional": "optional",
     "topicPreview": "Resolved publish topic preview",
     "topicPreviewEmpty": "Empty → defaults to corec/{{.Driver}}/{{.Tag}}",

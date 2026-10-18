@@ -201,6 +201,7 @@
     "cancel": "取消",
     "preview": "预览 YAML",
     "stepHasErrors": "请先修正错误再继续",
+    "missingRequired": "必填字段未填：{{fields}}",
     "optional": "可选",
     "topicPreview": "实际发布主题预览",
     "topicPreviewEmpty": "留空 → 默认 corec/{{.Driver}}/{{.Tag}}",
