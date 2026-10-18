@@ -1186,6 +1186,7 @@
     "soundOff": "声音关闭",
     "notificationsOn": "通知开启",
     "notificationsOff": "通知关闭",
+    "unreadBadgeAria": "{{count}} 条未读告警",
     "notificationTitle": "CoreC 告警",
     "notificationBody": "检测到新的错误级事件",
     "retryFailed": "重试死信命令失败",

@@ -2,6 +2,7 @@ import { Menu } from 'lucide-react'
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, Outlet, useLocation } from 'react-router-dom'
+import { AlertStreamProvider } from '@/components/layout/AlertStreamProvider'
 import { SidebarNav } from '@/components/layout/SidebarNav'
 import { StreamStatusBanner } from '@/components/layout/StreamStatusBanner'
 import { TopProgressBar } from '@/components/layout/TopProgressBar'
@@ -131,6 +132,11 @@ export const AppShell: React.FC = () => {
 
   return (
     <div className="h-screen w-full bg-background text-foreground overflow-hidden relative">
+      {/* Instance-level alert subscription (audit B02): keeps the /logs
+          warn/error stream, sound, browser notifications, and the sidebar
+          badge alive on EVERY route of the instance — not just the alerts
+          page. Behavior-only provider; renders nothing. */}
+      <AlertStreamProvider />
       {/* Subtle decorative gradient orb */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden="true">
         <div

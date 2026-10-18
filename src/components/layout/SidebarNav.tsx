@@ -9,11 +9,46 @@ import { ThemeSelector } from '@/components/layout/ThemeSelector'
 import { useNavIndicator } from '@/components/layout/useNavIndicator'
 import { setLocale } from '@/i18n'
 import { cn } from '@/lib/cn'
+import { useAlertStore } from '@/stores/alertStore'
 
 interface SidebarNavProps {
   collapsed: boolean
   setCollapsed: (value: boolean) => void
   isMobile: boolean
+}
+
+/**
+ * Unread-alert count pill for the "告警事件" nav item (audit B02).
+ *
+ * Data source is the instance-level alert provider's store: unread error
+ * events win; with none unread, a non-empty dead-letter queue is the
+ * fallback signal ("deadLetters>0 或收到 error 级事件时显示红色计数").
+ * The aria label uses the audit's copy — "{{count}} unread alerts" — and
+ * participates in the nav link's accessible name, so screen readers hear
+ * the count, not just "Alerts & Events".
+ */
+const AlertsNavBadge: React.FC = () => {
+  const { t } = useTranslation()
+  const count = useAlertStore((s) =>
+    s.unreadErrorCount > 0 ? s.unreadErrorCount : s.deadLetterCount,
+  )
+  if (count <= 0) return null
+  const label = count > 99 ? '99+' : String(count)
+  return (
+    <span
+      role="status"
+      aria-label={t('alerts.unreadBadgeAria', { count })}
+      className={cn(
+        'absolute min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold leading-[18px] text-center',
+        'bg-status-error text-white shadow-sm pointer-events-none',
+        // Top-right corner: hugs the icon circle when collapsed, the row's
+        // right edge when expanded.
+        '-top-1 -right-1.5',
+      )}
+    >
+      {label}
+    </span>
+  )
 }
 
 /**
@@ -81,6 +116,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ collapsed, setCollapsed,
         {!eff && (
           <span className="text-sm font-medium truncate text-left flex-1">{t(item.labelKey)}</span>
         )}
+        {item.badge === 'alerts' && <AlertsNavBadge />}
       </NavLink>
     )
   }

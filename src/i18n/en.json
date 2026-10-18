@@ -1186,6 +1186,7 @@
     "soundOff": "Sound Off",
     "notificationsOn": "Notifications On",
     "notificationsOff": "Notifications Off",
+    "unreadBadgeAria": "{{count}} unread alerts",
     "notificationTitle": "CoreC Alert",
     "notificationBody": "New error-level event detected",
     "retryFailed": "Failed to retry dead letter command",

@@ -8,9 +8,9 @@ import {
   ShieldAlert,
 } from 'lucide-react'
 import type React from 'react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { CoreCWebSocket, useDeadLetters, useRules } from '@/api/hooks'
+import { useDeadLetters, useRules } from '@/api/hooks'
 import { DeadLetterReplayList } from '@/components/monitor/DeadLetterReplayList'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -23,152 +23,42 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { safePersist, safeRead } from '@/lib/storage'
+import { useAlertStore } from '@/stores/alertStore'
 import type { LogEvent } from '@/types/models'
 
-const SOUND_KEY = 'corec_alert_sound'
-const NOTIF_KEY = 'corec_alert_notification'
-
-const readPref = (key: string): boolean => safeRead(key) === '1'
-const writePref = (key: string, value: boolean): void => safePersist(key, value ? '1' : '0')
-
-// Plays a short 800 Hz beep via the Web Audio API. The AudioContext is created
-// lazily and stored in a ref so it can be unlocked by a user gesture (the
-// sound toggle click) and reused for subsequent WebSocket-driven alerts.
-function playBeep(ctxRef: { current: AudioContext | null }): void {
-  try {
-    if (!ctxRef.current) {
-      const Ctor =
-        window.AudioContext ??
-        (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
-      if (!Ctor) return
-      ctxRef.current = new Ctor()
-    }
-    const ctx = ctxRef.current
-    if (!ctx) return
-    if (ctx.state === 'suspended') void ctx.resume().catch(() => {})
-    const osc = ctx.createOscillator()
-    const gain = ctx.createGain()
-    osc.type = 'sine'
-    osc.frequency.value = 800
-    gain.gain.value = 0.2
-    osc.connect(gain)
-    gain.connect(ctx.destination)
-    const now = ctx.currentTime
-    osc.start(now)
-    osc.stop(now + 0.2)
-  } catch {
-    // AudioContext blocked or unavailable — fail silently
-  }
-}
-
-// Shows a browser notification iff the user has granted permission.
-function notify(title: string, body: string): void {
-  try {
-    if (typeof Notification === 'undefined') return
-    if (Notification.permission !== 'granted') return
-    new Notification(title, { body })
-  } catch {
-    // Notification API blocked — fail silently
-  }
-}
-
+/**
+ * Alerts — live warning/error feed + dead letter queue.
+ *
+ * B02: the /logs subscription NO LONGER lives here. It moved to the
+ * instance-level AlertStreamProvider (mounted by AppShell), which keeps
+ * sounds/notifications/badge alive on every route; this page now renders
+ * the shared alertStore feed, so visiting it does not open a second
+ * /logs socket (subscription dedupe). The page still owns the display
+ * and the sound/notification preference toggles (they write through the
+ * store so the global provider honors them).
+ */
 export const AlertsPage: React.FC = () => {
   const { t } = useTranslation()
   const { data: deadLettersData, refetch, isFetching, isLoading, isError, error } = useDeadLetters()
   const { data: rulesData } = useRules()
 
-  const [liveLogs, setLiveLogs] = useState<LogEvent[]>([])
-  const [soundEnabled, setSoundEnabled] = useState(() => readPref(SOUND_KEY))
-  const [notifEnabled, setNotifEnabled] = useState(() => readPref(NOTIF_KEY))
+  // Shared, provider-fed feed (bounded, newest first). While this page is
+  // mounted, arriving error events count as "seen" — the sidebar badge's
+  // unread counter is frozen at 0 and new events don't re-arm it.
+  const liveLogs = useAlertStore((s) => s.events)
+  const soundEnabled = useAlertStore((s) => s.soundEnabled)
+  const notifEnabled = useAlertStore((s) => s.notificationsEnabled)
+  const toggleSound = useAlertStore((s) => s.toggleSound)
+  const toggleNotifications = useAlertStore((s) => s.toggleNotifications)
+  const setViewing = useAlertStore((s) => s.setViewing)
+  useEffect(() => {
+    setViewing(true)
+    return () => setViewing(false)
+  }, [setViewing])
 
   // Live feed filters
   const [logFilter, setLogFilter] = useState('')
   const [logLevel, setLogLevel] = useState<'all' | 'warning' | 'error'>('all')
-
-  // Refs mirror the latest preference/translation values so the WebSocket
-  // callback (created once on mount) always reads current state without
-  // needing to resubscribe on every toggle.
-  const audioCtxRef = useRef<AudioContext | null>(null)
-  const soundRef = useRef(soundEnabled)
-  const notifRef = useRef(notifEnabled)
-  const tRef = useRef(t)
-  // rAF batching buffers for the live-log WebSocket stream — avoids a
-  // setLiveLogs call (and re-render) per incoming message at high frequency.
-  const pendingLogsRef = useRef<LogEvent[]>([])
-  const rafIdRef = useRef<number | null>(null)
-  // Sync refs in an effect, not during render (StrictMode double-invokes render).
-  useEffect(() => {
-    soundRef.current = soundEnabled
-    notifRef.current = notifEnabled
-    tRef.current = t
-  }, [soundEnabled, notifEnabled, t])
-
-  const toggleSound = () => {
-    const next = !soundEnabled
-    setSoundEnabled(next)
-    writePref(SOUND_KEY, next)
-    // Preview the beep on enable; this also unlocks the AudioContext under the
-    // user-gesture requirement so later WS-driven beeps can play.
-    if (next) playBeep(audioCtxRef)
-  }
-
-  const toggleNotifications = async () => {
-    const next = !notifEnabled
-    setNotifEnabled(next)
-    writePref(NOTIF_KEY, next)
-    if (next && typeof Notification !== 'undefined' && Notification.permission === 'default') {
-      try {
-        await Notification.requestPermission()
-      } catch {
-        // requestPermission rejected — preference stored; notifications skipped if denied
-      }
-    }
-  }
-
-  // Subscribe to /logs WebSocket for warn/error.
-  // Incoming events are buffered and flushed once per animation frame to
-  // avoid a state update (and re-render) on every single WS message.
-  useEffect(() => {
-    const flushLogs = () => {
-      rafIdRef.current = null
-      const batch = pendingLogsRef.current
-      if (batch.length === 0) return
-      pendingLogsRef.current = []
-      setLiveLogs((prev) => {
-        const merged = [...batch, ...prev]
-        return merged.length > 50 ? merged.slice(0, 50) : merged
-      })
-    }
-
-    const scheduleFlush = () => {
-      if (rafIdRef.current === null) {
-        rafIdRef.current = requestAnimationFrame(flushLogs)
-      }
-    }
-
-    const ws = new CoreCWebSocket<LogEvent>('/logs', {}, (evt) => {
-      // level >= 4 are warnings and errors
-      if (evt.level >= 4) {
-        pendingLogsRef.current.push(evt)
-        scheduleFlush()
-      }
-      // level >= 8 are errors — fire audible + visual alerts when enabled
-      if (evt.level >= 8) {
-        if (soundRef.current) {
-          playBeep(audioCtxRef)
-        }
-        if (notifRef.current) {
-          notify(tRef.current('alerts.notificationTitle'), tRef.current('alerts.notificationBody'))
-        }
-      }
-    })
-    return () => {
-      ws.destroy()
-      if (rafIdRef.current !== null) cancelAnimationFrame(rafIdRef.current)
-      rafIdRef.current = null
-    }
-  }, [])
 
   const deadLetters = useMemo(() => deadLettersData?.failed_writes || [], [deadLettersData])
   const alertRules = useMemo(
@@ -177,8 +67,9 @@ export const AlertsPage: React.FC = () => {
   )
 
   // Filter the live warning/error feed by text content and severity level.
-  // The WS handler already keeps only level >= 4 (warnings + errors); the level
-  // filter here narrows that further to warnings-only (4–7) or errors-only (8+).
+  // The store handler already keeps only level >= 4 (warnings + errors);
+  // the level filter here narrows that further to warnings-only (4–7) or
+  // errors-only (8+).
   const filteredLogs = useMemo(() => {
     const term = logFilter.trim().toLowerCase()
     return liveLogs.filter((log) => {
@@ -353,7 +244,7 @@ export const AlertsPage: React.FC = () => {
             </div>
           ) : (
             <div className="space-y-2 max-h-[60vh] overflow-y-auto font-mono text-xs">
-              {filteredLogs.map((log) => (
+              {filteredLogs.map((log: LogEvent) => (
                 <div
                   key={`${log.timestamp}-${log.level}-${log.type}-${log.payload.slice(0, 20)}`}
                   className={`p-2.5 rounded border flex items-start space-x-2 transition-colors hover:bg-muted/30 ${

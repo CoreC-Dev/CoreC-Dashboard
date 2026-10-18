@@ -16,6 +16,13 @@ export type RailItem = {
   path: string
   labelKey: string
   icon: React.ComponentType<{ className?: string }>
+  /**
+   * Optional live badge marker (audit B02): 'alerts' renders an unread-alert
+   * count pill fed by the instance-level alert provider's store. Keeping
+   * this a semantic key (not a value) lets navItems stay pure data — the
+   * renderer (SidebarNav) resolves the data source.
+   */
+  badge?: 'alerts'
 }
 
 /** Monitor-section nav items, scoped to the active instance via `base`. */
@@ -23,7 +30,7 @@ export function buildMonitorItems(base: string): RailItem[] {
   return [
     { path: `${base}/monitor/dashboard`, labelKey: 'nav.dashboard', icon: LayoutDashboard },
     { path: `${base}/monitor/tags`, labelKey: 'nav.tags', icon: Tag },
-    { path: `${base}/monitor/alerts`, labelKey: 'nav.alerts', icon: Bell },
+    { path: `${base}/monitor/alerts`, labelKey: 'nav.alerts', icon: Bell, badge: 'alerts' },
   ]
 }
 
