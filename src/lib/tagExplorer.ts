@@ -6,13 +6,16 @@ export const ROW_HEIGHT = 48
 export const MAX_TREND_SAMPLES = 100
 
 /** Fixed percentage column widths — header and rows share these so columns
- *  stay aligned inside the virtualized (display:block) table. */
+ *  stay aligned inside the virtualized (display:block) table. B06 added the
+ *  device column (2% each from tag/driver/group/type, total still 100%) so
+ *  same-name tags on different sub-devices are distinguishable at a glance. */
 export const COLS = {
-  tag: '20%',
-  driver: '12%',
-  group: '10%',
+  tag: '18%',
+  driver: '10%',
+  device: '8%',
+  group: '8%',
   value: '14%',
-  type: '10%',
+  type: '8%',
   quality: '10%',
   timestamp: '16%',
   actions: '8%',

@@ -104,6 +104,11 @@ export function TagTable({
                 <th className="px-4 py-2.5 shrink-0 overflow-hidden" style={{ width: COLS.driver }}>
                   {t('tags.colDriver')}
                 </th>
+                {/* B06: device column — the row key already carries device; now
+                    the operator can SEE which sub-device a same-name tag is on. */}
+                <th className="px-4 py-2.5 shrink-0 overflow-hidden" style={{ width: COLS.device }}>
+                  {t('common.device')}
+                </th>
                 <th className="px-4 py-2.5 shrink-0 overflow-hidden" style={{ width: COLS.group }}>
                   {t('tags.colGroup')}
                 </th>

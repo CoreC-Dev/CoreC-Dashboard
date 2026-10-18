@@ -35,9 +35,15 @@ const MAX_VISIBLE_DLQ = 100
 const dlqKeyOf = (dl: DeadLetterEntry): string =>
   `${dl.command.driver}-${dl.command.tag}-${dl.failed_at}-${dl.attempts}`
 
+/** Composite command prefix `[driver/device]` — same-name tags on different
+ *  sub-devices must stay distinguishable everywhere a command is listed (B06).
+ *  Single-device drivers render the unchanged `[driver]`. */
+const commandPrefixOf = (cmd: WriteCommand): string =>
+  `[${cmd.driver}${cmd.device ? `/${cmd.device}` : ''}]`
+
 /** Short human label of a dead letter's command, used in dialogs and results. */
 const labelOf = (dl: DeadLetterEntry): string =>
-  `[${dl.command.driver}] ${dl.command.tag} = ${String(dl.command.value)}`
+  `${commandPrefixOf(dl.command)} ${dl.command.tag} = ${String(dl.command.value)}`
 
 /**
  * Re-issues a dead letter via the existing POST /write. Builds a CLEAN
@@ -320,6 +326,11 @@ export const DeadLetterReplayList: React.FC<DeadLetterReplayListProps> = ({
                         [{entry.command.driver}] {t('common.tag')}: {entry.command.tag} ={' '}
                         {String(entry.command.value)}
                       </div>
+                      {/* B06: sub-device of the failed write — same-name tags
+                          across devices are only distinguishable by this line. */}
+                      <div className="text-xs text-muted-foreground font-mono break-all">
+                        {t('common.device')}: {entry.command.device || '-'}
+                      </div>
                       <div className="text-muted-foreground font-mono text-xs break-all">
                         {entry.error}
                       </div>
@@ -375,7 +386,7 @@ export const DeadLetterReplayList: React.FC<DeadLetterReplayListProps> = ({
             <div className="space-y-1 font-mono text-xs">
               {selectedEntries.map((dl) => (
                 <div key={`confirm-${dlqKeyOf(dl)}`} className="break-all text-foreground">
-                  [{dl.command.driver}] {dl.command.tag} = {String(dl.command.value)} (
+                  {commandPrefixOf(dl.command)} {dl.command.tag} = {String(dl.command.value)} (
                   {String(dl.command.type)})
                 </div>
               ))}
@@ -433,7 +444,7 @@ export const DeadLetterReplayList: React.FC<DeadLetterReplayListProps> = ({
           {pendingReplay && (
             <div className="rounded-lg border border-border bg-muted/40 p-3 space-y-1.5">
               <div className="break-all font-mono text-xs text-foreground">
-                [{pendingReplay.command.driver}] {pendingReplay.command.tag} ={' '}
+                {commandPrefixOf(pendingReplay.command)} {pendingReplay.command.tag} ={' '}
                 {String(pendingReplay.command.value)} ({String(pendingReplay.command.type)})
               </div>
               <div className="text-xs text-muted-foreground flex items-center space-x-2">

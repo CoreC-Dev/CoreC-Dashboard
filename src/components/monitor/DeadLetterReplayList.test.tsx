@@ -87,6 +87,14 @@ describe('DeadLetterReplayList', () => {
     expect(screen.getByRole('button', { name: 'Replay Selected (0)' })).toBeDisabled()
   })
 
+  it('lists the sub-device on every entry so same-name tags stay distinguishable (B06)', async () => {
+    renderList()
+
+    // Entry 1 carries a device; entry 2 has none and falls back to '-'.
+    expect(await screen.findByText('Device: meter-01')).toBeTruthy()
+    expect(screen.getByText('Device: -')).toBeTruthy()
+  })
+
   it('requires the batch confirmation dialog before any write is sent', async () => {
     vi.mocked(api.writeTag).mockResolvedValue({ success: true })
     renderList()
@@ -102,7 +110,7 @@ describe('DeadLetterReplayList', () => {
 
     // The confirm dialog lists every staged command — and nothing is sent.
     expect(await screen.findByText('Replay 2 Dead Letter Command(s)')).toBeTruthy()
-    expect(screen.getByText('[plc1] pump = true (bool)')).toBeTruthy()
+    expect(screen.getByText('[plc1/meter-01] pump = true (bool)')).toBeTruthy()
     expect(screen.getByText('[plc2] temp = 50 (float32)')).toBeTruthy()
     expect(screen.getByText(/writes directly to PLC coils\/registers/)).toBeTruthy()
     expect(api.writeTag).not.toHaveBeenCalled()
@@ -202,7 +210,7 @@ describe('DeadLetterReplayList', () => {
     expect(await screen.findByText('Replay Dead Letter Command')).toBeTruthy()
     // The dialog lists the exact command, the recorded failure reason…
     expect(screen.getByText(/This command previously failed \(driver disconnected\)/)).toBeTruthy()
-    expect(screen.getByText('[plc1] pump = true (bool)')).toBeTruthy()
+    expect(screen.getByText('[plc1/meter-01] pump = true (bool)')).toBeTruthy()
     // "3 attempts exhausted" appears in both rows and once more in the dialog.
     expect(screen.getAllByText('3 attempts exhausted').length).toBe(3)
     // …and nothing has been sent yet.

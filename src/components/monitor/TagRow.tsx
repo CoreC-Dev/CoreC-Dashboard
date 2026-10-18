@@ -100,6 +100,14 @@ export const TagRow = memo(function TagRow({
       >
         {point.driver}
       </td>
+      {/* B06: the composite key already contained device — surface it so two
+       * same-name tags on different sub-devices are no longer indistinguishable. */}
+      <td
+        className="px-4 py-2.5 shrink-0 min-w-0 truncate font-mono text-muted-foreground"
+        style={{ width: COLS.device }}
+      >
+        {point.device || '-'}
+      </td>
       <td
         className="px-4 py-2.5 shrink-0 min-w-0 truncate text-muted-foreground"
         style={{ width: COLS.group }}

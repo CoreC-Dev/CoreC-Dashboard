@@ -61,6 +61,14 @@ export function TagWriteDialog({
                 <span className="text-muted-foreground">{t('common.driver')}: </span>
                 <span className="font-semibold text-foreground">{selectedTagForWrite.driver}</span>
               </div>
+              {/* B06: a write targets a PHYSICAL register — the operator must
+                  see which sub-device receives it before confirming. */}
+              <div>
+                <span className="text-muted-foreground">{t('common.device')}: </span>
+                <span className="font-semibold text-foreground">
+                  {selectedTagForWrite.device || '-'}
+                </span>
+              </div>
               <div>
                 <span className="text-muted-foreground">{t('common.tag')}: </span>
                 <span className="font-semibold text-primary">{selectedTagForWrite.tag}</span>
