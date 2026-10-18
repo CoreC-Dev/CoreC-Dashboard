@@ -70,7 +70,6 @@ const RealRO = globalThis.ResizeObserver
 
 beforeEach(() => {
   cleanup()
-  vi.useFakeTimers()
   class MockRO {
     observe() {}
     unobserve() {}
@@ -82,7 +81,6 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup()
-  vi.useRealTimers()
   globalThis.ResizeObserver = RealRO
   useWsStatusStore.getState().reset()
 })
