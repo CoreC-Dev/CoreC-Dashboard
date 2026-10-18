@@ -8,10 +8,22 @@
 //  2. CSP — script-src pins the script's sha256 hash; editing the script
 //     without re-pinning gets it BLOCKED by the CSP, so the test recomputes
 //     the hash and compares.
-// The html source comes in via Vite's ?raw import (works in vitest, no node
-// APIs — the web tsconfig has none); the hash uses WebCrypto.
+//
+// Node builtins are not typeable here: the web tsconfig has
+// "types": ["vite/client"], so `node:fs` imports fail tsc, while a plain
+// relative import ('../index.html?raw') trips the custom-lint TD-ARCH-010
+// no-relative-imports rule. import.meta.glob threads the needle: the glob
+// path is a string argument (not an import statement) and vite/client types
+// the call itself. The sha256 uses WebCrypto (globalThis.crypto), which the
+// DOM lib types and Node 18+ provides.
 import { describe, expect, it } from 'vitest'
-import html from '../index.html?raw'
+
+const htmlModules = import.meta.glob('../index.html', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+}) as Record<string, string>
+const html = Object.values(htmlModules)[0] ?? ''
 
 function extractInlineScript(source: string): string {
   const match = source.match(/<script>([\s\S]*?)<\/script>/)
@@ -62,8 +74,7 @@ function bootWith(savedTheme: string | null, prefersDark = false) {
 }
 
 async function sha256Base64(text: string): Promise<string> {
-  const bytes = new TextEncoder().encode(text)
-  const digest = await globalThis.crypto.subtle.digest('SHA-256', bytes)
+  const digest = await globalThis.crypto.subtle.digest('SHA-256', new TextEncoder().encode(text))
   return btoa(String.fromCharCode(...new Uint8Array(digest)))
 }
 
