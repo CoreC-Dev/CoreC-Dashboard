@@ -1194,6 +1194,7 @@
     "soundOff": "声音关闭",
     "notificationsOn": "通知开启",
     "notificationsOff": "通知关闭",
+    "notificationsBlocked": "通知被浏览器拦截 — 请在站点设置中允许通知后重新开启",
     "unreadBadgeAria": "{{count}} 条未读告警",
     "notificationTitle": "CoreC 告警",
     "notificationBody": "检测到新的错误级事件",

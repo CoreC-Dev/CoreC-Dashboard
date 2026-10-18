@@ -142,3 +142,43 @@ describe('AlertsPage — preference toggles (kept here, honored globally)', () =
     expect(screen.getByRole('button', { name: 'Notifications On' })).toBeTruthy()
   })
 })
+
+describe('AlertsPage — notification permission honesty (B09)', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('shows the blocked state, not "on", when the browser has denied notifications', () => {
+    vi.stubGlobal('Notification', {
+      permission: 'denied',
+      requestPermission: vi.fn(),
+    } as unknown as typeof Notification)
+    useAlertStore.setState({ notificationsEnabled: true })
+
+    renderPage()
+
+    // Audit copy (en): the toggle must admit the channel is dead instead
+    // of a comforting "Notifications On" that never delivers.
+    const button = screen.getByRole('button', {
+      name: /Notifications blocked by the browser/,
+    })
+    expect(button.getAttribute('aria-pressed')).toBe('true') // pref still on
+    expect(button.getAttribute('title')).toBe(
+      'Notifications blocked by the browser — allow them in site settings, then re-enable',
+    )
+    expect(screen.queryByRole('button', { name: 'Notifications On' })).toBeNull()
+  })
+
+  it('still shows the plain on state when permission is granted', () => {
+    vi.stubGlobal('Notification', {
+      permission: 'granted',
+      requestPermission: vi.fn(),
+    } as unknown as typeof Notification)
+    useAlertStore.setState({ notificationsEnabled: true })
+
+    renderPage()
+
+    expect(screen.getByRole('button', { name: 'Notifications On' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /blocked by the browser/ })).toBeNull()
+  })
+})

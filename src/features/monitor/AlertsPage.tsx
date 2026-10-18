@@ -23,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { cn } from '@/lib/cn'
 import { useAlertStore } from '@/stores/alertStore'
 import type { LogEvent } from '@/types/models'
 
@@ -55,6 +56,12 @@ export const AlertsPage: React.FC = () => {
     setViewing(true)
     return () => setViewing(false)
   }, [setViewing])
+
+  // B09: the notification preference is worthless when the browser has it
+  // hard-denied (no prompt will ever appear), so the toggle must say so
+  // instead of a comforting "on" that never delivers.
+  const notifBlocked =
+    notifEnabled && typeof Notification !== 'undefined' && Notification.permission === 'denied'
 
   // Live feed filters
   const [logFilter, setLogFilter] = useState('')
@@ -184,14 +191,23 @@ export const AlertsPage: React.FC = () => {
               size="sm"
               onClick={toggleNotifications}
               aria-pressed={notifEnabled}
-              className="h-8 text-xs"
+              className={cn(
+                'h-8 text-xs',
+                notifBlocked &&
+                  'text-status-warning border-status-warning/50 hover:text-status-warning',
+              )}
+              title={notifBlocked ? t('alerts.notificationsBlocked') : undefined}
             >
-              {notifEnabled ? (
+              {notifEnabled && !notifBlocked ? (
                 <BellRing className="w-3.5 h-3.5 mr-1" />
               ) : (
                 <BellOff className="w-3.5 h-3.5 mr-1" />
               )}
-              <span>{t(notifEnabled ? 'alerts.notificationsOn' : 'alerts.notificationsOff')}</span>
+              <span>
+                {notifBlocked
+                  ? t('alerts.notificationsBlocked')
+                  : t(notifEnabled ? 'alerts.notificationsOn' : 'alerts.notificationsOff')}
+              </span>
             </Button>
           </div>
         </CardHeader>
