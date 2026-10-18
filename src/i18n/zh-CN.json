@@ -1232,7 +1232,12 @@
   "monitor": {
     "realtimeStreamConnected": "实时流已连接",
     "realtimeStreamConnecting": "实时流连接中…",
-    "realtimeStreamDisconnected": "实时流已断开"
+    "realtimeStreamDisconnected": "实时流已断开",
+    "realtimeStreamRejected": "实时流已停止重连",
+    "streamBannerDisconnected": "⚠ 实时流已断开，数据可能已停止更新（上次更新 {{time}}），正在重连…",
+    "streamBannerRejected": "实时流重连 10 次失败，已停止重连。请检查网络后刷新页面。",
+    "streamRetry": "重新连接",
+    "streamRateLimited": "⚠ 实时数据超过 500 条/秒的界面保护上限，部分更新已被丢弃以保持界面流畅"
   },
   "error": {
     "boundary": {

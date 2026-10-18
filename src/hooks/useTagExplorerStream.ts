@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { CoreCWebSocket } from '@/api/hooks'
+import { CoreCWebSocket, makeStreamId, useWsStatusStore } from '@/api/hooks'
 import {
   isNumericType,
   MAX_TREND_SAMPLES,
@@ -184,11 +184,23 @@ export function useTagExplorerStream({
   // message; merge by composite key so same-name tags across drivers/devices
   // don't collide. Also bump the row's flash tick and buffer trend samples for
   // the tag currently shown in the drawer (if numeric).
+  //
+  // The socket reports its connection status into the global wsStatusStore
+  // (audit B01): a silent freeze after a disconnect/reject is the P0 the
+  // store + page banner exist to surface. Message activity pings the store's
+  // "last update" timestamp (throttled ≥1s inside the store — this callback
+  // runs up to ~500×/s), and limiter drops feed the rate-limit hint.
   useEffect(() => {
-    const ws = new CoreCWebSocket<DataPoint>(
+    const id = makeStreamId('tags-stream')
+    let ws: CoreCWebSocket<DataPoint> | null = null
+    const statusStore = useWsStatusStore.getState()
+    const sink = statusStore.registerStream(id)
+    statusStore.attachReconnect(id, () => ws?.reconnect())
+    ws = new CoreCWebSocket<DataPoint>(
       '/tags/stream',
       selectedDriver !== 'all' ? { driver: selectedDriver } : {},
       (point) => {
+        statusStore.touchStream(id)
         const key = tagKey(point)
         // Stage the update for the next animation frame instead of setState
         // per message (see scheduleFlush above).
@@ -206,9 +218,12 @@ export function useTagExplorerStream({
           scheduleFlush()
         }
       },
+      sink,
+      (dropped) => statusStore.reportDropped(id, dropped),
     )
     return () => {
-      ws.destroy()
+      ws?.destroy()
+      statusStore.unregisterStream(id)
       // Cancel a pending frame so we never setState after unmount/re-sub.
       if (flushRef.current !== null) {
         cancelAnimationFrame(flushRef.current)

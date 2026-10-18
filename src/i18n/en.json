@@ -1232,7 +1232,12 @@
   "monitor": {
     "realtimeStreamConnected": "Real-time Stream Connected",
     "realtimeStreamConnecting": "Real-time Stream Connecting…",
-    "realtimeStreamDisconnected": "Real-time Stream Disconnected"
+    "realtimeStreamDisconnected": "Real-time Stream Disconnected",
+    "realtimeStreamRejected": "Live Stream Gave Up Reconnecting",
+    "streamBannerDisconnected": "⚠ Live stream disconnected — data may be stale (last update {{time}}). Reconnecting…",
+    "streamBannerRejected": "Live stream gave up after 10 failed attempts. Check your network and reload the page.",
+    "streamRetry": "Reconnect",
+    "streamRateLimited": "⚠ Live data exceeds the 500 msg/s UI protection cap — some updates are being dropped to keep the interface responsive"
   },
   "error": {
     "boundary": {

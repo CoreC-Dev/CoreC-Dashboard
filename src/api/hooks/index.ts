@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react'
 import * as api from '@/api/endpoints'
 import { CoreCWebSocket, type WSStatus } from '@/api/websocket'
 import { useConnectionStore } from '@/stores/connectionStore'
+import { makeStreamId, useWsStatusStore } from '@/stores/wsStatusStore'
 import type { DriverTestRequest, RulesPreviewRequest } from '@/types/api'
 import type { WriteCommand } from '@/types/models'
 
@@ -405,11 +406,13 @@ export function useRestoreConfigBackup() {
 // Re-export ApiError so features don't reach into the raw HTTP client (TD-ARCH-008).
 // api/client is an internal transport detail; consumers should catch ApiError via this surface.
 export { ApiError } from '@/api/client'
-
 // Re-export CoreCWebSocket + WSStatus for consumers that need direct lifecycle control
 // (complex useEffect with intertwined local state). Simple consumers should use
 // useCoreCWebSocket below instead (TD-ARCH-007).
-export { CoreCWebSocket, type WSStatus }
+// Re-export the WS status store surface so manual CoreCWebSocket consumers
+// (useTagExplorerStream, the global alert provider) wire into the same
+// aggregation the auto-wired hooks use, without reaching into @/stores twice.
+export { CoreCWebSocket, makeStreamId, useWsStatusStore, type WSStatus }
 
 /**
  * React hook that manages a CoreCWebSocket lifecycle.
@@ -417,6 +420,14 @@ export { CoreCWebSocket, type WSStatus }
  * Callbacks are stored in refs so they can change without triggering reconnects.
  *
  * (TD-ARCH-007 — consumers no longer import @/api/websocket directly.)
+ *
+ * The socket is ALSO wired into the global WS status store (audit B01/D-02):
+ * every status change feeds the AppShell badge + monitor banner, message
+ * activity pings the "last update" timestamp (throttled ≥1s in the store),
+ * and limiter drops feed the rate-limit hint. Consumer-provided onStatus is
+ * chained after the store sink, so existing consumers (charts,
+ * RealtimeStreamsPanel) keep working unchanged — this is how /traffic and
+ * /memory became visible without touching their components.
  */
 export function useCoreCWebSocket<T>(
   path: string,
@@ -433,12 +444,27 @@ export function useCoreCWebSocket<T>(
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: paramsKey (JSON.stringify of params) is an intentional stable dep — reconnect only when path or serialized params change, not on every render with a new params object.
   useEffect(() => {
-    const ws = new CoreCWebSocket<T>(
+    const id = makeStreamId(path.replace(/^\//, ''))
+    let ws: CoreCWebSocket<T> | null = null
+    const statusStore = useWsStatusStore.getState()
+    const sink = statusStore.registerStream(id)
+    statusStore.attachReconnect(id, () => ws?.reconnect())
+    ws = new CoreCWebSocket<T>(
       path,
       params,
-      (data) => msgRef.current(data),
-      (status) => statusRef.current?.(status),
+      (data) => {
+        useWsStatusStore.getState().touchStream(id)
+        msgRef.current(data)
+      },
+      (status) => {
+        sink(status)
+        statusRef.current?.(status)
+      },
+      (dropped) => useWsStatusStore.getState().reportDropped(id, dropped),
     )
-    return () => ws.destroy()
+    return () => {
+      ws?.destroy()
+      useWsStatusStore.getState().unregisterStream(id)
+    }
   }, [path, paramsKey])
 }

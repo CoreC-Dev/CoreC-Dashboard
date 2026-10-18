@@ -28,6 +28,13 @@ class MockWebSocket {
     MockWebSocket.instances = []
   }
 
+  // Ready-state constants — part of the real WebSocket interface
+  // (CoreCWebSocket.reconnect() compares against WebSocket.OPEN/CONNECTING).
+  static readonly CONNECTING = 0
+  static readonly OPEN = 1
+  static readonly CLOSING = 2
+  static readonly CLOSED = 3
+
   readonly url: string
   onopen: ((ev: Event) => void) | null = null
   onmessage: ((ev: MessageEvent) => void) | null = null
@@ -275,6 +282,140 @@ describe('CoreCWebSocket — TD-TEST-004', () => {
 
       expect(statuses).not.toContain('rejected')
       client.destroy()
+    })
+  })
+
+  describe('reconnect() — controlled manual retry after rejected (B01)', () => {
+    it('is a no-op when a socket is already open', () => {
+      const client = new CoreCWebSocket('/test', {}, vi.fn())
+      const inst = MockWebSocket.last()
+      inst.simulateOpen()
+      const countBefore = MockWebSocket.instances.length
+
+      client.reconnect()
+
+      // No new socket — the live one is left untouched.
+      expect(MockWebSocket.instances.length).toBe(countBefore)
+      expect(client).toBeTruthy()
+      client.destroy()
+    })
+
+    it('immediately opens a fresh attempt after maxRetries rejected, resetting the backoff ladder', () => {
+      const statuses: WSStatus[] = []
+      const client = new CoreCWebSocket('/test', {}, vi.fn(), (s) => statuses.push(s))
+      let inst = MockWebSocket.last()
+
+      // Burn the full ladder → rejected (no pending timer, no self-healing).
+      for (let i = 0; i < 10; i++) {
+        inst.simulateClose(1000)
+        vi.advanceTimersByTime(100000)
+        inst = MockWebSocket.last()
+      }
+      inst.simulateClose(1000)
+      expect(statuses.at(-1)).toBe('rejected')
+      expect(vi.getTimerCount()).toBe(0)
+
+      // Manual retry: a new socket is created synchronously and reports
+      // 'connecting' — the rejected state has an in-band recovery entry.
+      const instancesBefore = MockWebSocket.instances.length
+      client.reconnect()
+      expect(MockWebSocket.instances.length).toBe(instancesBefore + 1)
+      expect(statuses.at(-1)).toBe('connecting')
+
+      // Backoff discipline: the fresh ladder starts at baseDelay again
+      // (1000 ms), not wherever the exhausted counter left off.
+      inst = MockWebSocket.last()
+      inst.simulateClose(1000)
+      const countBefore = MockWebSocket.instances.length
+      vi.advanceTimersByTime(999)
+      expect(MockWebSocket.instances.length).toBe(countBefore)
+      vi.advanceTimersByTime(1)
+      expect(MockWebSocket.instances.length).toBe(countBefore + 1)
+
+      client.destroy()
+    })
+
+    it('cancels a pending automatic retry and connects immediately', () => {
+      const client = new CoreCWebSocket('/test', {}, vi.fn())
+      const inst = MockWebSocket.last()
+      inst.simulateClose(1000) // schedules reconnect in ~1000ms
+      expect(vi.getTimerCount()).toBe(1)
+
+      client.reconnect() // operator asked to retry NOW
+      expect(vi.getTimerCount()).toBe(0) // pending timer cleared
+      expect(MockWebSocket.instances.length).toBe(2) // fresh immediate attempt
+
+      client.destroy()
+    })
+
+    it('is a no-op after destroy()', () => {
+      const client = new CoreCWebSocket('/test', {}, vi.fn())
+      client.destroy()
+      const instancesBefore = MockWebSocket.instances.length
+
+      client.reconnect()
+
+      expect(MockWebSocket.instances.length).toBe(instancesBefore)
+      expect(vi.getTimerCount()).toBe(0)
+    })
+
+    it('detaches the dead socket handlers so queued events cannot fire into the new cycle', () => {
+      const onMessage = vi.fn()
+      const client = new CoreCWebSocket('/test', {}, onMessage)
+      const dead = MockWebSocket.last()
+      dead.simulateClose(1000) // dead (readyState 3), never opened
+
+      client.reconnect() // replaces this.ws with a fresh socket
+
+      // The old socket's handlers were nulled — a late frame is a no-op.
+      dead.simulateMessage(JSON.stringify({ stale: true }))
+      expect(onMessage).not.toHaveBeenCalled()
+
+      client.destroy()
+    })
+  })
+
+  describe('onDrop — rate-limit visibility (B01)', () => {
+    it('reports dropped frames to the onDrop callback instead of dropping silently', () => {
+      const onMessage = vi.fn()
+      const onDrop = vi.fn()
+      const client = new CoreCWebSocket('/tags/stream', {}, onMessage, undefined, onDrop)
+      const inst = MockWebSocket.last()
+      inst.simulateOpen()
+
+      // 502 messages in the same 1s window: 500 delivered, 2 dropped.
+      for (let i = 0; i < 502; i++) inst.simulateMessage(JSON.stringify({ i }))
+      expect(onMessage).toHaveBeenCalledTimes(500)
+      // First drop reports immediately.
+      expect(onDrop).toHaveBeenCalledTimes(1)
+      expect(onDrop).toHaveBeenLastCalledWith(1)
+
+      // Further drops in the same window are throttled (≥1s between reports)…
+      for (let i = 0; i < 10; i++) inst.simulateMessage(JSON.stringify({ i }))
+      expect(onDrop).toHaveBeenCalledTimes(1)
+
+      // …and the next window reports the accumulated count: after 1s the
+      // ring prunes, 500 fresh messages refill the window, and the next
+      // frame drops — the report carries the 11 accumulated drops + this
+      // one (the first drop of the previous window was already reported).
+      vi.advanceTimersByTime(1001)
+      for (let i = 0; i < 500; i++) inst.simulateMessage(JSON.stringify({ refill: i }))
+      expect(onMessage).toHaveBeenCalledTimes(1000)
+      inst.simulateMessage(JSON.stringify({ after: 'window' }))
+      expect(onDrop).toHaveBeenCalledTimes(2)
+      expect(onDrop).toHaveBeenLastCalledWith(12)
+
+      client.destroy()
+    })
+
+    it('never calls onDrop while messages stay under the cap', () => {
+      const onDrop = vi.fn()
+      new CoreCWebSocket('/tags/stream', {}, vi.fn(), undefined, onDrop)
+      const inst = MockWebSocket.last()
+      inst.simulateOpen()
+
+      for (let i = 0; i < 100; i++) inst.simulateMessage(JSON.stringify({ i }))
+      expect(onDrop).not.toHaveBeenCalled()
     })
   })
 

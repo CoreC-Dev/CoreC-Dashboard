@@ -9,6 +9,13 @@ export class CoreCWebSocket<T = unknown> {
   private ws: WebSocket | null = null
   private onMessageCallback: (data: T) => void
   private onStatusCallback?: (status: WSStatus) => void
+  /**
+   * Rate-limit reporter: called (at most once per second while dropping
+   * continues) with the number of messages dropped by the sliding-window
+   * limiter since the previous report. Consumers surface this so the
+   * >500 msg/s cap is visible instead of silent (audit B01).
+   */
+  private onDropCallback?: (dropped: number) => void
   private isDestroyed = false
   private reconnectTimeout: ReturnType<typeof setTimeout> | null = null
   private retryCount = 0
@@ -37,17 +44,23 @@ export class CoreCWebSocket<T = unknown> {
   private ringHead = 0
   /** Number of valid entries currently in the ring buffer. */
   private ringCount = 0
+  /** Frames dropped since the last onDrop report (reset on each report). */
+  private droppedSinceReport = 0
+  /** Timestamp of the last onDrop report (throttles reports to ≥1/s). */
+  private lastDropReportAt = 0
 
   constructor(
     path: string,
     params: Record<string, string> = {},
     onMessage: (data: T) => void,
     onStatus?: (status: WSStatus) => void,
+    onDrop?: (dropped: number) => void,
   ) {
     this.path = path.startsWith('/') ? path : `/${path}`
     this.params = params
     this.onMessageCallback = onMessage
     this.onStatusCallback = onStatus
+    this.onDropCallback = onDrop
     this.connect()
   }
 
@@ -124,6 +137,16 @@ export class CoreCWebSocket<T = unknown> {
         }
         // Drop if the window is at capacity.
         if (this.ringCount >= this.maxMsgPerSec) {
+          // Report the drop instead of dropping silently: the operator must
+          // be able to tell "the plant went quiet" apart from "the UI shed
+          // frames to protect itself". Reports are throttled to at most one
+          // per second while the flood continues.
+          this.droppedSinceReport++
+          if (now - this.lastDropReportAt >= 1000) {
+            this.onDropCallback?.(this.droppedSinceReport)
+            this.droppedSinceReport = 0
+            this.lastDropReportAt = now
+          }
           return // drop this message
         }
         // Push the current timestamp at the tail of the ring.
@@ -189,6 +212,39 @@ export class CoreCWebSocket<T = unknown> {
     this.reconnectTimeout = setTimeout(() => {
       this.connect()
     }, jitter)
+  }
+
+  /**
+   * Controlled manual reconnect — the recovery entry point after a
+   * 'rejected' status (maxRetries exhausted / upgrade refused), where the
+   * socket otherwise never tries again and the UI has no in-band way back
+   * (audit B01/D-02: "rejected 后无自愈无入口").
+   *
+   * Backoff discipline: the retry ladder is reset (retryCount = 0), so the
+   * next failure sequence starts from baseDelay exactly like a fresh
+   * subscription — a manual retry never inherits the exhausted counter.
+   * No-op when destroyed, or when a socket is already open/connecting.
+   */
+  public reconnect(): void {
+    if (this.isDestroyed) return
+    // Cancel a pending automatic retry — the operator asked to retry NOW.
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout)
+      this.reconnectTimeout = null
+    }
+    if (this.ws) {
+      const state = this.ws.readyState
+      if (state === WebSocket.OPEN || state === WebSocket.CONNECTING) return
+      // A dead (closed/closing) socket lingers — detach its handlers so
+      // queued events can't fire into the new connection cycle.
+      this.ws.onopen = null
+      this.ws.onmessage = null
+      this.ws.onerror = null
+      this.ws.onclose = null
+      this.ws = null
+    }
+    this.retryCount = 0
+    this.connect()
   }
 
   public destroy() {
