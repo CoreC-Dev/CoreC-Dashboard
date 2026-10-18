@@ -466,7 +466,7 @@
     "pauseScroll": "暂停滚动",
     "resumeScroll": "继续滚动",
     "clearLogs": "清空控制台",
-    "subtitle": "实时终端日志流、Prometheus 指标抓取与 pprof 性能调试",
+    "subtitle": "实例健康、实时流、事件终端、Prometheus 指标、写操作历史与高级调试（pprof）一页总览",
     "resume": "继续",
     "pause": "暂停",
     "clear": "清除",
@@ -529,7 +529,16 @@
     "liveMemory": "内存",
     "sysMemory": "系统内存",
     "autoRefresh": "自动刷新",
-    "liveWaiting": "等待首批数据…"
+    "liveWaiting": "等待首批数据…",
+    "navAriaLabel": "页面章节导航",
+    "navHealth": "健康",
+    "navStreams": "实时流",
+    "navTerminal": "事件终端",
+    "navMetrics": "指标",
+    "navWrites": "写历史",
+    "navAdvanced": "高级调试",
+    "advancedDebugging": "高级调试 (pprof)",
+    "advancedToggle": "展开/收起高级调试"
   },
   "writeHistory": {
     "title": "写操作历史",

@@ -466,7 +466,7 @@
     "pauseScroll": "Pause Scroll",
     "resumeScroll": "Resume Scroll",
     "clearLogs": "Clear Terminal",
-    "subtitle": "Real-time terminal log streaming, Prometheus scrape metrics & pprof debugging",
+    "subtitle": "Instance health, live streams, event terminal, Prometheus metrics, write history & advanced debugging (pprof) — one page",
     "resume": "Resume",
     "pause": "Pause",
     "clear": "Clear",
@@ -529,7 +529,16 @@
     "liveMemory": "Memory",
     "sysMemory": "System Memory",
     "autoRefresh": "Auto-refresh",
-    "liveWaiting": "Waiting for first frames…"
+    "liveWaiting": "Waiting for first frames…",
+    "navAriaLabel": "Section navigation",
+    "navHealth": "Health",
+    "navStreams": "Live streams",
+    "navTerminal": "Event terminal",
+    "navMetrics": "Metrics",
+    "navWrites": "Write history",
+    "navAdvanced": "Advanced debugging",
+    "advancedDebugging": "Advanced debugging (pprof)",
+    "advancedToggle": "Toggle advanced debugging section"
   },
   "writeHistory": {
     "title": "Write Operation History",

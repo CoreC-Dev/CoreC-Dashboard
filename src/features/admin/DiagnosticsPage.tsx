@@ -1,12 +1,13 @@
-import { AlertCircle, Download, Gauge, RefreshCw } from 'lucide-react'
+import { Gauge, RefreshCw } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { getActiveConnection } from '@/api/activeConnection'
 import { useMetrics } from '@/api/hooks'
 import { EventLogTerminal } from '@/components/admin/EventLogTerminal'
 import { InstanceHealthBar } from '@/components/admin/InstanceHealthBar'
+import { PprofDownloads } from '@/components/admin/PprofDownloads'
 import { RealtimeStreamsPanel } from '@/components/admin/RealtimeStreamsPanel'
+import { type AnchorSection, SectionAnchorNav } from '@/components/admin/SectionAnchorNav'
 import { WriteHistoryTable } from '@/components/admin/WriteHistoryTable'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -21,14 +22,16 @@ import { formatNumber } from '@/lib/utils'
 
 const METRICS_AUTO_REFRESH_MS = 12_000
 
-const PPROF_PROFILES = [
-  'heap',
-  'goroutine',
-  'profile?seconds=5',
-  'trace?seconds=5',
-  'block',
-  'mutex',
-] as const
+// C-E1: in-page table of contents — one chip per section, in reading
+// order. The labels mirror the section cards below.
+const ANCHOR_SECTIONS: readonly AnchorSection[] = [
+  { id: 'diagnostics-health', labelKey: 'diagnostics.navHealth' },
+  { id: 'diagnostics-streams', labelKey: 'diagnostics.navStreams' },
+  { id: 'diagnostics-terminal', labelKey: 'diagnostics.navTerminal' },
+  { id: 'diagnostics-metrics', labelKey: 'diagnostics.navMetrics' },
+  { id: 'diagnostics-writes', labelKey: 'diagnostics.navWrites' },
+  { id: 'diagnostics-advanced', labelKey: 'diagnostics.navAdvanced' },
+]
 
 const fmtNum = (v: number | null, fallback: string = '—'): string =>
   v === null ? fallback : formatNumber(v)
@@ -135,59 +138,6 @@ export const DiagnosticsPage: React.FC = () => {
     [metricsRaw],
   )
 
-  // pprof download state
-  const [pprofLoading, setPprofLoading] = useState<string | null>(null)
-  const [pprofError, setPprofError] = useState<string | null>(null)
-
-  // Fetch a pprof profile with the Bearer auth header and trigger a local
-  // download. Direct <a href> links would receive a 401 because pprof is
-  // mounted inside CoreC's authed route group.
-  const downloadPprof = async (profile: string) => {
-    const conn = getActiveConnection()
-    const baseUrl = conn?.baseUrl ?? ''
-    const secret = conn?.secret ?? ''
-    const cleanBase = baseUrl.trim().replace(/\/+$/, '')
-    // Route through same-origin proxy (TD-SEC-001/002, D3).
-    const url = `/corec-proxy/debug/pprof/${profile}`
-    setPprofLoading(profile)
-    setPprofError(null)
-    try {
-      // Add 30s timeout — pprof profiles can block server-side for seconds
-      // but should not hang forever (TD-PERF-002).
-      const ctrl = new AbortController()
-      const timeoutId = setTimeout(() => ctrl.abort(), 30_000)
-      const res = await fetch(url, {
-        headers: {
-          'X-CoreC-Target': cleanBase,
-          Authorization: `Bearer ${secret}`,
-        },
-        signal: ctrl.signal,
-      })
-      clearTimeout(timeoutId)
-      if (!res.ok) {
-        throw new Error(
-          t('diagnostics.httpError', { status: res.status, statusText: res.statusText }),
-        )
-      }
-      const blob = await res.blob()
-      const objectUrl = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = objectUrl
-      const baseName = profile.split('?')[0].replace(/\/+$/, '')
-      a.download = `pprof_${baseName.replace(/\//g, '_')}.pb.gz`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(objectUrl)
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e)
-      console.error('pprof download failed', e)
-      setPprofError(t('diagnostics.pprofFetchFailed', { profile, error: msg }))
-    } finally {
-      setPprofLoading(null)
-    }
-  }
-
   // Filter key metrics — memoize the lookup map to avoid O(n) finds per render.
   const metricsMap = useMemo(() => new Map(metrics.map((m) => [m.name, m.value])), [metrics])
   // Decode histogram buckets (_bucket{le=...}, _count, _sum) once per scrape.
@@ -241,302 +191,286 @@ export const DiagnosticsPage: React.FC = () => {
         <p className="text-sm text-muted-foreground mt-1">{t('diagnostics.subtitle')}</p>
       </div>
 
+      {/* C-E1: jump chips — the page's own table of contents, so the
+          operator reaches "health" or "write history" without scrolling
+          past everything else. */}
+      <SectionAnchorNav sections={ANCHOR_SECTIONS} />
+
       {/* Instance version + liveness/readiness probes (public endpoints) */}
-      <InstanceHealthBar />
+      <section id="diagnostics-health" className="scroll-mt-24">
+        <InstanceHealthBar />
+      </section>
 
       {/* Live /traffic + /memory push tiles (WS, 1s) — compact; the
           Prometheus card below stays the deep-dive surface. */}
-      <RealtimeStreamsPanel />
+      <section id="diagnostics-streams" className="scroll-mt-24">
+        <RealtimeStreamsPanel />
+      </section>
 
       {/* Real-time xterm.js Terminal */}
-      <EventLogTerminal />
+      <section id="diagnostics-terminal" className="scroll-mt-24">
+        <EventLogTerminal />
+      </section>
 
-      {/* Prometheus Native Metrics */}
-      <Card className="border-border bg-card">
-        <CardHeader className="p-4 flex flex-row items-center justify-between">
-          <div>
-            <CardTitle className="text-sm font-semibold flex items-center space-x-2">
-              <Gauge className="w-4 h-4 text-primary" />
-              <span>{t('diagnostics.runtimeMetrics')}</span>
+      {/* Prometheus metrics: runtime tiles + latency histograms + the
+          per-driver/per-transport counter tables, one jump target. */}
+      <section id="diagnostics-metrics" className="scroll-mt-24">
+        <Card className="border-border bg-card">
+          <CardHeader className="p-4 flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="text-sm font-semibold flex items-center space-x-2">
+                <Gauge className="w-4 h-4 text-primary" />
+                <span>{t('diagnostics.runtimeMetrics')}</span>
+              </CardTitle>
+              <CardDescription className="text-xs">{t('diagnostics.metricsDesc')}</CardDescription>
+            </div>
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer select-none">
+                <Switch
+                  checked={autoRefresh}
+                  onCheckedChange={setAutoRefresh}
+                  aria-label={t('diagnostics.autoRefresh', { defaultValue: 'Auto-refresh' })}
+                />
+                <span>{t('diagnostics.autoRefresh', { defaultValue: 'Auto-refresh' })}</span>
+              </label>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => refetch()}
+                disabled={loadingMetrics}
+                className="h-8 text-xs"
+              >
+                <RefreshCw
+                  className={`w-3.5 h-3.5 mr-1.5 ${loadingMetrics ? 'animate-spin' : ''}`}
+                />
+                <span>{t('common.refresh')}</span>
+              </Button>
+            </div>
+          </CardHeader>
+
+          <CardContent className="p-4 pt-0">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+              <div className="min-w-0 overflow-hidden p-3 rounded-lg bg-muted/40 border border-border text-center">
+                <div className="text-xs text-muted-foreground uppercase font-semibold">
+                  {t('diagnostics.goroutines')}
+                </div>
+                <div className="text-xl font-bold font-mono truncate text-primary mt-1">
+                  {goroutines}
+                </div>
+              </div>
+              <div className="min-w-0 overflow-hidden p-3 rounded-lg bg-muted/40 border border-border text-center">
+                <div className="text-xs text-muted-foreground uppercase font-semibold">
+                  {t('diagnostics.heapAllocated')}
+                </div>
+                <div className="text-xl font-bold font-mono truncate text-primary mt-1">
+                  {(heapAllocBytes / (1024 * 1024)).toFixed(1)} MB
+                </div>
+              </div>
+              <div className="min-w-0 overflow-hidden p-3 rounded-lg bg-muted/40 border border-border text-center">
+                <div className="text-xs text-muted-foreground uppercase font-semibold">
+                  {t('diagnostics.gcCycles')}
+                </div>
+                <div className="text-xl font-bold font-mono truncate text-primary mt-1">
+                  {gcCount}
+                </div>
+              </div>
+              <div className="min-w-0 overflow-hidden p-3 rounded-lg bg-muted/40 border border-border text-center">
+                <div className="text-xs text-muted-foreground uppercase font-semibold">
+                  {t('diagnostics.offlineBuffer')}
+                </div>
+                <div className="text-xl font-bold font-mono truncate text-status-running mt-1">
+                  {offlinePending} {t('diagnostics.batches')}
+                </div>
+              </div>
+              <div className="min-w-0 overflow-hidden p-3 rounded-lg bg-muted/40 border border-border text-center">
+                <div className="text-xs text-muted-foreground uppercase font-semibold">
+                  {t('diagnostics.busDropped')}
+                </div>
+                <div className="text-xl font-bold font-mono truncate text-status-error mt-1">
+                  {totalDropped}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Latency & Data Age Histograms */}
+        <Card className="border-border bg-card">
+          <CardHeader className="p-4 pb-2">
+            <CardTitle className="text-sm font-semibold">
+              {t('diagnostics.latencyDataAge')}
             </CardTitle>
-            <CardDescription className="text-xs">{t('diagnostics.metricsDesc')}</CardDescription>
-          </div>
-          <div className="flex items-center gap-3">
-            <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer select-none">
-              <Switch
-                checked={autoRefresh}
-                onCheckedChange={setAutoRefresh}
-                aria-label={t('diagnostics.autoRefresh', { defaultValue: 'Auto-refresh' })}
+            <CardDescription className="text-xs">{t('diagnostics.histogramDesc')}</CardDescription>
+          </CardHeader>
+          <CardContent className="p-4 pt-0">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <HistTile
+                label={t('diagnostics.readLatency')}
+                metric="corec_read_latency_seconds"
+                avg={readLatency.avg}
+                count={readLatency.count}
+                sum={readLatency.sum}
+                p50={readLatency.p50}
+                p95={readLatency.p95}
+                p99={readLatency.p99}
+                buckets={readLatency.buckets}
+                accent="text-primary"
+                barClass="bg-primary"
               />
-              <span>{t('diagnostics.autoRefresh', { defaultValue: 'Auto-refresh' })}</span>
-            </label>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => refetch()}
-              disabled={loadingMetrics}
-              className="h-8 text-xs"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${loadingMetrics ? 'animate-spin' : ''}`} />
-              <span>{t('common.refresh')}</span>
-            </Button>
-          </div>
-        </CardHeader>
+              <HistTile
+                label={t('diagnostics.publishLatency')}
+                metric="corec_publish_latency_seconds"
+                avg={publishLatency.avg}
+                count={publishLatency.count}
+                sum={publishLatency.sum}
+                p50={publishLatency.p50}
+                p95={publishLatency.p95}
+                p99={publishLatency.p99}
+                buckets={publishLatency.buckets}
+                accent="text-status-running"
+                barClass="bg-status-running"
+              />
+              <HistTile
+                label={t('diagnostics.httpRequests')}
+                metric="corec_http_request_duration_seconds"
+                avg={httpReq.avg}
+                count={httpReq.count}
+                sum={httpReq.sum}
+                p50={httpReq.p50}
+                p95={httpReq.p95}
+                p99={httpReq.p99}
+                buckets={httpReq.buckets}
+                accent="text-status-queued"
+                barClass="bg-status-queued"
+              />
+              <div className="p-3 rounded-lg bg-muted/40 border border-border">
+                <div className="text-xs text-muted-foreground uppercase font-semibold">
+                  {t('diagnostics.dataAge')}
+                </div>
+                <div className="text-xl font-bold font-mono truncate text-status-warning mt-1">
+                  {fmtSec(dataAge, t('diagnostics.notAvailable'))}
+                </div>
+                <div className="text-xs text-muted-foreground mt-1 font-mono">
+                  {t('diagnostics.currentMaxAge')}
+                </div>
+                <div className="text-xs text-muted-foreground/70 mt-0.5 font-mono truncate">
+                  corec_data_age_seconds
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-        <CardContent className="p-4 pt-0">
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-            <div className="min-w-0 overflow-hidden p-3 rounded-lg bg-muted/40 border border-border text-center">
-              <div className="text-xs text-muted-foreground uppercase font-semibold">
-                {t('diagnostics.goroutines')}
-              </div>
-              <div className="text-xl font-bold font-mono truncate text-primary mt-1">
-                {goroutines}
-              </div>
-            </div>
-            <div className="min-w-0 overflow-hidden p-3 rounded-lg bg-muted/40 border border-border text-center">
-              <div className="text-xs text-muted-foreground uppercase font-semibold">
-                {t('diagnostics.heapAllocated')}
-              </div>
-              <div className="text-xl font-bold font-mono truncate text-primary mt-1">
-                {(heapAllocBytes / (1024 * 1024)).toFixed(1)} MB
-              </div>
-            </div>
-            <div className="min-w-0 overflow-hidden p-3 rounded-lg bg-muted/40 border border-border text-center">
-              <div className="text-xs text-muted-foreground uppercase font-semibold">
-                {t('diagnostics.gcCycles')}
-              </div>
-              <div className="text-xl font-bold font-mono truncate text-primary mt-1">
-                {gcCount}
-              </div>
-            </div>
-            <div className="min-w-0 overflow-hidden p-3 rounded-lg bg-muted/40 border border-border text-center">
-              <div className="text-xs text-muted-foreground uppercase font-semibold">
-                {t('diagnostics.offlineBuffer')}
-              </div>
-              <div className="text-xl font-bold font-mono truncate text-status-running mt-1">
-                {offlinePending} {t('diagnostics.batches')}
-              </div>
-            </div>
-            <div className="min-w-0 overflow-hidden p-3 rounded-lg bg-muted/40 border border-border text-center">
-              <div className="text-xs text-muted-foreground uppercase font-semibold">
-                {t('diagnostics.busDropped')}
-              </div>
-              <div className="text-xl font-bold font-mono truncate text-status-error mt-1">
-                {totalDropped}
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Latency & Data Age Histograms */}
-      <Card className="border-border bg-card">
-        <CardHeader className="p-4 pb-2">
-          <CardTitle className="text-sm font-semibold">{t('diagnostics.latencyDataAge')}</CardTitle>
-          <CardDescription className="text-xs">{t('diagnostics.histogramDesc')}</CardDescription>
-        </CardHeader>
-        <CardContent className="p-4 pt-0">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            <HistTile
-              label={t('diagnostics.readLatency')}
-              metric="corec_read_latency_seconds"
-              avg={readLatency.avg}
-              count={readLatency.count}
-              sum={readLatency.sum}
-              p50={readLatency.p50}
-              p95={readLatency.p95}
-              p99={readLatency.p99}
-              buckets={readLatency.buckets}
-              accent="text-primary"
-              barClass="bg-primary"
-            />
-            <HistTile
-              label={t('diagnostics.publishLatency')}
-              metric="corec_publish_latency_seconds"
-              avg={publishLatency.avg}
-              count={publishLatency.count}
-              sum={publishLatency.sum}
-              p50={publishLatency.p50}
-              p95={publishLatency.p95}
-              p99={publishLatency.p99}
-              buckets={publishLatency.buckets}
-              accent="text-status-running"
-              barClass="bg-status-running"
-            />
-            <HistTile
-              label={t('diagnostics.httpRequests')}
-              metric="corec_http_request_duration_seconds"
-              avg={httpReq.avg}
-              count={httpReq.count}
-              sum={httpReq.sum}
-              p50={httpReq.p50}
-              p95={httpReq.p95}
-              p99={httpReq.p99}
-              buckets={httpReq.buckets}
-              accent="text-status-queued"
-              barClass="bg-status-queued"
-            />
-            <div className="p-3 rounded-lg bg-muted/40 border border-border">
-              <div className="text-xs text-muted-foreground uppercase font-semibold">
-                {t('diagnostics.dataAge')}
-              </div>
-              <div className="text-xl font-bold font-mono truncate text-status-warning mt-1">
-                {fmtSec(dataAge, t('diagnostics.notAvailable'))}
-              </div>
-              <div className="text-xs text-muted-foreground mt-1 font-mono">
-                {t('diagnostics.currentMaxAge')}
-              </div>
-              <div className="text-xs text-muted-foreground/70 mt-0.5 font-mono truncate">
-                corec_data_age_seconds
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Per-Driver Read Counts */}
-      <Card className="border-border bg-card overflow-hidden">
-        <CardHeader className="p-4 pb-2">
-          <CardTitle className="text-sm font-semibold">
-            {t('diagnostics.perDriverReadCounts')}
-          </CardTitle>
-          <CardDescription className="text-xs">
-            {t('diagnostics.perDriverReadCountsDesc')}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs text-left">
-              <thead className="bg-muted/50 border-b border-border uppercase font-semibold text-xs text-muted-foreground tracking-wider">
-                <tr>
-                  <th className="px-4 py-2">{t('common.driver')}</th>
-                  <th className="px-4 py-2">{t('common.type')}</th>
-                  <th className="px-4 py-2 text-right">{t('drivers.reads')}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/60">
-                {driverReads.length === 0 ? (
+        {/* Per-Driver Read Counts */}
+        <Card className="border-border bg-card overflow-hidden">
+          <CardHeader className="p-4 pb-2">
+            <CardTitle className="text-sm font-semibold">
+              {t('diagnostics.perDriverReadCounts')}
+            </CardTitle>
+            <CardDescription className="text-xs">
+              {t('diagnostics.perDriverReadCountsDesc')}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs text-left">
+                <thead className="bg-muted/50 border-b border-border uppercase font-semibold text-xs text-muted-foreground tracking-wider">
                   <tr>
-                    <td colSpan={3} className="py-6 text-center text-muted-foreground">
-                      {t('diagnostics.noDriverReadCounters')}
-                    </td>
+                    <th className="px-4 py-2">{t('common.driver')}</th>
+                    <th className="px-4 py-2">{t('common.type')}</th>
+                    <th className="px-4 py-2 text-right">{t('drivers.reads')}</th>
                   </tr>
-                ) : (
-                  driverReads.map((m, i) => (
-                    <tr
-                      key={`driver-${m.labels.driver}-${m.labels.type}-${i}`}
-                      className="hover:bg-muted/30 transition-colors"
-                    >
-                      <td className="px-4 py-2 font-semibold text-foreground">
-                        {m.labels.driver || '—'}
-                      </td>
-                      <td className="px-4 py-2 font-mono text-muted-foreground">
-                        {m.labels.type || '—'}
-                      </td>
-                      <td className="px-4 py-2 text-right font-mono font-bold text-primary">
-                        {formatNumber(m.value)}
+                </thead>
+                <tbody className="divide-y divide-border/60">
+                  {driverReads.length === 0 ? (
+                    <tr>
+                      <td colSpan={3} className="py-6 text-center text-muted-foreground">
+                        {t('diagnostics.noDriverReadCounters')}
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
+                  ) : (
+                    driverReads.map((m, i) => (
+                      <tr
+                        key={`driver-${m.labels.driver}-${m.labels.type}-${i}`}
+                        className="hover:bg-muted/30 transition-colors"
+                      >
+                        <td className="px-4 py-2 font-semibold text-foreground">
+                          {m.labels.driver || '—'}
+                        </td>
+                        <td className="px-4 py-2 font-mono text-muted-foreground">
+                          {m.labels.type || '—'}
+                        </td>
+                        <td className="px-4 py-2 text-right font-mono font-bold text-primary">
+                          {formatNumber(m.value)}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
 
-      {/* Per-Transport Publish Counts */}
-      <Card className="border-border bg-card overflow-hidden">
-        <CardHeader className="p-4 pb-2">
-          <CardTitle className="text-sm font-semibold">
-            {t('diagnostics.perTransportPublishCounts')}
-          </CardTitle>
-          <CardDescription className="text-xs">
-            {t('diagnostics.perTransportPublishCountsDesc')}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs text-left">
-              <thead className="bg-muted/50 border-b border-border uppercase font-semibold text-xs text-muted-foreground tracking-wider">
-                <tr>
-                  <th className="px-4 py-2">{t('transports.colTransport')}</th>
-                  <th className="px-4 py-2">{t('common.type')}</th>
-                  <th className="px-4 py-2 text-right">{t('transports.published')}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/60">
-                {transportPublishes.length === 0 ? (
+        {/* Per-Transport Publish Counts */}
+        <Card className="border-border bg-card overflow-hidden">
+          <CardHeader className="p-4 pb-2">
+            <CardTitle className="text-sm font-semibold">
+              {t('diagnostics.perTransportPublishCounts')}
+            </CardTitle>
+            <CardDescription className="text-xs">
+              {t('diagnostics.perTransportPublishCountsDesc')}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs text-left">
+                <thead className="bg-muted/50 border-b border-border uppercase font-semibold text-xs text-muted-foreground tracking-wider">
                   <tr>
-                    <td colSpan={3} className="py-6 text-center text-muted-foreground">
-                      {t('diagnostics.noTransportPublishCounters')}
-                    </td>
+                    <th className="px-4 py-2">{t('transports.colTransport')}</th>
+                    <th className="px-4 py-2">{t('common.type')}</th>
+                    <th className="px-4 py-2 text-right">{t('transports.published')}</th>
                   </tr>
-                ) : (
-                  transportPublishes.map((m, i) => (
-                    <tr
-                      key={`transport-${m.labels.transport}-${m.labels.type}-${i}`}
-                      className="hover:bg-muted/30 transition-colors"
-                    >
-                      <td className="px-4 py-2 font-semibold text-foreground">
-                        {m.labels.transport || '—'}
-                      </td>
-                      <td className="px-4 py-2 font-mono text-muted-foreground">
-                        {m.labels.type || '—'}
-                      </td>
-                      <td className="px-4 py-2 text-right font-mono font-bold text-status-running">
-                        {formatNumber(m.value)}
+                </thead>
+                <tbody className="divide-y divide-border/60">
+                  {transportPublishes.length === 0 ? (
+                    <tr>
+                      <td colSpan={3} className="py-6 text-center text-muted-foreground">
+                        {t('diagnostics.noTransportPublishCounters')}
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
+                  ) : (
+                    transportPublishes.map((m, i) => (
+                      <tr
+                        key={`transport-${m.labels.transport}-${m.labels.type}-${i}`}
+                        className="hover:bg-muted/30 transition-colors"
+                      >
+                        <td className="px-4 py-2 font-semibold text-foreground">
+                          {m.labels.transport || '—'}
+                        </td>
+                        <td className="px-4 py-2 font-mono text-muted-foreground">
+                          {m.labels.type || '—'}
+                        </td>
+                        <td className="px-4 py-2 text-right font-mono font-bold text-status-running">
+                          {formatNumber(m.value)}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      </section>
 
       {/* Write Operation History (audit trail of every tag write) */}
-      <WriteHistoryTable />
+      <section id="diagnostics-writes" className="scroll-mt-24">
+        <WriteHistoryTable />
+      </section>
 
-      {/* pprof Debugging Downloads */}
-      <Card className="border-border bg-card">
-        <CardHeader className="p-4">
-          <CardTitle className="text-sm font-semibold">{t('diagnostics.pprofEndpoints')}</CardTitle>
-          <CardDescription className="text-xs">{t('diagnostics.pprofDesc')}</CardDescription>
-        </CardHeader>
-        <CardContent className="p-4 pt-0">
-          {pprofError && (
-            <div className="mb-3 p-2.5 rounded-lg bg-status-error/10 border border-status-error/20 text-status-error text-xs flex items-start space-x-2">
-              <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-              <span className="break-all">{pprofError}</span>
-            </div>
-          )}
-          <div className="flex flex-wrap gap-2 text-xs">
-            {PPROF_PROFILES.map((p) => {
-              const loading = pprofLoading === p
-              return (
-                <Button
-                  key={p}
-                  variant="outline"
-                  size="sm"
-                  disabled={pprofLoading !== null}
-                  onClick={() => downloadPprof(p)}
-                  className="h-8 px-3 font-mono text-xs"
-                >
-                  {loading ? (
-                    <RefreshCw className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                  ) : (
-                    <Download className="w-3.5 h-3.5 mr-1.5 text-primary" />
-                  )}
-                  <span>/debug/pprof/{p}</span>
-                </Button>
-              )
-            })}
-          </div>
-          <p className="text-xs text-muted-foreground mt-3">{t('diagnostics.pprofFetchNote')}</p>
-        </CardContent>
-      </Card>
+      {/* Advanced debugging (pprof) — collapsed by default (C-E1) */}
+      <PprofDownloads />
     </div>
   )
 }
