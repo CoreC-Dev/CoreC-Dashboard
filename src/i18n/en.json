@@ -556,7 +556,7 @@
   "drivers": {
     "title": "Southbound Drivers",
     "subtitle": "Industrial Southbound protocol clients: Modbus TCP/RTU/TLS, Siemens S7, OPC UA",
-    "empty": "No drivers currently configured in CoreC. Add drivers in the YAML configuration.",
+    "empty": "No drivers yet. Click \"Create Driver\" (top right) to start, or paste your existing YAML in Config Center.",
     "driverList": "Driver List",
     "state": "State",
     "tags": "Tags",

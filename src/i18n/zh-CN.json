@@ -556,7 +556,7 @@
   "drivers": {
     "title": "南向驱动",
     "subtitle": "工业南向协议客户端：Modbus TCP/RTU/TLS、西门子 S7、OPC UA",
-    "empty": "CoreC 当前未配置任何驱动。请在 YAML 配置中添加驱动。",
+    "empty": "尚无驱动。点击右上角「创建驱动」开始，或先在配置中心粘贴现有 YAML。",
     "driverList": "驱动列表",
     "state": "状态",
     "tags": "测点",
