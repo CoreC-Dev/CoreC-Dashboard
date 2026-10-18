@@ -98,11 +98,17 @@ describe('list pages: seed-guarded Create with a visible block (X4 wiring)', () 
       fireEvent.click(screen.getByRole('button', { name: 'Retry' }))
     })
     await waitFor(() => expect(screen.queryByTestId('seed-blocked-banner')).toBeNull())
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Create Driver' })).toBeEnabled())
+    await waitFor(() => {
+      const enabled = screen
+        .getAllByRole('button', { name: 'Create Driver' })
+        .filter((b) => !b.hasAttribute('disabled'))
+      expect(enabled.length).toBeGreaterThan(0)
+    })
 
-    // Create now works: the wizard opens.
+    // Create now works: the wizard opens (header button = the first of
+    // the two Create affordances).
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Create Driver' }))
+      fireEvent.click(screen.getAllByRole('button', { name: 'Create Driver' })[0]!)
     })
     // The wizard dialog opens on top of the page: its title matches the
     // header button's label, so the label now appears twice.
