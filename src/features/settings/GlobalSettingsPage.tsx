@@ -1,6 +1,6 @@
 import { ArrowLeft, Download, Globe, Palette, Trash2, Upload } from 'lucide-react'
 import type React from 'react'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { InstanceExportDialog } from '@/components/home/InstanceExportDialog'
@@ -22,8 +22,31 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import i18n, { setLocale } from '@/i18n'
+import { cn } from '@/lib/cn'
 import { useInstanceStore } from '@/stores/instanceStore'
 import { THEME_I18N_KEYS, THEME_VARIANTS, type ThemeMode, useThemeStore } from '@/stores/themeStore'
+
+/**
+ * D-08: import outcome classification for the new ImportResult shape
+ * ({added, skipped, invalid, parseError}). The old UI collapsed everything
+ * into "added N, skipped N duplicates" — broken JSON and invalid entries
+ * were indistinguishable from duplicates, and a clean import closed the
+ * dialog with no confirmation at all.
+ */
+type ImportFeedback = {
+  /** success: entries were added; partial: some/all entries skipped or invalid; error: nothing imported */
+  tone: 'success' | 'partial' | 'error'
+  message: string
+}
+
+const FEEDBACK_TONE_CLASS: Record<ImportFeedback['tone'], string> = {
+  success: 'text-status-running',
+  partial: 'text-status-warning',
+  error: 'text-status-error',
+}
+
+/** How long a clean success stays visible before the dialog closes (D-08). */
+const IMPORT_SUCCESS_CLOSE_MS = 1500
 
 export const GlobalSettingsPage: React.FC = () => {
   const { t } = useTranslation()
@@ -34,22 +57,84 @@ export const GlobalSettingsPage: React.FC = () => {
 
   const [importOpen, setImportOpen] = useState(false)
   const [importText, setImportText] = useState('')
-  const [importResult, setImportResult] = useState<string | null>(null)
+  const [importFeedback, setImportFeedback] = useState<ImportFeedback | null>(null)
   const [clearOpen, setClearOpen] = useState(false)
   const [exportOpen, setExportOpen] = useState(false)
+  const successCloseTimer = useRef<number | null>(null)
+
+  // Never leak the pending success-close timer past unmount.
+  useEffect(
+    () => () => {
+      if (successCloseTimer.current !== null) window.clearTimeout(successCloseTimer.current)
+    },
+    [],
+  )
+
+  const clearImportTimer = () => {
+    if (successCloseTimer.current !== null) {
+      window.clearTimeout(successCloseTimer.current)
+      successCloseTimer.current = null
+    }
+  }
+
+  const closeImport = () => {
+    clearImportTimer()
+    setImportOpen(false)
+    setImportText('')
+    setImportFeedback(null)
+  }
 
   const handleExport = () => {
     setExportOpen(true)
   }
 
   const handleImport = () => {
+    clearImportTimer()
     const result = importInstances(importText, 'merge')
-    setImportResult(t('instances.importResult', { added: result.added, skipped: result.skipped }))
-    if (result.added > 0) {
-      setImportOpen(false)
-      setImportText('')
-      setImportResult(null)
+    if (result.parseError) {
+      // The payload itself was unusable (not JSON / not an array / forbidden
+      // keys) — previously this was reported as "added 0, skipped 0".
+      setImportFeedback({ tone: 'error', message: t('instances.importInvalid') })
+      return
     }
+    if (result.added > 0 && result.skipped === 0 && result.invalid === 0) {
+      // Clean import: show a brief confirmation instead of closing silently,
+      // then close the dialog.
+      setImportFeedback({
+        tone: 'success',
+        message: t('instances.importSuccess', { added: result.added }),
+      })
+      successCloseTimer.current = window.setTimeout(() => closeImport(), IMPORT_SUCCESS_CLOSE_MS)
+      return
+    }
+    if (result.added > 0 || (result.skipped > 0 && result.invalid > 0)) {
+      setImportFeedback({
+        tone: 'partial',
+        message: t('instances.importPartial', {
+          added: result.added,
+          skipped: result.skipped,
+          invalid: result.invalid,
+        }),
+      })
+      return
+    }
+    if (result.skipped > 0) {
+      setImportFeedback({
+        tone: 'partial',
+        message: t('instances.importAllSkipped', { skipped: result.skipped }),
+      })
+      return
+    }
+    if (result.invalid > 0) {
+      // Valid JSON array, but every entry failed per-entry validation.
+      setImportFeedback({ tone: 'error', message: t('instances.importInvalid') })
+      return
+    }
+    // Valid JSON, empty array — nothing happened, nothing to complain about.
+    setImportFeedback({
+      tone: 'partial',
+      message: t('instances.importResult', { added: 0, skipped: 0 }),
+    })
   }
 
   return (
@@ -156,7 +241,12 @@ export const GlobalSettingsPage: React.FC = () => {
       </main>
 
       {/* Import dialog */}
-      <Dialog open={importOpen} onOpenChange={setImportOpen}>
+      <Dialog
+        open={importOpen}
+        onOpenChange={(open) => {
+          if (!open) closeImport()
+        }}
+      >
         <DialogContent className="sm:max-w-[480px]">
           <DialogHeader>
             <DialogTitle>{t('instances.importTitle')}</DialogTitle>
@@ -169,9 +259,13 @@ export const GlobalSettingsPage: React.FC = () => {
             value={importText}
             onChange={(e) => setImportText(e.target.value)}
           />
-          {importResult && <p className="text-sm text-muted-foreground">{importResult}</p>}
+          {importFeedback && (
+            <p role="status" className={cn('text-sm', FEEDBACK_TONE_CLASS[importFeedback.tone])}>
+              {importFeedback.message}
+            </p>
+          )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setImportOpen(false)}>
+            <Button variant="outline" onClick={closeImport}>
               {t('common.cancel')}
             </Button>
             <Button onClick={handleImport} disabled={!importText.trim()}>
