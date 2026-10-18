@@ -346,6 +346,8 @@
     "allDrivers": "All Drivers",
     "allGroups": "All Groups",
     "staleOnly": "Stale Tags Only",
+    "qualityFilter": "Quality",
+    "allQualities": "All",
     "stale": "Stale",
     "fresh": "Live",
     "writeVal": "Write Control",

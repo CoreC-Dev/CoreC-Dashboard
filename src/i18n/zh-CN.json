@@ -346,6 +346,8 @@
     "allDrivers": "全部驱动",
     "allGroups": "全部分组",
     "staleOnly": "仅显示陈旧测点",
+    "qualityFilter": "质量",
+    "allQualities": "全部",
     "stale": "陈旧",
     "fresh": "实时",
     "writeVal": "下发指令",

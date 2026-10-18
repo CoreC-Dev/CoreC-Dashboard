@@ -8,7 +8,13 @@ import { TagTrendPanel } from '@/components/monitor/TagTrendPanel'
 import { TagWriteDialog } from '@/components/monitor/TagWriteDialog'
 import { useTagExplorerStream } from '@/hooks/useTagExplorerStream'
 import { useTagWrite } from '@/hooks/useTagWrite'
-import { isNumericType, tagKey, toSeconds } from '@/lib/tagExplorer'
+import {
+  isNumericType,
+  matchesQualityFilter,
+  type QualityFilter,
+  tagKey,
+  toSeconds,
+} from '@/lib/tagExplorer'
 import type { DataPoint } from '@/types/models'
 
 export const TagExplorerPage: React.FC = () => {
@@ -43,6 +49,9 @@ export const TagExplorerPage: React.FC = () => {
   // rAF-flushed tag map from cascading into a 60×/sec filter+sort per keystroke.
   const deferredSearchTerm = useDeferredValue(searchTerm)
   const [selectedGroup, setSelectedGroup] = useState<string>('all')
+  // B07: quality filter + stale-only toggle — the "problem points" hunt.
+  const [selectedQuality, setSelectedQuality] = useState<QualityFilter>('all')
+  const [staleOnly, setStaleOnly] = useState(false)
   const [sortKey, setSortKey] = useState<'tag' | 'timestamp' | null>(null)
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
 
@@ -82,6 +91,8 @@ export const TagExplorerPage: React.FC = () => {
     const filtered = tagsList.filter((pt) => {
       if (selectedDriver !== 'all' && pt.driver !== selectedDriver) return false
       if (selectedGroup !== 'all' && pt.group !== selectedGroup) return false
+      // B07: shared quality/staleness predicate (unit-tested in lib).
+      if (!matchesQualityFilter(pt, selectedQuality, staleOnly)) return false
       if (term) {
         const match =
           pt.tag.toLowerCase().includes(term) ||
@@ -101,7 +112,16 @@ export const TagExplorerPage: React.FC = () => {
       }
       return sortDir === 'asc' ? cmp : -cmp
     })
-  }, [tagsList, deferredSearchTerm, selectedDriver, selectedGroup, sortKey, sortDir])
+  }, [
+    tagsList,
+    deferredSearchTerm,
+    selectedDriver,
+    selectedGroup,
+    selectedQuality,
+    staleOnly,
+    sortKey,
+    sortDir,
+  ])
 
   const openTrend = useCallback(
     (point: DataPoint) => {
@@ -183,6 +203,10 @@ export const TagExplorerPage: React.FC = () => {
           onDriverChange={setSelectedDriver}
           selectedGroup={selectedGroup}
           onGroupChange={setSelectedGroup}
+          selectedQuality={selectedQuality}
+          onQualityChange={setSelectedQuality}
+          staleOnly={staleOnly}
+          onStaleOnlyChange={setStaleOnly}
           drivers={drivers}
           uniqueGroups={uniqueGroups}
           filteredCount={filteredTags.length}

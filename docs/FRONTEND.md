@@ -68,3 +68,4 @@ Conventional Commits；单一职责；重构与行为变更不混提；改造仅
 - **主路径页面缺键补齐（D-24）**：审计点名的 12 个只存在于代码 `defaultValue` 的键（`dashboard.realtimeMonitor`、`tags.explorerDesc`、`alerts.filterPlaceholder/levelAll/levelWarning/levelError/noMatchingEvents`、`diagnostics.autoRefresh`、`topology.received/queueSize/droppedCmds/failed`）补进两语言包——中文主路径不再常年显示英文兜底句；新增 i18nKeys 测试钉住这些键与相关命名空间的 zh/en 对称性。
 - **深色主题刷新白闪（D-10）**：index.html `<head>` 加同步内联主题引导脚本（读 `corec_theme` → 立即设 `data-theme` 与 `.dark`，显式变体保留自身名，system/无效值走 `prefers-color-scheme`，与 themeStore 首跑幂等）；CSP `script-src` 以该脚本 sha256 哈希钉住（仍禁任意内联）；themeBoot 测试执行真实脚本逐一断言各主题变体并校验哈希同步。
 - **实时流徽标与断线横幅覆盖 admin 路由（D-04）**：原 monitor 专属的「实时流」徽标与断线/放弃重连横幅改为所有实例路由可见——admin 七页（配置中心/写入控制）由 AppShell 级 `/logs` 告警流提供真实状态，不再全盲；AppShell 新增测试覆盖 admin/monitor 双路由的徽标与横幅状态。
+- **测点问题点过滤（B07）**：TagToolbar 新增质量筛选（质量: 全部/良好/坏/不确定，复用 common.good/bad/uncertain）与「仅显示陈旧测点」开关（复活死键 tags.staleOnly）；过滤谓词抽为 lib/tagExplorer.matchesQualityFilter 纯函数，页面 memo 与单测共用同一规则。

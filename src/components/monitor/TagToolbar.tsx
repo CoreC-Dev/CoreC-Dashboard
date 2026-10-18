@@ -1,7 +1,9 @@
 import { RefreshCw, Search } from 'lucide-react'
+import { useId } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -10,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import type { QualityFilter } from '@/lib/tagExplorer'
 import type { DriverStatus } from '@/types/models'
 
 interface TagToolbarProps {
@@ -19,6 +22,12 @@ interface TagToolbarProps {
   onDriverChange: (value: string) => void
   selectedGroup: string
   onGroupChange: (value: string) => void
+  /** B07: active quality filter ('all' | 'good' | 'bad' | 'uncertain'). */
+  selectedQuality: QualityFilter
+  onQualityChange: (value: QualityFilter) => void
+  /** B07: "stale tags only" toggle (revives the dead tags.staleOnly key). */
+  staleOnly: boolean
+  onStaleOnlyChange: (value: boolean) => void
   drivers: DriverStatus[]
   uniqueGroups: string[]
   filteredCount: number
@@ -26,8 +35,8 @@ interface TagToolbarProps {
   onRefresh: () => void
 }
 
-/** Search input + driver/group filter dropdowns + result count + refresh.
- *  Extracted verbatim from TagExplorerPage — same classes & i18n keys. */
+/** Search input + driver/group/quality filter dropdowns + stale-only toggle
+ *  + result count + refresh. */
 export function TagToolbar({
   searchTerm,
   onSearchChange,
@@ -35,6 +44,10 @@ export function TagToolbar({
   onDriverChange,
   selectedGroup,
   onGroupChange,
+  selectedQuality,
+  onQualityChange,
+  staleOnly,
+  onStaleOnlyChange,
   drivers,
   uniqueGroups,
   filteredCount,
@@ -42,12 +55,13 @@ export function TagToolbar({
   onRefresh,
 }: TagToolbarProps) {
   const { t } = useTranslation()
+  const staleId = useId()
 
   return (
     <Card className="border-border bg-card">
       <CardContent className="p-4 flex flex-col md:flex-row items-center justify-between gap-3">
-        <div className="flex flex-1 items-center space-x-2 w-full">
-          <div className="relative flex-1">
+        <div className="flex flex-1 flex-wrap items-center gap-2 w-full">
+          <div className="relative flex-1 min-w-[10rem]">
             <Search className="w-4 h-4 absolute left-3 top-2.5 text-muted-foreground" />
             <Input
               placeholder={t('common.search')}
@@ -91,6 +105,36 @@ export function TagToolbar({
               ))}
             </SelectContent>
           </Select>
+
+          {/* Quality Filter (B07) — the problem-point hunt: bad/uncertain
+           *  quality tags no longer hide among hundreds of rows. */}
+          <Select
+            value={selectedQuality}
+            onValueChange={(v) => onQualityChange(v as QualityFilter)}
+          >
+            <SelectTrigger className="h-9 w-auto text-xs" aria-label={t('tags.qualityFilter')}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t('tags.allQualities')}</SelectItem>
+              <SelectItem value="good">{t('common.good')}</SelectItem>
+              <SelectItem value="bad">{t('common.bad')}</SelectItem>
+              <SelectItem value="uncertain">{t('common.uncertain')}</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* Stale-only toggle (B07) — 复用存量键 tags.staleOnly. */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            <Checkbox
+              id={staleId}
+              checked={staleOnly}
+              onCheckedChange={(v) => onStaleOnlyChange(v === true)}
+              aria-label={t('tags.staleOnly')}
+            />
+            <label htmlFor={staleId} className="text-xs text-muted-foreground cursor-pointer">
+              {t('tags.staleOnly')}
+            </label>
+          </div>
         </div>
 
         <div className="flex items-center space-x-2 shrink-0">

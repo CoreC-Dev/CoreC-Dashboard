@@ -49,3 +49,25 @@ export interface TrendSample {
   time: number
   value: number
 }
+
+/** B07 — quality/staleness filter for the tag explorer's problem-point hunt.
+ *  Quality codes come straight from DataPoint: 0=Good, 1=Bad, 2=Uncertain. */
+export type QualityFilter = 'all' | 'good' | 'bad' | 'uncertain'
+
+export const QUALITY_CODES: Record<Exclude<QualityFilter, 'all'>, number> = {
+  good: 0,
+  bad: 1,
+  uncertain: 2,
+}
+
+/** Whether a point survives the quality Select + the "stale tags only" toggle.
+ *  Pure so the page memo and the unit tests share the exact same rules. */
+export const matchesQualityFilter = (
+  point: Pick<DataPoint, 'quality' | 'is_stale'>,
+  quality: QualityFilter,
+  staleOnly: boolean,
+): boolean => {
+  if (quality !== 'all' && point.quality !== QUALITY_CODES[quality]) return false
+  if (staleOnly && !point.is_stale) return false
+  return true
+}
