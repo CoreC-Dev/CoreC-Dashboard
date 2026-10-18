@@ -54,3 +54,13 @@ function deepEqual(a: unknown, b: unknown): boolean {
 export function configEqual(a: CoreCConfig | null, b: CoreCConfig | null): boolean {
   return deepEqual(a, b)
 }
+
+/**
+ * Order-independent deep equality for any plain JSON value — the
+ * exported building block behind configEqual, reusable for per-entity
+ * comparisons (e.g. "does this one driver differ between the working and
+ * the saved config?", C-A7 pending-change badges).
+ */
+export function jsonDeepEqual(a: unknown, b: unknown): boolean {
+  return deepEqual(a, b)
+}

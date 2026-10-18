@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { AlertCircle, Cpu, ExternalLink, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react'
 import type React from 'react'
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useConfigRaw, useDrivers, useDriverTags } from '@/api/hooks'
@@ -33,6 +33,7 @@ import {
 } from '@/hooks/useConfigValidation'
 import { useEntityListPage } from '@/hooks/useEntityListPage'
 import { useParsedConfig } from '@/hooks/useParsedConfig'
+import { jsonDeepEqual } from '@/lib/configHelpers'
 import { getDriverConnectionSummary } from '@/lib/connectionInfo'
 import { ConnStateLabel, QualityLabel } from '@/lib/constants'
 import { rulesDependingOnDriver, unionRulesForDependencyScan } from '@/lib/ruleDependencies'
@@ -144,6 +145,25 @@ export const DriversPage: React.FC = () => {
     return rulesDependingOnDriver({ driver, ...sources })
   }, [deleteTarget, workingConfig, savedConfig])
 
+  // C-A7: the same driver appears in both zones with no way to tell
+  // which card is "running" and which is "my unapplied edit". Badges:
+  // working driver differs from the saved one (or is missing there) →
+  // "pending changes"; runtime list contains the name → "live", else
+  // "configured, not running". Same-name cards cross-link by anchor.
+  const runtimeDriverNames = useMemo(() => new Set(drivers.map((d) => d.name)), [drivers])
+  const hasPendingDriverChanges = useCallback(
+    (name: string): boolean => {
+      const w = workingConfig?.drivers?.find((d) => d.name === name)
+      const s = savedConfig?.drivers?.find((d) => d.name === name)
+      if (!w && !s) return false
+      if (!w || !s) return true // added or deleted, not yet applied
+      return !jsonDeepEqual(w, s)
+    },
+    [workingConfig, savedConfig],
+  )
+  const jumpToCard = (id: string) =>
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+
   return (
     <div className="space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -221,7 +241,11 @@ export const DriversPage: React.FC = () => {
           )}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 card-stagger">
             {filteredConfigDrivers.map((drv) => (
-              <Card key={drv.name} className="border-border bg-card card-enter">
+              <Card
+                key={drv.name}
+                id={`cfg-driver-${drv.name}`}
+                className="border-border bg-card card-enter scroll-mt-24"
+              >
                 <CardHeader className="p-4 pb-2">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center space-x-2.5">
@@ -234,6 +258,29 @@ export const DriversPage: React.FC = () => {
                         <ConnectionSummary
                           summary={workingDriverConnSummaries.get(drv.name) ?? ''}
                         />
+                        <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                          {runtimeDriverNames.has(drv.name) ? (
+                            <button
+                              type="button"
+                              onClick={() => jumpToCard(`runtime-driver-${drv.name}`)}
+                              title={t('drivers.jumpToRuntime')}
+                              aria-label={`${t('drivers.jumpToRuntime')} — ${drv.name}`}
+                              className="inline-flex items-center gap-1 rounded-full border border-status-running/30 bg-status-running/10 px-2 py-0.5 text-xs text-status-running hover:bg-status-running/20 transition-colors"
+                            >
+                              <span className="h-1.5 w-1.5 rounded-full bg-status-running" />
+                              {t('drivers.zoneLive')}
+                            </button>
+                          ) : (
+                            <span className="inline-flex items-center rounded-full border border-border bg-muted/40 px-2 py-0.5 text-xs text-muted-foreground">
+                              {t('drivers.zoneConfigOnly')}
+                            </span>
+                          )}
+                          {hasPendingDriverChanges(drv.name) && (
+                            <span className="inline-flex items-center rounded-full border border-status-warning/30 bg-status-warning/10 px-2 py-0.5 text-xs text-status-warning dark:text-status-warning">
+                              {t('drivers.zonePendingChanges')}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-1">
@@ -312,8 +359,22 @@ export const DriversPage: React.FC = () => {
               </Button>
             </Card>
           ) : drivers.length === 0 ? (
-            <Card className="col-span-full p-8 text-center text-xs text-muted-foreground border-dashed">
-              {t('drivers.empty')}
+            // C-A8: the empty state points at the page's own Create
+            // action instead of telling the operator to go edit YAML.
+            <Card className="col-span-full p-8 text-center space-y-3 border-dashed">
+              <p className="text-xs text-muted-foreground">{t('drivers.empty')}</p>
+              <div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCreate}
+                  disabled={seedBlocked}
+                  className="h-8 text-xs"
+                >
+                  <Plus className="w-3.5 h-3.5 mr-1.5" />
+                  <span>{t('drivers.createDriver')}</span>
+                </Button>
+              </div>
             </Card>
           ) : filteredRuntimeDrivers.length === 0 ? (
             <Card className="col-span-full p-8 text-center text-xs text-muted-foreground border-dashed">
@@ -325,10 +386,11 @@ export const DriversPage: React.FC = () => {
               return (
                 <Card
                   key={drv.name}
+                  id={`runtime-driver-${drv.name}`}
                   tabIndex={0}
                   role="button"
                   aria-label={`${drv.name} — ${st}`}
-                  className="border-border bg-card card-enter hover:border-primary/40 transition-all cursor-pointer group focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  className="border-border bg-card card-enter hover:border-primary/40 transition-all cursor-pointer group focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 scroll-mt-24"
                   onClick={() => navigate(`${adminBase}/drivers/${encodeURIComponent(drv.name)}`)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
@@ -351,6 +413,20 @@ export const DriversPage: React.FC = () => {
                           <ConnectionSummary
                             summary={parsedDriverConnSummaries.get(drv.name) ?? ''}
                           />
+                          {hasPendingDriverChanges(drv.name) && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                jumpToCard(`cfg-driver-${drv.name}`)
+                              }}
+                              title={t('drivers.jumpToConfig')}
+                              aria-label={`${t('drivers.jumpToConfig')} — ${drv.name}`}
+                              className="mt-1.5 inline-flex items-center rounded-full border border-status-warning/30 bg-status-warning/10 px-2 py-0.5 text-xs text-status-warning dark:text-status-warning hover:bg-status-warning/20 transition-colors"
+                            >
+                              {t('drivers.zonePendingChanges')}
+                            </button>
+                          )}
                         </div>
                       </div>
                       <Badge variant="outline" className={`text-xs ${st.badgeColor}`}>
