@@ -22,6 +22,7 @@ import {
   Param,
   StatCard,
 } from '@/components/admin/DetailPageParts'
+import { TransportTestSender } from '@/components/admin/TransportTestSender'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -423,6 +424,12 @@ export const TransportDetailPage: React.FC = () => {
           </Badge>
         </CardHeader>
       </Card>
+
+      {/* C-A15: connectivity probe — publishes one synthetic data point
+          through the running transport (POST /transports/{name}/test);
+          the wizard cannot offer this because the instance must already
+          be registered (config saved & applied). */}
+      <TransportTestSender name={transport.name} />
 
       {/* Publishing stat cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">

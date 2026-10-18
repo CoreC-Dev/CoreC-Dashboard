@@ -667,6 +667,9 @@
     "queueSize": "队列大小",
     "dropped": "丢弃指令",
     "droppedCommands": "丢弃指令",
+    "testPoint": "发送测试点",
+    "testPointSent": "测试点已发送：{{message}}",
+    "testPointFailed": "发送失败：{{message}}",
     "commandsReceived": "接收指令",
     "lastPublished": "最近发布",
     "never": "从未",
@@ -1332,7 +1335,8 @@
     "transportName": "传输名称",
     "nameExists": "已存在同名传输。",
     "nameLockedInEdit": "创建后无法修改传输名称。",
-    "typeLockedInEdit": "编辑模式下无法修改传输类型。如需切换协议请新建传输。"
+    "typeLockedInEdit": "编辑模式下无法修改传输类型。如需切换协议请新建传输。",
+    "testAfterSave": "保存并应用后，可在传输详情页发送测试点验证连通性。"
   },
   "ruleWizard": {
     "createTitle": "创建规则",

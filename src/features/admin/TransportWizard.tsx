@@ -326,6 +326,12 @@ export const TransportWizard: React.FC<TransportWizardProps> = ({
               ))}
             </div>
           )}
+
+          {/* C-A15: unlike the driver wizard there is no connection test
+              here — POST /transports/{name}/test needs the instance to be
+              REGISTERED, which only happens after save & apply. Say where
+              the probe lives instead of leaving the gap unexplained. */}
+          <p className="text-xs text-muted-foreground">{t('transportWizard.testAfterSave')}</p>
         </div>
       ),
     },
