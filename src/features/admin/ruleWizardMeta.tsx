@@ -70,6 +70,9 @@ export const MATCH_TEMPLATES: { label: string; value: string }[] = [
  */
 export const PLAYGROUND_DEFAULTS = {
   driver: 'plc1',
+  /** C-B2: device/group are editable playground inputs, empty by default. */
+  device: '',
+  group: '',
   tag: 'temperature',
   /** Raw input text — the component parses it to number when numeric. */
   value: '96.5',

@@ -209,6 +209,38 @@ describe('RulePlayground', { timeout: 15_000 }, () => {
     expect(call[1]?.value).toBe('hot')
   })
 
+  // C-B2: the DSL supports device/group — an expression like
+  // `device == "meter-01"` must be trial-runnable.
+  it('sends the typed device/group with the sample point (C-B2)', async () => {
+    vi.mocked(api.postRulesPreview).mockResolvedValue(evaluated(true))
+    renderWithClient(<RulePlayground match='device == "meter-01"' defaults={DEFAULTS} />)
+    await openPlayground()
+
+    // The mini form's textboxes render in a fixed order:
+    // driver, device, group, tag, value (labels lack htmlFor, so select
+    // positionally).
+    const boxes = () => screen.getAllByRole('textbox')
+    expect((boxes()[0] as HTMLInputElement).value).toBe('plc1')
+    expect((boxes()[1] as HTMLInputElement).value).toBe('')
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Preview' }))
+    })
+    // Defaults: device/group are sent empty.
+    let call = vi.mocked(api.postRulesPreview).mock.calls[0]
+    expect(call[1]?.device).toBe('')
+    expect(call[1]?.group).toBe('')
+
+    fireEvent.change(boxes()[1]!, { target: { value: 'meter-01' } })
+    fireEvent.change(boxes()[2]!, { target: { value: 'zone-1' } })
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Preview' }))
+    })
+    call = vi.mocked(api.postRulesPreview).mock.calls[1]
+    expect(call[1]?.device).toBe('meter-01')
+    expect(call[1]?.group).toBe('zone-1')
+  })
+
   it('shows a transport failure without throwing', async () => {
     vi.mocked(api.postRulesPreview).mockRejectedValue(new Error('network unreachable'))
     renderWithClient(<RulePlayground match="value > 90" defaults={DEFAULTS} />)

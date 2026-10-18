@@ -42,6 +42,9 @@ import { DATA_TYPES, type DataType } from '@/types/config'
 /** Sample-point defaults — owned by the wizard (ruleWizardMeta), passed in. */
 export interface RulePlaygroundDefaults {
   driver: string
+  /** C-B2: device/group defaults — empty unless the caller provides one. */
+  device?: string
+  group?: string
   tag: string
   /** Raw input text; parsed to a number when it is numeric. */
   value: string
@@ -75,6 +78,10 @@ export const RulePlayground: React.FC<RulePlaygroundProps> = ({ match, defaults 
 
   const [open, setOpen] = useState(false)
   const [driver, setDriver] = useState(defaults.driver)
+  // C-B2: the DSL supports device/group fields — an expression like
+  // `device == "meter-01" && value > 80` could never hit without them.
+  const [device, setDevice] = useState(defaults.device ?? '')
+  const [group, setGroup] = useState(defaults.group ?? '')
   const [tag, setTag] = useState(defaults.tag)
   const [valueText, setValueText] = useState(defaults.value)
   const [type, setType] = useState<DataType>(defaults.type)
@@ -82,7 +89,7 @@ export const RulePlayground: React.FC<RulePlaygroundProps> = ({ match, defaults 
 
   // Stale guard: the verdict stays visible only while the expression AND
   // the sample point still match what the last run tested.
-  const currentKey = JSON.stringify([match, driver, tag, valueText, type, quality])
+  const currentKey = JSON.stringify([match, driver, device, group, tag, valueText, type, quality])
   const [testedKey, setTestedKey] = useState<string | null>(null)
   const showResult = testedKey !== null && testedKey === currentKey
 
@@ -96,8 +103,8 @@ export const RulePlayground: React.FC<RulePlaygroundProps> = ({ match, defaults 
       match,
       point: {
         driver: driver.trim(),
-        device: '',
-        group: '',
+        device: device.trim(),
+        group: group.trim(),
         tag: tag.trim(),
         value: parseSampleValue(valueText),
         type,
@@ -133,12 +140,28 @@ export const RulePlayground: React.FC<RulePlaygroundProps> = ({ match, defaults 
           </div>
 
           {/* Sample data point mini form */}
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             <label className="space-y-1">
               <span className="text-xs text-muted-foreground">{t('common.driver')}</span>
               <Input
                 value={driver}
                 onChange={(e) => setDriver(e.target.value)}
+                className="h-7 text-xs"
+              />
+            </label>
+            <label className="space-y-1">
+              <span className="text-xs text-muted-foreground">{t('common.device')}</span>
+              <Input
+                value={device}
+                onChange={(e) => setDevice(e.target.value)}
+                className="h-7 text-xs"
+              />
+            </label>
+            <label className="space-y-1">
+              <span className="text-xs text-muted-foreground">{t('common.group')}</span>
+              <Input
+                value={group}
+                onChange={(e) => setGroup(e.target.value)}
                 className="h-7 text-xs"
               />
             </label>
