@@ -8,7 +8,6 @@ import { DeleteEntityConfirm } from '@/components/admin/DeleteEntityConfirm'
 import {
   ActionBadge,
   ContinueBadge,
-  EMPTY_TEST_DP,
   getTargetDisplay,
   RuleTestDialog,
 } from '@/components/admin/RuleParts'
@@ -34,7 +33,6 @@ import { useEntityListPage } from '@/hooks/useEntityListPage'
 import { useRuleToggle } from '@/hooks/useRuleToggle'
 import { parseConfigYaml } from '@/lib/configYaml'
 import { formatRelativeTime } from '@/lib/formatters'
-import { evaluateMatch, type SimDataPoint } from '@/lib/ruleMatchEvaluator'
 import { formatNumber, isZeroTime } from '@/lib/utils'
 import { useConfigStore } from '@/stores/configStore'
 import type { RuleConfig } from '@/types/config'
@@ -104,24 +102,12 @@ export const RulesPage: React.FC = () => {
   // Per-row toggle in-flight tracking + error surface. [M-5]
   const { togglingNames, toggleError, handleToggle, clearToggleError } = useRuleToggle()
   const [testRule, setTestRule] = useState<RuleStat | null>(null)
-  const [testDp, setTestDp] = useState<SimDataPoint>(EMPTY_TEST_DP)
-  const [testResult, setTestResult] = useState<boolean | null>(null)
 
-  const openTest = (rule: RuleStat) => {
-    setTestRule(rule)
-    setTestDp({ ...EMPTY_TEST_DP })
-    setTestResult(null)
-  }
-
-  const closeTest = () => {
-    setTestRule(null)
-    setTestResult(null)
-  }
-
-  const runTest = () => {
-    if (!testRule) return
-    setTestResult(evaluateMatch(testRule.match, testDp))
-  }
+  // C-B3: the dialog owns its sample-point state and talks to the
+  // server's scratch engine itself — RulesPage only tracks which rule
+  // is under test.
+  const openTest = (rule: RuleStat) => setTestRule(rule)
+  const closeTest = () => setTestRule(null)
 
   // C-B1: the runtime row's Edit opens the SAME RuleWizard the config
   // section uses, so a rule has ONE editor with ONE (delayed-apply)
@@ -456,14 +442,7 @@ export const RulesPage: React.FC = () => {
         </Card>
       </div>
 
-      <RuleTestDialog
-        testRule={testRule}
-        testDp={testDp}
-        setTestDp={setTestDp}
-        testResult={testResult}
-        closeTest={closeTest}
-        runTest={runTest}
-      />
+      <RuleTestDialog rule={testRule} onClose={closeTest} key={testRule?.name ?? 'none'} />
 
       {/* Rule create/edit wizard — the SINGLE rule editor for both the
           config section and the runtime section (C-B1). */}

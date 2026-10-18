@@ -1,7 +1,9 @@
-import { Play } from 'lucide-react'
+import { AlertCircle, Play } from 'lucide-react'
 import type React from 'react'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useRulesPreview } from '@/api/hooks'
+import { parseSampleValue } from '@/components/admin/RulePlayground'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -20,9 +22,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import type { SimDataPoint } from '@/lib/ruleMatchEvaluator'
 import { useConfigStore } from '@/stores/configStore'
-import { DATA_TYPES } from '@/types/config'
+import { DATA_TYPES, type DataType } from '@/types/config'
 import type { RuleStat } from '@/types/models'
 
 // ─── Shared helpers ─────────────────────────────────────────
@@ -36,7 +37,25 @@ export const getTargetDisplay = (rule: RuleStat): string => {
   return rule.target || '-'
 }
 
-export const EMPTY_TEST_DP: SimDataPoint = {
+/**
+ * Form-side shape of the sample data point for the runtime row's Test
+ * dialog (C-B3). Once evaluated by a rough client-side matcher; now the
+ * dialog POSTs to /rules/preview — the same scratch engine the wizard's
+ * Playground uses — so the two "test" affordances can no longer disagree.
+ */
+export interface TestSamplePoint {
+  driver: string
+  device: string
+  group: string
+  tag: string
+  /** Raw input text; parsed to number when numeric (same as Playground). */
+  value: string
+  type: DataType
+  /** 0=Good, 1=Bad, 2=Uncertain — string form for the Select. */
+  quality: '0' | '1' | '2'
+}
+
+const INITIAL_TEST_DP: TestSamplePoint = {
   driver: '',
   device: '',
   group: '',
@@ -140,23 +159,25 @@ export const ContinueBadge: React.FC = () => {
 // ─── RuleTestDialog ─────────────────────────────────────────
 
 interface RuleTestDialogProps {
-  testRule: RuleStat | null
-  testDp: SimDataPoint
-  setTestDp: React.Dispatch<React.SetStateAction<SimDataPoint>>
-  testResult: boolean | null
-  closeTest: () => void
-  runTest: () => void
+  /** The runtime rule under test; null keeps the dialog closed. */
+  rule: RuleStat | null
+  onClose: () => void
 }
 
-export const RuleTestDialog: React.FC<RuleTestDialogProps> = ({
-  testRule,
-  testDp,
-  setTestDp,
-  testResult,
-  closeTest,
-  runTest,
-}) => {
+export const RuleTestDialog: React.FC<RuleTestDialogProps> = ({ rule, onClose }) => {
   const { t } = useTranslation()
+  // C-B3: the verdict comes from the SERVER's scratch engine
+  // (POST /rules/preview) — the same engine the wizard's Playground
+  // uses — so this dialog and the Playground can never disagree again.
+  const { mutate, isPending, data, error } = useRulesPreview()
+
+  const [dp, setDp] = useState<TestSamplePoint>(INITIAL_TEST_DP)
+  // Stale guard: the verdict stays visible only while the sample point
+  // still matches what the last run tested.
+  const currentKey = JSON.stringify(dp)
+  const [testedKey, setTestedKey] = useState<string | null>(null)
+  const showResult = testedKey !== null && testedKey === currentKey
+
   const QUALITY_OPTIONS = useMemo(
     () =>
       [
@@ -177,9 +198,9 @@ export const RuleTestDialog: React.FC<RuleTestDialogProps> = ({
   // Tags belonging to the currently selected driver.
   const selectedDriverTags = useMemo(() => {
     const drivers = workingConfig?.drivers ?? []
-    const driver = drivers.find((d) => d.name === testDp.driver)
+    const driver = drivers.find((d) => d.name === dp.driver)
     return driver?.tags ?? []
-  }, [workingConfig, testDp.driver])
+  }, [workingConfig, dp.driver])
   const tagNames = selectedDriverTags.map((tg) => tg.name).filter(Boolean)
 
   // Unique group names across the selected driver's tags.
@@ -191,11 +212,29 @@ export const RuleTestDialog: React.FC<RuleTestDialogProps> = ({
     return Array.from(groups).sort()
   }, [selectedDriverTags])
 
+  const runTest = () => {
+    if (!rule || isPending) return
+    setTestedKey(currentKey)
+    mutate({
+      match: rule.match,
+      point: {
+        driver: dp.driver.trim(),
+        device: dp.device.trim(),
+        group: dp.group.trim(),
+        tag: dp.tag.trim(),
+        value: parseSampleValue(dp.value),
+        type: dp.type,
+        quality: Number(dp.quality),
+        timestamp: new Date().toISOString(),
+      },
+    })
+  }
+
   return (
-    <Dialog open={testRule !== null} onOpenChange={(o) => !o && closeTest()}>
+    <Dialog open={rule !== null} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>{t('rules.testRule', { name: testRule?.name })}</DialogTitle>
+          <DialogTitle>{t('rules.testRule', { name: rule?.name })}</DialogTitle>
           <DialogDescription>{t('rules.testDesc')}</DialogDescription>
         </DialogHeader>
 
@@ -205,7 +244,7 @@ export const RuleTestDialog: React.FC<RuleTestDialogProps> = ({
               {t('rules.matchExpression')}
             </div>
             <code className="block px-3 py-2 rounded bg-muted/60 text-xs font-mono text-primary border border-border break-all">
-              {testRule?.match || t('rules.emptyMatch')}
+              {rule?.match || t('rules.emptyMatch')}
             </code>
           </div>
 
@@ -213,51 +252,51 @@ export const RuleTestDialog: React.FC<RuleTestDialogProps> = ({
             {driverNames.length > 0 ? (
               <LabeledSelect
                 label={t('common.driver')}
-                value={testDp.driver}
-                onChange={(v) => setTestDp({ ...testDp, driver: v, tag: '', group: '' })}
+                value={dp.driver}
+                onChange={(v) => setDp({ ...dp, driver: v, tag: '', group: '' })}
                 options={driverNames.map((n) => ({ value: n, label: n }))}
                 placeholder={t('common.select')}
               />
             ) : (
               <LabeledInput
                 label={t('common.driver')}
-                value={testDp.driver}
-                onChange={(v) => setTestDp({ ...testDp, driver: v })}
+                value={dp.driver}
+                onChange={(v) => setDp({ ...dp, driver: v })}
                 placeholder={t('rules.phDriver')}
               />
             )}
             <LabeledInput
               label={t('common.device')}
-              value={testDp.device}
-              onChange={(v) => setTestDp({ ...testDp, device: v })}
+              value={dp.device}
+              onChange={(v) => setDp({ ...dp, device: v })}
               placeholder={t('rules.phDevice')}
             />
             {groupNames.length > 0 ? (
               <LabeledSelect
                 label={t('common.group')}
-                value={testDp.group}
-                onChange={(v) => setTestDp({ ...testDp, group: v })}
+                value={dp.group}
+                onChange={(v) => setDp({ ...dp, group: v })}
                 options={groupNames.map((n) => ({ value: n, label: n }))}
                 placeholder={t('common.none')}
               />
             ) : (
               <LabeledInput
                 label={t('common.group')}
-                value={testDp.group}
-                onChange={(v) => setTestDp({ ...testDp, group: v })}
+                value={dp.group}
+                onChange={(v) => setDp({ ...dp, group: v })}
                 placeholder={t('rules.phGroup')}
               />
             )}
             {tagNames.length > 0 ? (
               <LabeledSelect
                 label={t('common.tag')}
-                value={testDp.tag}
+                value={dp.tag}
                 onChange={(v) => {
                   const selected = selectedDriverTags.find((tg) => tg.name === v)
-                  setTestDp({
-                    ...testDp,
+                  setDp({
+                    ...dp,
                     tag: v,
-                    ...(selected?.type ? { type: selected.type } : {}),
+                    ...(selected?.type ? { type: selected.type as DataType } : {}),
                   })
                 }}
                 options={tagNames.map((n) => ({ value: n, label: n }))}
@@ -266,66 +305,93 @@ export const RuleTestDialog: React.FC<RuleTestDialogProps> = ({
             ) : (
               <LabeledInput
                 label={t('common.tag')}
-                value={testDp.tag}
-                onChange={(v) => setTestDp({ ...testDp, tag: v })}
+                value={dp.tag}
+                onChange={(v) => setDp({ ...dp, tag: v })}
                 placeholder={t('rules.phTag')}
               />
             )}
             <LabeledInput
               label={t('common.value')}
-              value={testDp.value}
-              onChange={(v) => setTestDp({ ...testDp, value: v })}
+              value={dp.value}
+              onChange={(v) => setDp({ ...dp, value: v })}
               placeholder={t('rules.phValue')}
             />
             <LabeledSelect
               label={t('common.type')}
-              value={testDp.type}
-              onChange={(v) => setTestDp({ ...testDp, type: v })}
+              value={dp.type}
+              onChange={(v) => setDp({ ...dp, type: v as DataType })}
               options={TEST_TYPE_OPTIONS}
             />
             <LabeledSelect
               label={t('common.quality')}
-              value={testDp.quality}
-              onChange={(v) => setTestDp({ ...testDp, quality: v })}
+              value={dp.quality}
+              onChange={(v) => setDp({ ...dp, quality: v as TestSamplePoint['quality'] })}
               options={QUALITY_OPTIONS}
             />
           </div>
 
-          {testRule && testResult !== null && (
-            <div
-              className={`rounded-lg border p-3 space-y-2 ${
-                testResult
-                  ? 'border-status-running/30 bg-status-running/10'
-                  : 'border-status-error/30 bg-status-error/10'
-              }`}
-            >
-              {testResult ? (
-                <div className="space-y-1.5">
+          {rule && showResult && (
+            <div className="space-y-2" aria-live="polite" data-testid="rule-test-result">
+              {data?.outcome === 'evaluated' && data.matched && (
+                <div className="rounded-lg border border-status-running/30 bg-status-running/10 p-3 space-y-1.5">
                   <div className="text-xs font-bold text-status-running">{t('rules.matched')}</div>
                   <div className="flex items-center gap-2 text-xs">
                     <span className="text-muted-foreground">{t('common.action')}:</span>
-                    <ActionBadge action={testRule.action} />
+                    <ActionBadge action={rule.action} />
                   </div>
                   <div className="text-xs font-mono">
                     <span className="text-muted-foreground">{t('common.target')}:</span>{' '}
-                    <span className="text-foreground">{getTargetDisplay(testRule)}</span>
+                    <span className="text-foreground">{getTargetDisplay(rule)}</span>
                   </div>
                 </div>
-              ) : (
-                <div className="text-xs font-bold text-status-error">{t('rules.noMatch')}</div>
               )}
-              <div className="text-xs text-muted-foreground pt-1 border-t border-border/40">
-                {t('rules.testNote')}
-              </div>
+
+              {data?.outcome === 'evaluated' && !data.matched && (
+                <div className="rounded-lg border border-status-error/30 bg-status-error/10 p-3">
+                  <div className="text-xs font-bold text-status-error">{t('rules.noMatch')}</div>
+                </div>
+              )}
+
+              {data?.outcome === 'error' && (
+                <div className="space-y-1 rounded-lg border border-status-error/30 bg-status-error/10 p-3 text-xs">
+                  <div className="flex items-center gap-1.5 font-semibold text-status-error">
+                    <AlertCircle className="h-3.5 w-3.5" />
+                    {data.status === 501
+                      ? t('ruleWizard.playgroundUnsupported')
+                      : t('ruleWizard.playgroundFailed')}
+                  </div>
+                  {/* Verbatim on purpose: the backend returns compile/eval
+                      errors unmasked so the author sees expr's own message. */}
+                  <p className="break-all font-mono text-muted-foreground">{data.error}</p>
+                </div>
+              )}
+
+              {error && (
+                <div className="space-y-1 rounded-lg border border-status-error/30 bg-status-error/10 p-3 text-xs">
+                  <div className="flex items-center gap-1.5 font-semibold text-status-error">
+                    <AlertCircle className="h-3.5 w-3.5" />
+                    {t('ruleWizard.playgroundFailed')}
+                  </div>
+                  <p className="break-all text-muted-foreground">
+                    {error instanceof Error ? error.message : String(error)}
+                  </p>
+                </div>
+              )}
+
+              {data?.outcome === 'evaluated' && (
+                <div className="text-xs text-muted-foreground border-t border-border/40 pt-1">
+                  {t('rules.testNote')}
+                </div>
+              )}
             </div>
           )}
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={closeTest}>
+          <Button variant="outline" onClick={onClose}>
             {t('common.close')}
           </Button>
-          <Button onClick={runTest} disabled={!testRule}>
+          <Button onClick={runTest} disabled={!rule || isPending}>
             <Play className="w-3.5 h-3.5 mr-1.5" />
             {t('rules.runTest')}
           </Button>

@@ -60,8 +60,10 @@ export interface RulePlaygroundProps {
   defaults: RulePlaygroundDefaults
 }
 
-/** Numeric input text becomes a number; anything else stays a string. */
-const parseSampleValue = (raw: string): number | string => {
+/** Numeric input text becomes a number; anything else stays a string.
+ *  Shared with the runtime rows' Test dialog (C-B3) so both surfaces
+ *  build identical sample points. */
+export const parseSampleValue = (raw: string): number | string => {
   const trimmed = raw.trim()
   if (trimmed !== '') {
     const num = Number(trimmed)
