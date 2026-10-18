@@ -81,3 +81,16 @@ Conventional Commits；单一职责；重构与行为变更不混提；改造仅
 - **html lang 随语言切换（D-11）**：setLocale 同步写 `document.documentElement.lang`（i18next 的 languageChange 事件在资源加载后才触发，故显式同步一次）+ languageChange 监听兜底启动场景；英文界面不再被读屏用中文语音引擎朗读。
 - **首页消费 ?edit 深链（D-15 A 域半边）**：InstancePanel 挂载时读取 `?edit=<id>`（D 域 ConnectionGate 失败屏的「编辑此实例」出口），自动打开对应实例的编辑弹窗并立即清除参数（残留参数会在每次回首页时重开弹窗）；未知 id 静默丢弃。
 - **趋势暂停留空不连线（B08）**：恢复趋势时在最后采样后插入无值 whitespace 采样（lib/tagExplorer.insertPauseGap），lightweight-charts 于该点断线——暂停时段留空，不再伪造连续数据；暂停指示改为「已暂停 — 恢复后暂停时段将留空，不连线」（tags.pausedGapNote 替换 tags.paused）；统计条/采样计数/CSV 导出跳过 gap 标记。
+
+- **种子守卫可见化（C 域 X4 接线）**：服务器配置未加载（auto-seed 进行中/失败且无基线）时，驱动/传输/规则三列表页的「创建」按钮显式禁用并显示共享 SeedBlockedBanner（进行中/失败两态 + verbatim 错误 + Retry，与配置中心同源）——不再是无声死按钮。
+- **删除驱动列出受影响规则（C-A3）**：驱动删除确认对齐传输页模板——列出将失去数据来源的规则；规则与驱动仅靠 match DSL 关联，故按子句扫描（driver ==/contains/=~；!=与裸 driver 排除；无 driver 子句时回退「测点唯一归属」判定；SUB-RULE 组解析一层），扫描范围取工作 ∪ 已保存配置（未应用的规则同样告警）。
+- **密码字段不再明文回显（C-A4）**：详情页快编辑表单的密码类字段（MQTT password、Notify smtp-pass、OPC UA password）改为 masked 输入 + 显隐切换；已存密码不再进入表单状态/预览/应用 YAML（占位符「已保存 — 留空保持不变」）；连带修复传输页应用合并浅覆 settings、空字段会清空已存值的数据丢失 bug（settings 深合并，对齐驱动页既有实现）。
+- **向导 gate 说出缺什么（C-A5）**：连接步骤校验失败不再只说「请先修正错误再继续」——按必填字段已翻译标签具体列出（Intl.ListFormat 本地化连接：「必填字段未填：驱动名称、主机地址」），重名给 nameExists 原因，测点步骤给出具体要求。
+- **列表页搜索提升到页头并覆盖双区（C-A6）**：驱动/传输页搜索条在配置+运行合计 >6 时显示于页头；运行区卡片按名称/类型/连接摘要过滤，空匹配渲染 no-results 卡片而非空白。
+- **驱动双区角标与互跳（C-A7）**：配置卡带「运行中」（可点跳运行卡）或「仅配置，未运行」角标 +「有未应用修改」；运行卡带「有未应用修改」（跳回配置卡，含已从工作配置删除的待应用场景）；跳转用 scrollIntoView（HashRouter 下不可用 hash 链接）。
+- **驱动空态指向创建（C-A8）**：空态文案改为指出两条真实路径（右上角创建 / 配置中心粘贴 YAML），空态卡内直接放置受种子守卫约束的创建按钮，不再指使用户去手改 YAML。
+- **传输「发送测试点」（C-A15）**：传输详情页头部接线 POST /transports/{name}/test（后端早已实现、endpoints 层已有 testTransport 但 UI 从未调用）：单次点击单次请求、ok/message 原文渲染（ok:false 为警告态非崩溃）、进行中禁用；向导连接步骤说明测试需先保存应用。
+- **规则试算补 device/group（C-B2）**：向导 Playground 样例数据点新增 device/group 输入（默认空，参与 stale 键）——`device == "meter-01"` 类表达式终于可以试算命中。
+- **运行区测试改服务端引擎（C-B3）**：RuleTestDialog 弃用客户端粗算器（lib/ruleMatchEvaluator 连测试整体删除），改调 POST /rules/preview——与向导 Playground 同一 scratch 引擎，两处「测试」结论不再可能打架；编译错误原文透传，样例点变更后旧结论隐藏。
+- **诊断页信息架构（C-E1）**：页头下新增锚点跳转 chips（健康/实时流/事件终端/指标/写历史/高级调试，scrollIntoView）；pprof 归入默认折叠的「高级调试 (pprof)」区块（抽出为 PprofDownloads 组件，页面回到 476 行）；副标题如实覆盖全部六类内容。
+- **死信搜索与过滤（B10）**：死信队列头部新增搜索框（搜索死信（驱动/测点）…）与驱动过滤（驱动: 全部），全选提示与「显示 X/Y」底部计数对齐可见（过滤后）集合；无匹配时显示「没有匹配的死信」。过滤规则抽为纯函数 filterDeadLetters 并配单测；死信重放确认对话框拆出 DeadLetterReplayDialogs（主文件 443 行/对话框 212 行，回到 500 行门禁内）。

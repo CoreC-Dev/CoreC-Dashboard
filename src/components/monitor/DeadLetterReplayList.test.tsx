@@ -4,11 +4,15 @@
 // wiring (per-write cache invalidation included) runs inside a real
 // QueryClient. i18n forced to English for deterministic assertions.
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, configure, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
-import { DeadLetterReplayList } from '@/components/monitor/DeadLetterReplayList'
+import { DeadLetterReplayList, filterDeadLetters } from '@/components/monitor/DeadLetterReplayList'
 import i18n from '@/i18n'
 import type { DeadLetterEntry } from '@/types/models'
+
+// The dialogs live in a second module since the file split; on cold
+// transforms the confirm-dialog query can outlive the 1s default timeout.
+configure({ asyncUtilTimeout: 4000 })
 
 vi.mock('@/api/endpoints', () => ({
   writeTag: vi.fn(),
@@ -245,5 +249,85 @@ describe('DeadLetterReplayList', () => {
     })
     await waitFor(() => expect(screen.queryByText('Replay Dead Letter Command')).toBeNull())
     expect(api.writeTag).not.toHaveBeenCalled()
+  })
+})
+
+describe('DeadLetterReplayList — search & driver filter (B10)', () => {
+  it('filterDeadLetters narrows by free text over driver/tag and by exact driver', () => {
+    const all = filterDeadLetters(ENTRIES, '', 'all')
+    expect(all).toHaveLength(2)
+
+    // Text matches the tag…
+    expect(filterDeadLetters(ENTRIES, 'pump', 'all')).toHaveLength(1)
+    // …and the driver…
+    expect(filterDeadLetters(ENTRIES, 'plc2', 'all')).toHaveLength(1)
+    // …and nothing else.
+    expect(filterDeadLetters(ENTRIES, 'nonexistent', 'all')).toHaveLength(0)
+    // Driver filter narrows independently…
+    expect(filterDeadLetters(ENTRIES, '', 'plc2')).toHaveLength(1)
+    // …and combines with text conjunctively.
+    expect(filterDeadLetters(ENTRIES, 'pump', 'plc2')).toHaveLength(0)
+  })
+
+  it('the search input narrows the rendered rows', async () => {
+    renderList()
+
+    expect(await screen.findByText('[plc1] Tag: pump = true')).toBeTruthy()
+    expect(screen.getByText('[plc2] Tag: temp = 50')).toBeTruthy()
+
+    fireEvent.change(screen.getByPlaceholderText('Search dead letters (driver/tag)…'), {
+      target: { value: 'pump' },
+    })
+
+    await waitFor(() => {
+      expect(screen.queryByText('[plc2] Tag: temp = 50')).toBeNull()
+    })
+    expect(screen.getByText('[plc1] Tag: pump = true')).toBeTruthy()
+  })
+
+  it('a search with no hits shows the no-matching state instead of rows', async () => {
+    renderList()
+
+    fireEvent.change(screen.getByPlaceholderText('Search dead letters (driver/tag)…'), {
+      target: { value: 'no-such-tag' },
+    })
+
+    expect(await screen.findByText('No dead letters match the current filter')).toBeTruthy()
+    expect(screen.queryByText('[plc1] Tag: pump = true')).toBeNull()
+  })
+
+  it('select-all states and stages the FILTERED visible set only', async () => {
+    vi.mocked(api.writeTag).mockResolvedValue({ success: true })
+    renderList()
+
+    expect(await screen.findByText('Select all visible dead letters (2)')).toBeTruthy()
+
+    fireEvent.change(screen.getByPlaceholderText('Search dead letters (driver/tag)…'), {
+      target: { value: 'pump' },
+    })
+    await screen.findByText('Select all visible dead letters (1)')
+
+    fireEvent.click(screen.getAllByRole('checkbox')[0])
+    expect(screen.getByRole('button', { name: 'Replay Selected (1)' })).toBeEnabled()
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Replay Selected (1)' }))
+    })
+    // The confirm dialog lists ONLY the visible (filtered) entry.
+    expect(await screen.findByText('Replay 1 Dead Letter Command(s)')).toBeTruthy()
+    expect(screen.getByText('[plc1/meter-01] pump = true (bool)')).toBeTruthy()
+    expect(screen.queryByText('[plc2] temp = 50 (float32)')).toBeNull()
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Replay Selected' }))
+    })
+    await waitFor(() => expect(api.writeTag).toHaveBeenCalledTimes(1))
+    expect(vi.mocked(api.writeTag).mock.calls[0][0].driver).toBe('plc1')
+  })
+
+  it('renders the driver filter select with its accessible label', async () => {
+    renderList()
+
+    expect(await screen.findByRole('combobox', { name: 'Driver' })).toBeTruthy()
   })
 })

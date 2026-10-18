@@ -6,65 +6,57 @@ import {
   Loader2,
   RefreshCw,
   RotateCcw,
+  Search,
 } from 'lucide-react'
 import type React from 'react'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { extractApiError } from '@/api/client'
 import { ApiError, useWriteTag } from '@/api/hooks'
+import {
+  cleanCommandOf,
+  DeadLetterReplayDialogs,
+  dlqKeyOf,
+  labelOf,
+  type ReplayOutcome,
+} from '@/components/monitor/DeadLetterReplayDialogs'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
 import { LoadingState } from '@/components/ui/loading-state'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import type { DeadLetterEntry, WriteCommand } from '@/types/models'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import type { DeadLetterEntry } from '@/types/models'
 
 /** Cap rendered dead letters to prevent DOM overload (TD-PERF-005). */
 const MAX_VISIBLE_DLQ = 100
 
-/** Stable key for a dead-letter entry (driver + tag + failed_at + attempts). */
-const dlqKeyOf = (dl: DeadLetterEntry): string =>
-  `${dl.command.driver}-${dl.command.tag}-${dl.failed_at}-${dl.attempts}`
-
-/** Composite command prefix `[driver/device]` — same-name tags on different
- *  sub-devices must stay distinguishable everywhere a command is listed (B06).
- *  Single-device drivers render the unchanged `[driver]`. */
-const commandPrefixOf = (cmd: WriteCommand): string =>
-  `[${cmd.driver}${cmd.device ? `/${cmd.device}` : ''}]`
-
-/** Short human label of a dead letter's command, used in dialogs and results. */
-const labelOf = (dl: DeadLetterEntry): string =>
-  `${commandPrefixOf(dl.command)} ${dl.command.tag} = ${String(dl.command.value)}`
-
 /**
- * Re-issues a dead letter via the existing POST /write. Builds a CLEAN
- * command (driver/device/tag/value/type only): the recorded command carries
- * the server-stamped source/remote audit fields, which POST /write re-stamps
- * at its own trust boundary anyway.
+ * B10 — narrow the dead-letter queue by free text (driver/tag) and driver.
+ * Exported pure so the row-filtering rules are unit-testable alongside the
+ * component (the driver Select itself cannot be driven open in jsdom).
  */
-const cleanCommandOf = (dl: DeadLetterEntry): WriteCommand => ({
-  driver: dl.command.driver,
-  device: dl.command.device,
-  tag: dl.command.tag,
-  value: dl.command.value,
-  type: dl.command.type,
-})
-
-/** Per-item outcome of a batch replay. */
-interface ReplayOutcome {
-  key: string
-  label: string
-  ok: boolean
-  error?: string
+export const filterDeadLetters = (
+  entries: DeadLetterEntry[],
+  term: string,
+  driver: string,
+): DeadLetterEntry[] => {
+  const q = term.trim().toLowerCase()
+  return entries.filter((dl) => {
+    if (driver !== 'all' && dl.command.driver !== driver) return false
+    if (q) {
+      const hay = `${dl.command.driver} ${dl.command.tag}`.toLowerCase()
+      if (!hay.includes(q)) return false
+    }
+    return true
+  })
 }
 
 interface DeadLetterReplayListProps {
@@ -111,7 +103,22 @@ export const DeadLetterReplayList: React.FC<DeadLetterReplayListProps> = ({
   const [running, setRunning] = useState(false)
   const [results, setResults] = useState<ReplayOutcome[]>([])
 
-  const visibleDeadLetters = useMemo(() => deadLetters.slice(0, MAX_VISIBLE_DLQ), [deadLetters])
+  // B10: locate one driver's failures among hundreds of dead letters.
+  const [dlqSearch, setDlqSearch] = useState('')
+  const [dlqDriver, setDlqDriver] = useState('all')
+
+  const filteredDeadLetters = useMemo(
+    () => filterDeadLetters(deadLetters, dlqSearch, dlqDriver),
+    [deadLetters, dlqSearch, dlqDriver],
+  )
+  const uniqueDlqDrivers = useMemo(
+    () => Array.from(new Set(deadLetters.map((dl) => dl.command.driver))).sort(),
+    [deadLetters],
+  )
+  const visibleDeadLetters = useMemo(
+    () => filteredDeadLetters.slice(0, MAX_VISIBLE_DLQ),
+    [filteredDeadLetters],
+  )
   const selectedEntries = useMemo(
     () => visibleDeadLetters.filter((dl) => selected.has(dlqKeyOf(dl))),
     [visibleDeadLetters, selected],
@@ -290,208 +297,147 @@ export const DeadLetterReplayList: React.FC<DeadLetterReplayListProps> = ({
           </div>
         ) : (
           <div className="space-y-2">
-            <div className="flex items-center gap-2 pb-1 border-b border-border/60">
-              <Checkbox
-                checked={allVisibleSelected}
-                onCheckedChange={toggleAllVisible}
-                aria-label={t('alerts.selectAllDeadLetters')}
-                disabled={running}
-              />
-              <span className="text-xs text-muted-foreground">
-                {t('alerts.selectAllDeadLetters')}
-              </span>
-            </div>
-            {visibleDeadLetters.map((entry) => {
-              const retryKey = dlqKeyOf(entry)
-              const isSelected = selected.has(retryKey)
-              return (
-                <div
-                  key={retryKey}
-                  className={`p-3 rounded-lg border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sm transition-colors ${
-                    isSelected
-                      ? 'border-status-error/40 bg-status-error/10'
-                      : 'border-status-error/20 bg-status-error/5 hover:bg-status-error/10'
-                  }`}
+            {/* B10: search + driver filter — locate one driver's failures
+                among hundreds of queued dead letters. */}
+            <div className="flex flex-col sm:flex-row items-center gap-2 pb-1">
+              <div className="relative flex-1 w-full">
+                <Search className="w-4 h-4 absolute left-3 top-2.5 text-muted-foreground" />
+                <Input
+                  placeholder={t('alerts.searchDeadLetters')}
+                  value={dlqSearch}
+                  onChange={(e) => setDlqSearch(e.target.value)}
+                  className="pl-9 h-9 text-xs"
+                />
+              </div>
+              <Select value={dlqDriver} onValueChange={setDlqDriver}>
+                <SelectTrigger
+                  className="h-9 w-auto shrink-0 text-xs"
+                  aria-label={t('alerts.driverFilter')}
                 >
-                  <div className="flex items-start gap-2.5 min-w-0">
-                    <Checkbox
-                      checked={isSelected}
-                      onCheckedChange={() => toggleSelected(retryKey)}
-                      aria-label={t('alerts.selectDeadLetter', { tag: entry.command.tag })}
-                      disabled={running || pendingRetryKey === retryKey}
-                      className="mt-0.5"
-                    />
-                    <div className="space-y-1 min-w-0">
-                      <div className="font-mono font-semibold text-status-error text-sm break-all">
-                        [{entry.command.driver}] {t('common.tag')}: {entry.command.tag} ={' '}
-                        {String(entry.command.value)}
-                      </div>
-                      {/* B06: sub-device of the failed write — same-name tags
-                          across devices are only distinguishable by this line. */}
-                      <div className="text-xs text-muted-foreground font-mono break-all">
-                        {t('common.device')}: {entry.command.device || '-'}
-                      </div>
-                      <div className="text-muted-foreground font-mono text-xs break-all">
-                        {entry.error}
-                      </div>
-                      <div className="text-xs text-muted-foreground flex items-center space-x-2">
-                        <Clock className="w-3 h-3" />
-                        <span>{new Date(entry.failed_at).toLocaleString()}</span>
-                        <span>•</span>
-                        <span>{t('alerts.attemptsExhausted', { count: entry.attempts })}</span>
-                      </div>
-                    </div>
-                  </div>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t('alerts.driverFilterAll')}</SelectItem>
+                  {uniqueDlqDrivers.map((d) => (
+                    <SelectItem key={d} value={d}>
+                      {d}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPendingReplay(entry)}
-                    disabled={pendingRetryKey === retryKey || running}
-                    className="shrink-0 text-xs border-status-error/30 text-status-error hover:bg-status-error/10"
-                  >
-                    {pendingRetryKey === retryKey ? (
-                      <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
-                    ) : (
-                      <RotateCcw className="w-3.5 h-3.5 mr-1" />
-                    )}
-                    <span>{t('write.retry')}</span>
-                  </Button>
+            {filteredDeadLetters.length === 0 ? (
+              <div className="py-8 text-center text-xs text-muted-foreground">
+                {t('alerts.noMatchingDeadLetters')}
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center gap-2 pb-1 border-b border-border/60">
+                  <Checkbox
+                    checked={allVisibleSelected}
+                    onCheckedChange={toggleAllVisible}
+                    aria-label={t('alerts.selectAllDeadLetters', {
+                      count: visibleDeadLetters.length,
+                    })}
+                    disabled={running}
+                  />
+                  <span className="text-xs text-muted-foreground">
+                    {/* B10: the count states which set select-all covers. */}
+                    {t('alerts.selectAllDeadLetters', { count: visibleDeadLetters.length })}
+                  </span>
                 </div>
-              )
-            })}
-            {deadLetters.length > MAX_VISIBLE_DLQ && (
-              <p className="text-xs text-muted-foreground text-center py-2">
-                {t('common.showing', { shown: MAX_VISIBLE_DLQ, total: deadLetters.length })}
-              </p>
+                {visibleDeadLetters.map((entry) => {
+                  const retryKey = dlqKeyOf(entry)
+                  const isSelected = selected.has(retryKey)
+                  return (
+                    <div
+                      key={retryKey}
+                      className={`p-3 rounded-lg border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sm transition-colors ${
+                        isSelected
+                          ? 'border-status-error/40 bg-status-error/10'
+                          : 'border-status-error/20 bg-status-error/5 hover:bg-status-error/10'
+                      }`}
+                    >
+                      <div className="flex items-start gap-2.5 min-w-0">
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={() => toggleSelected(retryKey)}
+                          aria-label={t('alerts.selectDeadLetter', { tag: entry.command.tag })}
+                          disabled={running || pendingRetryKey === retryKey}
+                          className="mt-0.5"
+                        />
+                        <div className="space-y-1 min-w-0">
+                          <div className="font-mono font-semibold text-status-error text-sm break-all">
+                            [{entry.command.driver}] {t('common.tag')}: {entry.command.tag} ={' '}
+                            {String(entry.command.value)}
+                          </div>
+                          {/* B06: sub-device of the failed write — same-name tags
+                          across devices are only distinguishable by this line. */}
+                          <div className="text-xs text-muted-foreground font-mono break-all">
+                            {t('common.device')}: {entry.command.device || '-'}
+                          </div>
+                          <div className="text-muted-foreground font-mono text-xs break-all">
+                            {entry.error}
+                          </div>
+                          <div className="text-xs text-muted-foreground flex items-center space-x-2">
+                            <Clock className="w-3 h-3" />
+                            <span>{new Date(entry.failed_at).toLocaleString()}</span>
+                            <span>•</span>
+                            <span>{t('alerts.attemptsExhausted', { count: entry.attempts })}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPendingReplay(entry)}
+                        disabled={pendingRetryKey === retryKey || running}
+                        className="shrink-0 text-xs border-status-error/30 text-status-error hover:bg-status-error/10"
+                      >
+                        {pendingRetryKey === retryKey ? (
+                          <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
+                        ) : (
+                          <RotateCcw className="w-3.5 h-3.5 mr-1" />
+                        )}
+                        <span>{t('write.retry')}</span>
+                      </Button>
+                    </div>
+                  )
+                })}
+                {filteredDeadLetters.length > MAX_VISIBLE_DLQ && (
+                  <p className="text-xs text-muted-foreground text-center py-2">
+                    {/* B10: the "showing X/Y" footer tracks the FILTERED set. */}
+                    {t('common.showing', {
+                      shown: visibleDeadLetters.length,
+                      total: filteredDeadLetters.length,
+                    })}
+                  </p>
+                )}
+              </>
             )}
           </div>
         )}
       </CardContent>
 
-      {/* Batch replay confirmation — ONE dialog per batch. Writing to a PLC
-          is dangerous, so nothing is sent until the operator sees the exact
-          command list and confirms (the WriteControlPage pattern). */}
-      <Dialog open={confirmOpen} onOpenChange={(v) => !running && setConfirmOpen(v)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <RotateCcw className="w-4 h-4 text-status-error" />
-              <span>{t('alerts.replaySelectedTitle', { count: selectedEntries.length })}</span>
-            </DialogTitle>
-            <DialogDescription>{t('alerts.replaySelectedDesc')}</DialogDescription>
-          </DialogHeader>
-
-          <ScrollArea className="max-h-56 rounded-lg border border-border bg-muted/40 p-2">
-            <div className="space-y-1 font-mono text-xs">
-              {selectedEntries.map((dl) => (
-                <div key={`confirm-${dlqKeyOf(dl)}`} className="break-all text-foreground">
-                  {commandPrefixOf(dl.command)} {dl.command.tag} = {String(dl.command.value)} (
-                  {String(dl.command.type)})
-                </div>
-              ))}
-            </div>
-          </ScrollArea>
-
-          <div className="p-3 rounded-lg bg-status-warning/10 border border-status-warning/20 text-xs text-status-warning">
-            {t('write.confirmWarning')}
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirmOpen(false)} disabled={running}>
-              {t('common.cancel')}
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleConfirmBatch}
-              disabled={running || selectedEntries.length === 0}
-            >
-              {running ? (
-                <>
-                  <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                  {t('alerts.replaying')}
-                </>
-              ) : (
-                <>
-                  <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
-                  {t('alerts.replaySelectedConfirm')}
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Single replay confirmation — ONE dialog per entry, the same
-          two-step gate as the batch (C-C1). A dead letter's last write
-          already FAILED, so nothing is re-sent until the operator has seen
-          the exact command, its failure time/error, and confirmed. */}
-      <Dialog
-        open={pendingReplay !== null}
-        onOpenChange={(v) => !writeMutation.isPending && !v && setPendingReplay(null)}
-      >
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <RotateCcw className="w-4 h-4 text-status-error" />
-              <span>{t('alerts.replayOneTitle')}</span>
-            </DialogTitle>
-            <DialogDescription>
-              {t('alerts.replayOneDesc', { error: pendingReplay?.error ?? '' })}
-            </DialogDescription>
-          </DialogHeader>
-
-          {pendingReplay && (
-            <div className="rounded-lg border border-border bg-muted/40 p-3 space-y-1.5">
-              <div className="break-all font-mono text-xs text-foreground">
-                {commandPrefixOf(pendingReplay.command)} {pendingReplay.command.tag} ={' '}
-                {String(pendingReplay.command.value)} ({String(pendingReplay.command.type)})
-              </div>
-              <div className="text-xs text-muted-foreground flex items-center space-x-2">
-                <Clock className="w-3 h-3" />
-                <span>{new Date(pendingReplay.failed_at).toLocaleString()}</span>
-                <span>•</span>
-                <span>{t('alerts.attemptsExhausted', { count: pendingReplay.attempts })}</span>
-              </div>
-            </div>
-          )}
-
-          <div className="p-3 rounded-lg bg-status-warning/10 border border-status-warning/20 text-xs text-status-warning">
-            {t('write.confirmWarning')}
-          </div>
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setPendingReplay(null)}
-              disabled={writeMutation.isPending}
-            >
-              {t('common.cancel')}
-            </Button>
-            <Button
-              variant="destructive"
-              disabled={writeMutation.isPending || !pendingReplay}
-              onClick={() => {
-                const dl = pendingReplay
-                if (!dl) return
-                void handleRetryDeadLetter(dl, dlqKeyOf(dl))
-              }}
-            >
-              {writeMutation.isPending ? (
-                <>
-                  <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                  {t('alerts.replaying')}
-                </>
-              ) : (
-                <>
-                  <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
-                  {t('write.replayConfirm')}
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Replay confirmations (batch + single) — display-only dialogs; the
+          staging/flow lives in this component (see DeadLetterReplayDialogs). */}
+      <DeadLetterReplayDialogs
+        confirmOpen={confirmOpen}
+        onConfirmOpenChange={(v) => !running && setConfirmOpen(v)}
+        selectedEntries={selectedEntries}
+        running={running}
+        onConfirmBatch={handleConfirmBatch}
+        pendingReplay={pendingReplay}
+        writePending={writeMutation.isPending}
+        onConfirmSingle={() => {
+          const dl = pendingReplay
+          if (!dl) return
+          void handleRetryDeadLetter(dl, dlqKeyOf(dl))
+        }}
+        onCancelSingle={() => setPendingReplay(null)}
+      />
     </Card>
   )
 }
