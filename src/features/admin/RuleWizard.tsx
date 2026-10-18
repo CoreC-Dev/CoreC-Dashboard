@@ -51,6 +51,7 @@ import { dumpConfigYaml } from '@/lib/configYaml'
 import { validateRuleInContext } from '@/lib/entityValidation'
 import { validateRuleExpression } from '@/lib/ruleExprValidator'
 import { validateTransformExpression } from '@/lib/transformExprValidator'
+import { isRuleDraftDirty } from '@/lib/wizardDirty'
 import { useConfigStore } from '@/stores/configStore'
 import type { RuleAction, RuleConfig } from '@/types/config'
 
@@ -454,6 +455,23 @@ export const RuleWizard: React.FC<RuleWizardProps> = ({
       onFinish={handleFinish}
       canFinish={!hasContextErrors}
       onCancel={() => onOpenChange(false)}
+      // C-A2: a draft with unsaved input confirms before the wizard closes.
+      isDirty={() =>
+        isRuleDraftDirty({
+          currentStep,
+          isEdit,
+          existing: existingRule,
+          ruleName,
+          match,
+          priority,
+          action,
+          target,
+          targets,
+          transformExpr,
+          tagRename,
+          continueFlag,
+        })
+      }
       dialogTitle={isEdit ? t('ruleWizard.editTitle') : t('ruleWizard.createTitle')}
       previewNode={
         <pre className="text-xs font-mono whitespace-pre-wrap text-muted-foreground">

@@ -17,7 +17,7 @@
  */
 import { Check, ChevronLeft, ChevronRight } from 'lucide-react'
 import type React from 'react'
-import { Fragment, useCallback, useMemo, useRef } from 'react'
+import { Fragment, useCallback, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSlidingIndicator } from '@/components/layout/useSlidingIndicator'
 import { Button } from '@/components/ui/button'
@@ -28,6 +28,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { DiscardChangesDialog } from '@/components/wizard/DiscardChangesDialog'
 import { cn } from '@/lib/cn'
 
 export interface WizardStep {
@@ -75,6 +76,16 @@ interface WizardProps {
    * cross-entity context validation shown in the preview step.
    */
   canFinish?: boolean
+  /**
+   * Dirty-draft predicate for the cancel guard (C-A2). When provided and
+   * true, EVERY dismiss path (Cancel button, Esc, X, overlay click) first
+   * opens the shared DiscardChangesDialog instead of closing — the wizard
+   * only closes after an explicit "Discard". Omit (or return false) to
+   * close immediately; an untouched form must not nag. Consumed by
+   * WizardDialog (the shell that owns the close funnel); see
+   * lib/wizardDirty.ts for the per-wizard predicates.
+   */
+  isDirty?: () => boolean
 }
 
 const Wizard: React.FC<WizardProps> = ({
@@ -145,12 +156,12 @@ const Wizard: React.FC<WizardProps> = ({
     <DialogContent
       className={cn('max-w-3xl max-h-[90vh] flex flex-col', className)}
       onEscapeKeyDown={(e) => {
-        if (finishing) {
-          // Prevent closing mid-apply (non-atomic hot-reload in flight).
-          e.preventDefault()
-        } else if (onCancel) {
-          onCancel()
-        }
+        // Always funnel Esc through onCancel (WizardDialog's guarded close
+        // path) instead of letting Radix dismiss the dialog directly — a
+        // dirty draft must first pass the discard confirmation (C-A2).
+        // Closing is blocked entirely mid-apply (non-atomic hot-reload).
+        e.preventDefault()
+        if (!finishing) onCancel?.()
       }}
     >
       <DialogHeader>
@@ -286,20 +297,39 @@ export const WizardDialog: React.FC<WizardDialogProps> = ({
   open,
   onOpenChange,
   onCancel,
+  isDirty,
+  finishing,
   ...wizardProps
 }) => {
+  const [discardOpen, setDiscardOpen] = useState(false)
+
+  // Single guarded close funnel for EVERY dismiss path (Cancel button, Esc,
+  // X, overlay click) — C-A2. A clean draft closes immediately; a dirty
+  // draft first sees the shared DiscardChangesDialog, and only its explicit
+  // "Discard" closes the wizard. Never closes mid-apply (finishing).
+  const requestClose = useCallback(() => {
+    if (finishing) return
+    if (isDirty?.()) {
+      setDiscardOpen(true)
+      return
+    }
+    onCancel?.()
+    onOpenChange(false)
+  }, [finishing, isDirty, onCancel, onOpenChange])
+
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(v) => (v ? undefined : onCancel ? onCancel() : onOpenChange(false))}
-    >
-      <Wizard
-        {...wizardProps}
-        onCancel={() => {
-          onCancel?.()
+    <>
+      <Dialog open={open} onOpenChange={(v) => (v ? undefined : requestClose())}>
+        <Wizard {...wizardProps} finishing={finishing} onCancel={requestClose} />
+      </Dialog>
+      <DiscardChangesDialog
+        open={discardOpen}
+        onOpenChange={setDiscardOpen}
+        onConfirm={() => {
+          setDiscardOpen(false)
           onOpenChange(false)
         }}
       />
-    </Dialog>
+    </>
   )
 }

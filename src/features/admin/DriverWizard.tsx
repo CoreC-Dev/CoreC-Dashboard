@@ -45,6 +45,7 @@ import { cn } from '@/lib/cn'
 import { dumpConfigYaml } from '@/lib/configYaml'
 import { validateDriverInContext } from '@/lib/entityValidation'
 import { buildDefaultSettings, getDriverFieldRegistry } from '@/lib/settingsRegistry'
+import { isDriverDraftDirty } from '@/lib/wizardDirty'
 import { useConfigStore } from '@/stores/configStore'
 import { DATA_TYPES, type DriverConfig, type DriverType } from '@/types/config'
 
@@ -421,6 +422,20 @@ export const DriverWizard: React.FC<DriverWizardProps> = ({
       onFinish={handleFinish}
       canFinish={!hasContextErrors}
       onCancel={() => onOpenChange(false)}
+      // C-A2: a draft with unsaved input confirms before the wizard closes.
+      isDirty={() =>
+        isDriverDraftDirty({
+          currentStep,
+          isEdit,
+          existing: existingDriver,
+          selectedType,
+          driverName,
+          settings,
+          tags,
+          tagsFile,
+          tagsInterval,
+        })
+      }
       dialogTitle={isEdit ? t('driverWizard.editTitle') : t('driverWizard.createTitle')}
       previewNode={
         <pre className="text-xs font-mono whitespace-pre-wrap text-muted-foreground">

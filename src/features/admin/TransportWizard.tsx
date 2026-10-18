@@ -35,6 +35,7 @@ import {
   getTransportFieldRegistry,
   TRANSPORT_TOPLEVEL_FIELDS,
 } from '@/lib/settingsRegistry'
+import { isTransportDraftDirty } from '@/lib/wizardDirty'
 import { useConfigStore } from '@/stores/configStore'
 import type { TransportConfig, TransportType } from '@/types/config'
 
@@ -212,6 +213,20 @@ export const TransportWizard: React.FC<TransportWizardProps> = ({
     }
   }
 
+  // The existing transport's top-level fields, in the same key set the
+  // toplevel state uses — the edit-mode baseline for the dirty check.
+  const existingToplevel = useMemo(() => {
+    const tl: Record<string, unknown> = {}
+    if (existingTransport) {
+      const tp = existingTransport as unknown as Record<string, unknown>
+      for (const f of TRANSPORT_TOPLEVEL_FIELDS) {
+        const val = tp[f.key]
+        if (val !== undefined) tl[f.key] = val
+      }
+    }
+    return tl
+  }, [existingTransport])
+
   // ─── Build wizard steps ──────────────────────────────────────────
   const steps: WizardStep[] = [
     {
@@ -355,6 +370,19 @@ export const TransportWizard: React.FC<TransportWizardProps> = ({
       onFinish={handleFinish}
       canFinish={!hasContextErrors}
       onCancel={() => onOpenChange(false)}
+      // C-A2: a draft with unsaved input confirms before the wizard closes.
+      isDirty={() =>
+        isTransportDraftDirty({
+          currentStep,
+          isEdit,
+          existing: existingTransport,
+          selectedType,
+          transportName,
+          settings,
+          toplevel,
+          existingToplevel,
+        })
+      }
       dialogTitle={isEdit ? t('transportWizard.editTitle') : t('transportWizard.createTitle')}
       previewNode={
         <pre className="text-xs font-mono whitespace-pre-wrap text-muted-foreground">
