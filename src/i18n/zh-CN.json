@@ -37,6 +37,7 @@
     "secretToken": "API 密钥 (Bearer Token)",
     "secretMin": "密钥至少需要 8 个字符",
     "secretHint": "在 CoreC 服务端的 config.yaml 里：global.api.secret。若配置为 ${COREC_API_SECRET} 形式，填对应环境变量的值。",
+    "secretStorageNote": "密钥将以明文保存在此浏览器的本地存储中，请勿在公用电脑上保存生产密钥。",
     "color": "颜色标识",
     "tags": "分组标签",
     "tagsPlaceholder": "车间A, 生产线1（逗号分隔）",

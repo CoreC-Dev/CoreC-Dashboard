@@ -125,4 +125,11 @@ describe('InstanceDialog form validation (TD-TEST-007)', { timeout: 15_000 }, ()
     expect(i18n.t('instances.proxyModeHint')).not.toContain('server.mjs')
     expect(i18n.t('instances.proxyModeProxy')).not.toContain('server.mjs')
   })
+
+  // A-10 — the dialog must disclose that the key is persisted in plain
+  // text localStorage BEFORE the operator saves it, not after discovery.
+  it('discloses plain-text local storage under the API key field (A-10)', () => {
+    renderDialog()
+    expect(screen.getByText(t('instances.secretStorageNote'))).toBeInTheDocument()
+  })
 })

@@ -201,6 +201,10 @@ export const InstanceDialog: React.FC<InstanceDialogProps> = ({
                   </FormControl>
                   {/* A-02: where the key comes from — the #1 cold-start blocker. */}
                   <FormDescription>{t('instances.secretHint')}</FormDescription>
+                  {/* A-10: honest disclosure that the key lands in localStorage
+                      in plain text — the operator deserves to know before
+                      saving a production key on a shared machine. */}
+                  <FormDescription>{t('instances.secretStorageNote')}</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

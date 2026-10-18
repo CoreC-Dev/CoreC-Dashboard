@@ -37,6 +37,7 @@
     "secretToken": "API Secret (Bearer Token)",
     "secretMin": "Secret must be at least 8 characters",
     "secretHint": "Find it in CoreC's config.yaml under global.api.secret. If it's set to ${COREC_API_SECRET}, use that environment variable's value.",
+    "secretStorageNote": "The key is stored in plain text in this browser's local storage. Avoid saving production keys on shared computers.",
     "color": "Color Label",
     "tags": "Group Tags",
     "tagsPlaceholder": "Workshop A, Line 1 (comma-separated)",
