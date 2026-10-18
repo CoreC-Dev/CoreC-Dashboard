@@ -30,6 +30,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { deriveTopologyView } from '@/features/home/instanceTopology'
 import { ConnStateLabel } from '@/lib/constants'
 import { formatRelativeTime } from '@/lib/formatters'
 import { formatCompact, formatUptime } from '@/lib/utils'
@@ -73,77 +74,10 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
 
   // Driver stats for display — memoized so probe updates that don't change
   // this card's stats don't recompute the topology arrays.
-  const { allInputs, allOutputs, ruleList, hasTopology } = useMemo(() => {
-    const driverList = stats?.driver_stats ? Object.values(stats.driver_stats) : []
-    const transportList = stats?.transport_stats ? Object.values(stats.transport_stats) : []
-    const ruleList = stats?.rule_list ?? []
-
-    // Classify transports as input or output based on published/received counts
-    const inputTransports = transportList.filter((tr) => tr.received > 0 && tr.published === 0)
-    const outputTransports = transportList.filter((tr) => tr.published > 0 && tr.received === 0)
-    const bidirTransports = transportList.filter((tr) => tr.published > 0 && tr.received > 0)
-    // Ambiguous (both 0) — use name heuristic
-    const ambiguousTransports = transportList.filter(
-      (tr) => tr.published === 0 && tr.received === 0,
-    )
-    for (const tr of ambiguousTransports) {
-      if (/sub|in|from/i.test(tr.name)) {
-        inputTransports.push(tr)
-      } else {
-        outputTransports.push(tr)
-      }
-    }
-
-    // All inputs: drivers + input transports + bidirectional
-    const allInputs = [
-      ...driverList.map((d) => ({
-        name: d.name,
-        type: d.type,
-        state: d.state,
-        detail:
-          d.error_count > 0 ? `${d.error_count} err` : d.tag_count > 0 ? `${d.tag_count} tags` : '',
-        conn: stats?.driver_conn?.[d.name] ?? '',
-        isDriver: true,
-      })),
-      ...inputTransports.map((tr) => ({
-        name: tr.name,
-        type: tr.type,
-        state: tr.state,
-        detail: tr.received > 0 ? `${tr.received} rx` : '',
-        conn: stats?.transport_conn?.[tr.name] ?? '',
-        isDriver: false,
-      })),
-      ...bidirTransports.map((tr) => ({
-        name: tr.name,
-        type: tr.type,
-        state: tr.state,
-        detail: `${tr.received} rx`,
-        conn: stats?.transport_conn?.[tr.name] ?? '',
-        isDriver: false,
-      })),
-    ]
-
-    // All outputs: output transports + bidirectional (published side)
-    const allOutputs = [
-      ...outputTransports.map((tr) => ({
-        name: tr.name,
-        type: tr.type,
-        state: tr.state,
-        detail: tr.published > 0 ? `${tr.published} pub` : '',
-        conn: stats?.transport_conn?.[tr.name] ?? '',
-      })),
-      ...bidirTransports.map((tr) => ({
-        name: tr.name,
-        type: tr.type,
-        state: tr.state,
-        detail: `${tr.published} pub`,
-        conn: stats?.transport_conn?.[tr.name] ?? '',
-      })),
-    ]
-
-    const hasTopology = allInputs.length > 0 || ruleList.length > 0 || allOutputs.length > 0
-    return { allInputs, allOutputs, ruleList, hasTopology }
-  }, [stats])
+  const { allInputs, allOutputs, ruleList, hasTopology } = useMemo(
+    () => deriveTopologyView(stats),
+    [stats],
+  )
 
   return (
     <>
