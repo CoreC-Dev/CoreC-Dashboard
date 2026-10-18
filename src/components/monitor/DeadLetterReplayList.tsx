@@ -92,9 +92,12 @@ export const DeadLetterReplayList: React.FC<DeadLetterReplayListProps> = ({
   const { t } = useTranslation()
   const writeMutation = useWriteTag()
 
-  // Single-entry retry state (per-row button).
+  // Single-entry retry state (per-row button). C-C1: the row button only
+  // STAGES the entry here; the write fires from the per-entry confirmation
+  // dialog below — the same two-step gate the batch replay already uses.
   const [retryError, setRetryError] = useState<string | null>(null)
   const [pendingRetryKey, setPendingRetryKey] = useState<string | null>(null)
+  const [pendingReplay, setPendingReplay] = useState<DeadLetterEntry | null>(null)
 
   // Batch replay state: selection → per-batch confirm dialog → results.
   const [selected, setSelected] = useState<Set<string>>(new Set())
@@ -143,6 +146,7 @@ export const DeadLetterReplayList: React.FC<DeadLetterReplayListProps> = ({
       setRetryError(writeErrorMsg(err))
     } finally {
       setPendingRetryKey(null)
+      setPendingReplay(null)
     }
   }
 
@@ -331,7 +335,7 @@ export const DeadLetterReplayList: React.FC<DeadLetterReplayListProps> = ({
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleRetryDeadLetter(entry, retryKey)}
+                    onClick={() => setPendingReplay(entry)}
                     disabled={pendingRetryKey === retryKey || running}
                     className="shrink-0 text-xs border-status-error/30 text-status-error hover:bg-status-error/10"
                   >
@@ -400,6 +404,77 @@ export const DeadLetterReplayList: React.FC<DeadLetterReplayListProps> = ({
                 <>
                   <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
                   {t('alerts.replaySelectedConfirm')}
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Single replay confirmation — ONE dialog per entry, the same
+          two-step gate as the batch (C-C1). A dead letter's last write
+          already FAILED, so nothing is re-sent until the operator has seen
+          the exact command, its failure time/error, and confirmed. */}
+      <Dialog
+        open={pendingReplay !== null}
+        onOpenChange={(v) => !writeMutation.isPending && !v && setPendingReplay(null)}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <RotateCcw className="w-4 h-4 text-status-error" />
+              <span>{t('alerts.replayOneTitle')}</span>
+            </DialogTitle>
+            <DialogDescription>
+              {t('alerts.replayOneDesc', { error: pendingReplay?.error ?? '' })}
+            </DialogDescription>
+          </DialogHeader>
+
+          {pendingReplay && (
+            <div className="rounded-lg border border-border bg-muted/40 p-3 space-y-1.5">
+              <div className="break-all font-mono text-xs text-foreground">
+                [{pendingReplay.command.driver}] {pendingReplay.command.tag} ={' '}
+                {String(pendingReplay.command.value)} ({String(pendingReplay.command.type)})
+              </div>
+              <div className="text-xs text-muted-foreground flex items-center space-x-2">
+                <Clock className="w-3 h-3" />
+                <span>{new Date(pendingReplay.failed_at).toLocaleString()}</span>
+                <span>•</span>
+                <span>{t('alerts.attemptsExhausted', { count: pendingReplay.attempts })}</span>
+              </div>
+            </div>
+          )}
+
+          <div className="p-3 rounded-lg bg-status-warning/10 border border-status-warning/20 text-xs text-status-warning">
+            {t('write.confirmWarning')}
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setPendingReplay(null)}
+              disabled={writeMutation.isPending}
+            >
+              {t('common.cancel')}
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={writeMutation.isPending || !pendingReplay}
+              onClick={() => {
+                const dl = pendingReplay
+                if (!dl) return
+                void handleRetryDeadLetter(dl, dlqKeyOf(dl))
+              }}
+            >
+              {writeMutation.isPending ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                  {t('alerts.replaying')}
+                </>
+              ) : (
+                <>
+                  <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
+                  {t('write.replayConfirm')}
                 </>
               )}
             </Button>

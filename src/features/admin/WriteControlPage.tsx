@@ -1,4 +1,4 @@
-import { AlertOctagon, Loader2, Send, ShieldAlert } from 'lucide-react'
+import { AlertOctagon, Clock, Loader2, Send, ShieldAlert } from 'lucide-react'
 import type React from 'react'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -36,6 +36,20 @@ import type { DeadLetterEntry, WriteCommand } from '@/types/models'
 const dlqKeyOf = (dl: DeadLetterEntry): string =>
   `${dl.command.driver}-${dl.command.tag}-${dl.failed_at}`
 
+/**
+ * Re-issues a dead letter via the existing POST /write. Builds a CLEAN
+ * command (driver/device/tag/value/type only): the recorded command carries
+ * the server-stamped source/remote audit fields, which POST /write re-stamps
+ * at its own trust boundary anyway. (Same shape as the Alerts page's replay.)
+ */
+const cleanReplayCommand = (dl: DeadLetterEntry): WriteCommand => ({
+  driver: dl.command.driver,
+  device: dl.command.device,
+  tag: dl.command.tag,
+  value: dl.command.value,
+  type: dl.command.type,
+})
+
 export const WriteControlPage: React.FC = () => {
   const { t } = useTranslation()
   const { data: driversData } = useDrivers()
@@ -63,6 +77,9 @@ export const WriteControlPage: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [replayError, setReplayError] = useState<string | null>(null)
   const [pendingCmd, setPendingCmd] = useState<WriteCommand | null>(null)
+  // Dead-letter context when the staged command is a REPLAY request (C-C1):
+  // the confirm dialog then also lists when/why the original write failed.
+  const [pendingReplay, setPendingReplay] = useState<DeadLetterEntry | null>(null)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [clearConfirmOpen, setClearConfirmOpen] = useState(false)
   const { clearedDlqKeys, setClearedDlqKeys } = useClearedDlqKeys()
@@ -128,6 +145,7 @@ export const WriteControlPage: React.FC = () => {
       type,
       value: parseWriteValue(value, type),
     })
+    setPendingReplay(null)
     setConfirmOpen(true)
   }
 
@@ -138,9 +156,10 @@ export const WriteControlPage: React.FC = () => {
       setSuccessMsg(
         t('write.writeSuccess', { driver: pendingCmd.driver, tag: pendingCmd.tag, value }),
       )
-      setValue('')
+      if (!pendingReplay) setValue('')
       setConfirmOpen(false)
       setPendingCmd(null)
+      setPendingReplay(null)
     } catch (err) {
       // Surface CoreC's error body (e.g. "unsupported patch key(s)") when
       // available — ApiError carries the response body in .body.
@@ -150,26 +169,26 @@ export const WriteControlPage: React.FC = () => {
           : err instanceof Error
             ? err.message
             : t('write.writeFailed')
-      setErrorMsg(msg)
+      if (pendingReplay) setReplayError(msg)
+      else setErrorMsg(msg)
       setConfirmOpen(false)
+      setPendingCmd(null)
+      setPendingReplay(null)
     }
   }
 
-  const handleReplay = async (cmd: WriteCommand) => {
+  // C-C1: a dead letter's last write already FAILED — its value may be
+  // stale. The replay button therefore only STAGES the command in the SAME
+  // confirmation dialog the manual write uses (listing the command plus
+  // when/why it failed); the write fires only from the explicit
+  // "Confirm re-send".
+  const handleReplayRequest = (dl: DeadLetterEntry) => {
+    setSuccessMsg(null)
+    setErrorMsg(null)
     setReplayError(null)
-    try {
-      await writeMutation.mutateAsync(cmd)
-      // No manual refetch needed — useWriteTag's onSuccess invalidates
-      // ['deadLetters'], triggering an automatic refetch.
-    } catch (err) {
-      const msg =
-        err instanceof ApiError && err.body
-          ? extractApiError(err.body, t('write.unknownError'))
-          : err instanceof Error
-            ? err.message
-            : t('write.unknownError')
-      setReplayError(msg)
-    }
+    setPendingReplay(dl)
+    setPendingCmd(cleanReplayCommand(dl))
+    setConfirmOpen(true)
   }
 
   // Industrial safety: clearing is a second-confirmed action. The AlertDialog
@@ -292,6 +311,27 @@ export const WriteControlPage: React.FC = () => {
             </div>
           )}
 
+          {/* Dead-letter context (replay requests only, C-C1): the command
+              already failed once — show when it failed, how many retries
+              were exhausted, and the recorded error before re-sending. */}
+          {pendingReplay && (
+            <div className="rounded-lg border border-status-error/20 bg-status-error/5 p-3 space-y-1.5 text-xs">
+              <div className="text-status-error">
+                {t('alerts.replayOneDesc', { error: pendingReplay.error })}
+              </div>
+              <div className="text-muted-foreground flex items-center space-x-2 font-mono">
+                <Clock className="w-3 h-3" />
+                <span>
+                  {t('write.lastFailure', {
+                    time: new Date(pendingReplay.failed_at).toLocaleString(),
+                  })}
+                </span>
+                <span>•</span>
+                <span>{t('write.attemptsExhausted', { count: pendingReplay.attempts })}</span>
+              </div>
+            </div>
+          )}
+
           <div className="p-3 rounded-lg bg-status-warning/10 border border-status-warning/20 text-xs text-status-warning">
             {t('write.confirmWarning')}
           </div>
@@ -317,7 +357,7 @@ export const WriteControlPage: React.FC = () => {
               ) : (
                 <>
                   <Send className="w-3.5 h-3.5 mr-1.5" />
-                  {t('write.confirmWrite')}
+                  {pendingReplay ? t('write.replayConfirm') : t('write.confirmWrite')}
                 </>
               )}
             </Button>
@@ -339,7 +379,7 @@ export const WriteControlPage: React.FC = () => {
           refetchDeadLetters()
         }}
         onClearAll={() => setClearConfirmOpen(true)}
-        onReplay={handleReplay}
+        onReplay={handleReplayRequest}
         isWritePending={writeMutation.isPending}
       />
 

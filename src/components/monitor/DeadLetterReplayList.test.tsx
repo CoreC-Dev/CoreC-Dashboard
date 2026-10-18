@@ -188,12 +188,28 @@ describe('DeadLetterReplayList', () => {
     await waitFor(() => expect(api.writeTag).toHaveBeenCalledTimes(2))
   })
 
-  it('still supports the single-entry retry button', async () => {
+  it('requires the per-entry confirmation dialog before a single replay is sent', async () => {
     vi.mocked(api.writeTag).mockResolvedValue({ success: true })
     renderList()
 
+    // The row button only STAGES the replay — a confirm dialog opens
+    // (C-C1: a dead letter's last write already failed, so nothing is
+    // re-sent until the operator has seen the command and confirmed).
     await act(async () => {
       fireEvent.click(screen.getAllByRole('button', { name: 'Replay Command' })[0])
+    })
+
+    expect(await screen.findByText('Replay Dead Letter Command')).toBeTruthy()
+    // The dialog lists the exact command, the recorded failure reason…
+    expect(screen.getByText(/This command previously failed \(driver disconnected\)/)).toBeTruthy()
+    expect(screen.getByText('[plc1] pump = true (bool)')).toBeTruthy()
+    // "3 attempts exhausted" appears in both rows and once more in the dialog.
+    expect(screen.getAllByText('3 attempts exhausted').length).toBe(3)
+    // …and nothing has been sent yet.
+    expect(api.writeTag).not.toHaveBeenCalled()
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Confirm re-send' }))
     })
 
     await waitFor(() =>
@@ -206,5 +222,20 @@ describe('DeadLetterReplayList', () => {
       }),
     )
     expect(api.writeTag).toHaveBeenCalledTimes(1)
+  })
+
+  it('single replay: cancel sends nothing', async () => {
+    renderList()
+
+    await act(async () => {
+      fireEvent.click(screen.getAllByRole('button', { name: 'Replay Command' })[0])
+    })
+    expect(await screen.findByText('Replay Dead Letter Command')).toBeTruthy()
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+    })
+    await waitFor(() => expect(screen.queryByText('Replay Dead Letter Command')).toBeNull())
+    expect(api.writeTag).not.toHaveBeenCalled()
   })
 })

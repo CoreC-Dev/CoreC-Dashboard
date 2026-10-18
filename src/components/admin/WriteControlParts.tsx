@@ -32,7 +32,7 @@ import {
 } from '@/components/ui/select'
 import type { DataTypeString } from '@/lib/constants'
 import { DATA_TYPES } from '@/types/config'
-import type { DeadLetterEntry, WriteCommand } from '@/types/models'
+import type { DeadLetterEntry } from '@/types/models'
 
 // ─── TagCombobox ────────────────────────────────────────────
 
@@ -281,7 +281,10 @@ interface DeadLetterTableProps {
   replayError: string | null
   onRefresh: () => void
   onClearAll: () => void
-  onReplay: (cmd: WriteCommand) => void
+  /** Replay request for ONE dead letter (C-C1): stages the entry in the
+   *  page's write-confirmation dialog — the full entry is passed so the
+   *  gate can also list failed_at/attempts/last error. Fires no write. */
+  onReplay: (dl: DeadLetterEntry) => void
   isWritePending: boolean
 }
 
@@ -403,7 +406,7 @@ export const DeadLetterTable: React.FC<DeadLetterTableProps> = ({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => onReplay(dl.command)}
+                  onClick={() => onReplay(dl)}
                   disabled={isWritePending}
                   className="shrink-0 text-xs border-status-error/30 text-status-error hover:bg-status-error/10"
                 >
