@@ -5,17 +5,9 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useConfigRaw, useTransports } from '@/api/hooks'
+import { DeleteEntityConfirm } from '@/components/admin/DeleteEntityConfirm'
 import { ConnectionSummary } from '@/components/admin/DetailPageParts'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
+import { SeedBlockedBanner } from '@/components/admin/SeedBlockedBanner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -26,6 +18,7 @@ import { UnsavedChangesBanner } from '@/components/wizard/UnsavedChangesBanner'
 import { ValidationBanner } from '@/components/wizard/ValidationBanner'
 import { TransportWizard } from '@/features/admin/TransportWizard'
 import { useApplyConfig } from '@/hooks/useApplyConfig'
+import { useAutoLoadConfig } from '@/hooks/useAutoLoadConfig'
 import {
   formatValidationErrors,
   formatValidationWarnings,
@@ -75,6 +68,10 @@ export const TransportsPage: React.FC = () => {
     validationWarnings,
     onApplySuccess: () => queryClient.invalidateQueries({ queryKey: ['transports'] }),
   })
+
+  // D-16/X4: Create stays disabled (and the block visible) while the
+  // server config has never been loaded.
+  const { seedBlocked } = useAutoLoadConfig()
 
   const {
     wizardOpen,
@@ -138,6 +135,7 @@ export const TransportsPage: React.FC = () => {
             variant="default"
             size="sm"
             onClick={handleCreate}
+            disabled={seedBlocked}
             className="h-8 text-xs shrink-0"
           >
             <Plus className="w-3.5 h-3.5 mr-1.5" />
@@ -145,6 +143,9 @@ export const TransportsPage: React.FC = () => {
           </Button>
         </div>
       </div>
+
+      {/* D-16 — config seed failed/loading: explain why Create is disabled */}
+      <SeedBlockedBanner />
 
       {/* Unsaved changes banner */}
       <UnsavedChangesBanner
@@ -389,49 +390,36 @@ export const TransportsPage: React.FC = () => {
         existingTransport={editingTransport}
       />
 
-      {/* Delete Confirmation */}
-      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t('transports.deleteTitle')}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t('transports.deleteConfirm', { name: deleteTarget ?? '' })}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-
-          {dependentRules.length > 0 && (
-            <div className="rounded-md border border-status-warning/30 bg-status-warning/10 p-3 text-xs space-y-1.5">
-              <div className="flex items-center gap-1.5 font-semibold text-status-warning">
-                <AlertCircle className="h-3.5 w-3.5" />
-                {t('transports.deleteDependentRules', { count: dependentRules.length })}
-              </div>
-              <ul className="list-disc list-inside text-status-warning/80 space-y-0.5">
-                {dependentRules.slice(0, 10).map((r) => (
-                  <li key={r.name} className="font-mono">
-                    {r.name} → {r.action}
-                  </li>
-                ))}
-                {dependentRules.length > 10 && (
-                  <li className="italic">
-                    {t('transports.deleteAndMore', { count: dependentRules.length - 10 })}
-                  </li>
-                )}
-              </ul>
-              <p className="text-status-warning/70">{t('transports.deleteDependentHint')}</p>
+      {/* Delete Confirmation — lists dependent rules (C-A13 scan surface) */}
+      <DeleteEntityConfirm
+        open={!!deleteTarget}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        title={t('transports.deleteTitle')}
+        description={t('transports.deleteConfirm', { name: deleteTarget ?? '' })}
+        onConfirm={confirmDelete}
+      >
+        {dependentRules.length > 0 && (
+          <div className="rounded-md border border-status-warning/30 bg-status-warning/10 p-3 text-xs space-y-1.5">
+            <div className="flex items-center gap-1.5 font-semibold text-status-warning">
+              <AlertCircle className="h-3.5 w-3.5" />
+              {t('transports.deleteDependentRules', { count: dependentRules.length })}
             </div>
-          )}
-
-          <AlertDialogFooter>
-            <AlertDialogCancel className="h-8 text-xs">{t('common.cancel')}</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDelete}
-              className="h-8 text-xs bg-destructive text-destructive-foreground hover:bg-destructive/90 danger-pulse"
-            >
-              {t('common.delete')}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            <ul className="list-disc list-inside text-status-warning/80 space-y-0.5">
+              {dependentRules.slice(0, 10).map((r) => (
+                <li key={r.name} className="font-mono">
+                  {r.name} → {r.action}
+                </li>
+              ))}
+              {dependentRules.length > 10 && (
+                <li className="italic">
+                  {t('transports.deleteAndMore', { count: dependentRules.length - 10 })}
+                </li>
+              )}
+            </ul>
+            <p className="text-status-warning/70">{t('transports.deleteDependentHint')}</p>
+          </div>
+        )}
+      </DeleteEntityConfirm>
 
       {/* Apply Config Confirmation */}
       <ConfigApplyConfirmationDialog {...applyDialogProps} />

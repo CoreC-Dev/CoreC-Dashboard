@@ -4,6 +4,7 @@ import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useConfigRaw, useRules } from '@/api/hooks'
+import { DeleteEntityConfirm } from '@/components/admin/DeleteEntityConfirm'
 import {
   ActionBadge,
   ContinueBadge,
@@ -11,16 +12,7 @@ import {
   getTargetDisplay,
   RuleTestDialog,
 } from '@/components/admin/RuleParts'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
+import { SeedBlockedBanner } from '@/components/admin/SeedBlockedBanner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -32,6 +24,7 @@ import { UnsavedChangesBanner } from '@/components/wizard/UnsavedChangesBanner'
 import { ValidationBanner } from '@/components/wizard/ValidationBanner'
 import { RuleWizard } from '@/features/admin/RuleWizard'
 import { useApplyConfig } from '@/hooks/useApplyConfig'
+import { useAutoLoadConfig } from '@/hooks/useAutoLoadConfig'
 import {
   formatValidationErrors,
   formatValidationWarnings,
@@ -80,6 +73,10 @@ export const RulesPage: React.FC = () => {
     validationWarnings,
     onApplySuccess: () => queryClient.invalidateQueries({ queryKey: ['rules'] }),
   })
+
+  // D-16/X4: Create stays disabled (and the block visible) while the
+  // server config has never been loaded.
+  const { seedBlocked } = useAutoLoadConfig()
 
   const {
     wizardOpen,
@@ -211,6 +208,7 @@ export const RulesPage: React.FC = () => {
             variant="default"
             size="sm"
             onClick={handleCreateRule}
+            disabled={seedBlocked}
             className="h-8 text-xs shrink-0"
           >
             <Plus className="w-3.5 h-3.5 mr-1.5" />
@@ -218,6 +216,9 @@ export const RulesPage: React.FC = () => {
           </Button>
         </div>
       </div>
+
+      {/* D-16 — config seed failed/loading: explain why Create is disabled */}
+      <SeedBlockedBanner />
 
       {/* Unsaved changes banner */}
       <UnsavedChangesBanner
@@ -469,25 +470,13 @@ export const RulesPage: React.FC = () => {
       <RuleWizard open={wizardOpen} onOpenChange={setWizardOpen} existingRule={editingRule} />
 
       {/* Delete confirmation */}
-      <AlertDialog open={deleteTarget !== null} onOpenChange={(o) => !o && setDeleteTarget(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t('rules.deleteTitle')}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t('rules.deleteConfirm', { name: deleteTarget ?? '' })}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDeleteRule}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 danger-pulse"
-            >
-              {t('common.delete')}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteEntityConfirm
+        open={deleteTarget !== null}
+        onOpenChange={(o) => !o && setDeleteTarget(null)}
+        title={t('rules.deleteTitle')}
+        description={t('rules.deleteConfirm', { name: deleteTarget ?? '' })}
+        onConfirm={confirmDeleteRule}
+      />
 
       {/* Apply changes confirmation */}
       <ConfigApplyConfirmationDialog {...applyDialogProps} />

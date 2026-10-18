@@ -881,6 +881,7 @@
     "applySyncFailed": "Config hot-reloaded, but local state sync failed: {{error}}. Reload the config from the server.",
     "editedInFormView": "(edited in Form view)",
     "seedLoadFailed": "Could not load the server config — create & apply are disabled to protect the running config",
+    "seedLoadPending": "Loading the server config to protect the running engine — create is temporarily unavailable…",
     "applyBlockedSeed": "The server config has not been loaded — apply is disabled to protect the running config. Retry the load first.",
     "serverValidateFailed": "Server-side validation failed: {{error}}"
   },

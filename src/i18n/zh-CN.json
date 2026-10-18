@@ -881,6 +881,7 @@
     "applySyncFailed": "配置已热重载，但本地状态同步失败：{{error}}。请从服务器重新加载配置。",
     "editedInFormView": "（在表单视图中修改）",
     "seedLoadFailed": "服务器配置加载失败，创建/应用已禁用以保护运行中的配置",
+    "seedLoadPending": "正在从服务器加载配置以保护运行中的引擎，创建暂不可用…",
     "applyBlockedSeed": "服务器配置尚未成功加载，应用已禁用以保护运行中的配置。请先重试加载。",
     "serverValidateFailed": "服务端校验未通过：{{error}}"
   },

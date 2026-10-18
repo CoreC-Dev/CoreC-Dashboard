@@ -5,17 +5,9 @@ import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useConfigRaw, useDrivers, useDriverTags } from '@/api/hooks'
+import { DeleteEntityConfirm } from '@/components/admin/DeleteEntityConfirm'
 import { ConnectionSummary } from '@/components/admin/DetailPageParts'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
+import { SeedBlockedBanner } from '@/components/admin/SeedBlockedBanner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -33,6 +25,7 @@ import { UnsavedChangesBanner } from '@/components/wizard/UnsavedChangesBanner'
 import { ValidationBanner } from '@/components/wizard/ValidationBanner'
 import { DriverWizard } from '@/features/admin/DriverWizard'
 import { useApplyConfig } from '@/hooks/useApplyConfig'
+import { useAutoLoadConfig } from '@/hooks/useAutoLoadConfig'
 import {
   formatValidationErrors,
   formatValidationWarnings,
@@ -72,6 +65,11 @@ export const DriversPage: React.FC = () => {
   const validationWarnings = formatValidationWarnings(validation)
 
   const [searchQuery, setSearchQuery] = useState('')
+
+  // D-16/X4: while the server config has never been loaded (auto-seed in
+  // flight or failed, no baseline), Create must stay disabled — and the
+  // block must be VISIBLE, not a silently dead button.
+  const { seedBlocked } = useAutoLoadConfig()
 
   const { openDialog: openApplyDialog, dialogProps: applyDialogProps } = useApplyConfig({
     getWorkingYaml,
@@ -153,6 +151,7 @@ export const DriversPage: React.FC = () => {
             variant="default"
             size="sm"
             onClick={handleCreate}
+            disabled={seedBlocked}
             className="h-8 text-xs shrink-0"
           >
             <Plus className="w-3.5 h-3.5 mr-1.5" />
@@ -160,6 +159,9 @@ export const DriversPage: React.FC = () => {
           </Button>
         </div>
       </div>
+
+      {/* D-16 — config seed failed/loading: explain why Create is disabled */}
+      <SeedBlockedBanner />
 
       {/* Config editing banner — shows when there are unsaved config changes */}
       <UnsavedChangesBanner
@@ -407,25 +409,13 @@ export const DriversPage: React.FC = () => {
       <DriverWizard open={wizardOpen} onOpenChange={setWizardOpen} existingDriver={editingDriver} />
 
       {/* Delete Confirmation */}
-      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t('drivers.deleteTitle')}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t('drivers.deleteConfirm', { name: deleteTarget ?? '' })}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="h-8 text-xs">{t('common.cancel')}</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDelete}
-              className="h-8 text-xs bg-destructive text-destructive-foreground hover:bg-destructive/90 danger-pulse"
-            >
-              {t('common.delete')}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteEntityConfirm
+        open={!!deleteTarget}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        title={t('drivers.deleteTitle')}
+        description={t('drivers.deleteConfirm', { name: deleteTarget ?? '' })}
+        onConfirm={confirmDelete}
+      />
 
       {/* Apply Config Confirmation */}
       <ConfigApplyConfirmationDialog {...applyDialogProps} />
