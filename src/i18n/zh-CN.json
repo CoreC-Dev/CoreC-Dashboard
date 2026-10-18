@@ -382,6 +382,7 @@
     "pause": "暂停",
     "resume": "继续",
     "pausedGapNote": "已暂停 — 恢复后暂停时段将留空，不连线",
+    "backToLive": "回到最新",
     "exportCsv": "导出 CSV",
     "fullscreen": "全屏",
     "statCurrent": "当前",

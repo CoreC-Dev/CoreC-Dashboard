@@ -1,16 +1,20 @@
 // @vitest-environment jsdom
-// TagTrendPanel (B08) — the pause indicator carries the expectation-management
-// copy, and gap samples (whitespace markers) stay out of the stats bar, the
-// sample count, and the CSV export. useTrendChart is mocked (jsdom has no
+// TagTrendPanel (B08 + 待验证-1) — the pause indicator carries the
+// expectation-management copy, gap samples (whitespace markers) stay out of
+// the stats bar / count / CSV export, and the Back-to-live button jumps the
+// (mocked) chart to the live edge. useTrendChart is mocked (jsdom has no
 // canvas); i18n in English.
-import { cleanup, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { TagTrendPanel } from '@/components/monitor/TagTrendPanel'
 import i18n from '@/i18n'
 import type { DataPoint } from '@/types/models'
 
+// Both the main and the fullscreen chart instances resolve to the same spy —
+// each TagTrendPanel render calls the hook twice.
+const scrollToLive = vi.fn()
 vi.mock('@/hooks/useTrendChart', () => ({
-  useTrendChart: () => ({ chartContainerRef: { current: null } }),
+  useTrendChart: () => ({ chartContainerRef: { current: null }, scrollToLive }),
 }))
 
 const TREND_TAG: DataPoint = {
@@ -43,6 +47,7 @@ beforeAll(async () => {
 
 afterEach(() => {
   cleanup()
+  scrollToLive.mockClear()
 })
 
 describe('TagTrendPanel — pause gap expectation (B08)', () => {
@@ -84,5 +89,37 @@ describe('TagTrendPanel — gap samples excluded from stats and count (B08)', ()
     expect(screen.queryByText('Current')).toBeNull()
     const csv = screen.getByRole('button', { name: 'Export CSV' })
     expect(csv).toBeDisabled()
+  })
+})
+
+describe('TagTrendPanel — back to live (待验证-1)', () => {
+  it('shows the Back to live button and wires it to the chart scroll', () => {
+    renderPanel({ trendSamples: [{ time: 10, value: 1 }] })
+
+    const btn = screen.getByRole('button', { name: 'Back to live' })
+    expect(btn).toBeEnabled()
+    act(() => {
+      fireEvent.click(btn)
+    })
+    expect(scrollToLive).toHaveBeenCalled()
+  })
+
+  it('disables the jump while there are no valued samples yet', () => {
+    renderPanel()
+
+    expect(screen.getByRole('button', { name: 'Back to live' })).toBeDisabled()
+  })
+
+  it('the fullscreen dialog carries its own Back to live control', () => {
+    renderPanel({ trendSamples: [{ time: 10, value: 1 }] })
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Fullscreen' }))
+    })
+    const dialogBtn = screen.getAllByRole('button', { name: 'Back to live' })[0]
+    act(() => {
+      fireEvent.click(dialogBtn)
+    })
+    expect(scrollToLive).toHaveBeenCalled()
   })
 })

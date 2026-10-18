@@ -382,6 +382,7 @@
     "pause": "Pause",
     "resume": "Resume",
     "pausedGapNote": "Paused — the paused period will be left blank on resume",
+    "backToLive": "Back to live",
     "exportCsv": "Export CSV",
     "fullscreen": "Fullscreen",
     "statCurrent": "Current",

@@ -1,4 +1,4 @@
-import { Activity, Download, Maximize2, Pause, Play, X } from 'lucide-react'
+import { Activity, ArrowRightToLine, Download, Maximize2, Pause, Play, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
@@ -60,15 +60,19 @@ export function TagTrendPanel({
   onClose,
 }: TagTrendPanelProps) {
   const { t } = useTranslation()
-  const { chartContainerRef } = useTrendChart({ trendTag, trendSamples })
   const trendNumeric = isNumericType(trendTag.type)
 
   // Fullscreen chart dialog state.
   const [fullscreen, setFullscreen] = useState(false)
-  const { chartContainerRef: fullscreenChartRef } = useTrendChart({
-    trendTag: fullscreen ? trendTag : null,
+  const { chartContainerRef: mainChartRef, scrollToLive: mainScrollToLive } = useTrendChart({
+    trendTag,
     trendSamples,
   })
+  const { chartContainerRef: fullscreenChartRef, scrollToLive: fullscreenScrollToLive } =
+    useTrendChart({
+      trendTag: fullscreen ? trendTag : null,
+      trendSamples,
+    })
 
   // Real (valued) samples — gap markers carry no value and must not reach the
   // stats bar, the sample count, or the CSV export (B08).
@@ -133,6 +137,20 @@ export function TagTrendPanel({
                 title={trendPaused ? t('tags.resume') : t('tags.pause')}
               >
                 {trendPaused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
+              </Button>
+              {/* 待验证-1 (verified): lightweight-charts only auto-follows the
+               *  newest bar while it sits at the visible right edge — once the
+               *  operator pans/zooms into history there was no way back. */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={mainScrollToLive}
+                disabled={valuedSamples.length === 0}
+                className="h-8 w-8 p-0"
+                title={t('tags.backToLive')}
+                aria-label={t('tags.backToLive')}
+              >
+                <ArrowRightToLine className="h-4 w-4" />
               </Button>
               <Button
                 variant="ghost"
@@ -214,7 +232,7 @@ export function TagTrendPanel({
             )}
 
             <div
-              ref={chartContainerRef}
+              ref={mainChartRef}
               className="w-full h-[280px] md:h-[360px] [&_canvas]:outline-none"
             />
           </>
@@ -262,8 +280,22 @@ export function TagTrendPanel({
       <Dialog open={fullscreen} onOpenChange={setFullscreen}>
         <DialogContent className="max-w-5xl">
           <DialogHeader>
-            <DialogTitle className="text-sm font-mono">
-              {trendTag.driver} · {trendTag.tag}
+            <DialogTitle className="flex items-center justify-between gap-2 text-sm font-mono">
+              <span className="truncate">
+                {trendTag.driver} · {trendTag.tag}
+              </span>
+              {/* Panning happens mostly in fullscreen history dives — the
+               *  live-edge jump belongs here too. */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={fullscreenScrollToLive}
+                disabled={valuedSamples.length === 0}
+                className="h-7 shrink-0 text-xs"
+              >
+                <ArrowRightToLine className="h-3.5 w-3.5" aria-hidden />
+                <span>{t('tags.backToLive')}</span>
+              </Button>
             </DialogTitle>
           </DialogHeader>
           <div ref={fullscreenChartRef} className="w-full h-[60vh] [&_canvas]:outline-none" />

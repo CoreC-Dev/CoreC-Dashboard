@@ -5,7 +5,7 @@ import {
   LineSeries,
   type UTCTimestamp,
 } from 'lightweight-charts'
-import { useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { isNumericType, type TrendSample } from '@/lib/tagExplorer'
 import { useThemeStore } from '@/stores/themeStore'
 import type { DataPoint } from '@/types/models'
@@ -20,6 +20,11 @@ interface UseTrendChartOptions {
 interface UseTrendChartResult {
   /** Attach to the chart container <div>. */
   chartContainerRef: React.RefObject<HTMLDivElement | null>
+  /** Jump the time scale back to the live edge after the operator panned or
+   *  zoomed into history — lightweight-charts only auto-follows while the
+   *  newest bar is at the visible right edge (audit 待验证-1 verification:
+   *  no scrollToRealTime/fitContent call existed anywhere before this). */
+  scrollToLive: () => void
 }
 
 /**
@@ -117,5 +122,9 @@ export function useTrendChart({
     seriesRef.current.setData(toLineData(trendSamples))
   }, [trendSamples])
 
-  return { chartContainerRef }
+  const scrollToLive = useCallback(() => {
+    chartRef.current?.timeScale().scrollToRealTime()
+  }, [])
+
+  return { chartContainerRef, scrollToLive }
 }

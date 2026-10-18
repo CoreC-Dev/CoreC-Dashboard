@@ -94,3 +94,5 @@ Conventional Commits；单一职责；重构与行为变更不混提；改造仅
 - **运行区测试改服务端引擎（C-B3）**：RuleTestDialog 弃用客户端粗算器（lib/ruleMatchEvaluator 连测试整体删除），改调 POST /rules/preview——与向导 Playground 同一 scratch 引擎，两处「测试」结论不再可能打架；编译错误原文透传，样例点变更后旧结论隐藏。
 - **诊断页信息架构（C-E1）**：页头下新增锚点跳转 chips（健康/实时流/事件终端/指标/写历史/高级调试，scrollIntoView）；pprof 归入默认折叠的「高级调试 (pprof)」区块（抽出为 PprofDownloads 组件，页面回到 476 行）；副标题如实覆盖全部六类内容。
 - **死信搜索与过滤（B10）**：死信队列头部新增搜索框（搜索死信（驱动/测点）…）与驱动过滤（驱动: 全部），全选提示与「显示 X/Y」底部计数对齐可见（过滤后）集合；无匹配时显示「没有匹配的死信」。过滤规则抽为纯函数 filterDeadLetters 并配单测；死信重放确认对话框拆出 DeadLetterReplayDialogs（主文件 443 行/对话框 212 行，回到 500 行门禁内）。
+- **死信「查看测点」深链（B11）**：每条死信新增「查看测点」链接（alerts.viewTag），直达 #/corec/{{id}}/monitor/tags?driver={{driver}}&tag={{tag}}；TagExplorerPage 挂载时经 useSearchParams 预填驱动过滤与搜索词（driver/tag 参数驱动 WS 订阅与搜索框）。重放前核对当前实时值不再需要抄测点名、切页、粘贴。
+- **趋势「回到最新」按钮（B 域待验证-1，已验证落地）**：验证确认 lightweight-charts 仅在最新 bar 位于可视右缘时自动跟随（全库原无任何 scrollToRealTime/fitContent 调用），拖拽/缩放回历史后无回跳手段；TagTrendPanel 头部与全屏对话框新增「回到最新」（tags.backToLive，回到最新/Back to live），经 useTrendChart.scrollToLive 调 timeScale().scrollToRealTime()。
