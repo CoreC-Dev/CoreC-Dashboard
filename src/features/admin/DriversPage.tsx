@@ -120,6 +120,16 @@ export const DriversPage: React.FC = () => {
     return m
   }, [parsedConfig, drivers])
 
+  // C-A6: one page-header search bar covers BOTH zones — the runtime cards
+  // filter by name/type/connection summary too, so an 80-driver site can
+  // find plc-line3 without scrolling.
+  const showSearch = configDrivers.length + drivers.length > 6
+  const filteredRuntimeDrivers = filterEntities(
+    drivers,
+    searchQuery,
+    (d) => parsedDriverConnSummaries.get(d.name) ?? '',
+  )
+
   // C-A3: when deleting a driver, list the rules that lose their data
   // source — the match DSL is the only structural link between a rule
   // and a driver. Scans the working ∪ saved rule sets so pending
@@ -142,6 +152,7 @@ export const DriversPage: React.FC = () => {
           <p className="text-sm text-muted-foreground mt-1">{t('drivers.subtitle')}</p>
         </div>
         <div className="flex items-center gap-2">
+          {showSearch && <EntitySearchBar value={searchQuery} onChange={setSearchQuery} />}
           {dirty && (
             <Button
               variant="default"
@@ -202,9 +213,6 @@ export const DriversPage: React.FC = () => {
             <Badge variant="outline" className="text-xs">
               {configDrivers.length}
             </Badge>
-            {configDrivers.length > 6 && (
-              <EntitySearchBar value={searchQuery} onChange={setSearchQuery} />
-            )}
           </div>
           {searchQuery && filteredConfigDrivers.length === 0 && (
             <p className="text-xs text-muted-foreground italic">
@@ -307,8 +315,12 @@ export const DriversPage: React.FC = () => {
             <Card className="col-span-full p-8 text-center text-xs text-muted-foreground border-dashed">
               {t('drivers.empty')}
             </Card>
+          ) : filteredRuntimeDrivers.length === 0 ? (
+            <Card className="col-span-full p-8 text-center text-xs text-muted-foreground border-dashed">
+              {t('common.noResults', { query: searchQuery })}
+            </Card>
           ) : (
-            drivers.map((drv) => {
+            filteredRuntimeDrivers.map((drv) => {
               const st = ConnStateLabel[drv.state] || ConnStateLabel[0]
               return (
                 <Card

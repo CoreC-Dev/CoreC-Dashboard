@@ -91,6 +91,12 @@ export const TransportsPage: React.FC = () => {
 
   const configTransports = workingConfig?.transports ?? []
   const filteredConfigTransports = filterEntities(configTransports, searchQuery)
+  // C-A6: one page-header search bar covers BOTH zones — runtime cards
+  // match name/type/connection summary too.
+  const showSearch = configTransports.length + transports.length > 6
+  const filteredRuntimeTransports = filterEntities(transports, searchQuery, (tr) =>
+    getTransportConnectionSummary(parsedConfig, tr.name),
+  )
 
   // When deleting a transport, find rules that reference it as a target so
   // the operator is warned before removing a dependency. A rule depends on
@@ -110,6 +116,7 @@ export const TransportsPage: React.FC = () => {
           <p className="text-sm text-muted-foreground mt-1">{t('transports.subtitle')}</p>
         </div>
         <div className="flex items-center gap-2">
+          {showSearch && <EntitySearchBar value={searchQuery} onChange={setSearchQuery} />}
           {dirty && (
             <Button
               variant="default"
@@ -170,9 +177,6 @@ export const TransportsPage: React.FC = () => {
             <Badge variant="outline" className="text-xs">
               {configTransports.length}
             </Badge>
-            {configTransports.length > 6 && (
-              <EntitySearchBar value={searchQuery} onChange={setSearchQuery} />
-            )}
           </div>
           {searchQuery && filteredConfigTransports.length === 0 && (
             <p className="text-xs text-muted-foreground italic">
@@ -283,8 +287,12 @@ export const TransportsPage: React.FC = () => {
             <Card className="col-span-full p-8 text-center text-xs text-muted-foreground border-dashed">
               {t('transports.empty')}
             </Card>
+          ) : filteredRuntimeTransports.length === 0 ? (
+            <Card className="col-span-full p-8 text-center text-xs text-muted-foreground border-dashed">
+              {t('common.noResults', { query: searchQuery })}
+            </Card>
           ) : (
-            transports.map((tr) => {
+            filteredRuntimeTransports.map((tr) => {
               const st = ConnStateLabel[tr.state] || ConnStateLabel[0]
               const goDetail = () =>
                 navigate(`${adminBase}/transports/${encodeURIComponent(tr.name)}`)

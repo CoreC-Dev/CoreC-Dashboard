@@ -50,15 +50,20 @@ export const EntitySearchBar: React.FC<EntitySearchBarProps> = ({
 
 /**
  * Filters an array of entities by a search query. Matches case-insensitively
- * against the entity's `name` and `type` fields.
+ * against the entity's `name` and `type` fields, plus the optional
+ * `extra` text (e.g. a runtime card's connection summary — C-A6).
  */
 export function filterEntities<T extends { name: string; type?: string }>(
   entities: T[],
   query: string,
+  extra?: (entity: T) => string,
 ): T[] {
   if (!query.trim()) return entities
   const q = query.trim().toLowerCase()
   return entities.filter(
-    (e) => e.name.toLowerCase().includes(q) || (e.type ?? '').toLowerCase().includes(q),
+    (e) =>
+      e.name.toLowerCase().includes(q) ||
+      (e.type ?? '').toLowerCase().includes(q) ||
+      (extra?.(e) ?? '').toLowerCase().includes(q),
   )
 }

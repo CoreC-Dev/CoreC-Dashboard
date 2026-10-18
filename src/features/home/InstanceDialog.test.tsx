@@ -233,3 +233,25 @@ describe('InstanceDialog — test connection (D-13)', { timeout: 15_000 }, () =>
     ).not.toBeInTheDocument()
   })
 })
+
+// D-22 — the color swatches' aria-label/title were hardcoded English
+// ('Blue', 'Green'…) — screen readers and hover tooltips spoke English in a
+// zh UI. They must resolve through the language packs now.
+describe('InstanceDialog — localized color swatch labels (D-22)', { timeout: 15_000 }, () => {
+  it('labels every color swatch with the translated color name', () => {
+    renderDialog()
+
+    for (const key of [
+      'instances.colorDefault',
+      'instances.colorBlue',
+      'instances.colorGreen',
+      'instances.colorAmber',
+      'instances.colorRed',
+      'instances.colorPurple',
+      'instances.colorPink',
+    ]) {
+      const swatch = screen.getByRole('button', { name: t(key) })
+      expect(swatch).toHaveAttribute('title', t(key))
+    }
+  })
+})

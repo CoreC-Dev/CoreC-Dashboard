@@ -68,14 +68,16 @@ export interface InstanceDialogProps {
   }) => void
 }
 
+// D-22: color names render as aria-label/title, so they must resolve
+// through i18n — hardcoded 'Blue'/'Green' read English in a zh UI.
 const INSTANCE_COLORS = [
-  { value: '', label: 'Default' },
-  { value: '#3b82f6', label: 'Blue' },
-  { value: '#10b981', label: 'Green' },
-  { value: '#f59e0b', label: 'Amber' },
-  { value: '#ef4444', label: 'Red' },
-  { value: '#8b5cf6', label: 'Purple' },
-  { value: '#ec4899', label: 'Pink' },
+  { value: '', labelKey: 'instances.colorDefault' },
+  { value: '#3b82f6', labelKey: 'instances.colorBlue' },
+  { value: '#10b981', labelKey: 'instances.colorGreen' },
+  { value: '#f59e0b', labelKey: 'instances.colorAmber' },
+  { value: '#ef4444', labelKey: 'instances.colorRed' },
+  { value: '#8b5cf6', labelKey: 'instances.colorPurple' },
+  { value: '#ec4899', labelKey: 'instances.colorPink' },
 ]
 
 export const InstanceDialog: React.FC<InstanceDialogProps> = ({
@@ -285,7 +287,7 @@ export const InstanceDialog: React.FC<InstanceDialogProps> = ({
                           type="button"
                           onClick={() => field.onChange(c.value)}
                           aria-pressed={field.value === c.value}
-                          aria-label={c.label}
+                          aria-label={t(c.labelKey)}
                           className={`w-8 h-8 rounded-full border-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
                             field.value === c.value
                               ? 'border-foreground scale-110'
@@ -294,7 +296,7 @@ export const InstanceDialog: React.FC<InstanceDialogProps> = ({
                           style={{
                             backgroundColor: c.value || 'var(--muted)',
                           }}
-                          title={c.label}
+                          title={t(c.labelKey)}
                         />
                       ))}
                     </div>
