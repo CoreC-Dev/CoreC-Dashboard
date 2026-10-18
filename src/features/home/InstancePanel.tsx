@@ -11,7 +11,7 @@ import {
 } from 'lucide-react'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { InstanceExportDialog } from '@/components/home/InstanceExportDialog'
 import { Button } from '@/components/ui/button'
 import {
@@ -51,6 +51,7 @@ export const InstancePanel: React.FC = () => {
   const addInstance = useInstanceStore((s) => s.addInstance)
   const updateInstance = useInstanceStore((s) => s.updateInstance)
   const importInstances = useInstanceStore((s) => s.importInstances)
+  const [searchParams, setSearchParams] = useSearchParams()
   // A-11: surfaced as a banner when localStorage writes fail (quota /
   // private mode) so the data-loss risk is not discovered the hard way.
   const persistFailed = useInstanceStore((s) => s.persistFailed)
@@ -79,6 +80,18 @@ export const InstancePanel: React.FC = () => {
     setEditingInstance(instance)
     setDialogOpen(true)
   }, [])
+
+  // D-15 wiring: ConnectionGate's failure screen links here with
+  // ?edit=<instanceId> ("edit this instance"). Open the edit dialog for
+  // that instance, then strip the param — leaving it would re-open the
+  // dialog on every later visit to the homepage.
+  React.useEffect(() => {
+    const editId = searchParams.get('edit')
+    if (!editId) return
+    const target = instances.find((i) => i.id === editId)
+    if (target) handleEdit(target)
+    setSearchParams({}, { replace: true })
+  }, [searchParams, instances, handleEdit, setSearchParams])
 
   const handleSubmit = (data: {
     name: string

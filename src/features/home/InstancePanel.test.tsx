@@ -118,7 +118,13 @@ beforeEach(() => {
   mockHealthyEndpoints()
 })
 
-afterEach(cleanup)
+// Restore real timers after every test: the A-09 import tests run under
+// fake timers, and a leaked fake clock freezes waitFor's polling for every
+// subsequent test in the file (observed with the D-15 deep-link suite).
+afterEach(() => {
+  cleanup()
+  vi.useRealTimers()
+})
 
 // Suite timeout raised from the 5s default (same rationale as
 // InstanceDialog.test.tsx: heavy full-panel renders on a loaded runner).
@@ -379,5 +385,69 @@ describe('InstancePanel — help links (A-06)', () => {
     const hint = screen.getByRole('link', { name: t('instances.emptyHelpHint') })
     expect(hint).toHaveAttribute('href', HELP_URL)
     expect(hint).toHaveAttribute('target', '_blank')
+  })
+})
+
+// D-15 wiring — ConnectionGate's failure screen sends the operator back
+// with /?edit=<instanceId> so they land in the edit dialog for exactly the
+// broken instance instead of having to find it in the list.
+describe('InstancePanel — ?edit deep link (D-15)', { timeout: 15_000 }, () => {
+  it('opens the edit dialog for the referenced instance', async () => {
+    resetStore([makeInstance()])
+
+    render(
+      <MemoryRouter initialEntries={['/?edit=inst-1']}>
+        <InstancePanel />
+      </MemoryRouter>,
+    )
+
+    // The edit dialog opened for the referenced instance…
+    await waitFor(() => {
+      expect(screen.getByText(t('instances.editTitle'))).toBeInTheDocument()
+    })
+    const nameField = screen.getByPlaceholderText(
+      t('instances.namePlaceholder'),
+    ) as HTMLInputElement
+    expect(nameField.value).toBe('Gateway A')
+  })
+
+  it('clears the param and does not reopen the dialog on later visits', async () => {
+    resetStore([makeInstance()])
+
+    const { unmount } = render(
+      <MemoryRouter initialEntries={['/?edit=inst-1']}>
+        <InstancePanel />
+      </MemoryRouter>,
+    )
+    await waitFor(() => {
+      expect(screen.getByText(t('instances.editTitle'))).toBeInTheDocument()
+    })
+    // Close the dialog like the user would…
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: t('common.cancel') }))
+    })
+    expect(screen.queryByText(t('instances.editTitle'))).not.toBeInTheDocument()
+    unmount()
+
+    // …a plain visit to / afterwards must NOT reopen it (param was stripped).
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <InstancePanel />
+      </MemoryRouter>,
+    )
+    expect(screen.queryByText(t('instances.editTitle'))).not.toBeInTheDocument()
+  })
+
+  it('ignores (and clears) an ?edit id that does not exist', () => {
+    resetStore([makeInstance()])
+
+    render(
+      <MemoryRouter initialEntries={['/?edit=nope']}>
+        <InstancePanel />
+      </MemoryRouter>,
+    )
+
+    // No dialog — and no crash, the stale param is simply dropped.
+    expect(screen.queryByText(t('instances.editTitle'))).not.toBeInTheDocument()
   })
 })
