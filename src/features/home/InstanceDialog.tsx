@@ -230,7 +230,9 @@ export const InstanceDialog: React.FC<InstanceDialogProps> = ({
                         type="button"
                         onClick={() => setShowSecret((s) => !s)}
                         className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                        aria-label={showSecret ? t('common.hide') : t('common.show')}
+                        aria-label={
+                          showSecret ? t('instances.hideSecret') : t('instances.showSecret')
+                        }
                       >
                         {showSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>

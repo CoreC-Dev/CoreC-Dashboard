@@ -255,3 +255,19 @@ describe('InstanceDialog — localized color swatch labels (D-22)', { timeout: 1
     }
   })
 })
+
+// D-25 — the show/hide-secret toggle referenced common.show/common.hide,
+// keys that exist in neither pack; screen readers heard the literal
+// "common.show" key instead of a word.
+describe('InstanceDialog — secret visibility toggle label (D-25)', { timeout: 15_000 }, () => {
+  it('announces show/hide with translated, existing keys', () => {
+    renderDialog()
+
+    const toggle = secretInput().parentElement?.querySelector('button')
+    expect(toggle).toBeTruthy()
+    expect(toggle).toHaveAttribute('aria-label', t('instances.showSecret'))
+    // The key must actually resolve — a missing key echoes the key itself.
+    expect(t('instances.showSecret')).not.toBe('instances.showSecret')
+    expect(t('instances.hideSecret')).not.toBe('instances.hideSecret')
+  })
+})
