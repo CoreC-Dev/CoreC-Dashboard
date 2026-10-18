@@ -381,7 +381,7 @@
     "trendTitle": "{{tag}} 趋势",
     "pause": "暂停",
     "resume": "继续",
-    "paused": "已暂停",
+    "pausedGapNote": "已暂停 — 恢复后暂停时段将留空，不连线",
     "exportCsv": "导出 CSV",
     "fullscreen": "全屏",
     "statCurrent": "当前",

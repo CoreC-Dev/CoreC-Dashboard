@@ -70,24 +70,32 @@ export function TagTrendPanel({
     trendSamples,
   })
 
+  // Real (valued) samples — gap markers carry no value and must not reach the
+  // stats bar, the sample count, or the CSV export (B08).
+  const valuedSamples = useMemo(
+    () => trendSamples.filter((s) => s.value !== undefined),
+    [trendSamples],
+  )
+
   // Statistics over the visible trend samples.
   const stats = useMemo(() => {
-    if (trendSamples.length === 0) return null
+    if (valuedSamples.length === 0) return null
     let min = Infinity
     let max = -Infinity
     let sum = 0
-    for (const s of trendSamples) {
-      if (s.value < min) min = s.value
-      if (s.value > max) max = s.value
-      sum += s.value
+    for (const s of valuedSamples) {
+      const v = s.value as number
+      if (v < min) min = v
+      if (v > max) max = v
+      sum += v
     }
     return {
       min,
       max,
-      avg: sum / trendSamples.length,
-      current: trendSamples[trendSamples.length - 1].value,
+      avg: sum / valuedSamples.length,
+      current: (valuedSamples[valuedSamples.length - 1] as { value: number }).value,
     }
-  }, [trendSamples])
+  }, [valuedSamples])
 
   return (
     <Card
@@ -129,8 +137,8 @@ export function TagTrendPanel({
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => exportCsv(trendTag.tag, trendSamples)}
-                disabled={trendSamples.length === 0}
+                onClick={() => exportCsv(trendTag.tag, valuedSamples)}
+                disabled={valuedSamples.length === 0}
                 className="h-8 w-8 p-0"
                 title={t('tags.exportCsv')}
               >
@@ -158,10 +166,12 @@ export function TagTrendPanel({
           <>
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span>
-                {t('tags.liveTrend', { count: trendSamples.length, max: MAX_TREND_SAMPLES })}
+                {t('tags.liveTrend', { count: valuedSamples.length, max: MAX_TREND_SAMPLES })}
               </span>
               {trendPaused && (
-                <span className="text-status-warning font-semibold">{t('tags.paused')}</span>
+                // B08: expectation management — the pause leaves a BLANK gap
+                // on resume, never a fabricated connecting line.
+                <span className="text-status-warning font-semibold">{t('tags.pausedGapNote')}</span>
               )}
             </div>
 

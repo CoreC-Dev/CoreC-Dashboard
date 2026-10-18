@@ -23,6 +23,18 @@ interface UseTrendChartResult {
 }
 
 /**
+ * Map buffered samples to lightweight-charts line data. A sample without a
+ * value is a whitespace point — the line BREAKS there instead of drawing a
+ * fabricated segment across the pause gap (B08). Pure; unit-tested.
+ */
+export const toLineData = (samples: TrendSample[]) =>
+  samples.map((s) =>
+    s.value === undefined
+      ? { time: s.time as UTCTimestamp }
+      : { time: s.time as UTCTimestamp, value: s.value },
+  )
+
+/**
  * Lightweight-charts trend chart lifecycle for the TagExplorer trend drawer.
  *
  * Creates the chart once per tag selection (and again on theme change, since
@@ -99,11 +111,10 @@ export function useTrendChart({
   }, [trendTag, resolvedTheme])
 
   // Push buffered samples into the chart series whenever they change.
+  // Whitespace samples (no value) break the line across pause gaps (B08).
   useEffect(() => {
     if (!seriesRef.current) return
-    seriesRef.current.setData(
-      trendSamples.map((s) => ({ time: s.time as UTCTimestamp, value: s.value })),
-    )
+    seriesRef.current.setData(toLineData(trendSamples))
   }, [trendSamples])
 
   return { chartContainerRef }

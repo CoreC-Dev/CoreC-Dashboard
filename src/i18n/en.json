@@ -381,7 +381,7 @@
     "trendTitle": "Trend for {{tag}}",
     "pause": "Pause",
     "resume": "Resume",
-    "paused": "Paused",
+    "pausedGapNote": "Paused — the paused period will be left blank on resume",
     "exportCsv": "Export CSV",
     "fullscreen": "Fullscreen",
     "statCurrent": "Current",

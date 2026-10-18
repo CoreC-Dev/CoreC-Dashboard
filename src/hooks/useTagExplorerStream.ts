@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { CoreCWebSocket, makeStreamId, useWsStatusStore } from '@/api/hooks'
 import {
+  insertPauseGap,
   isNumericType,
   MAX_TREND_SAMPLES,
   type TrendSample,
@@ -78,10 +79,23 @@ export function useTagExplorerStream({
 
   // Pause/resume the trend chart. When paused, the WS callback skips staging
   // new trend samples so the operator can inspect a frozen snapshot.
+  // On RESUME after a real pause, a value-less GAP sample is appended one
+  // second after the last real sample (B08): lightweight-charts breaks the
+  // line there, so the paused period renders blank instead of a straight
+  // line fabricating the missing data.
   const [trendPaused, setTrendPaused] = useState(false)
   const trendPausedRef = useRef(false)
   useEffect(() => {
-    trendPausedRef.current = trendPaused
+    if (trendPaused) {
+      trendPausedRef.current = true
+      return
+    }
+    if (!trendPausedRef.current) return
+    trendPausedRef.current = false
+    setTrendSamples((prev) => {
+      const next = insertPauseGap(prev)
+      return next.length > MAX_TREND_SAMPLES ? next.slice(next.length - MAX_TREND_SAMPLES) : next
+    })
   }, [trendPaused])
 
   // Seed-once guard so the 5s REST poll never clobbers fresher WS values.

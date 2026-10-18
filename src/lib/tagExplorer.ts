@@ -44,10 +44,24 @@ export const toSeconds = (ts: string | undefined): number => {
   return Number.isNaN(parsed) ? Math.floor(Date.now() / 1000) : Math.floor(parsed / 1000)
 }
 
-/** One sampled point on the live trend chart. */
+/** One sampled point on the live trend chart. A sample WITHOUT `value` is a
+ *  whitespace gap marker: lightweight-charts breaks the line there instead of
+ *  drawing a fabricated segment across the pause period (B08). */
 export interface TrendSample {
   time: number
-  value: number
+  value?: number
+}
+
+/**
+ * B08 — append a value-less gap sample one second after the last real sample.
+ * Inserted on trend RESUME so the paused period renders as a blank gap, not a
+ * straight line pretending the data was continuous. Pure; no-op on an empty
+ * buffer (nothing to break yet).
+ */
+export const insertPauseGap = (samples: TrendSample[]): TrendSample[] => {
+  const last = samples[samples.length - 1]
+  if (!last) return samples
+  return [...samples, { time: last.time + 1 }]
 }
 
 /** B07 — quality/staleness filter for the tag explorer's problem-point hunt.

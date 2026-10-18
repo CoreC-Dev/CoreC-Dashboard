@@ -80,3 +80,4 @@ Conventional Commits；单一职责；重构与行为变更不混提；改造仅
 - **实例未找到文案本地化（D-05 半边）**：ConnectionProvider 缺实例分支的裸英文 'Instance not found' 改走 `connection.errInstance`（「未找到实例，请返回首页重新选择」）——探测错误路径再无英文原文。
 - **html lang 随语言切换（D-11）**：setLocale 同步写 `document.documentElement.lang`（i18next 的 languageChange 事件在资源加载后才触发，故显式同步一次）+ languageChange 监听兜底启动场景；英文界面不再被读屏用中文语音引擎朗读。
 - **首页消费 ?edit 深链（D-15 A 域半边）**：InstancePanel 挂载时读取 `?edit=<id>`（D 域 ConnectionGate 失败屏的「编辑此实例」出口），自动打开对应实例的编辑弹窗并立即清除参数（残留参数会在每次回首页时重开弹窗）；未知 id 静默丢弃。
+- **趋势暂停留空不连线（B08）**：恢复趋势时在最后采样后插入无值 whitespace 采样（lib/tagExplorer.insertPauseGap），lightweight-charts 于该点断线——暂停时段留空，不再伪造连续数据；暂停指示改为「已暂停 — 恢复后暂停时段将留空，不连线」（tags.pausedGapNote 替换 tags.paused）；统计条/采样计数/CSV 导出跳过 gap 标记。
