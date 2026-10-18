@@ -6,7 +6,6 @@ import {
   Cpu,
   Database,
   Send,
-  ShieldCheck,
   TrendingDown,
   TrendingUp,
 } from 'lucide-react'
@@ -17,10 +16,10 @@ import { Link, useParams } from 'react-router-dom'
 import { useDeadLetters, useDrivers, useStats, useTransports } from '@/api/hooks'
 import { MemoryChart } from '@/components/charts/MemoryChart'
 import { TrafficChart } from '@/components/charts/TrafficChart'
-import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { CountUpNumber } from '@/components/ui/count-up-number'
 import { LoadingState } from '@/components/ui/loading-state'
+import { DashboardDeadLetterCard } from '@/features/monitor/DashboardDeadLetterCard'
 import { ConnStateLabel } from '@/lib/constants'
 import { formatNumber, formatUptime } from '@/lib/utils'
 
@@ -31,7 +30,7 @@ import { formatNumber, formatUptime } from '@/lib/utils'
  * Row 2: Real-time charts (traffic + memory, side by side)
  * Row 3: Driver matrix (compact cards)
  * Row 4: Transport matrix (compact cards)
- * Row 5: Recent alerts / dead letters
+ * Row 5: Dead letters (failed writes) + current error-event count (B03)
  *
  * No customizable layout — fixed design for out-of-the-box best experience.
  */
@@ -306,58 +305,8 @@ export const DashboardPage: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Row 5 — Recent alerts / dead letters */}
-      <Card className="border-border bg-card">
-        <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between">
-          <CardTitle className="text-sm font-semibold">{t('dashboard.recentAlerts')}</CardTitle>
-          <Link
-            to={alertsLink}
-            className="text-xs text-primary hover:underline flex items-center space-x-0.5"
-          >
-            <span>{t('dashboard.manage', { defaultValue: 'View All' })}</span>
-            <ArrowUpRight className="w-3.5 h-3.5" />
-          </Link>
-        </CardHeader>
-        <CardContent className="p-4 pt-0">
-          {deadLetters.length === 0 ? (
-            <div className="py-6 text-center text-sm text-muted-foreground flex flex-col items-center space-y-2">
-              <ShieldCheck className="w-6 h-6 text-status-running" />
-              <span>
-                {t('dashboard.allHealthy', {
-                  defaultValue: 'All systems healthy. No dead letter write failures.',
-                })}
-              </span>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {deadLetters.slice(0, 8).map((item) => (
-                <div
-                  key={`${item.command.driver}-${item.command.tag}-${item.failed_at}-${item.attempts}`}
-                  className="p-3 rounded-lg border border-status-error/20 bg-status-error/5 flex items-center justify-between text-sm"
-                >
-                  <div className="space-y-1 min-w-0">
-                    <div className="font-mono font-semibold text-status-error truncate">
-                      [{item.command.driver}] {item.command.tag} = {String(item.command.value)}
-                    </div>
-                    <div className="text-xs text-muted-foreground truncate">{item.error}</div>
-                  </div>
-                  <div className="text-right shrink-0 ml-3">
-                    <Badge
-                      variant="outline"
-                      className="border-status-error/30 text-status-error text-xs"
-                    >
-                      {t('dashboard.retries', { count: item.attempts })}
-                    </Badge>
-                    <div className="text-xs text-muted-foreground mt-1">
-                      {new Date(item.failed_at).toLocaleTimeString()}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {/* Row 5 — Dead letters (failed writes) + current error-event lure (B03) */}
+      <DashboardDeadLetterCard deadLetters={deadLetters} alertsLink={alertsLink} />
     </div>
   )
 }

@@ -57,3 +57,4 @@ Conventional Commits；单一职责；重构与行为变更不混提；改造仅
 - **配置中心**：YAML 重载不再把未应用的表单编辑标成已保存（蒸发修复）；模式切换分歧时三选一桥接；播种失败红色横幅+创建/应用守卫；`POST /configs/validate` 接入两条应用确认流；变更历史按钮改名"载入到编辑器"（"恢复"仅指服务端备份真恢复）。
 - **诚实性**：`GET /configs/raw` 明文（无脱敏/无 sentinel-merge）在注释与提示文案中如实标注；`settings.subtitle`/`secretsRedactedNote` 等死键与失实文案清除。
 - **门禁收紧**：`SIZE_EXEMPTIONS` 移除 RulesPage/RuleParts 两项（C-B1 死代码删除后回到 500 行内）。
+- **总览页第 5 行卡片诚实化（B03）**：标题由名不副实的「近期告警事件」改为「死信队列 (写入失败)」，空态不再凭死信为空就宣称"系统健康"；卡片头新增全局告警流的当前 error 级事件计数徽标（消费 `alertStore.events`），点击直达告警页。
