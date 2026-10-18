@@ -63,8 +63,6 @@ export const AppShell: React.FC = () => {
   // calls resetToEmpty() and silently drops global.api from the server config.
   useAutoLoadConfig()
 
-  const isMonitor = location.pathname.includes('/monitor')
-
   // Main content area — shared by mobile (full-width) and desktop (inside the centered group)
   const mainArea = (
     <div className="flex-1 flex flex-col min-w-0 overflow-hidden h-full">
@@ -82,7 +80,7 @@ export const AppShell: React.FC = () => {
           <Link to="/" className="flex items-center shrink-0" aria-label={t('aria.corecHome')}>
             <img src="/logo-animated.svg" alt="CoreC" className="w-8 h-8 shrink-0" />
           </Link>
-          {isMonitor && (
+          {isMobile && (
             <span
               role="status"
               className={cn(
@@ -98,28 +96,33 @@ export const AppShell: React.FC = () => {
       {/* Content — floating white rounded card, aligned with sidebar */}
       <main className="flex-1 overflow-y-auto flex flex-col">
         <div className="w-full p-2 md:py-4 md:px-0 flex-1 flex flex-col">
-          {/* Page-level stream banner (monitor pages only) — surfaces
-              disconnected / gave-up / rate-limited states with a retry
-              entry point for rejected streams (audit B01/D-02). */}
-          {isMonitor && <StreamStatusBanner />}
+          {/* Page-level stream banner — surfaces disconnected / gave-up /
+              rate-limited states with a retry entry point for rejected
+              streams (audit B01/D-02). Mounted on EVERY instance route
+              (D-04): on admin pages the AppShell-level /logs alert stream
+              is live, and write-control/config pages are exactly where a
+              silent dead socket hurts most. Renders nothing when healthy. */}
+          <StreamStatusBanner />
           <div
             className="bg-card rounded-2xl px-5 py-5 md:px-8 md:py-8 flex-1 border border-border/40 relative"
             style={{ boxShadow: 'var(--shadow-card)' }}
           >
-            {/* Real-time stream indicator — floating top-right inside the card (desktop only; mobile uses the topbar dot) */}
-            {isMonitor && (
-              <div className="hidden md:block absolute top-7 right-8 z-10">
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50 border border-border/60">
-                  <span
-                    className={cn(
-                      'w-2.5 h-2.5 rounded-full shrink-0 transition-colors duration-300',
-                      tone.dot,
-                    )}
-                  />
-                  <span className={cn('text-sm font-semibold', tone.text)}>{t(tone.labelKey)}</span>
-                </div>
+            {/* Real-time stream indicator — floating top-right inside the
+                card on every instance route (desktop only; mobile uses the
+                topbar dot). D-04: was monitor-only, leaving the seven admin
+                pages with no connection status at all; the InstanceSelector
+                dot covers the HTTP probe, this covers the live streams. */}
+            <div className="hidden md:block absolute top-7 right-8 z-10">
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50 border border-border/60">
+                <span
+                  className={cn(
+                    'w-2.5 h-2.5 rounded-full shrink-0 transition-colors duration-300',
+                    tone.dot,
+                  )}
+                />
+                <span className={cn('text-sm font-semibold', tone.text)}>{t(tone.labelKey)}</span>
               </div>
-            )}
+            </div>
 
             <div key={location.pathname} className="page-enter">
               <Outlet />
