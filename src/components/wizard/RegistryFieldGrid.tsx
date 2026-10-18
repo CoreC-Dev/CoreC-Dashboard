@@ -10,6 +10,8 @@
  * per-type field set makes a static zod schema impractical. This grid
  * renders fields directly bound to the settings state.
  */
+
+import type { TFunction } from 'i18next'
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Input } from '@/components/ui/input'
@@ -23,6 +25,26 @@ import {
 import { TopicTemplatePreview } from '@/components/wizard/TopicTemplatePreview'
 import type { SettingsField } from '@/lib/settingsRegistry'
 
+/**
+ * D-23 guard: registry fields reference i18n keys by raw string, and a key
+ * pointing at the wrong (or a non-existent) namespace renders the literal
+ * key as the help text — e.g. "settings.tagsFileHelp" shown to operators
+ * because the copy actually lives at driverWizard.tagsFileHelp. Registry
+ * key existence is asserted by settingsRegistry.test.ts, but the grid is
+ * the last line of defense: in DEV it warns on the first render so the
+ * slip is caught immediately, not in production copy.
+ */
+function translateFieldHelp(
+  t: TFunction,
+  keyExists: (key: string) => boolean,
+  key: string,
+): string {
+  if (import.meta.env.DEV && !keyExists(key)) {
+    console.warn(`[settingsRegistry] field help key missing from the language packs: ${key}`)
+  }
+  return t(key)
+}
+
 export const RegistryFieldGrid: React.FC<{
   fields: SettingsField[]
   settings: Record<string, unknown>
@@ -30,7 +52,7 @@ export const RegistryFieldGrid: React.FC<{
   transportNames?: string[]
   currentName?: string
 }> = ({ fields, settings, onChange, transportNames, currentName }) => {
-  const { t } = useTranslation()
+  const { t, i18n: i18nInst } = useTranslation()
   return (
     <div className="grid grid-cols-2 gap-x-3 gap-y-2.5">
       {fields.map((field) => {
@@ -52,7 +74,9 @@ export const RegistryFieldGrid: React.FC<{
                 />
               </div>
               {field.help && (
-                <p className="text-xs text-muted-foreground leading-tight">{t(field.help)}</p>
+                <p className="text-xs text-muted-foreground leading-tight">
+                  {translateFieldHelp(t, (k) => i18nInst.exists(k), field.help)}
+                </p>
               )}
             </div>
           )
@@ -79,9 +103,9 @@ const RegistryFieldInput: React.FC<{
   transportNames?: string[]
   currentName?: string
 }> = ({ field, value, onChange, transportNames, currentName }) => {
-  const { t } = useTranslation()
+  const { t, i18n: i18nInst } = useTranslation()
   const label = t(field.label)
-  const help = field.help ? t(field.help) : undefined
+  const help = field.help ? translateFieldHelp(t, (k) => i18nInst.exists(k), field.help) : undefined
   const placeholder = field.placeholder ?? ''
 
   const renderControl = () => {

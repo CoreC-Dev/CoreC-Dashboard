@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest'
+import en from '@/i18n/en.json'
+import zhCN from '@/i18n/zh-CN.json'
 import {
   buildDefaultSettings,
   DRIVER_SETTINGS_REGISTRY,
@@ -7,6 +9,9 @@ import {
   TRANSPORT_SETTINGS_REGISTRY,
   TRANSPORT_TOPLEVEL_FIELDS,
 } from '@/lib/settingsRegistry'
+import { DRIVER_TOPLEVEL_FIELDS } from '@/lib/settingsRegistryDriver'
+import { NOTIFY_SETTINGS_REGISTRY } from '@/lib/settingsRegistryNotify'
+import type { SettingsField, TypeFieldRegistry } from '@/lib/settingsRegistryTypes'
 import { DRIVER_TYPES, TRANSPORT_TYPES } from '@/types/config'
 
 describe('settingsRegistry — driver coverage', () => {
@@ -224,5 +229,86 @@ describe('settingsRegistry — buildDefaultSettings (all types)', () => {
       })),
     }
     expect(buildDefaultSettings(noDefaults)).toEqual({})
+  })
+})
+
+// ─── D-23: registry i18n key integrity ────────────────────────────────
+// Registry fields reference i18n keys as raw strings; a key pointing at a
+// wrong/non-existent namespace renders the literal key as UI copy (the
+// driver edit form showed "settings.tagsFileHelp" because the text lives
+// at driverWizard.tagsFileHelp). Walk every field of every registry and
+// assert each dot-shaped label/help/group-label key resolves in BOTH
+// language packs, so a future namespace slip fails here instead of in
+// production copy.
+
+function flattenJsonKeys(obj: unknown, prefix = ''): string[] {
+  if (obj && typeof obj === 'object') {
+    return Object.entries(obj as Record<string, unknown>).flatMap(([k, v]) =>
+      flattenJsonKeys(v, prefix ? `${prefix}.${k}` : k),
+    )
+  }
+  return [prefix]
+}
+
+function collectFields(source: TypeFieldRegistry | SettingsField[]): SettingsField[] {
+  const fields: SettingsField[] = []
+  const push = (f: SettingsField) => {
+    fields.push(f)
+    f.subFields?.forEach(push)
+  }
+  if (Array.isArray(source)) {
+    source.forEach(push)
+  } else {
+    for (const group of source.groups) group.fields.forEach(push)
+  }
+  return fields
+}
+
+describe('settingsRegistry — i18n key integrity (D-23)', () => {
+  const I18N_KEY_RE = /^[\w-]+\.[\w.-]+$/
+  const zhKeys = new Set(flattenJsonKeys(zhCN))
+  const enKeys = new Set(flattenJsonKeys(en))
+
+  const registries: TypeFieldRegistry[] = [
+    ...DRIVER_TYPES.map((t) => DRIVER_SETTINGS_REGISTRY[t]),
+    ...TRANSPORT_TYPES.map((t) => TRANSPORT_SETTINGS_REGISTRY[t]),
+    NOTIFY_SETTINGS_REGISTRY,
+  ]
+  const fields: SettingsField[] = [
+    ...registries.flatMap((r) => collectFields(r)),
+    ...collectFields(DRIVER_TOPLEVEL_FIELDS),
+    ...collectFields(TRANSPORT_TOPLEVEL_FIELDS),
+  ]
+  const groupLabels: string[] = registries.flatMap((r) => r.groups.map((g) => g.label))
+
+  it('driver top-level tags-file/tags-interval help points at driverWizard.* (regression)', () => {
+    const tagsFile = DRIVER_TOPLEVEL_FIELDS.find((f) => f.key === 'tags-file')!
+    const tagsInterval = DRIVER_TOPLEVEL_FIELDS.find((f) => f.key === 'tags-interval')!
+    expect(tagsFile.help).toBe('driverWizard.tagsFileHelp')
+    expect(tagsInterval.help).toBe('driverWizard.tagsIntervalHelp')
+  })
+
+  it('every field label/help key resolves in both language packs', () => {
+    expect(fields.length).toBeGreaterThan(100)
+    for (const field of fields) {
+      for (const [kind, key] of [
+        ['label', field.label],
+        ['help', field.help],
+      ] as const) {
+        if (!key || !I18N_KEY_RE.test(key)) continue
+        expect(zhKeys.has(key), `zh-CN missing ${kind} key "${key}" (field ${field.key})`).toBe(
+          true,
+        )
+        expect(enKeys.has(key), `en missing ${kind} key "${key}" (field ${field.key})`).toBe(true)
+      }
+    }
+  })
+
+  it('every group label key resolves in both language packs', () => {
+    for (const label of groupLabels) {
+      if (!I18N_KEY_RE.test(label)) continue
+      expect(zhKeys.has(label), `zh-CN missing group label "${label}"`).toBe(true)
+      expect(enKeys.has(label), `en missing group label "${label}"`).toBe(true)
+    }
   })
 })

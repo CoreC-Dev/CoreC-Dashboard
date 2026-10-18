@@ -397,13 +397,17 @@ export const DRIVER_TOPLEVEL_FIELDS: SettingsField[] = [
     label: 'settings.tagsFile',
     type: 'text',
     default: 'tags.yaml',
-    help: 'settings.tagsFileHelp',
+    // D-23: the help copy lives under driverWizard.* (both packs) — these
+    // two fields used to point at settings.tagsFileHelp/tagsIntervalHelp,
+    // keys that never existed, so the edit form rendered the raw key string
+    // ("settings.tagsFileHelp") as the help text.
+    help: 'driverWizard.tagsFileHelp',
   },
   {
     key: 'tags-interval',
     label: 'settings.tagsInterval',
     type: 'duration',
     default: '1s',
-    help: 'settings.tagsIntervalHelp',
+    help: 'driverWizard.tagsIntervalHelp',
   },
 ]
