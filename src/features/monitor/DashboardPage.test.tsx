@@ -30,6 +30,11 @@ vi.mock('@/api/endpoints', () => ({
 
 import * as api from '@/api/endpoints'
 
+// Shared-tree CI runs up to a dozen jsdom workers at once; the multi-step
+// dialog/page interactions here can outlive vitest's 5s default testTimeout
+// even while every wait is already patience-tuned via asyncUtilTimeout.
+vi.setConfig({ testTimeout: 15_000 })
+
 const STATS: EngineStats = {
   status: 'running',
   uptime: 60 * 1e9,

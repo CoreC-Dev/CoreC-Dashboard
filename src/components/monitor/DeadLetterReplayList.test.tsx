@@ -5,6 +5,7 @@
 // QueryClient. i18n forced to English for deterministic assertions.
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, cleanup, configure, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { DeadLetterReplayList, filterDeadLetters } from '@/components/monitor/DeadLetterReplayList'
 import i18n from '@/i18n'
@@ -19,6 +20,11 @@ vi.mock('@/api/endpoints', () => ({
 }))
 
 import * as api from '@/api/endpoints'
+
+// Shared-tree CI runs up to a dozen jsdom workers at once; the multi-step
+// dialog/page interactions here can outlive vitest's 5s default testTimeout
+// even while every wait is already patience-tuned via asyncUtilTimeout.
+vi.setConfig({ testTimeout: 15_000 })
 
 const ENTRIES: DeadLetterEntry[] = [
   {
@@ -50,14 +56,25 @@ function renderList(entries: DeadLetterEntry[] = ENTRIES) {
   })
   return render(
     <QueryClientProvider client={qc}>
-      <DeadLetterReplayList
-        deadLetters={entries}
-        isLoading={false}
-        isError={false}
-        error={null}
-        isFetching={false}
-        onRefresh={vi.fn()}
-      />
+      {/* B11: the list renders per-entry router Links and reads the instance
+          id from the route — mount it at its real location. */}
+      <MemoryRouter initialEntries={['/corec/inst1/monitor/alerts']}>
+        <Routes>
+          <Route
+            path="/corec/:id/monitor/alerts"
+            element={
+              <DeadLetterReplayList
+                deadLetters={entries}
+                isLoading={false}
+                isError={false}
+                error={null}
+                isFetching={false}
+                onRefresh={vi.fn()}
+              />
+            }
+          />
+        </Routes>
+      </MemoryRouter>
     </QueryClientProvider>,
   )
 }
@@ -329,5 +346,36 @@ describe('DeadLetterReplayList — search & driver filter (B10)', () => {
     renderList()
 
     expect(await screen.findByRole('combobox', { name: 'Driver' })).toBeTruthy()
+  })
+})
+
+describe('DeadLetterReplayList — view-tag deep link (B11)', () => {
+  it('links each entry to the tag explorer with driver+tag prefill', async () => {
+    renderList()
+
+    const links = await screen.findAllByRole('link', { name: 'View tag' })
+    expect(links).toHaveLength(2)
+    expect(links[0].getAttribute('href')).toContain(
+      '/corec/inst1/monitor/tags?driver=plc1&tag=pump',
+    )
+    expect(links[1].getAttribute('href')).toContain(
+      '/corec/inst1/monitor/tags?driver=plc2&tag=temp',
+    )
+  })
+
+  it('encodes driver and tag in the query string', async () => {
+    renderList([
+      {
+        command: { driver: 'plc a/1', tag: 'temp sensor #2', value: 1, type: 'int32' },
+        error: 'x',
+        failed_at: '2026-01-01T00:00:00Z',
+        attempts: 3,
+      },
+    ])
+
+    const link = await screen.findByRole('link', { name: 'View tag' })
+    const href = link.getAttribute('href') ?? ''
+    expect(href).toContain('driver=plc%20a%2F1')
+    expect(href).toContain('tag=temp%20sensor%20%232')
   })
 })

@@ -38,6 +38,11 @@ vi.mock('@/api/endpoints', () => ({
 
 import * as api from '@/api/endpoints'
 
+// Shared-tree CI runs up to a dozen jsdom workers at once; the multi-step
+// dialog/page interactions here can outlive vitest's 5s default testTimeout
+// even while every wait is already patience-tuned via asyncUtilTimeout.
+vi.setConfig({ testTimeout: 15_000 })
+
 // themeStore reads the system theme via matchMedia at module scope, which
 // jsdom does not implement — stub it before any module import evaluates.
 vi.hoisted(() => {
@@ -164,5 +169,27 @@ describe('TagExplorerPage — problem-point filters (B07)', () => {
 
     expect(socketArgs).toHaveLength(1)
     expect(socketArgs[0]?.[0]).toBe('/tags/stream')
+  })
+})
+
+describe('TagExplorerPage — dead-letter deep-link prefill (B11)', () => {
+  it('prefills the driver filter and search box from ?driver=&tag=', async () => {
+    renderPage('/corec/inst1/monitor/tags?driver=plc1&tag=pump')
+
+    // Search box prefilled with the tag from the URL.
+    expect(await screen.findByDisplayValue('pump')).toBeTruthy()
+    // Driver-scoped + tag-filtered: only pump matches (level is plc1 but
+    // doesn't match 'pump'; temp is plc2).
+    await screen.findByText('Total: 1 points')
+    // The driver param reached the /tags/stream subscription too.
+    expect(socketArgs[0]?.[1]).toEqual({ driver: 'plc1' })
+  })
+
+  it('a tag param without a driver still prefills the search only', async () => {
+    renderPage('/corec/inst1/monitor/tags?tag=temp')
+
+    expect(await screen.findByDisplayValue('temp')).toBeTruthy()
+    await screen.findByText('Total: 1 points')
+    expect(socketArgs[0]?.[1]).toEqual({})
   })
 })
