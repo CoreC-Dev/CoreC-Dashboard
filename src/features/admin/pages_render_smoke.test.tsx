@@ -151,6 +151,11 @@ afterEach(() => {
   cleanup()
 })
 
+// These pages render heavy card grids; under full-suite load on a 2-core
+// box (parallel agent workstreams) they can exceed the 5s default. 15s
+// mirrors the BatchWritePanel suite-timeout precedent.
+vi.setConfig({ testTimeout: 15_000 })
+
 describe('render smoke (#185 regression)', () => {
   it('TransportsPage renders without infinite loop', async () => {
     let container: ReturnType<typeof render> | undefined
