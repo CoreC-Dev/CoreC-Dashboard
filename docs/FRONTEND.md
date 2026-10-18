@@ -69,3 +69,14 @@ Conventional Commits；单一职责；重构与行为变更不混提；改造仅
 - **深色主题刷新白闪（D-10）**：index.html `<head>` 加同步内联主题引导脚本（读 `corec_theme` → 立即设 `data-theme` 与 `.dark`，显式变体保留自身名，system/无效值走 `prefers-color-scheme`，与 themeStore 首跑幂等）；CSP `script-src` 以该脚本 sha256 哈希钉住（仍禁任意内联）；themeBoot 测试执行真实脚本逐一断言各主题变体并校验哈希同步。
 - **实时流徽标与断线横幅覆盖 admin 路由（D-04）**：原 monitor 专属的「实时流」徽标与断线/放弃重连横幅改为所有实例路由可见——admin 七页（配置中心/写入控制）由 AppShell 级 `/logs` 告警流提供真实状态，不再全盲；AppShell 新增测试覆盖 admin/monitor 双路由的徽标与横幅状态。
 - **测点问题点过滤（B07）**：TagToolbar 新增质量筛选（质量: 全部/良好/坏/不确定，复用 common.good/bad/uncertain）与「仅显示陈旧测点」开关（复活死键 tags.staleOnly）；过滤谓词抽为 lib/tagExplorer.matchesQualityFilter 纯函数，页面 memo 与单测共用同一规则。
+- **连接模式说明激活（A-05）**：添加/编辑弹窗的连接模式 Select 从三个裸标签变为带说明——激活两包中的死键 `proxyModeHint` 渲染为 FormDescription，写明三种模式各自何时适用；选项文案去内部化（「自动（推荐）/Auto (recommended)」「代理转发/Proxy forwarding」），不再向用户暴露 server.mjs 内部文件名。
+- **密钥明文存储披露（A-10）**：密钥字段在保存前（而非导出时才发现）披露「密钥将以明文保存在此浏览器的本地存储中，请勿在公用电脑上保存生产密钥」；instanceStore 中名不副实的 sessionStorage 注释已在 A-11 波修正。
+- **首页帮助入口（A-06）**：全仓原先零外链零帮助出口——首页 header 新增 HelpCircle ghost 按钮与空态「如何获取地址与 API 密钥？见帮助」链接，均以 `noopener/noreferrer` 新标签打开仓库文档。
+- **后台重探不再集体闪黄（A-07）**：15s 周期探测不再把所有卡片瞬间翻成黄点——「连接中」黄点+雷达动画只保留给首次探测（尚无任何结果的实例）；已有结论（绿/红）的实例在后台重探期间保持原状态，新结论落地才翻转。死实例不再黄红交替闪烁。
+- **失败卡片刷新按钮改真重试（A-08/D-12）**：错误卡片右下的 RefreshCw 图标原先点击竟是「进入实例」（与重试预期相反）且无任何标签——现在调用 probeOneInstance 真重探，aria-label/title 为「重试连接」，重探进行中禁用并旋转，读屏不再只听到"按钮"。
+- **删除实例改 AlertDialog（D-07 卡片半边）**：与 D 域设置页「清空全部」对齐——InstanceCard 删除确认从普通 Dialog 换为 AlertDialog（外部点击不误关），确认键为红色 destructive 变体的「确认删除（不可恢复）」，与触发它的菜单项文案不同。
+- **添加/编辑弹窗「测试连接」（D-13）**：保存前即可验证地址+密钥——次级按钮跑与首页卡片完全相同的带鉴权探测（GET / + Bearer /stats），成功显示「连接成功 v{{version}}」，失败按 401/超时/网络分类显示与卡片一致的原因文案；改动地址/密钥/模式即失效旧结论；不阻塞保存。
+- **色板与密钥显隐可读（D-22/D-25）**：颜色选择器 aria-label/title 从硬编码英文（'Blue'…）改走 i18n（instances.colorDefault…colorPink）；密钥小眼睛按钮由引用两包皆无的 `common.show/hide`（读屏听到原始 key 名）改为 `instances.showSecret/hideSecret`。
+- **实例未找到文案本地化（D-05 半边）**：ConnectionProvider 缺实例分支的裸英文 'Instance not found' 改走 `connection.errInstance`（「未找到实例，请返回首页重新选择」）——探测错误路径再无英文原文。
+- **html lang 随语言切换（D-11）**：setLocale 同步写 `document.documentElement.lang`（i18next 的 languageChange 事件在资源加载后才触发，故显式同步一次）+ languageChange 监听兜底启动场景；英文界面不再被读屏用中文语音引擎朗读。
+- **首页消费 ?edit 深链（D-15 A 域半边）**：InstancePanel 挂载时读取 `?edit=<id>`（D 域 ConnectionGate 失败屏的「编辑此实例」出口），自动打开对应实例的编辑弹窗并立即清除参数（残留参数会在每次回首页时重开弹窗）；未知 id 静默丢弃。
