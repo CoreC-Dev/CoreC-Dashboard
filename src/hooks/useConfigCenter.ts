@@ -120,9 +120,11 @@ export function useConfigCenter() {
   // page consumes it through this hook's return value unchanged.
   const {
     updateMutation,
+    yamlApplying,
     yamlApplyOpen,
     setYamlApplyOpen,
     yamlApplyError,
+    yamlApplyWarnings,
     handleYamlApplyConfirm,
     requestModeSwitch,
     bridgeTarget,
@@ -449,10 +451,12 @@ export function useConfigCenter() {
     applyGuardOpen,
     applyGuardProceed,
     applyGuardCancel,
-    // YAML-mode apply dialog
+    // YAML-mode apply dialog (yamlApplying covers the server dry-run too)
+    yamlApplying,
     yamlApplyOpen,
     setYamlApplyOpen,
     yamlApplyError,
+    yamlApplyWarnings,
     handleYamlApplyConfirm,
   }
 }

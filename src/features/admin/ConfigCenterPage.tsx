@@ -58,7 +58,6 @@ export const ConfigCenterPage: React.FC = () => {
     refetch,
     rawConfigQuery,
     validateMutation,
-    updateMutation,
     patchMutation,
     configDirty,
     configWorkingExists,
@@ -104,9 +103,11 @@ export const ConfigCenterPage: React.FC = () => {
     handleLoadFromServer,
     handleDryRunValidate,
     handleRestore,
+    yamlApplying,
     yamlApplyOpen,
     setYamlApplyOpen,
     yamlApplyError,
+    yamlApplyWarnings,
     handleYamlApplyConfirm,
   } = useConfigCenter()
 
@@ -148,7 +149,7 @@ export const ConfigCenterPage: React.FC = () => {
             onLoadFromServer={handleLoadFromServer}
             isValidatePending={validateMutation.isPending}
             onDryRunValidate={handleDryRunValidate}
-            isUpdatePending={updateMutation.isPending}
+            isUpdatePending={yamlApplying}
             onHotReload={handleHotReload}
           />
         </div>
@@ -311,11 +312,12 @@ export const ConfigCenterPage: React.FC = () => {
           against the last saved YAML and requires explicit confirmation. */}
       <ConfigApplyConfirmationDialog
         open={yamlApplyOpen}
-        onOpenChange={(v) => !updateMutation.isPending && setYamlApplyOpen(v)}
+        onOpenChange={(v) => !yamlApplying && setYamlApplyOpen(v)}
         beforeYaml={getSavedYaml()}
         afterYaml={yamlContent}
-        applying={updateMutation.isPending}
+        applying={yamlApplying}
         onConfirm={handleYamlApplyConfirm}
+        validationWarnings={yamlApplyWarnings}
         applyError={yamlApplyError ?? undefined}
       />
 

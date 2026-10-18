@@ -652,3 +652,75 @@ describe('useConfigCenter — C-D6 diff baseline is the saved server config', ()
     expect(result.current.diffLines.some((l) => l.type === 'added')).toBe(true)
   })
 })
+
+describe('useConfigCenter — server validate gates the YAML apply', () => {
+  it('a server dry-run rejection blocks the PUT with the server message', async () => {
+    fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = route(input)
+      const method = init?.method ?? 'GET'
+      if (url.includes('/configs/raw')) {
+        return Promise.resolve(
+          new Response(SERVER_YAML, {
+            status: 200,
+            headers: { 'content-type': 'application/yaml' },
+          }),
+        )
+      }
+      if (url.includes('/configs/validate')) {
+        return Promise.resolve(
+          jsonResponse({ valid: false, error: 'config validation failed: no transports' }),
+        )
+      }
+      if (url.includes('/configs') && method === 'PUT') {
+        ;(fetchMock as unknown as { putCalls: string[] }).putCalls.push(String(init?.body ?? ''))
+        return Promise.resolve(new Response('', { status: 200 }))
+      }
+      return Promise.resolve(jsonResponse({}))
+    })
+    const { result } = await mountSeeded()
+    act(() => {
+      result.current.setYamlContent(YAML_WITH_OTHER_EDIT)
+    })
+
+    await act(async () => {
+      await result.current.handleYamlApplyConfirm()
+    })
+    expect(putPayloads()).toHaveLength(0)
+    expect(result.current.yamlApplyError).toContain('no transports')
+    // The editor edits stay pending — nothing was applied.
+    expect(useConfigStore.getState().dirty).toBe(false)
+  })
+
+  it('server warnings surface on the apply dialog and the PUT proceeds', async () => {
+    fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = route(input)
+      const method = init?.method ?? 'GET'
+      if (url.includes('/configs/raw')) {
+        return Promise.resolve(
+          new Response(SERVER_YAML, {
+            status: 200,
+            headers: { 'content-type': 'application/yaml' },
+          }),
+        )
+      }
+      if (url.includes('/configs/validate')) {
+        return Promise.resolve(jsonResponse({ valid: true, warnings: ['idle mode: no transport'] }))
+      }
+      if (url.includes('/configs') && method === 'PUT') {
+        ;(fetchMock as unknown as { putCalls: string[] }).putCalls.push(String(init?.body ?? ''))
+        return Promise.resolve(new Response('', { status: 200 }))
+      }
+      return Promise.resolve(jsonResponse({}))
+    })
+    const { result } = await mountSeeded()
+    act(() => {
+      result.current.setYamlContent(YAML_WITH_OTHER_EDIT)
+    })
+
+    await act(async () => {
+      await result.current.handleYamlApplyConfirm()
+    })
+    expect(putPayloads()).toHaveLength(1)
+    expect(result.current.yamlApplyWarnings).toContain('idle mode: no transport')
+  })
+})

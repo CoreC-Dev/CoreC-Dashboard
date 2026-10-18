@@ -20,7 +20,8 @@
  */
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useUpdateConfig } from '@/api/hooks'
+import { ApiError } from '@/api/client'
+import { useUpdateConfig, useValidateConfig } from '@/api/hooks'
 import type { ConfigMode } from '@/hooks/useConfigCenter'
 import type { StatusMessage } from '@/hooks/useStatusMessage'
 import { yamlDiffersFromConfig } from '@/lib/configYaml'
@@ -51,11 +52,16 @@ export function useYamlApplyFlow(options: YamlApplyFlowOptions) {
   const { yamlContent, setYamlContent, mode, setMode, loadFromYaml, getWorkingYaml } = options
   const { t } = useTranslation()
   const updateMutation = useUpdateConfig()
+  const validateConfig = useValidateConfig()
   const addSnapshot = useConfigHistoryStore((s) => s.addSnapshot)
   const markSavedFromYaml = useConfigStore((s) => s.markSavedFromYaml)
 
   const [yamlApplyOpen, setYamlApplyOpen] = useState(false)
   const [yamlApplyError, setYamlApplyError] = useState<string | null>(null)
+  // Server dry-run state: validating flag + warnings to surface in the
+  // apply dialog alongside the local zod warnings.
+  const [serverValidating, setServerValidating] = useState(false)
+  const [yamlApplyWarnings, setYamlApplyWarnings] = useState<string[] | null>(null)
   // `bridgeTarget` holds the mode the user tried to switch to while form and
   // YAML had diverged (3-way dialog: import / overwrite / cancel).
   // `applyGuardOpen` gates hot reload when the editor content does not
@@ -143,6 +149,29 @@ export function useYamlApplyFlow(options: YamlApplyFlowOptions) {
       return
     }
     options.setStatusMsg(null)
+    setYamlApplyError(null)
+    // Server-side dry-run before the destructive PUT (same gate the
+    // ConfigApplyConfirmationDialog header promises for the form flow):
+    // { valid: false } blocks the PUT with the server message; warnings
+    // surface in the dialog; 404/501 (endpoint unavailable) proceeds —
+    // "if available" — and any other transport error blocks.
+    setServerValidating(true)
+    try {
+      const res = await validateConfig.mutateAsync(yamlContent)
+      if (!res.valid) {
+        setYamlApplyError(res.error || t('configCenter.serverValidateFailed', { error: '' }))
+        return
+      }
+      setYamlApplyWarnings(res.warnings?.length ? res.warnings : null)
+    } catch (err: unknown) {
+      if (!(err instanceof ApiError && (err.status === 404 || err.status === 501))) {
+        const msg = err instanceof Error ? err.message : String(err)
+        setYamlApplyError(msg || t('config.dryRunFailed', { error: msg }))
+        return
+      }
+    } finally {
+      setServerValidating(false)
+    }
     try {
       await updateMutation.mutateAsync({ payload: yamlContent })
       addSnapshot(yamlContent)
@@ -169,10 +198,14 @@ export function useYamlApplyFlow(options: YamlApplyFlowOptions) {
 
   return {
     updateMutation,
+    // True while the server dry-run or the PUT itself is in flight — the
+    // page passes this to the dialog's `applying` prop.
+    yamlApplying: serverValidating || updateMutation.isPending,
     // apply dialog
     yamlApplyOpen,
     setYamlApplyOpen,
     yamlApplyError,
+    yamlApplyWarnings: yamlApplyWarnings ?? undefined,
     handleYamlApplyConfirm,
     // C-D1 bridge + guard
     requestModeSwitch,

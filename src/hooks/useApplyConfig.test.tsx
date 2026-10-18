@@ -58,6 +58,30 @@ function createWrapper() {
   return Wrapper
 }
 
+/** Mock POST /configs/validate with the given result, plus a working PUT. */
+function mockValidateThenPut(validateResult: {
+  valid: boolean
+  error?: string
+  warnings?: string[]
+}) {
+  fetchMock.mockImplementation((input: unknown, init?: RequestInit) => {
+    const url = typeof input === 'string' ? input : String(input)
+    if ((init?.method ?? 'GET') === 'POST' && url.includes('/configs/validate')) {
+      return Promise.resolve(
+        new Response(JSON.stringify(validateResult), {
+          status: validateResult.valid ? 200 : 400,
+          headers: { 'content-type': 'application/json' },
+        }),
+      )
+    }
+    if ((init?.method ?? 'GET') === 'PUT') {
+      putCalls.push(String(init?.body ?? ''))
+      return Promise.resolve(new Response('', { status: 200 }))
+    }
+    return Promise.resolve(new Response('{}', { headers: { 'content-type': 'application/json' } }))
+  })
+}
+
 const putCalls: string[] = []
 
 function mountApplyConfig() {
@@ -106,14 +130,74 @@ describe('useApplyConfig — D-16 guard', () => {
   })
 
   it('applies normally once a baseline exists', async () => {
-    const yaml = 'global:\n  log-level: debug\n'
     useConfigStore.setState({
       workingConfig: { global: { 'log-level': 'debug' } },
       savedConfig: { global: { 'log-level': 'info' } },
       dirty: true,
       seedStatus: 'ready',
     })
-    fetchMock.mockImplementation((_input: unknown, init?: RequestInit) => {
+    mockValidateThenPut({ valid: true })
+    const { result } = mountApplyConfig()
+    act(() => {
+      result.current.dialogProps.onConfirm()
+    })
+    await vi.waitFor(() => expect(putCalls).toHaveLength(1))
+    expect(result.current.open).toBe(false)
+    expect(useConfigStore.getState().dirty).toBe(false)
+  })
+})
+
+describe('useApplyConfig — server-side validate before the PUT', () => {
+  it('blocks the PUT when the server dry-run rejects the config', async () => {
+    useConfigStore.setState({
+      workingConfig: { global: { 'log-level': 'debug' } },
+      savedConfig: { global: { 'log-level': 'info' } },
+      dirty: true,
+      seedStatus: 'ready',
+    })
+    mockValidateThenPut({ valid: false, error: 'config validation failed: no transports' })
+    const { result } = mountApplyConfig()
+    act(() => {
+      result.current.dialogProps.onConfirm()
+    })
+    await vi.waitFor(() => expect(result.current.dialogProps.applyError).toBeTruthy())
+    expect(putCalls).toHaveLength(0)
+    expect(result.current.dialogProps.applyError).toContain('no transports')
+    // Nothing was marked saved.
+    expect(useConfigStore.getState().dirty).toBe(true)
+  })
+
+  it('surfaces server warnings in the dialog and proceeds with the PUT', async () => {
+    useConfigStore.setState({
+      workingConfig: { global: { 'log-level': 'debug' } },
+      savedConfig: { global: { 'log-level': 'info' } },
+      dirty: true,
+      seedStatus: 'ready',
+    })
+    mockValidateThenPut({ valid: true, warnings: ['idle mode: no data source'] })
+    const { result } = mountApplyConfig()
+    act(() => {
+      result.current.dialogProps.onConfirm()
+    })
+    await vi.waitFor(() => expect(putCalls).toHaveLength(1))
+    expect(result.current.dialogProps.validationWarnings).toContain('idle mode: no data source')
+    expect(result.current.open).toBe(false)
+  })
+
+  it('proceeds without validation when the endpoint is unavailable (404)', async () => {
+    useConfigStore.setState({
+      workingConfig: { global: { 'log-level': 'debug' } },
+      savedConfig: { global: { 'log-level': 'info' } },
+      dirty: true,
+      seedStatus: 'ready',
+    })
+    fetchMock.mockImplementation((input: unknown, init?: RequestInit) => {
+      const url = typeof input === 'string' ? input : String(input)
+      if ((init?.method ?? 'GET') === 'POST' && url.includes('/configs/validate')) {
+        return Promise.resolve(
+          new Response('not found', { status: 404, headers: { 'content-type': 'text/plain' } }),
+        )
+      }
       if ((init?.method ?? 'GET') === 'PUT') {
         putCalls.push(String(init?.body ?? ''))
         return Promise.resolve(new Response('', { status: 200 }))
@@ -122,13 +206,41 @@ describe('useApplyConfig — D-16 guard', () => {
         new Response('{}', { headers: { 'content-type': 'application/json' } }),
       )
     })
-
     const { result } = mountApplyConfig()
     act(() => {
       result.current.dialogProps.onConfirm()
     })
     await vi.waitFor(() => expect(putCalls).toHaveLength(1))
-    expect(result.current.open).toBe(false)
-    expect(useConfigStore.getState().dirty).toBe(false)
+    expect(result.current.dialogProps.applyError).toBeUndefined()
+  })
+
+  it('blocks the PUT when the validate request fails at the transport level', async () => {
+    useConfigStore.setState({
+      workingConfig: { global: { 'log-level': 'debug' } },
+      savedConfig: { global: { 'log-level': 'info' } },
+      dirty: true,
+      seedStatus: 'ready',
+    })
+    fetchMock.mockImplementation((input: unknown, init?: RequestInit) => {
+      const url = typeof input === 'string' ? input : String(input)
+      if ((init?.method ?? 'GET') === 'POST' && url.includes('/configs/validate')) {
+        return Promise.resolve(
+          new Response('boom', { status: 500, headers: { 'content-type': 'text/plain' } }),
+        )
+      }
+      if ((init?.method ?? 'GET') === 'PUT') {
+        putCalls.push(String(init?.body ?? ''))
+        return Promise.resolve(new Response('', { status: 200 }))
+      }
+      return Promise.resolve(
+        new Response('{}', { headers: { 'content-type': 'application/json' } }),
+      )
+    })
+    const { result } = mountApplyConfig()
+    act(() => {
+      result.current.dialogProps.onConfirm()
+    })
+    await vi.waitFor(() => expect(result.current.dialogProps.applyError).toBeTruthy())
+    expect(putCalls).toHaveLength(0)
   })
 })
