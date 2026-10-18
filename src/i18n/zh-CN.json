@@ -832,7 +832,7 @@
     "templatesHint": "加载预置配置模板",
     "templateLoaded": "模板已加载: {{name}}",
     "loadFromServer": "从服务器加载",
-    "loadFromServerHint": "重新拉取服务器实时配置(密钥已脱敏为 ***)到编辑器;页面打开时已自动加载",
+    "loadFromServerHint": "重新拉取服务器实时配置到编辑器；页面打开时已自动加载",
     "loadFromServerSuccess": "已从服务器加载实时配置",
     "loadFromServerFailed": "加载服务器配置失败: {{error}}",
     "loadFromServerEmpty": "服务器上没有活动配置",
@@ -842,7 +842,6 @@
     "dryRunValid": "服务器校验通过 — 配置可用",
     "dryRunInvalid": "服务器校验失败: {{error}}",
     "dryRunFailed": "校验请求失败: {{error}}",
-    "secretsRedactedNote": "密钥在服务器端已脱敏为 ***;原样提交后会自动回填真实值。",
     "backupsTitle": "服务端配置备份",
     "backupsDesc": "CoreC 在每次配置变更前对持久化配置文件做的快照；恢复会通过与保存相同的 校验 → 应用 热重载链",
     "backupsEmpty": "尚无服务端备份",
@@ -864,7 +863,9 @@
     "backupsRestoreFailed": "恢复失败: {{error}}",
     "backupsSnapshotNow": "立即快照",
     "backupsSnapshotCreated": "备份已创建：{{name}}",
-    "backupsSnapshotFailed": "快照被拒绝"
+    "backupsSnapshotFailed": "快照被拒绝",
+    "historyLoadIntoEditor": "载入到编辑器",
+    "historyLoadedIntoEditor": "已载入编辑器（未应用）"
   },
   "configCenter": {
     "bridgeTitle": "表单与 YAML 内容不一致",

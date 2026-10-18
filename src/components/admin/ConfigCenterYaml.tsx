@@ -10,11 +10,11 @@ import Editor from '@monaco-editor/react'
 import {
   ChevronDown,
   ChevronRight,
+  Download,
   Eye,
   FileText,
   GitCompare,
   History,
-  RotateCcw,
 } from 'lucide-react'
 import type React from 'react'
 import { useState } from 'react'
@@ -201,9 +201,10 @@ export const ChangeHistoryCard: React.FC<{
                       variant="outline"
                       onClick={() => onRestore(snap)}
                       className="h-7 text-xs"
+                      aria-label={t('config.historyLoadIntoEditor')}
                     >
-                      <RotateCcw className="w-3 h-3 mr-1" />
-                      {t('config.restore')}
+                      <Download className="w-3 h-3 mr-1" />
+                      {t('config.historyLoadIntoEditor')}
                     </Button>
                   </div>
                 </div>

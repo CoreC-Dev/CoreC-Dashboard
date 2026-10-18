@@ -33,7 +33,7 @@ export const MAX_ALERT_EVENTS = 50
 
 /** Legacy pref encoding: '1' = on, anything else = off. */
 const readPref = (key: string): boolean => safeRead(key) === '1'
-const writePref = (key: string, value: boolean): void => safePersist(key, value ? '1' : '0')
+const writePref = (key: string, value: boolean): boolean => safePersist(key, value ? '1' : '0')
 
 interface AlertState {
   /** Warn/error events (level ≥ 4), newest first, capped at MAX_ALERT_EVENTS. */

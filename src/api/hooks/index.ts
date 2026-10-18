@@ -113,11 +113,12 @@ export function useConfigs() {
 }
 
 /**
- * Path A — fetches the full active config as redacted YAML text from
- * GET /configs/raw. Secrets are masked as "***" on the server; this string is
- * fed directly into the Config Center YAML editor (js-yaml load/dump) and, on
- * submit, round-tripped back via PUT /configs where the executor's
- * sentinel-merge restores the real secret values.
+ * Path A — fetches the full active config as raw YAML text from
+ * GET /configs/raw. Verified against the backend (hub/executor
+ * RawConfigYAML): the server returns the config PLAINTEXT, secrets
+ * included — there is no masking and no sentinel-merge on submit. The
+ * editor and every PUT therefore round-trip real secret values; the
+ * endpoint is authenticated for exactly this reason.
  *
  * Not polled (no refetchInterval): the raw config only changes via PUT
  * /configs, and useUpdateConfig invalidates ['configsRaw'] on success.
@@ -176,7 +177,7 @@ export function usePatchConfig() {
     mutationFn: (data: { 'log-level'?: string }) => api.patchConfigs(data),
     onSuccess: () => {
       // PATCH mutates the active config (log-level is a global field), so the
-      // raw-redacted view goes stale too — invalidate both caches for parity
+      // raw config view goes stale too — invalidate both caches for parity
       // with useUpdateConfig. [M-1]
       queryClient.invalidateQueries({ queryKey: ['configs'] })
       queryClient.invalidateQueries({ queryKey: ['configsRaw'] })
@@ -190,7 +191,7 @@ export function useUpdateConfig() {
     mutationFn: (data: { path?: string; payload: string }) => api.updateConfigs(data),
     onSuccess: () => {
       // After a successful reload, the active config changed — invalidate both
-      // the summary and the raw-redacted view so the editor reflects the new
+      // the summary and the raw config view so the editor reflects the new
       // state on next read.
       queryClient.invalidateQueries({ queryKey: ['configs'] })
       queryClient.invalidateQueries({ queryKey: ['configsRaw'] })

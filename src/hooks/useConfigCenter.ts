@@ -7,7 +7,7 @@
  * load, dry-run validation, change history, and the debounced diff preview.
  * No behavior changes — pure relocation of the page's stateful logic.
  */
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useConfigRaw, useConfigs, usePatchConfig, useValidateConfig } from '@/api/hooks'
 import { useApplyConfig } from '@/hooks/useApplyConfig'
@@ -110,10 +110,10 @@ export function useConfigCenter() {
   // Every editor content change (user keystroke or programmatic load) goes
   // through this wrapper so a stale validation result never outlives its
   // YAML. Exposed to the page as `setYamlContent`.
-  const applyYamlContent = (text: string) => {
+  const applyYamlContent = useCallback((text: string) => {
     setYamlContent(text)
     setDryRunResult(null)
-  }
+  }, [])
 
   // YAML-mode apply flow: apply dialog + C-D1 divergence bridge/guard +
   // D-16 seed guard. Extracted to useYamlApplyFlow (God-file limit); the
@@ -211,7 +211,9 @@ export function useConfigCenter() {
     setAutoLoaded(true)
     applyYamlContent(yamlText)
     seedFromServer(yamlText)
-  }, [rawConfigQuery.data, seedFromServer, autoLoaded])
+    // applyYamlContent is a setState-only useCallback (stable identity);
+    // the one-shot autoLoaded guard keeps this effect from re-firing.
+  }, [rawConfigQuery.data, seedFromServer, autoLoaded, applyYamlContent])
 
   // ── YAML ↔ Form bridge ─────────────────────────────────────────────
   // "Import YAML → Form": parse the current Monaco editor content into the
@@ -354,7 +356,7 @@ export function useConfigCenter() {
   const handleRestore = (snap: ConfigSnapshot) => {
     applyYamlContent(snap.yaml)
     setMode('yaml')
-    setStatusMsg({ type: 'success', text: t('config.restored') })
+    setStatusMsg({ type: 'success', text: t('config.historyLoadedIntoEditor') })
   }
 
   // Revert the configStore working config to the last saved state.

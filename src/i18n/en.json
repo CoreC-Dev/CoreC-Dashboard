@@ -832,7 +832,7 @@
     "templatesHint": "Load a pre-built configuration template",
     "templateLoaded": "Template loaded: {{name}}",
     "loadFromServer": "Load from Server",
-    "loadFromServerHint": "Re-fetch the live server config (secrets masked as ***) into the editor; auto-loaded on page open",
+    "loadFromServerHint": "Re-fetch the live server config into the editor; auto-loaded on page open",
     "loadFromServerSuccess": "Live config loaded from server",
     "loadFromServerFailed": "Failed to load server config: {{error}}",
     "loadFromServerEmpty": "No active configuration on the server",
@@ -842,7 +842,6 @@
     "dryRunValid": "Server validation passed — config is acceptable",
     "dryRunInvalid": "Server validation failed: {{error}}",
     "dryRunFailed": "Validation request failed: {{error}}",
-    "secretsRedactedNote": "Secrets are masked as *** on the server; submit unchanged and they are restored automatically.",
     "backupsTitle": "Server-side Config Backups",
     "backupsDesc": "Snapshots CoreC takes of the persisted config before every change; restore replays one through the same validate → apply reload chain as a save",
     "backupsEmpty": "No server-side backups yet",
@@ -864,7 +863,9 @@
     "backupsRestoreFailed": "Restore failed: {{error}}",
     "backupsSnapshotNow": "Snapshot now",
     "backupsSnapshotCreated": "Backup created: {{name}}",
-    "backupsSnapshotFailed": "Snapshot rejected"
+    "backupsSnapshotFailed": "Snapshot rejected",
+    "historyLoadIntoEditor": "Load into editor",
+    "historyLoadedIntoEditor": "Loaded into editor (not applied)"
   },
   "configCenter": {
     "bridgeTitle": "Form and YAML have diverged",
