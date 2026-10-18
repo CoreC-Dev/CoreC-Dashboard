@@ -61,3 +61,10 @@ Conventional Commits；单一职责；重构与行为变更不混提；改造仅
 - **总览页数据降级契约（B04）**：stats 轮询失败不再把整页坍缩成一行红字——保留已渲染数据，顶部显示琥珀色横幅「数据刷新失败，正在显示 {{time}} 的快照」并附手动重试按钮；仅首次加载且无数据时才整页回退。
 - **设备列贯通监控链路（B06）**：测点表新增「设备」列（列宽自 tag/driver/group/type 各挪 2%），多设备同名测点不再无法分辨；写入确认框与死信条目/重放确认单补「设备: {{device}}」行，重放确认与结果列表改用 `[driver/device]` 复合前缀——写往物理 PLC 前能看到目标子设备。
 - **在线率动态着色（B05）**：驱动/传输 KPI 的在线百分比不再恒绿——100% 绿（「100% 在线」）、1–99% 琥珀（「{{n}}% 在线」）、0% 红（「全部离线」/「全部断开」）；未配置驱动/传输时显示中性灰 N/A 而非绿色断言。死键 dashboard.onlineSuffix/dashboard.connected 移除。
+- **连接失败屏不再是死胡同（D-15/D-05）**：探测失败页升级为带实例名的标题（「无法连接到 {{name}}」）+ 已翻译的失败原因（消费 A-01 的结构化探测错误），原始技术细节（`GET {baseUrl}/stats`）折叠进「技术详情」不当主文案；提供三条出路——重试、「编辑此实例」（跳首页 `?edit=<id>` 打开编辑框）、「返回实例列表」。ConnectionGate 自 App.tsx 抽至 components/layout/ 并配 8 用例测试。
+- **导入实例结果四分类（D-08）**：设置页导入弹窗消费 `importInstances` 新返回形状 `{added, skipped, invalid, parseError}`——坏 JSON 明确报「解析失败」、纯重复报「全部跳过」、混合结果给三项明细、干净成功显示绿色确认后 1.5s 自动关闭；不再有「已添加 0 个，跳过 0 个」式谎言与无声关闭。
+- **「清除所有数据」改用 AlertDialog（D-07）**：全库最狠的删除动作从普通 Dialog（点外部即误关、确认键与触发键同文）对齐为 AlertDialog 纪律——外部点击不再误关，确认键换为红色 destructive 变体的「确认清空（不可恢复）」。
+- **驱动编辑表单 help 指错命名空间（D-23）**：「测点文件/测点轮询间隔」的 help 由不存在的 `settings.tagsFileHelp`/`tagsIntervalHelp` 改指两包齐全的 `driverWizard.*`（表单不再显示原始 key 串）；RegistryFieldGrid 对缺 help 键加 DEV console.warn，settingsRegistry 测试遍历全部 registry 字段断言每个 label/help 键在两包可解析。
+- **主路径页面缺键补齐（D-24）**：审计点名的 12 个只存在于代码 `defaultValue` 的键（`dashboard.realtimeMonitor`、`tags.explorerDesc`、`alerts.filterPlaceholder/levelAll/levelWarning/levelError/noMatchingEvents`、`diagnostics.autoRefresh`、`topology.received/queueSize/droppedCmds/failed`）补进两语言包——中文主路径不再常年显示英文兜底句；新增 i18nKeys 测试钉住这些键与相关命名空间的 zh/en 对称性。
+- **深色主题刷新白闪（D-10）**：index.html `<head>` 加同步内联主题引导脚本（读 `corec_theme` → 立即设 `data-theme` 与 `.dark`，显式变体保留自身名，system/无效值走 `prefers-color-scheme`，与 themeStore 首跑幂等）；CSP `script-src` 以该脚本 sha256 哈希钉住（仍禁任意内联）；themeBoot 测试执行真实脚本逐一断言各主题变体并校验哈希同步。
+- **实时流徽标与断线横幅覆盖 admin 路由（D-04）**：原 monitor 专属的「实时流」徽标与断线/放弃重连横幅改为所有实例路由可见——admin 七页（配置中心/写入控制）由 AppShell 级 `/logs` 告警流提供真实状态，不再全盲；AppShell 新增测试覆盖 admin/monitor 双路由的徽标与横幅状态。
