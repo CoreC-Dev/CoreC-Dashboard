@@ -38,6 +38,16 @@ import type {
   TransportConfig,
 } from '@/types/config'
 
+/** Read a dotted-path value from a plain object (null/undefined-safe). */
+function readPath(root: unknown, path: string): unknown {
+  return path.split('.').reduce<unknown>((acc, key) => {
+    if (acc && typeof acc === 'object' && !Array.isArray(acc)) {
+      return (acc as Record<string, unknown>)[key]
+    }
+    return undefined
+  }, root)
+}
+
 /**
  * True when "Create" (resetToEmpty) or "Apply" would risk wiping a server
  * config we have never seen: the auto-seed fetch has not succeeded AND no
@@ -119,6 +129,12 @@ export interface ConfigStoreState {
   updateGlobalField: (path: string, value: unknown) => void
   /** Update a single field inside the node section. */
   updateNodeField: (path: string, value: unknown) => void
+  /** Record a zero-downtime global patch (e.g. PATCH /configs log-level):
+   *  the live SERVER config changed, so the saved baseline adopts the new
+   *  value. The working copy mirrors it ONLY when the user has no unapplied
+   *  edit at that path — a pending edit always wins and stays dirty (C-D8:
+   *  the old flow clobbered the whole working config from the server). */
+  applyGlobalPatch: (path: string, value: unknown) => void
 
   // ─── Save / revert ────────────────────────────────────────────────
 
@@ -267,6 +283,40 @@ export const useConfigStore = create<ConfigStoreState>((set, get) => {
       setNestedPath(node, path, value)
       const next = { ...workingConfig, node }
       commit(next)
+    },
+
+    applyGlobalPatch: (path: string, value: unknown) => {
+      const { workingConfig, savedConfig } = get()
+      // The live server config changed → the saved baseline adopts it.
+      let nextSaved = savedConfig
+      if (savedConfig) {
+        nextSaved = structuredClone(savedConfig)
+        const savedGlobal = { ...(nextSaved.global ?? {}) } as Record<string, unknown>
+        setNestedPath(savedGlobal, path, value)
+        nextSaved.global = savedGlobal
+      }
+      // Mirror into the working copy only when the user has no unapplied
+      // edit at this path (their pending value wins and stays dirty).
+      // configEqual's deepEqual handles primitives via ===, so reusing it
+      // for path values is safe.
+      let nextWorking = workingConfig
+      if (workingConfig) {
+        const workingHasPendingEdit = !configEqual(
+          readPath(workingConfig.global, path) as CoreCConfig | null,
+          readPath(savedConfig?.global, path) as CoreCConfig | null,
+        )
+        if (!workingHasPendingEdit) {
+          const workingGlobal = { ...(workingConfig.global ?? {}) } as Record<string, unknown>
+          setNestedPath(workingGlobal, path, value)
+          nextWorking = { ...workingConfig, global: workingGlobal }
+        }
+      }
+      set({
+        workingConfig: nextWorking,
+        savedConfig: nextSaved,
+        dirty: !configEqual(nextWorking, nextSaved),
+        error: null,
+      })
     },
 
     // ─── Save / revert ────────────────────────────────────────────────

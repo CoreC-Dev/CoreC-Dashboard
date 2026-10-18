@@ -21,6 +21,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useConfigCenter } from '@/hooks/useConfigCenter'
 import i18n from '@/i18n'
+import { CONFIG_TEMPLATES } from '@/lib/configTemplates'
 import { useConfigStore } from '@/stores/configStore'
 import { useConnectionStore } from '@/stores/connectionStore'
 
@@ -324,7 +325,7 @@ describe('useConfigCenter — D-16 seed-failure guard', () => {
   // would replace the (unknown) running config with the sample.
   function mockRawFailure() {
     fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
-      const url = typeof input === 'string' ? input : input.url
+      const url = route(input)
       if (url.includes('/configs/raw')) {
         return Promise.resolve(
           new Response('{"error":"backend restarting"}', {
@@ -367,7 +368,7 @@ describe('useConfigCenter — D-16 seed-failure guard', () => {
   it('hot reload works again after the seed is retried successfully', async () => {
     let failing = true
     fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
-      const url = typeof input === 'string' ? input : input.url
+      const url = route(input)
       if (url.includes('/configs/raw')) {
         return failing
           ? Promise.resolve(
@@ -405,5 +406,249 @@ describe('useConfigCenter — D-16 seed-failure guard', () => {
       result.current.handleHotReload()
     })
     expect(result.current.yamlApplyOpen).toBe(true)
+  })
+})
+
+describe('useConfigCenter — C-D7 persistent validation warnings', () => {
+  it('warnings land in the persistent result block, not the auto-dismiss strip', async () => {
+    fetchMock.mockImplementation((input: RequestInfo | URL) => {
+      const url = route(input)
+      if (url.includes('/configs/raw')) {
+        return Promise.resolve(
+          new Response(SERVER_YAML, {
+            status: 200,
+            headers: { 'content-type': 'application/yaml' },
+          }),
+        )
+      }
+      if (url.includes('/configs/validate')) {
+        return Promise.resolve(
+          jsonResponse({
+            valid: true,
+            warnings: ['idle mode: no data source', 'idle mode: no transport'],
+          }),
+        )
+      }
+      return Promise.resolve(jsonResponse({ global: { 'log-level': 'info' } }))
+    })
+    const { result } = await mountSeeded()
+
+    await act(async () => {
+      await result.current.handleDryRunValidate()
+    })
+    // The result must NOT ride the 4.5s auto-dismiss strip.
+    expect(result.current.statusMsg).toBeNull()
+    expect(result.current.dryRunResult).toEqual({
+      outcome: 'valid-with-warnings',
+      warnings: ['idle mode: no data source', 'idle mode: no transport'],
+    })
+
+    // Editing the YAML clears the (now stale) validation result.
+    act(() => {
+      result.current.setYamlContent(`${SERVER_YAML}# touched\n`)
+    })
+    expect(result.current.dryRunResult).toBeNull()
+  })
+
+  it('a clean success still uses the auto-dismiss status strip', async () => {
+    fetchMock.mockImplementation((input: RequestInfo | URL) => {
+      const url = route(input)
+      if (url.includes('/configs/raw')) {
+        return Promise.resolve(
+          new Response(SERVER_YAML, {
+            status: 200,
+            headers: { 'content-type': 'application/yaml' },
+          }),
+        )
+      }
+      if (url.includes('/configs/validate')) {
+        return Promise.resolve(jsonResponse({ valid: true, warnings: [] }))
+      }
+      return Promise.resolve(jsonResponse({ global: { 'log-level': 'info' } }))
+    })
+    const { result } = await mountSeeded()
+
+    await act(async () => {
+      await result.current.handleDryRunValidate()
+    })
+    expect(result.current.statusMsg?.type).toBe('success')
+    expect(result.current.dryRunResult).toBeNull()
+  })
+
+  it('a server rejection lands in the persistent result block', async () => {
+    fetchMock.mockImplementation((input: RequestInfo | URL) => {
+      const url = route(input)
+      if (url.includes('/configs/raw')) {
+        return Promise.resolve(
+          new Response(SERVER_YAML, {
+            status: 200,
+            headers: { 'content-type': 'application/yaml' },
+          }),
+        )
+      }
+      if (url.includes('/configs/validate')) {
+        return Promise.resolve(jsonResponse({ valid: false, error: 'bad config: no rules' }))
+      }
+      return Promise.resolve(jsonResponse({ global: { 'log-level': 'info' } }))
+    })
+    const { result } = await mountSeeded()
+
+    await act(async () => {
+      await result.current.handleDryRunValidate()
+    })
+    expect(result.current.dryRunResult).toEqual({
+      outcome: 'invalid',
+      error: 'bad config: no rules',
+    })
+    expect(result.current.statusMsg).toBeNull()
+  })
+})
+
+describe('useConfigCenter — C-D8 log-level patch no longer clobbers the editor', () => {
+  // Stateful mock: the overview reflects whatever level was last PATCHed,
+  // like the real backend would after a successful PATCH /configs.
+  function mockPatchAwareRaw(fetchRawImpl: () => Response) {
+    fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = route(input)
+      const method = init?.method ?? 'GET'
+      if (url.includes('/configs/raw')) {
+        return Promise.resolve(fetchRawImpl())
+      }
+      if (url.includes('/configs') && method === 'PATCH') {
+        patchLevel = String(JSON.parse(String(init?.body ?? '{}'))['log-level'] ?? 'info')
+        return Promise.resolve(new Response(null, { status: 204 }))
+      }
+      return Promise.resolve(jsonResponse({ global: { 'log-level': patchLevel } }))
+    })
+  }
+  let patchLevel = 'info'
+
+  it('PATCH updates the store baseline and leaves yamlContent untouched', async () => {
+    patchLevel = 'info'
+    mockPatchAwareRaw(
+      () =>
+        new Response(SERVER_YAML, { status: 200, headers: { 'content-type': 'application/yaml' } }),
+    )
+    const { result } = await mountSeeded()
+    // Let the overview query settle so its (stale) response cannot race the
+    // optimistic log-level update below.
+    await waitFor(() => expect(result.current.configData).toBeTruthy())
+    // Operator has unsaved editor work…
+    const editedYaml = `${SERVER_YAML}# my local draft\n`
+    act(() => {
+      result.current.setYamlContent(editedYaml)
+    })
+
+    await act(async () => {
+      await result.current.handleLogLevelChange('debug')
+    })
+
+    expect(result.current.currentLogLevel).toBe('debug')
+    // …the editor content survives the PATCH…
+    expect(result.current.yamlContent).toBe(editedYaml)
+    // …and the store baseline reflects the live server value.
+    const s = useConfigStore.getState()
+    expect(s.savedConfig?.global?.['log-level']).toBe('debug')
+    expect(s.workingConfig?.global?.['log-level']).toBe('debug')
+    expect(s.dirty).toBe(false)
+  })
+
+  it('PATCH keeps a pending form-side log-level edit visible', async () => {
+    patchLevel = 'info'
+    mockPatchAwareRaw(
+      () =>
+        new Response(SERVER_YAML, { status: 200, headers: { 'content-type': 'application/yaml' } }),
+    )
+    const { result } = await mountSeeded()
+    await waitFor(() => expect(result.current.configData).toBeTruthy())
+    // User has an unapplied log-level edit on the form side…
+    act(() => {
+      useConfigStore.getState().updateGlobalField('log-level', 'warn')
+    })
+
+    await act(async () => {
+      await result.current.handleLogLevelChange('debug')
+    })
+    const s = useConfigStore.getState()
+    expect(s.savedConfig?.global?.['log-level']).toBe('debug')
+    expect(s.workingConfig?.global?.['log-level']).toBe('warn')
+    expect(s.dirty).toBe(true)
+  })
+})
+
+describe('useConfigCenter — C-D4 template/file load confirmation', () => {
+  // The editor-dirty check compares the DEBOUNCED editor content; wait for
+  // the debounce to flush after the auto-load before asserting the gate.
+  async function settleDebounce() {
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 350))
+    })
+  }
+
+  it('a template load with pending edits waits for the discard confirmation', async () => {
+    const { result } = await mountSeeded()
+    await settleDebounce()
+    act(() => {
+      useConfigStore.getState().updateGlobalField('engine.workers', 8)
+    })
+
+    const template = CONFIG_TEMPLATES[0]!
+    act(() => {
+      result.current.handleLoadTemplate(template)
+    })
+    // Confirm dialog open; nothing replaced yet.
+    expect(result.current.loadConfirmOpen).toBe(true)
+    expect(result.current.yamlContent).toBe(SERVER_YAML)
+
+    act(() => {
+      result.current.confirmPendingLoad()
+    })
+    expect(result.current.loadConfirmOpen).toBe(false)
+    // Template yaml (with a regenerated secret) replaced the editor.
+    expect(result.current.yamlContent).not.toBe(SERVER_YAML)
+    expect(result.current.yamlContent).toContain('node-01')
+  })
+
+  it('a template load without pending edits applies directly', async () => {
+    const { result } = await mountSeeded()
+    await settleDebounce()
+    const template = CONFIG_TEMPLATES[0]!
+    act(() => {
+      result.current.handleLoadTemplate(template)
+    })
+    expect(result.current.loadConfirmOpen).toBe(false)
+    expect(result.current.yamlContent).not.toBe(SERVER_YAML)
+  })
+
+  it('cancel leaves pending edits and the editor untouched', async () => {
+    const { result } = await mountSeeded()
+    await settleDebounce()
+    act(() => {
+      useConfigStore.getState().updateGlobalField('engine.workers', 8)
+    })
+    act(() => {
+      result.current.handleLoadTemplate(CONFIG_TEMPLATES[0]!)
+    })
+    act(() => {
+      result.current.cancelPendingLoad()
+    })
+    expect(result.current.loadConfirmOpen).toBe(false)
+    expect(result.current.yamlContent).toBe(SERVER_YAML)
+    expect(useConfigStore.getState().workingConfig?.global?.engine?.workers).toBe(8)
+  })
+})
+
+describe('useConfigCenter — C-D6 diff baseline is the saved server config', () => {
+  it('diffBaselineYaml follows the saved baseline, not a per-session variable', async () => {
+    const { result } = await mountSeeded()
+    expect(result.current.diffBaselineYaml).toBeTruthy()
+    expect(result.current.diffBaselineYaml).toContain('d1')
+
+    // Edit the editor → diff computed against the server baseline.
+    act(() => {
+      result.current.setYamlContent(`${YAML_WITH_OTHER_EDIT}# extra line\n`)
+    })
+    await waitFor(() => expect(result.current.hasDiffChanges).toBe(true))
+    expect(result.current.diffLines.some((l) => l.type === 'added')).toBe(true)
   })
 })

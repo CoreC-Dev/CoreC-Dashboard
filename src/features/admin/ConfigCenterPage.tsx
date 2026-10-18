@@ -1,4 +1,4 @@
-import { AlertTriangle } from 'lucide-react'
+import { AlertTriangle, CheckCircle2 } from 'lucide-react'
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
 import { ConfigBackupsPanel } from '@/components/admin/ConfigBackupsPanel'
@@ -25,6 +25,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { ConfigApplyConfirmationDialog } from '@/components/wizard/ConfigApplyConfirmationDialog'
+import { DiscardChangesDialog } from '@/components/wizard/DiscardChangesDialog'
 import { UnsavedChangesBanner } from '@/components/wizard/UnsavedChangesBanner'
 import { ValidationBanner } from '@/components/wizard/ValidationBanner'
 import { DerivedTagsEditor } from '@/features/admin/DerivedTagsEditor'
@@ -81,7 +82,7 @@ export const ConfigCenterPage: React.FC = () => {
     setYamlContent,
     currentLogLevel,
     statusMsg,
-    lastSubmittedYaml,
+    diffBaselineYaml,
     diffOpen,
     setDiffOpen,
     templatePickerOpen,
@@ -89,6 +90,10 @@ export const ConfigCenterPage: React.FC = () => {
     history,
     diffLines,
     hasDiffChanges,
+    dryRunResult,
+    loadConfirmOpen,
+    confirmPendingLoad,
+    cancelPendingLoad,
     handleImportYamlToForm,
     handleSyncFormToYaml,
     handleFileUpload,
@@ -176,6 +181,64 @@ export const ConfigCenterPage: React.FC = () => {
         </div>
       )}
 
+      {/* C-D7 — persistent dry-run validation result. Only a clean success
+          goes through the auto-dismissing status strip; warnings and server
+          rejections must stay readable here. */}
+      {dryRunResult && (
+        <div className="space-y-2">
+          {dryRunResult.outcome === 'valid-with-warnings' && (
+            <>
+              <div className="rounded-md border border-status-running/20 bg-status-running/10 p-3 text-xs text-status-running flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                {t('config.dryRunValid')}
+              </div>
+              <div className="rounded-md border border-status-warning/30 bg-status-warning/10 p-3 text-xs text-status-warning dark:text-status-warning space-y-1">
+                <div className="font-semibold flex items-center gap-1.5">
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                  {t('config.validationWarningsTitle', { count: dryRunResult.warnings.length })}
+                </div>
+                <ul className="space-y-0.5 ml-5 list-disc">
+                  {dryRunResult.warnings.map((warn, i) => (
+                    <li key={i} className="font-mono">
+                      {warn}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </>
+          )}
+          {dryRunResult.outcome === 'invalid' && (
+            <div className="rounded-md border border-status-error/30 bg-status-error/10 p-3 text-xs text-status-error dark:text-status-error flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 shrink-0" />
+              {t('config.dryRunInvalid', { error: dryRunResult.error })}
+            </div>
+          )}
+          {dryRunResult.outcome === 'request-failed' && (
+            <div className="rounded-md border border-status-error/30 bg-status-error/10 p-3 text-xs text-status-error dark:text-status-error flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 shrink-0" />
+              {t('config.dryRunFailed', { error: dryRunResult.error })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Dirty + validation banners — hoisted out of the mode branches
+          (C-D2) so pending FORM edits stay visible while the operator
+          works in YAML view. */}
+      <UnsavedChangesBanner
+        dirty={configDirty}
+        unsavedChangesLabel={
+          mode === 'yaml'
+            ? `${t('config.unsavedChanges')} ${t('configCenter.editedInFormView')}`
+            : t('config.unsavedChanges')
+        }
+        applyChangesLabel={t('config.applyChanges')}
+        hasValidationErrors={hasValidationErrors}
+        onApply={() => openApplyDialog()}
+        onDiscard={revertWorkingConfig}
+      />
+      <ValidationBanner />
+
       {mode === 'form' ? (
         <div className="space-y-4">
           {/* Runtime Parameter Patch Card */}
@@ -200,19 +263,6 @@ export const ConfigCenterPage: React.FC = () => {
             onRetry={() => refetch()}
           />
 
-          {/* Dirty banner for configStore-managed edits */}
-          <UnsavedChangesBanner
-            dirty={configDirty}
-            unsavedChangesLabel={t('config.unsavedChanges')}
-            applyChangesLabel={t('config.applyChanges')}
-            hasValidationErrors={hasValidationErrors}
-            onApply={() => openApplyDialog()}
-            onDiscard={revertWorkingConfig}
-          />
-
-          {/* Live validation errors banner */}
-          <ValidationBanner />
-
           {/* Structured global config editor */}
           <GlobalConfigEditor />
 
@@ -233,9 +283,9 @@ export const ConfigCenterPage: React.FC = () => {
         </div>
       ) : (
         <div className="space-y-4">
-          {/* Changes Preview — diff against the last submitted YAML */}
+          {/* Changes Preview — diff against the saved server config (C-D6) */}
           <DiffPreview
-            lastSubmittedYaml={lastSubmittedYaml}
+            lastSubmittedYaml={diffBaselineYaml}
             diffOpen={diffOpen}
             onToggleDiff={() => setDiffOpen((open) => !open)}
             diffLines={diffLines}
@@ -267,6 +317,15 @@ export const ConfigCenterPage: React.FC = () => {
         applying={updateMutation.isPending}
         onConfirm={handleYamlApplyConfirm}
         applyError={yamlApplyError ?? undefined}
+      />
+
+      {/* C-D4 — loading a template or file replaces both sides wholesale;
+          when unapplied edits exist the operator confirms the discard first
+          (same DiscardChangesDialog as the banner's Discard button). */}
+      <DiscardChangesDialog
+        open={loadConfirmOpen}
+        onOpenChange={(v) => !v && cancelPendingLoad()}
+        onConfirm={confirmPendingLoad}
       />
 
       {/* C-D1 ① — hot-reload acknowledgement when the editor content does

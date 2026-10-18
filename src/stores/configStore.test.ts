@@ -704,3 +704,54 @@ describe('configStore — YAML output', () => {
     expect(useConfigStore.getState().getSavedYaml()).toBeNull()
   })
 })
+
+describe('configStore — applyGlobalPatch (C-D8)', () => {
+  const seedYaml = `
+global:
+  log-level: info
+  api:
+    listen: 0.0.0.0:9090
+    secret: s3cret
+`
+  beforeEach(() => {
+    useConfigStore.getState().seedFromServer(seedYaml)
+  })
+
+  it('mirrors a zero-downtime patch into both sides when clean', () => {
+    useConfigStore.getState().applyGlobalPatch('log-level', 'debug')
+    const s = useConfigStore.getState()
+    expect(s.savedConfig?.global?.['log-level']).toBe('debug')
+    expect(s.workingConfig?.global?.['log-level']).toBe('debug')
+    expect(s.dirty).toBe(false)
+  })
+
+  it('keeps a pending edit at the patched path; only the baseline moves', () => {
+    useConfigStore.getState().updateGlobalField('log-level', 'warn')
+    useConfigStore.getState().applyGlobalPatch('log-level', 'debug')
+    const s = useConfigStore.getState()
+    // Server truth (and diff baseline) is the patched value…
+    expect(s.savedConfig?.global?.['log-level']).toBe('debug')
+    // …but the user's unapplied edit survives and stays visible.
+    expect(s.workingConfig?.global?.['log-level']).toBe('warn')
+    expect(s.dirty).toBe(true)
+  })
+
+  it('mirrors the patch while preserving an unrelated pending edit', () => {
+    useConfigStore.getState().updateGlobalField('engine.workers', 8)
+    useConfigStore.getState().applyGlobalPatch('log-level', 'debug')
+    const s = useConfigStore.getState()
+    expect(s.workingConfig?.global?.engine?.workers).toBe(8)
+    expect(s.workingConfig?.global?.['log-level']).toBe('debug')
+    expect(s.savedConfig?.global?.['log-level']).toBe('debug')
+    expect(s.dirty).toBe(true)
+  })
+
+  it('is a no-op on an empty store', () => {
+    useConfigStore.getState().reset()
+    useConfigStore.getState().applyGlobalPatch('log-level', 'debug')
+    const s = useConfigStore.getState()
+    expect(s.workingConfig).toBeNull()
+    expect(s.savedConfig).toBeNull()
+    expect(s.dirty).toBe(false)
+  })
+})

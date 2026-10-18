@@ -7,10 +7,11 @@
  * load, dry-run validation, change history, and the debounced diff preview.
  * No behavior changes — pure relocation of the page's stateful logic.
  */
-import { type ChangeEvent, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useConfigRaw, useConfigs, usePatchConfig, useValidateConfig } from '@/api/hooks'
 import { useApplyConfig } from '@/hooks/useApplyConfig'
+import { useConfigCenterLoads } from '@/hooks/useConfigCenterLoads'
 import { type ConfigSnapshot, useConfigHistory } from '@/hooks/useConfigHistory'
 import {
   formatValidationErrors,
@@ -20,14 +21,22 @@ import {
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { useStatusMessage } from '@/hooks/useStatusMessage'
 import { useYamlApplyFlow } from '@/hooks/useYamlApplyFlow'
-import { type ConfigTemplate, DEFAULT_SAMPLE_YAML } from '@/lib/configTemplates'
-import { generateRandomSecret } from '@/lib/utils'
+import { DEFAULT_SAMPLE_YAML } from '@/lib/configTemplates'
+import { dumpConfigYaml, parseConfigYaml, yamlDiffersFromConfig } from '@/lib/configYaml'
 import { computeLcsDiff, type DiffLine } from '@/lib/yamlDiff'
 import { useConfigStore } from '@/stores/configStore'
 
 const STATUS_AUTO_DISMISS_MS = 4500
 
 export type ConfigMode = 'form' | 'yaml'
+
+/** Persistent dry-run validation result (C-D7). Rendered in a dedicated
+ *  non-dismissing block by the page; only a clean success uses the
+ *  auto-dismissing status strip. */
+export type DryRunResult =
+  | { outcome: 'valid-with-warnings'; warnings: string[] }
+  | { outcome: 'invalid'; error: string }
+  | { outcome: 'request-failed'; error: string }
 
 export function useConfigCenter() {
   const { t } = useTranslation()
@@ -52,6 +61,7 @@ export function useConfigCenter() {
   const getSavedYaml = useConfigStore((s) => s.getSavedYaml)
   const markSaved = useConfigStore((s) => s.markSaved)
   const loadFromYaml = useConfigStore((s) => s.loadFromYaml)
+  const applyGlobalPatch = useConfigStore((s) => s.applyGlobalPatch)
   const seedFromServer = useConfigStore((s) => s.seedFromServer)
   const revertConfig = useConfigStore((s) => s.revert)
   const configWorkingExists = useConfigStore((s) => !!s.workingConfig)
@@ -79,22 +89,31 @@ export function useConfigCenter() {
 
   const [mode, setMode] = useState<ConfigMode>('form')
   const [yamlContent, setYamlContent] = useState(DEFAULT_SAMPLE_YAML)
-  // Debounced copy of the editor content used only for the diff preview, so
-  // the O(m×n) LCS in computeDiff runs at most ~3×/sec while typing instead
-  // of on every keystroke. The editor itself stays un-debounced.
+  // Debounced copy of the editor content used only for the diff preview and
+  // the unsaved-changes guard, so the O(m×n) computations run at most ~3×/sec
+  // while typing instead of on every keystroke. The editor stays un-debounced.
   const debouncedYaml = useDebouncedValue(yamlContent, 300)
   const [currentLogLevel, setCurrentLogLevel] = useState<string>('info')
   const { statusMsg, setStatusMsg } = useStatusMessage(STATUS_AUTO_DISMISS_MS)
   // Change-history state: snapshots persisted to localStorage after every
-  // successful PUT /configs, plus the last submitted YAML for the diff preview.
+  // successful PUT /configs.
   const { history } = useConfigHistory()
-  const [lastSubmittedYaml, setLastSubmittedYaml] = useState<string | null>(null)
   const [diffOpen, setDiffOpen] = useState(true)
-  const [templatePickerOpen, setTemplatePickerOpen] = useState(false)
   // Guards one-time auto-load of the live server config into the editor on
   // first successful fetch, so operators see the actual running config
   // instead of DEFAULT_SAMPLE_YAML without a manual "Load from Server" click.
   const [autoLoaded, setAutoLoaded] = useState(false)
+  // C-D7 — persistent dry-run validation result. Unlike statusMsg it does NOT
+  // auto-dismiss: server-side warnings/errors must stay readable instead of
+  // vanishing with the 4.5s status strip.
+  const [dryRunResult, setDryRunResult] = useState<DryRunResult | null>(null)
+  // Every editor content change (user keystroke or programmatic load) goes
+  // through this wrapper so a stale validation result never outlives its
+  // YAML. Exposed to the page as `setYamlContent`.
+  const applyYamlContent = (text: string) => {
+    setYamlContent(text)
+    setDryRunResult(null)
+  }
 
   // YAML-mode apply flow: apply dialog + C-D1 divergence bridge/guard +
   // D-16 seed guard. Extracted to useYamlApplyFlow (God-file limit); the
@@ -116,17 +135,65 @@ export function useConfigCenter() {
     handleHotReload,
   } = useYamlApplyFlow({
     yamlContent,
-    setYamlContent,
+    setYamlContent: applyYamlContent,
     mode,
     setMode,
     loadFromYaml,
     getWorkingYaml,
     setStatusMsg,
-    onApplied: (appliedYaml) => {
-      setLastSubmittedYaml(appliedYaml)
+    onApplied: () => {
       refetch()
     },
   })
+
+  // ── Unsaved-changes guard (C-D3) ───────────────────────────────────
+  // The editor counts as dirty when it differs from the SERVER config
+  // (semantically — parse both sides). Together with the form side's dirty
+  // flag this drives the beforeunload guard; in-app route blocking would
+  // need a data-router migration (createHashRouter), so under the current
+  // <HashRouter> the audit's useBeforeUnload approach applies.
+  const serverRawYaml = rawConfigQuery.data
+  const editorDirty = useMemo(() => {
+    if (!serverRawYaml?.trim()) return false
+    try {
+      return yamlDiffersFromConfig(debouncedYaml, parseConfigYaml(serverRawYaml))
+    } catch {
+      // Server YAML our parser rejects: treat the editor as diverged
+      // rather than silently dropping the guard.
+      return true
+    }
+  }, [debouncedYaml, serverRawYaml])
+  const hasPendingEdits = () => configDirty || editorDirty
+  // Template/file loading with the C-D4 discard confirmation; extracted to
+  // useConfigCenterLoads (God-file limit).
+  const {
+    templatePickerOpen,
+    setTemplatePickerOpen,
+    handleFileUpload,
+    handleLoadTemplate,
+    loadConfirmOpen,
+    confirmPendingLoad,
+    cancelPendingLoad,
+  } = useConfigCenterLoads({
+    applyYamlContent,
+    loadFromYaml,
+    setStatusMsg,
+    hasPendingEdits,
+  })
+  // beforeunload guard (the audit's useBeforeUnload approach; the
+  // react-router hook registers unconditionally, so this is the same
+  // listener mechanism with an explicit activation flag).
+  const guardActive = configDirty || editorDirty
+  useEffect(() => {
+    if (!guardActive) return
+    const handler = (event: BeforeUnloadEvent) => {
+      // Browsers show their own native prompt; the handler just vetoes.
+      event.preventDefault()
+      event.returnValue = ''
+    }
+    window.addEventListener('beforeunload', handler, { capture: true })
+    return () => window.removeEventListener('beforeunload', handler, { capture: true })
+  }, [guardActive])
 
   // Auto-load the live server config into the editor on first successful
   // fetch. Without this the editor shows DEFAULT_SAMPLE_YAML and the operator
@@ -140,7 +207,7 @@ export function useConfigCenter() {
     const yamlText = rawConfigQuery.data
     if (!yamlText?.trim()) return
     setAutoLoaded(true)
-    setYamlContent(yamlText)
+    applyYamlContent(yamlText)
     seedFromServer(yamlText)
   }, [rawConfigQuery.data, seedFromServer, autoLoaded])
 
@@ -164,40 +231,12 @@ export function useConfigCenter() {
   const handleSyncFormToYaml = () => {
     const yaml = getWorkingYaml()
     if (yaml) {
-      setYamlContent(yaml)
+      applyYamlContent(yaml)
       setStatusMsg({ type: 'success', text: t('config.syncFormSuccess') })
       setMode('yaml')
     } else {
       setStatusMsg({ type: 'error', text: t('config.syncFormEmpty') })
     }
-  }
-
-  // "Upload YAML file": read a user-selected .yaml/.yml file into both the
-  // Monaco editor and the configStore.
-  const handleFileUpload = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => {
-      const text = String(reader.result)
-      setYamlContent(text)
-      const err = loadFromYaml(text)
-      if (err) {
-        setStatusMsg({
-          type: 'error',
-          text: t('config.importYamlFailed', { error: err }),
-        })
-      } else {
-        setStatusMsg({
-          type: 'success',
-          text: t('config.fileLoaded', { name: file.name }),
-        })
-      }
-    }
-    reader.onerror = () => setStatusMsg({ type: 'error', text: t('config.fileLoadFailed') })
-    reader.readAsText(file)
-    // Reset input so the same file can be re-selected
-    e.target.value = ''
   }
 
   // "Download YAML file": export the current working config as a .yaml file.
@@ -222,23 +261,6 @@ export function useConfigCenter() {
     setStatusMsg({ type: 'success', text: t('config.exported') })
   }
 
-  // Load a pre-built configuration template into the working config.
-  // Replaces the weak placeholder secret with a random one (TD-SEC-006, D5).
-  const handleLoadTemplate = (template: ConfigTemplate) => {
-    const yamlWithSecret = template.yaml.replace('change-me-please', generateRandomSecret())
-    setYamlContent(yamlWithSecret)
-    const err = loadFromYaml(yamlWithSecret)
-    if (err) {
-      setStatusMsg({ type: 'error', text: t('config.importYamlFailed', { error: err }) })
-    } else {
-      setStatusMsg({
-        type: 'success',
-        text: t('config.templateLoaded', { name: template.name }),
-      })
-    }
-    setTemplatePickerOpen(false)
-  }
-
   // Sync the displayed log level from the server-side config overview once it
   // loads (or whenever it changes after a PATCH/PUT).
   useEffect(() => {
@@ -254,17 +276,14 @@ export function useConfigCenter() {
     try {
       // The server only supports `log-level` for PATCH /configs.
       await patchMutation.mutateAsync({ 'log-level': lvl })
-      // After a successful PATCH, the active config changed. The M-1 cache
-      // fix invalidates ['configsRaw'], but the Monaco editor binds to
-      // yamlContent state (not the cache directly), so we must also re-sync
-      // yamlContent from the refetched raw config — otherwise a subsequent
-      // "Hot Reload" would PUT the stale yamlContent and overwrite the patch.
-      void rawConfigQuery.refetch().then((res) => {
-        if (res.data?.trim()) {
-          setYamlContent(res.data)
-          loadFromYaml(res.data)
-        }
-      })
+      // C-D8 — record the patch in the store baseline (saved + mirrored
+      // working value) but leave the editor content untouched: the old flow
+      // overwrote yamlContent with the refetched server config, silently
+      // destroying unsaved editor edits. If the editor content is now
+      // stale, the apply dialog's diff (baseline = saved config) shows the
+      // log-level reversion explicitly instead of sneaking it into the PUT.
+      applyGlobalPatch('log-level', lvl)
+      void refetch()
       setStatusMsg({ type: 'success', text: t('config.logLevelUpdated', { level: lvl }) })
     } catch (err: unknown) {
       setCurrentLogLevel(prev)
@@ -288,7 +307,7 @@ export function useConfigCenter() {
           setStatusMsg({ type: 'error', text: t('config.loadFromServerEmpty') })
           return
         }
-        setYamlContent(yamlText)
+        applyYamlContent(yamlText)
         const err = loadFromYaml(yamlText)
         if (err) {
           setStatusMsg({ type: 'error', text: t('config.importYamlFailed', { error: err }) })
@@ -306,35 +325,32 @@ export function useConfigCenter() {
   // Path A — "Validate": dry-run the current editor config on the server via
   // POST /configs/validate (parse + config validation, NO apply). Surfaces
   // whether the config would be accepted before the operator commits a PUT.
+  // C-D7 — results with warnings/errors go to the persistent dryRunResult
+  // block instead of the 4.5s status strip; ONLY a clean success auto-dismisses.
   const handleDryRunValidate = async () => {
     setStatusMsg(null)
     try {
       const result = await validateMutation.mutateAsync(yamlContent)
       if (result.valid) {
-        const warnings = result.warnings
-        if (warnings && warnings.length > 0) {
-          setStatusMsg({
-            type: 'success',
-            text: `${t('config.dryRunValid')} — ${t('config.validationWarningsTitle')}: ${warnings.join('; ')}`,
-          })
+        const warnings = result.warnings ?? []
+        if (warnings.length > 0) {
+          setDryRunResult({ outcome: 'valid-with-warnings', warnings })
         } else {
+          setDryRunResult(null)
           setStatusMsg({ type: 'success', text: t('config.dryRunValid') })
         }
       } else {
-        setStatusMsg({
-          type: 'error',
-          text: t('config.dryRunInvalid', { error: result.error ?? '' }),
-        })
+        setDryRunResult({ outcome: 'invalid', error: result.error ?? '' })
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err)
-      setStatusMsg({ type: 'error', text: t('config.dryRunFailed', { error: msg }) })
+      setDryRunResult({ outcome: 'request-failed', error: msg })
     }
   }
 
   // Restore a history snapshot into the YAML editor and switch to code view.
   const handleRestore = (snap: ConfigSnapshot) => {
-    setYamlContent(snap.yaml)
+    applyYamlContent(snap.yaml)
     setMode('yaml')
     setStatusMsg({ type: 'success', text: t('config.restored') })
   }
@@ -347,19 +363,25 @@ export function useConfigCenter() {
     void rawConfigQuery.refetch()
   }
 
-  // Line-by-line diff between the editor content and the last submitted YAML.
-  // Uses the debounced value so the O(m×n) LCS isn't recomputed on every
-  // keystroke. hasDiffChanges is folded in here too, so the O(n) scan only
-  // runs when the diff inputs actually change rather than on every render.
-  // Empty when no prior submission exists, in which case the preview is skipped.
+  // Line-by-line diff between the editor content and the SAVED SERVER CONFIG
+  // (C-D6 — the old per-session "last submitted" baseline was null on first
+  // visit, hiding the preview, and produced phantom diffs after "Load from
+  // Server"). Hidden until a baseline exists. Uses the debounced value so the
+  // O(m×n) LCS isn't recomputed on every keystroke; hasDiffChanges is folded
+  // in so the O(n) scan only runs when the inputs change.
+  const savedConfig = useConfigStore((s) => s.savedConfig)
+  const diffBaselineYaml = useMemo(
+    () => (savedConfig ? dumpConfigYaml(savedConfig) : null),
+    [savedConfig],
+  )
   const { diffLines, hasDiffChanges } = useMemo<{
     diffLines: DiffLine[]
     hasDiffChanges: boolean
   }>(() => {
-    if (lastSubmittedYaml === null) return { diffLines: [], hasDiffChanges: false }
-    const lines = computeLcsDiff(lastSubmittedYaml, debouncedYaml)
+    if (diffBaselineYaml === null) return { diffLines: [], hasDiffChanges: false }
+    const lines = computeLcsDiff(diffBaselineYaml, debouncedYaml)
     return { diffLines: lines, hasDiffChanges: lines.some((line) => line.type !== 'equal') }
-  }, [lastSubmittedYaml, debouncedYaml])
+  }, [diffBaselineYaml, debouncedYaml])
 
   return {
     // queries / mutations
@@ -389,18 +411,24 @@ export function useConfigCenter() {
     mode,
     setMode,
     yamlContent,
-    setYamlContent,
+    setYamlContent: applyYamlContent,
     currentLogLevel,
     statusMsg,
-    lastSubmittedYaml,
+    diffBaselineYaml,
     diffOpen,
     setDiffOpen,
-    templatePickerOpen,
-    setTemplatePickerOpen,
     history,
     // diff
     diffLines,
     hasDiffChanges,
+    // C-D7 persistent dry-run validation result (null = none)
+    dryRunResult,
+    // C-D4 template/file loads (useConfigCenterLoads)
+    templatePickerOpen,
+    setTemplatePickerOpen,
+    loadConfirmOpen,
+    confirmPendingLoad,
+    cancelPendingLoad,
     // handlers
     handleImportYamlToForm,
     handleSyncFormToYaml,
