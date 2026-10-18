@@ -48,6 +48,9 @@
     "proxyModeHint": "Auto: detect proxy at startup. Proxy: route through server.mjs. Direct: browser connects to backend.",
     "add": "Add",
     "enter": "Enter",
+    "probeUnauthorized": "Invalid API key (401) — check your API key",
+    "probeUnreachable": "Cannot reach server — check the address/port and that CoreC is running",
+    "probeTimeout": "Connection timed out",
     "deleteTitle": "Delete Instance",
     "deleteConfirm": "Are you sure you want to delete instance \"{{name}}\"? This cannot be undone.",
     "emptyTitle": "No CoreC Instances Yet",
@@ -256,7 +259,11 @@
     "testRequestFailed": "Test request failed"
   },
   "connection": {
-    "disconnect": "Disconnect"
+    "disconnect": "Disconnect",
+    "authExpiredTitle": "Authentication expired",
+    "authExpiredDesc": "The server rejected your access key. Re-enter it to reconnect.",
+    "reconnect": "Reconnect",
+    "backToInstances": "Back to instances"
   },
   "dashboard": {
     "title": "IIoT Gateway Operational Dashboard",

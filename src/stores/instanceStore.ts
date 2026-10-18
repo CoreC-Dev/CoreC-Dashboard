@@ -43,12 +43,31 @@ function rejectProtoKeys(obj: unknown): void {
   }
 }
 
+/**
+ * Probe failure kinds (A-01): an invalid API key and an unreachable server
+ * lead the operator down completely different repair paths (fix the secret
+ * vs fix the address/network), so probes must record which one happened.
+ */
+export type ProbeErrorKind = 'unauthorized' | 'unreachable' | 'timeout'
+
+/**
+ * i18n keys for rendering each probe failure kind. Kept next to the kind
+ * vocabulary (this store owns `probeErrors`) so the kind→copy mapping has a
+ * single source of truth; components translate at render time so the text
+ * follows language switches.
+ */
+export const PROBE_ERROR_I18N_KEYS: Record<ProbeErrorKind, string> = {
+  unauthorized: 'instances.probeUnauthorized',
+  unreachable: 'instances.probeUnreachable',
+  timeout: 'instances.probeTimeout',
+}
+
 interface InstanceState {
   instances: CoreCInstance[]
   /** IDs of instances currently being probed (connection test). */
   probing: Record<string, boolean>
-  /** Per-instance connection errors from the last probe. */
-  probeErrors: Record<string, string | null>
+  /** Per-instance failure kind from the last probe (null = last probe ok). */
+  probeErrors: Record<string, ProbeErrorKind | null>
 
   addInstance: (data: Omit<CoreCInstance, 'id' | 'createdAt' | 'sortOrder'>) => string
   updateInstance: (id: string, data: Partial<Omit<CoreCInstance, 'id' | 'createdAt'>>) => void
@@ -59,7 +78,7 @@ interface InstanceState {
     id: string,
     ok: boolean,
     info?: CoreCInstance['lastKnownInfo'],
-    error?: string,
+    error?: ProbeErrorKind,
   ) => void
   setProbing: (id: string, probing: boolean) => void
   exportInstances: (includeSecrets?: boolean) => string
@@ -189,7 +208,7 @@ export const useInstanceStore = create<InstanceState>((set, get) => ({
 
   setProbeResult: (id, ok, info, error) => {
     const { probeErrors: curErrors } = get()
-    set({ probeErrors: { ...curErrors, [id]: ok ? null : (error ?? 'Connection failed') } })
+    set({ probeErrors: { ...curErrors, [id]: ok ? null : (error ?? 'unreachable') } })
     if (ok) {
       const next = get().instances.map((i) =>
         i.id === id

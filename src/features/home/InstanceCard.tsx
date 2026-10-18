@@ -33,7 +33,7 @@ import {
 import { ConnStateLabel } from '@/lib/constants'
 import { formatRelativeTime } from '@/lib/formatters'
 import { formatCompact, formatUptime } from '@/lib/utils'
-import { useInstanceStore } from '@/stores/instanceStore'
+import { PROBE_ERROR_I18N_KEYS, useInstanceStore } from '@/stores/instanceStore'
 import type { CoreCInstance } from '@/types/models'
 
 export interface InstanceCardProps {
@@ -204,10 +204,13 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
             {instance.baseUrl.replace(/^https?:\/\//, '')}
           </div>
 
-          {/* Error message */}
+          {/* Error message — translated from the recorded failure kind (A-01) */}
           {probeError && (
-            <div className="text-xs text-status-error break-words" title={probeError}>
-              {probeError}
+            <div
+              className="text-xs text-status-error break-words"
+              title={t(PROBE_ERROR_I18N_KEYS[probeError])}
+            >
+              {t(PROBE_ERROR_I18N_KEYS[probeError])}
             </div>
           )}
 

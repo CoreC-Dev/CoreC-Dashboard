@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { resolveProxyMode } from '@/api/proxyMode'
 import { getDriverConnectionSummary, getTransportConnectionSummary } from '@/lib/connectionInfo'
+import type { ProbeErrorKind } from '@/stores/instanceStore'
 import { useInstanceStore } from '@/stores/instanceStore'
 import type { CoreCConfig } from '@/types/config'
 import type { CoreCInstance } from '@/types/models'
@@ -12,12 +13,37 @@ import type { CoreCInstance } from '@/types/models'
  * + GET /tags (tag count) and stores the results in lastKnownInfo so the
  * InstanceCard can display live metrics.
  *
+ * A-01: /stats lives inside CoreC's Bearer auth group (hub/route/router.go)
+ * while GET / is public — a 401 on /stats with a healthy GET / means the
+ * address is right but the API key is wrong, and is recorded distinctly
+ * from an unreachable server.
+ *
  * This is the "simultaneous multi-instance monitor" — all instances are
  * probed in parallel every REFRESH_INTERVAL ms.
  */
 
 const REFRESH_INTERVAL = 15_000 // 15 seconds
 const REQUEST_TIMEOUT = 8_000 // 8 seconds per request
+
+/** Probe failure carrying a machine-readable kind (stored, translated at render). */
+class ProbeError extends Error {
+  constructor(readonly kind: ProbeErrorKind) {
+    super(kind)
+  }
+}
+
+/**
+ * True when a fetch rejection was caused by an abort (timeout / unmount).
+ * Duck-typed on `.name` because DOMException (what fetch rejects with on
+ * abort) does not extend Error in every runtime.
+ */
+function isAbortError(reason: unknown): boolean {
+  return (
+    typeof reason === 'object' &&
+    reason !== null &&
+    (reason as { name?: unknown }).name === 'AbortError'
+  )
+}
 
 interface StatsData {
   drivers: number
@@ -100,14 +126,27 @@ async function probeInstance(
 
   // GET / must succeed — otherwise the instance is unreachable
   if (infoRes.status !== 'fulfilled' || !infoRes.value.ok) {
-    throw new Error('Unreachable')
+    // A rejected fetch means either the 8s timeout / unmount abort fired
+    // (AbortError) or the network/DNS/CORS layer failed — keep the two
+    // distinguishable (A-01: timeout vs wrong address).
+    if (infoRes.status === 'rejected' && isAbortError(infoRes.reason)) {
+      throw new ProbeError('timeout')
+    }
+    throw new ProbeError('unreachable')
+  }
+
+  // A-01: GET / is public, /stats is behind the Bearer auth group. A 401
+  // here with a healthy GET / means the address is right but the API key
+  // is wrong — record it as such instead of silently dropping the stats.
+  if (statsRes.status === 'fulfilled' && statsRes.value.status === 401) {
+    throw new ProbeError('unauthorized')
   }
 
   const info = await infoRes.value.json()
   // Guard against non-object responses (e.g., plain string, number, null)
   // which would cause TypeError on property access.
   if (typeof info !== 'object' || info === null) {
-    throw new Error('Invalid server response')
+    throw new ProbeError('unreachable')
   }
   const result: CoreCInstance['lastKnownInfo'] = {
     name: info.name,
@@ -232,9 +271,14 @@ export function useHomepageProbe(): void {
             const info = await probeInstance(inst, signal)
             if (!active) return
             setProbeResultRef.current(inst.id, true, info)
-          } catch {
+          } catch (err) {
             if (!active) return
-            setProbeResultRef.current(inst.id, false, undefined, 'Connection failed')
+            setProbeResultRef.current(
+              inst.id,
+              false,
+              undefined,
+              err instanceof ProbeError ? err.kind : 'unreachable',
+            )
           } finally {
             if (active) setProbingRef.current(inst.id, false)
           }
@@ -252,4 +296,29 @@ export function useHomepageProbe(): void {
       clearInterval(intervalId)
     }
   }, []) // Empty deps — runs once on mount, refs keep data fresh
+}
+
+/**
+ * Probe one instance immediately and record the result in the store (A-03).
+ * Called by InstancePanel right after add/update so a fresh or edited
+ * instance shows its connecting → verdict transition within seconds
+ * instead of waiting up to REFRESH_INTERVAL for the next cycle.
+ *
+ * Deliberately fire-and-forget: the UI follows the store's probing /
+ * probeErrors updates, and the periodic probeAll keeps the state fresh
+ * afterwards. Never throws — every failure lands in setProbeResult.
+ */
+export async function probeOneInstance(id: string): Promise<void> {
+  const { getInstance, setProbing, setProbeResult } = useInstanceStore.getState()
+  const inst = getInstance(id)
+  if (!inst) return
+  setProbing(id, true)
+  try {
+    const info = await probeInstance(inst)
+    setProbeResult(id, true, info)
+  } catch (err) {
+    setProbeResult(id, false, undefined, err instanceof ProbeError ? err.kind : 'unreachable')
+  } finally {
+    setProbing(id, false)
+  }
 }

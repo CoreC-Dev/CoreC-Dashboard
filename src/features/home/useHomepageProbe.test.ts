@@ -1,9 +1,13 @@
 // @vitest-environment jsdom
-import { act, cleanup, renderHook, waitFor } from '@testing-library/react'
+import { act, cleanup, configure, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { useHomepageProbe } from '@/features/home/useHomepageProbe'
+import { probeOneInstance, useHomepageProbe } from '@/features/home/useHomepageProbe'
 import { useInstanceStore } from '@/stores/instanceStore'
 import type { CoreCInstance } from '@/types/models'
+
+// Load-tolerant async-assertion timeout: the runner is shared with parallel
+// agents on a 2-core host, and RTL waitFor's 1s default flakes under contention.
+configure({ asyncUtilTimeout: 4000 })
 
 // Mock fetch — each test configures the responses it expects.
 const mockFetch = vi.fn<(url: string, init?: RequestInit) => Promise<Response>>()
@@ -136,7 +140,7 @@ describe('useHomepageProbe', () => {
     await flush()
   })
 
-  it('records "Connection failed" when GET / fails (Unreachable)', async () => {
+  it("records 'unreachable' when GET / fails (server down / wrong address)", async () => {
     vi.useRealTimers()
     resetStore([makeInstance()])
     mockFetch.mockImplementation((url: string) => {
@@ -148,11 +152,80 @@ describe('useHomepageProbe', () => {
     await probeSettled()
 
     const state = useInstanceStore.getState()
-    // probeInstance throws "Unreachable" internally; the hook surfaces it as
-    // "Connection failed" in the store.
-    expect(state.probeErrors['inst-1']).toBe('Connection failed')
+    // GET / failed → unreachable kind (distinct from an invalid API key).
+    expect(state.probeErrors['inst-1']).toBe('unreachable')
     // lastKnownInfo must NOT be updated on failure
     expect(state.instances[0].lastKnownInfo).toBeUndefined()
+    expect(state.probing['inst-1']).toBe(false)
+
+    unmount()
+    await flush()
+  })
+
+  it("records 'unreachable' when GET / rejects with a network error", async () => {
+    vi.useRealTimers()
+    resetStore([makeInstance()])
+    // fetch rejects with TypeError (DNS failure / CORS / connection refused)
+    mockFetch.mockImplementation((url: string) => {
+      if (url === INFO_URL) return Promise.reject(new TypeError('Failed to fetch'))
+      return Promise.resolve(jsonRes({}))
+    })
+
+    const { unmount } = renderHook(() => useHomepageProbe())
+    await probeSettled()
+
+    expect(useInstanceStore.getState().probeErrors['inst-1']).toBe('unreachable')
+    unmount()
+    await flush()
+  })
+
+  it("records 'timeout' when GET / aborts (8s per-request timeout)", async () => {
+    vi.useRealTimers()
+    resetStore([makeInstance()])
+    mockFetch.mockImplementation((url: string) => {
+      if (url === INFO_URL) {
+        const abortErr = new DOMException('The operation was aborted', 'AbortError')
+        return Promise.reject(abortErr)
+      }
+      return Promise.resolve(jsonRes({}))
+    })
+
+    const { unmount } = renderHook(() => useHomepageProbe())
+    await probeSettled()
+
+    // AbortError from the per-request timeout → timeout kind, not unreachable.
+    expect(useInstanceStore.getState().probeErrors['inst-1']).toBe('timeout')
+    unmount()
+    await flush()
+  })
+
+  it("records 'unauthorized' when GET / is ok but /stats returns 401 (A-01)", async () => {
+    vi.useRealTimers()
+    resetStore([makeInstance()])
+    mockFetch.mockImplementation((url: string) => {
+      switch (url) {
+        case INFO_URL:
+          // Public endpoint is healthy — the address and port are right…
+          return Promise.resolve(
+            jsonRes({ name: 'edge', version: '1.0.0', status: 'running', uptime: '1h' }),
+          )
+        case STATS_URL:
+          // …but the authenticated endpoint rejects the Bearer key.
+          return Promise.resolve(new Response('{"error":"unauthorized"}', { status: 401 }))
+        default:
+          return Promise.resolve(jsonRes({}))
+      }
+    })
+
+    const { unmount } = renderHook(() => useHomepageProbe())
+    await probeSettled()
+
+    const state = useInstanceStore.getState()
+    // The invalid key must surface as a distinct failure kind instead of a
+    // green light with silently missing stats.
+    expect(state.probeErrors['inst-1']).toBe('unauthorized')
+    expect(state.instances[0].lastKnownInfo).toBeUndefined()
+    expect(state.instances[0].lastConnectedAt).toBeUndefined()
     expect(state.probing['inst-1']).toBe(false)
 
     unmount()
@@ -269,5 +342,73 @@ describe('useHomepageProbe', () => {
 
     unmount()
     await flushMicrotasks()
+  })
+})
+
+describe('probeOneInstance (A-03 — immediate probe after add/update)', () => {
+  /** Wire all five probe endpoints to healthy responses. */
+  function mockHealthyEndpoints() {
+    mockFetch.mockImplementation((url: string) => {
+      switch (url) {
+        case INFO_URL:
+          return Promise.resolve(
+            jsonRes({ name: 'edge-node', version: '1.2.3', status: 'running', uptime: '1h' }),
+          )
+        case STATS_URL:
+          return Promise.resolve(jsonRes({ drivers: 1 }))
+        case TAGS_URL:
+          return Promise.resolve(jsonRes({ tags: { a: 1 } }))
+        case RULES_URL:
+          return Promise.resolve(jsonRes({ rules: [] }))
+        case RAW_CFG_URL:
+          return Promise.resolve(new Response('', { status: 200 }))
+        default:
+          return Promise.resolve(new Response('not found', { status: 404 }))
+      }
+    })
+  }
+
+  it('probes the given instance immediately and records the success', async () => {
+    resetStore([makeInstance()])
+    mockHealthyEndpoints()
+
+    await probeOneInstance('inst-1')
+
+    const state = useInstanceStore.getState()
+    const info = state.instances[0].lastKnownInfo
+    expect(info?.name).toBe('edge-node')
+    expect(info?.version).toBe('1.2.3')
+    expect(state.probeErrors['inst-1']).toBeNull()
+    expect(state.probing['inst-1']).toBe(false)
+    expect(state.instances[0].lastConnectedAt).toBeTruthy()
+  })
+
+  it("records the 'unauthorized' kind when the key is rejected", async () => {
+    resetStore([makeInstance()])
+    mockHealthyEndpoints()
+    mockFetch.mockImplementation((url: string) =>
+      url === STATS_URL
+        ? Promise.resolve(new Response('{"error":"unauthorized"}', { status: 401 }))
+        : url === INFO_URL
+          ? Promise.resolve(jsonRes({ name: 'edge', version: '1' }))
+          : Promise.resolve(jsonRes({})),
+    )
+
+    await probeOneInstance('inst-1')
+
+    const state = useInstanceStore.getState()
+    expect(state.probeErrors['inst-1']).toBe('unauthorized')
+    expect(state.instances[0].lastKnownInfo).toBeUndefined()
+    expect(state.probing['inst-1']).toBe(false)
+  })
+
+  it('is a no-op for an unknown instance id', async () => {
+    resetStore([makeInstance()])
+    mockHealthyEndpoints()
+
+    await probeOneInstance('does-not-exist')
+
+    expect(mockFetch).not.toHaveBeenCalled()
+    expect(useInstanceStore.getState().instances[0].lastKnownInfo).toBeUndefined()
   })
 })

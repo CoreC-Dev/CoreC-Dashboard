@@ -51,9 +51,12 @@ export interface ApiRequestOptions extends RequestInit {
  * - AbortController-based timeout (default 15s; overridable per-call via
  *   `options.signal` — caller-managed signals are respected and NOT
  *   auto-aborted).
- * - 401 handling: throws ApiError with status 401 so the ConnectionProvider
- *   can react (show reconnect prompt) instead of leaving the operator on a
- *   frozen page with stale data.
+ * - 401 handling: throws ApiError with status 401. The ConnectionProvider
+ *   reacts to these globally: its per-instance QueryCache/MutationCache
+ *   onError handlers flip the provider into the auth-expired state, which
+ *   renders a re-enter-key overlay — so a key that stops being accepted
+ *   mid-session never leaves the operator on a frozen page with stale
+ *   data and a green indicator.
  * - 204 No Content → returns undefined.
  */
 export async function apiRequest<T = unknown>(

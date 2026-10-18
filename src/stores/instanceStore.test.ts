@@ -115,7 +115,7 @@ describe('instanceStore — CRUD', () => {
   it('deleteInstance clears probe state for the removed instance', () => {
     const id = useInstanceStore.getState().addInstance(newInstanceData({ name: 'a' }))
     useInstanceStore.getState().setProbing(id, true)
-    useInstanceStore.getState().setProbeResult(id, false, undefined, 'boom')
+    useInstanceStore.getState().setProbeResult(id, false, undefined, 'unreachable')
     useInstanceStore.getState().deleteInstance(id)
 
     expect(useInstanceStore.getState().probing[id]).toBeUndefined()
@@ -302,19 +302,19 @@ describe('instanceStore — probe state', () => {
     expect(useInstanceStore.getState().probeErrors[id]).toBeNull()
   })
 
-  it('setProbeResult ok=false records the supplied error message', () => {
+  it('setProbeResult ok=false records the supplied failure kind', () => {
     const id = useInstanceStore.getState().addInstance(newInstanceData({ name: 'a' }))
-    useInstanceStore.getState().setProbeResult(id, false, undefined, 'connection refused')
+    useInstanceStore.getState().setProbeResult(id, false, undefined, 'unauthorized')
 
-    expect(useInstanceStore.getState().probeErrors[id]).toBe('connection refused')
+    expect(useInstanceStore.getState().probeErrors[id]).toBe('unauthorized')
     expect(useInstanceStore.getState().getInstance(id)?.lastConnectedAt).toBeUndefined()
   })
 
-  it('setProbeResult ok=false defaults the error to "Connection failed"', () => {
+  it("setProbeResult ok=false defaults the error to 'unreachable'", () => {
     const id = useInstanceStore.getState().addInstance(newInstanceData({ name: 'a' }))
     useInstanceStore.getState().setProbeResult(id, false)
 
-    expect(useInstanceStore.getState().probeErrors[id]).toBe('Connection failed')
+    expect(useInstanceStore.getState().probeErrors[id]).toBe('unreachable')
   })
 
   it('setProbing toggles the probing flag for an instance', () => {
