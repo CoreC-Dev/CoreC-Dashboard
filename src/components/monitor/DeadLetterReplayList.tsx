@@ -3,6 +3,7 @@ import {
   AlertOctagon,
   CheckCircle2,
   Clock,
+  Eye,
   Loader2,
   RefreshCw,
   RotateCcw,
@@ -11,6 +12,7 @@ import {
 import type React from 'react'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Link, useParams } from 'react-router-dom'
 import { extractApiError } from '@/api/client'
 import { ApiError, useWriteTag } from '@/api/hooks'
 import {
@@ -59,6 +61,14 @@ export const filterDeadLetters = (
   })
 }
 
+/** B11 — deep link into the tag explorer for a failed command, so the
+ *  operator can check the tag's CURRENT live value before replaying an old
+ *  write into the PLC (driver+tag prefill, see TagExplorerPage). */
+const tagExplorerLinkOf = (id: string | undefined, cmd: DeadLetterEntry['command']): string => {
+  const params = `driver=${encodeURIComponent(cmd.driver)}&tag=${encodeURIComponent(cmd.tag)}`
+  return id ? `/corec/${id}/monitor/tags?${params}` : `/monitor/tags?${params}`
+}
+
 interface DeadLetterReplayListProps {
   deadLetters: DeadLetterEntry[]
   isLoading: boolean
@@ -88,6 +98,8 @@ export const DeadLetterReplayList: React.FC<DeadLetterReplayListProps> = ({
   onRefresh,
 }) => {
   const { t } = useTranslation()
+  // B11: instance-scoped route for the per-entry "View tag" deep link.
+  const { id } = useParams<{ id: string }>()
   const writeMutation = useWriteTag()
 
   // Single-entry retry state (per-row button). C-C1: the row button only
@@ -389,20 +401,31 @@ export const DeadLetterReplayList: React.FC<DeadLetterReplayListProps> = ({
                         </div>
                       </div>
 
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setPendingReplay(entry)}
-                        disabled={pendingRetryKey === retryKey || running}
-                        className="shrink-0 text-xs border-status-error/30 text-status-error hover:bg-status-error/10"
-                      >
-                        {pendingRetryKey === retryKey ? (
-                          <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
-                        ) : (
-                          <RotateCcw className="w-3.5 h-3.5 mr-1" />
-                        )}
-                        <span>{t('write.retry')}</span>
-                      </Button>
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 shrink-0">
+                        {/* B11: confirm the tag's live value before re-sending
+                            an old write — one click, no copy/switch/paste. */}
+                        <Link
+                          to={tagExplorerLinkOf(id, entry.command)}
+                          className="flex items-center justify-center gap-1 rounded-md border border-border px-2 py-1.5 text-xs text-primary transition-colors hover:bg-muted/40 hover:underline"
+                        >
+                          <Eye className="w-3.5 h-3.5" aria-hidden />
+                          <span>{t('alerts.viewTag')}</span>
+                        </Link>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setPendingReplay(entry)}
+                          disabled={pendingRetryKey === retryKey || running}
+                          className="text-xs border-status-error/30 text-status-error hover:bg-status-error/10"
+                        >
+                          {pendingRetryKey === retryKey ? (
+                            <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
+                          ) : (
+                            <RotateCcw className="w-3.5 h-3.5 mr-1" />
+                          )}
+                          <span>{t('write.retry')}</span>
+                        </Button>
+                      </div>
                     </div>
                   )
                 })}

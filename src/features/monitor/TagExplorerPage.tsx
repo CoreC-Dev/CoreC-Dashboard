@@ -1,6 +1,7 @@
 import type React from 'react'
 import { useCallback, useDeferredValue, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useSearchParams } from 'react-router-dom'
 import { useDrivers, useTags } from '@/api/hooks'
 import { TagTable } from '@/components/monitor/TagTable'
 import { TagToolbar } from '@/components/monitor/TagToolbar'
@@ -22,7 +23,14 @@ export const TagExplorerPage: React.FC = () => {
   const { data: initialTagsData, refetch, isFetching, isLoading, isError, error } = useTags()
   const { data: driversData } = useDrivers()
 
-  const [selectedDriver, setSelectedDriver] = useState<string>('all')
+  // B11: deep-link prefill — the dead-letter "View tag" link lands here with
+  // ?driver=…&tag=… so the operator checks the current live value without
+  // re-typing the tag they were just staring at. Read once at mount; the link
+  // always navigates cross-route, so a fresh mount is the only entry path.
+  const [searchParams] = useSearchParams()
+  const [selectedDriver, setSelectedDriver] = useState<string>(
+    () => searchParams.get('driver') || 'all',
+  )
 
   const {
     tagMap,
@@ -40,8 +48,8 @@ export const TagExplorerPage: React.FC = () => {
     selectedDriver,
   })
 
-  // Search/filter/sort state.
-  const [searchTerm, setSearchTerm] = useState('')
+  // Search/filter/sort state. B11: the tag URL param prefills the search box.
+  const [searchTerm, setSearchTerm] = useState(() => searchParams.get('tag') ?? '')
   // Defer the search term so the expensive filter+sort in filteredTags runs at
   // a lower priority than the input's keystroke rendering. The <Input> below
   // keeps using the immediate `searchTerm` for responsive typing, while the
