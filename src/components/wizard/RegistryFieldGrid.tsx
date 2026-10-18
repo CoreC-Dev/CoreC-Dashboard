@@ -33,16 +33,17 @@ import type { SettingsField } from '@/lib/settingsRegistry'
  * key existence is asserted by settingsRegistry.test.ts, but the grid is
  * the last line of defense: in DEV it warns on the first render so the
  * slip is caught immediately, not in production copy.
+ *
+ * Detection uses t()'s own missing-key behavior (i18next returns the key
+ * unchanged) rather than i18n.exists() — consumers may render with the
+ * react-i18next default (uninitialized) instance, which has no exists().
  */
-function translateFieldHelp(
-  t: TFunction,
-  keyExists: (key: string) => boolean,
-  key: string,
-): string {
-  if (import.meta.env.DEV && !keyExists(key)) {
+function translateFieldHelp(t: TFunction, key: string): string {
+  const translated = t(key)
+  if (import.meta.env.DEV && translated === key) {
     console.warn(`[settingsRegistry] field help key missing from the language packs: ${key}`)
   }
-  return t(key)
+  return translated
 }
 
 export const RegistryFieldGrid: React.FC<{
@@ -52,7 +53,7 @@ export const RegistryFieldGrid: React.FC<{
   transportNames?: string[]
   currentName?: string
 }> = ({ fields, settings, onChange, transportNames, currentName }) => {
-  const { t, i18n: i18nInst } = useTranslation()
+  const { t } = useTranslation()
   return (
     <div className="grid grid-cols-2 gap-x-3 gap-y-2.5">
       {fields.map((field) => {
@@ -75,7 +76,7 @@ export const RegistryFieldGrid: React.FC<{
               </div>
               {field.help && (
                 <p className="text-xs text-muted-foreground leading-tight">
-                  {translateFieldHelp(t, (k) => i18nInst.exists(k), field.help)}
+                  {translateFieldHelp(t, field.help)}
                 </p>
               )}
             </div>
@@ -103,9 +104,9 @@ const RegistryFieldInput: React.FC<{
   transportNames?: string[]
   currentName?: string
 }> = ({ field, value, onChange, transportNames, currentName }) => {
-  const { t, i18n: i18nInst } = useTranslation()
+  const { t } = useTranslation()
   const label = t(field.label)
-  const help = field.help ? translateFieldHelp(t, (k) => i18nInst.exists(k), field.help) : undefined
+  const help = field.help ? translateFieldHelp(t, field.help) : undefined
   const placeholder = field.placeholder ?? ''
 
   const renderControl = () => {
