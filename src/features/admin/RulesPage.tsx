@@ -3,13 +3,12 @@ import { AlertCircle, Pencil, Play, Plus, RefreshCw, Trash2 } from 'lucide-react
 import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useConfigRaw, useRules, useUpdateConfig } from '@/api/hooks'
+import { useConfigRaw, useRules } from '@/api/hooks'
 import {
   ActionBadge,
   ContinueBadge,
   EMPTY_TEST_DP,
   getTargetDisplay,
-  RuleEditDialog,
   RuleTestDialog,
 } from '@/components/admin/RuleParts'
 import {
@@ -43,9 +42,7 @@ import { useRuleToggle } from '@/hooks/useRuleToggle'
 import { parseConfigYaml } from '@/lib/configYaml'
 import { formatRelativeTime } from '@/lib/formatters'
 import { evaluateMatch, type SimDataPoint } from '@/lib/ruleMatchEvaluator'
-import { buildRuleYaml, type EditFormData } from '@/lib/ruleYaml'
 import { formatNumber, isZeroTime } from '@/lib/utils'
-import { useConfigHistoryStore } from '@/stores/configHistoryStore'
 import { useConfigStore } from '@/stores/configStore'
 import type { RuleConfig } from '@/types/config'
 import type { RuleStat } from '@/types/models'
@@ -53,8 +50,6 @@ import type { RuleStat } from '@/types/models'
 export const RulesPage: React.FC = () => {
   const { t } = useTranslation()
   const { data, refetch, isFetching, isLoading, isError, error } = useRules()
-  const updateMutation = useUpdateConfig()
-  const addSnapshot = useConfigHistoryStore((s) => s.addSnapshot)
   const queryClient = useQueryClient()
   // Raw config YAML — used to pre-fill transform config for transform rules,
   // since the runtime RuleStat does not include transform fields.
@@ -90,6 +85,7 @@ export const RulesPage: React.FC = () => {
     wizardOpen,
     setWizardOpen,
     editing: editingRule,
+    setEditing,
     deleteTarget,
     setDeleteTarget,
     handleCreate: handleCreateRule,
@@ -113,12 +109,6 @@ export const RulesPage: React.FC = () => {
   const [testRule, setTestRule] = useState<RuleStat | null>(null)
   const [testDp, setTestDp] = useState<SimDataPoint>(EMPTY_TEST_DP)
   const [testResult, setTestResult] = useState<boolean | null>(null)
-  const [editRule, setEditRule] = useState<RuleStat | null>(null)
-  const [editForm, setEditForm] = useState<EditFormData | null>(null)
-  const [editStatus, setEditStatus] = useState<{ type: 'success' | 'error'; text: string } | null>(
-    null,
-  )
-  const [editConfirmOpen, setEditConfirmOpen] = useState(false)
 
   const openTest = (rule: RuleStat) => {
     setTestRule(rule)
@@ -136,99 +126,42 @@ export const RulesPage: React.FC = () => {
     setTestResult(evaluateMatch(testRule.match, testDp))
   }
 
-  const openEdit = (rule: RuleStat) => {
-    setEditRule(rule)
-    // Prefer the multi-target list's first entry when the single `target`
-    // field is empty (CoreC serializes targets as null when empty).
-    const singleTarget = (rule.target || rule.targets?.[0]) ?? ''
-    const targetsCsv =
-      rule.targets && rule.targets.length > 0 ? rule.targets.join(', ') : singleTarget
-
-    // Transform config is not part of the runtime RuleStat; look it up in the
-    // raw config YAML so the editor pre-fills the existing expression/tag-rename
-    // instead of blanking them on save.
-    let transformExpression = ''
-    let transformTagRename = ''
-    if (rule.action === 'transform' && rawConfigYaml) {
+  // C-B1: the runtime row's Edit opens the SAME RuleWizard the config
+  // section uses, so a rule has ONE editor with ONE (delayed-apply)
+  // semantics — the wizard writes into the working config and the change
+  // only reaches the engine through the shared apply-confirmation dialog.
+  // The old RuleEditDialog fired PUT /configs directly (and with a
+  // rules-only payload, which REPLACED the whole config).
+  const openRuntimeRuleInWizard = (rule: RuleStat) => {
+    const inWorking = findRule(rule.name)
+    if (inWorking) {
+      setEditing(inWorking)
+      setWizardOpen(true)
+      return
+    }
+    // Not in the working config (store still loading, or removed pending
+    // apply): fall back to the SAVED config's version of the rule, then
+    // to a minimal draft built from the runtime stat.
+    let fromSaved: RuleConfig | undefined
+    if (rawConfigYaml) {
       try {
-        const cfg = parseConfigYaml(rawConfigYaml)
-        const rl = cfg.rules?.find((r) => r.name === rule.name)
-        if (rl?.transform) {
-          transformExpression = rl.transform.expression ?? ''
-          transformTagRename = rl.transform['tag-rename'] ?? ''
-        }
+        fromSaved = parseConfigYaml(rawConfigYaml).rules?.find((r) => r.name === rule.name)
       } catch {
-        // Ignore parse errors — fall back to empty transform fields.
+        // Ignore parse errors — fall through to the runtime-stat draft.
       }
     }
-
-    setEditForm({
-      name: rule.name,
-      match: rule.match,
-      action: rule.action,
-      target: singleTarget,
-      targets: targetsCsv,
-      priority: rule.priority,
-      transformExpression,
-      transformTagRename,
-      continue: rule.continue,
-    })
-    setEditStatus(null)
-  }
-
-  const closeEdit = () => {
-    setEditRule(null)
-    setEditForm(null)
-    setEditStatus(null)
-    setEditConfirmOpen(false)
-  }
-
-  // Local validation for the legacy rule edit form. Returns error strings
-  // or undefined when valid. This prevents sending malformed YAML to the
-  // server and gives immediate feedback before the confirmation step.
-  const validateEditForm = (form: EditFormData): string[] | undefined => {
-    const errs: string[] = []
-    if (!form.name.trim()) errs.push(t('rules.edit.errNameRequired'))
-    if (!form.match.trim()) errs.push(t('rules.edit.errMatchRequired'))
-    if (form.action === 'forward' || form.action === 'alert') {
-      if (!form.target.trim()) errs.push(t('rules.edit.errTargetRequired'))
-    }
-    if (form.action === 'mirror') {
-      const targets = form.targets
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean)
-      if (targets.length === 0) errs.push(t('rules.edit.errTargetsRequired'))
-    }
-    if (form.action === 'transform' && !form.transformExpression.trim()) {
-      errs.push(t('rules.edit.errExpressionRequired'))
-    }
-    if (form.action === 'drop' && form.continue) {
-      errs.push(t('rules.edit.errDropContinue'))
-    }
-    return errs.length > 0 ? errs : undefined
-  }
-
-  const editFormErrors = editForm ? validateEditForm(editForm) : undefined
-
-  const handleGenerateAndReload = async () => {
-    if (!editForm) return
-    setEditStatus(null)
-    setEditConfirmOpen(false)
-    try {
-      const yaml = buildRuleYaml(editForm)
-      await updateMutation.mutateAsync({ payload: yaml })
-      addSnapshot(yaml)
-      // PUT /configs hot-reloads the config; invalidate the rules list so the
-      // table reflects the edited rule immediately rather than on next poll.
-      queryClient.invalidateQueries({ queryKey: ['rules'] })
-      setEditStatus({ type: 'success', text: t('rules.edit.reloadSuccess') })
-    } catch (err) {
-      setEditStatus({
-        type: 'error',
-        text: err instanceof Error ? err.message : t('rules.edit.reloadFailed'),
-      })
-    }
+    if (!workingConfig) resetToEmpty()
+    setEditing(
+      fromSaved ?? {
+        name: rule.name,
+        match: rule.match,
+        action: rule.action,
+        priority: rule.priority,
+        ...(rule.target ? { target: rule.target } : {}),
+        ...(rule.targets && rule.targets.length > 0 ? { targets: rule.targets } : {}),
+      },
+    )
+    setWizardOpen(true)
   }
 
   return (
@@ -387,6 +320,7 @@ export const RulesPage: React.FC = () => {
             {rules.length}
           </Badge>
         </div>
+        <p className="text-xs text-muted-foreground">{t('rules.runtimeEditHint')}</p>
         <Card className="border-border bg-card overflow-hidden">
           {isLoading ? (
             <LoadingState />
@@ -503,7 +437,7 @@ export const RulesPage: React.FC = () => {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => openEdit(rule)}
+                              onClick={() => openRuntimeRuleInWizard(rule)}
                               className="h-9 text-xs"
                             >
                               <Pencil className="w-3 h-3 mr-1" />
@@ -530,20 +464,8 @@ export const RulesPage: React.FC = () => {
         runTest={runTest}
       />
 
-      <RuleEditDialog
-        editRule={editRule}
-        editForm={editForm}
-        setEditForm={setEditForm}
-        editStatus={editStatus}
-        closeEdit={closeEdit}
-        handleGenerateAndReload={handleGenerateAndReload}
-        isPending={updateMutation.isPending}
-        editFormErrors={editFormErrors}
-        editConfirmOpen={editConfirmOpen}
-        setEditConfirmOpen={setEditConfirmOpen}
-      />
-
-      {/* Rule create/edit wizard */}
+      {/* Rule create/edit wizard — the SINGLE rule editor for both the
+          config section and the runtime section (C-B1). */}
       <RuleWizard open={wizardOpen} onOpenChange={setWizardOpen} existingRule={editingRule} />
 
       {/* Delete confirmation */}

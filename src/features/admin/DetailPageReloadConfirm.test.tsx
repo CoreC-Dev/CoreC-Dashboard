@@ -12,6 +12,11 @@ import { TransportDetailPage } from '@/features/admin/TransportDetailPage'
 import i18n from '@/i18n'
 import { useConnectionStore } from '@/stores/connectionStore'
 
+// Detail/wizard pages render heavy card grids; under full-suite load on a
+// 2-core box they can exceed the 5s default. 15s mirrors the
+// BatchWritePanel suite-timeout precedent.
+vi.setConfig({ testTimeout: 15_000 })
+
 vi.mock('@/api/endpoints', () => ({
   getDriver: vi.fn().mockResolvedValue({
     name: 'plc1',

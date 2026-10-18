@@ -60,6 +60,10 @@ export function useEntityListPage<T>(options: UseEntityListPageOptions<T>) {
     wizardOpen,
     setWizardOpen,
     editing,
+    /** Directly stage the entity the wizard will edit. Used by RulesPage's
+     *  runtime rows (C-B1), whose prefill may come from the SAVED config or
+     *  the runtime stat rather than the working config. */
+    setEditing,
     deleteTarget,
     setDeleteTarget,
     handleCreate,
