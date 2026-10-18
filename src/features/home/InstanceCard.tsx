@@ -15,15 +15,17 @@ import {
 import React, { memo, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { Button } from '@/components/ui/button'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -402,31 +404,32 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
         </div>
       </div>
 
-      {/* Delete confirmation */}
-      <Dialog open={confirmDelete} onOpenChange={setConfirmDelete}>
-        <DialogContent className="sm:max-w-[400px]">
-          <DialogHeader>
-            <DialogTitle>{t('instances.deleteTitle')}</DialogTitle>
-            <DialogDescription>
+      {/* Delete confirmation — D-07: an irreversible action gets an
+          AlertDialog (no accidental dismissal on outside click), a
+          destructive-styled confirm button, and confirm copy that differs
+          from the menu item that opened it. */}
+      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <AlertDialogContent className="sm:max-w-[400px]">
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('instances.deleteTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>
               {t('instances.deleteConfirm', { name: instance.name })}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirmDelete(false)}>
-              {t('common.cancel')}
-            </Button>
-            <Button
-              variant="destructive"
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
               onClick={() => {
                 deleteInstance(instance.id)
                 setConfirmDelete(false)
               }}
+              className="bg-destructive text-destructive-foreground shadow hover:bg-destructive/90"
             >
-              {t('common.delete')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+              {t('instances.deleteConfirmAction')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   )
 })

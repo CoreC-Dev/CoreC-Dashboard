@@ -208,3 +208,53 @@ describe('InstanceCard error-state retry (A-08/D-12)', { timeout: 15_000 }, () =
     ).not.toBeInTheDocument()
   })
 })
+
+// D-07 — deleting an instance is irreversible; it gets the same AlertDialog
+// discipline as the other destructive actions: no dismissal on outside
+// click, a destructive-styled confirm, and confirm copy that differs from
+// the menu item that opened the dialog.
+describe('InstanceCard delete confirmation (D-07)', { timeout: 15_000 }, () => {
+  async function openDeleteDialog() {
+    renderCard(baseInstance)
+    const trigger = screen.getByRole('button', { name: t('common.moreActions') })
+    // Radix opens the menu on pointerdown, then registers the click.
+    fireEvent.pointerDown(trigger)
+    fireEvent.click(trigger)
+    const item = await waitFor(() => screen.getByText(t('common.delete')))
+    fireEvent.click(item)
+    // AlertDialog — NOT the old dismissible Dialog (role differs).
+    return screen.findByRole('alertdialog')
+  }
+
+  it('asks for confirmation in an AlertDialog with a destructive, distinct action label', async () => {
+    await openDeleteDialog()
+
+    expect(
+      screen.getByText(t('instances.deleteConfirm', { name: 'Gateway A' })),
+    ).toBeInTheDocument()
+    const confirm = screen.getByRole('button', { name: t('instances.deleteConfirmAction') })
+    // The confirm label must differ from the menu item that opened it…
+    expect(t('instances.deleteConfirmAction')).not.toBe(t('common.delete'))
+    // …and carry the destructive styling shared by all irreversible actions.
+    expect(confirm.className).toContain('bg-destructive')
+  })
+
+  it('deletes the instance only after the destructive confirm', async () => {
+    await openDeleteDialog()
+
+    fireEvent.click(screen.getByRole('button', { name: t('instances.deleteConfirmAction') }))
+    await waitFor(() => {
+      expect(useInstanceStore.getState().instances).toHaveLength(0)
+    })
+  })
+
+  it('keeps the instance when cancelled', async () => {
+    await openDeleteDialog()
+
+    fireEvent.click(screen.getByRole('button', { name: t('common.cancel') }))
+    await waitFor(() => {
+      expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
+    })
+    expect(useInstanceStore.getState().instances).toHaveLength(1)
+  })
+})
