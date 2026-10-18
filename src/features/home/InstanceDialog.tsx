@@ -16,6 +16,7 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -198,6 +199,8 @@ export const InstanceDialog: React.FC<InstanceDialogProps> = ({
                       </button>
                     </div>
                   </FormControl>
+                  {/* A-02: where the key comes from — the #1 cold-start blocker. */}
+                  <FormDescription>{t('instances.secretHint')}</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

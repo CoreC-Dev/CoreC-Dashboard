@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { InstanceCard } from '@/features/home/InstanceCard'
 import { InstanceDialog } from '@/features/home/InstanceDialog'
-import { useHomepageProbe } from '@/features/home/useHomepageProbe'
+import { probeOneInstance, useHomepageProbe } from '@/features/home/useHomepageProbe'
 import i18n, { setLocale } from '@/i18n'
 import { useInstanceStore } from '@/stores/instanceStore'
 import { THEME_I18N_KEYS, THEME_VARIANTS, useThemeStore } from '@/stores/themeStore'
@@ -68,11 +68,16 @@ export const InstancePanel: React.FC = () => {
     notes?: string
     tags?: string[]
   }) => {
+    let targetId: string
     if (editingInstance) {
       updateInstance(editingInstance.id, data)
+      targetId = editingInstance.id
     } else {
-      addInstance(data)
+      targetId = addInstance(data)
     }
+    // A-03: probe immediately — the card must not sit on a stale grey/red
+    // state for up to 15s after the operator saved a new or fixed config.
+    void probeOneInstance(targetId)
   }
 
   const handleExport = () => {

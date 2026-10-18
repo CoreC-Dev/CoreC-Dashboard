@@ -107,4 +107,12 @@ describe('InstanceDialog form validation (TD-TEST-007)', { timeout: 15_000 }, ()
     })
     expect(onSubmit).not.toHaveBeenCalled()
   })
+
+  // A-02 — the secret field must explain where the key comes from; an
+  // operator seeing "API 密钥 (Bearer Token)" with zero context is the #1
+  // cold-start blocker.
+  it('shows the secret-location hint under the API key field (A-02)', () => {
+    renderDialog()
+    expect(screen.getByText(t('instances.secretHint'))).toBeInTheDocument()
+  })
 })
