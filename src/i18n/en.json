@@ -610,7 +610,10 @@
     "configSection": "Configuration",
     "runtimeSection": "Runtime Status",
     "deleteTitle": "Delete Driver",
-    "deleteConfirm": "Are you sure you want to delete driver \"{{name}}\"? This change will be applied when you save the configuration."
+    "deleteConfirm": "Are you sure you want to delete driver \"{{name}}\"? This change will be applied when you save the configuration.",
+    "deleteDependentRules": "{{count}} rule(s) will lose their data source:",
+    "deleteAndMore": "...and {{count}} more",
+    "deleteDependentHint": "After the delete these rules stop receiving this driver's data. Update or remove them before applying."
   },
   "transports": {
     "title": "Northbound Transports",

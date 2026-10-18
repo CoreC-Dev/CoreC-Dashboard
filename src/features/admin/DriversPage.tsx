@@ -35,6 +35,7 @@ import { useEntityListPage } from '@/hooks/useEntityListPage'
 import { useParsedConfig } from '@/hooks/useParsedConfig'
 import { getDriverConnectionSummary } from '@/lib/connectionInfo'
 import { ConnStateLabel, QualityLabel } from '@/lib/constants'
+import { rulesDependingOnDriver, unionRulesForDependencyScan } from '@/lib/ruleDependencies'
 import { formatNumber, isZeroTime } from '@/lib/utils'
 import { useConfigStore } from '@/stores/configStore'
 import type { DriverConfig } from '@/types/config'
@@ -53,6 +54,7 @@ export const DriversPage: React.FC = () => {
 
   // Config editing state
   const workingConfig = useConfigStore((s) => s.workingConfig)
+  const savedConfig = useConfigStore((s) => s.savedConfig)
   const dirty = useConfigStore((s) => s.dirty)
   const resetToEmpty = useConfigStore((s) => s.resetToEmpty)
   const removeDriver = useConfigStore((s) => s.removeDriver)
@@ -117,6 +119,20 @@ export const DriversPage: React.FC = () => {
     for (const drv of drivers) m.set(drv.name, getDriverConnectionSummary(parsedConfig, drv.name))
     return m
   }, [parsedConfig, drivers])
+
+  // C-A3: when deleting a driver, list the rules that lose their data
+  // source — the match DSL is the only structural link between a rule
+  // and a driver. Scans the working ∪ saved rule sets so pending
+  // (unapplied) rules warn too, mirroring the TransportsPage template.
+  const dependentDriverRules = useMemo(() => {
+    if (!deleteTarget) return []
+    const sources = unionRulesForDependencyScan(workingConfig, savedConfig)
+    const driver =
+      workingConfig?.drivers?.find((d) => d.name === deleteTarget) ??
+      sources.allDrivers.find((d) => d.name === deleteTarget)
+    if (!driver) return []
+    return rulesDependingOnDriver({ driver, ...sources })
+  }, [deleteTarget, workingConfig, savedConfig])
 
   return (
     <div className="space-y-5">
@@ -408,14 +424,36 @@ export const DriversPage: React.FC = () => {
       {/* Create/Edit Driver Wizard */}
       <DriverWizard open={wizardOpen} onOpenChange={setWizardOpen} existingDriver={editingDriver} />
 
-      {/* Delete Confirmation */}
+      {/* Delete Confirmation — lists rules that lose their data source (C-A3) */}
       <DeleteEntityConfirm
         open={!!deleteTarget}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
         title={t('drivers.deleteTitle')}
         description={t('drivers.deleteConfirm', { name: deleteTarget ?? '' })}
         onConfirm={confirmDelete}
-      />
+      >
+        {dependentDriverRules.length > 0 && (
+          <div className="rounded-md border border-status-warning/30 bg-status-warning/10 p-3 text-xs space-y-1.5">
+            <div className="flex items-center gap-1.5 font-semibold text-status-warning">
+              <AlertCircle className="h-3.5 w-3.5" />
+              {t('drivers.deleteDependentRules', { count: dependentDriverRules.length })}
+            </div>
+            <ul className="list-disc list-inside text-status-warning/80 space-y-0.5">
+              {dependentDriverRules.slice(0, 10).map((r) => (
+                <li key={r.name} className="font-mono">
+                  {r.name} → {r.action}
+                </li>
+              ))}
+              {dependentDriverRules.length > 10 && (
+                <li className="italic">
+                  {t('drivers.deleteAndMore', { count: dependentDriverRules.length - 10 })}
+                </li>
+              )}
+            </ul>
+            <p className="text-status-warning/70">{t('drivers.deleteDependentHint')}</p>
+          </div>
+        )}
+      </DeleteEntityConfirm>
 
       {/* Apply Config Confirmation */}
       <ConfigApplyConfirmationDialog {...applyDialogProps} />

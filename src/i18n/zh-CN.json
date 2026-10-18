@@ -610,7 +610,10 @@
     "configSection": "配置",
     "runtimeSection": "运行状态",
     "deleteTitle": "删除驱动",
-    "deleteConfirm": "确定要删除驱动 \"{{name}}\" 吗？此变更将在保存配置时应用。"
+    "deleteConfirm": "确定要删除驱动 \"{{name}}\" 吗？此变更将在保存配置时应用。",
+    "deleteDependentRules": "{{count}} 条规则将失去数据来源：",
+    "deleteAndMore": "...还有 {{count}} 条",
+    "deleteDependentHint": "删除后这些规则将不再收到该驱动的数据。请在应用前更新或删除相关规则。"
   },
   "transports": {
     "title": "北向传输",
