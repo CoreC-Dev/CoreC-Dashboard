@@ -23,6 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { Button } from '@/components/ui/button'
 import { ConfigApplyConfirmationDialog } from '@/components/wizard/ConfigApplyConfirmationDialog'
 import { UnsavedChangesBanner } from '@/components/wizard/UnsavedChangesBanner'
 import { ValidationBanner } from '@/components/wizard/ValidationBanner'
@@ -65,6 +66,8 @@ export const ConfigCenterPage: React.FC = () => {
     openApplyDialog,
     revertWorkingConfig,
     getSavedYaml,
+    seedLoadFailed,
+    retrySeed,
     mode,
     requestModeSwitch,
     bridgeTarget,
@@ -147,6 +150,31 @@ export const ConfigCenterPage: React.FC = () => {
       </div>
 
       <StatusMessageView statusMsg={statusMsg} />
+
+      {/* D-16 — the server config failed to load: creating or applying now
+          could wipe a running config we have never seen. The store blocks
+          the destructive paths; this banner tells the operator why and
+          offers a retry. */}
+      {seedLoadFailed && (
+        <div
+          role="alert"
+          className="rounded-md border border-status-error/30 bg-status-error/10 p-3 text-xs text-status-error flex items-center justify-between gap-3"
+        >
+          <span className="flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 shrink-0" />
+            {t('configCenter.seedLoadFailed')}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 text-xs shrink-0"
+            onClick={retrySeed}
+            disabled={rawConfigQuery.isFetching}
+          >
+            {t('common.retry')}
+          </Button>
+        </div>
+      )}
 
       {mode === 'form' ? (
         <div className="space-y-4">

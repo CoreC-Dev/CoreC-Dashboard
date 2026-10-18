@@ -94,6 +94,8 @@ beforeEach(() => {
     savedConfig: null,
     dirty: false,
     error: null,
+    seedStatus: 'idle',
+    seedError: null,
   })
   useConnectionStore.getState().setConnected(true)
 
@@ -311,6 +313,97 @@ describe('useConfigCenter — C-D1 hot-reload acknowledgement guard', () => {
       result.current.handleHotReload()
     })
     expect(result.current.applyGuardOpen).toBe(false)
+    expect(result.current.yamlApplyOpen).toBe(true)
+  })
+})
+
+describe('useConfigCenter — D-16 seed-failure guard', () => {
+  // When GET /configs/raw fails, AppShell's useAutoLoadConfig flips the
+  // store to seedStatus 'failed'. The Config Center must then refuse the
+  // hot-reload path — the editor still holds DEFAULT_SAMPLE_YAML and a PUT
+  // would replace the (unknown) running config with the sample.
+  function mockRawFailure() {
+    fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = typeof input === 'string' ? input : input.url
+      if (url.includes('/configs/raw')) {
+        return Promise.resolve(
+          new Response('{"error":"backend restarting"}', {
+            status: 503,
+            headers: { 'content-type': 'application/json' },
+          }),
+        )
+      }
+      if (url.includes('/configs') && (init?.method ?? 'GET') === 'PUT') {
+        ;(fetchMock as unknown as { putCalls: string[] }).putCalls.push(String(init?.body ?? ''))
+        return Promise.resolve(new Response('', { status: 200 }))
+      }
+      return Promise.resolve(jsonResponse({}))
+    })
+  }
+
+  it('hot reload is refused while the server config failed to load', async () => {
+    mockRawFailure()
+    useConfigStore.setState({ seedStatus: 'failed', seedError: 'backend restarting' })
+    const wrapper = createWrapper()
+    const { result } = renderHook(() => useConfigCenter(), { wrapper })
+    // Wait for the failed fetch to settle (editor keeps the sample YAML).
+    await waitFor(() => expect(result.current.seedLoadFailed).toBe(true))
+
+    act(() => {
+      result.current.handleHotReload()
+    })
+    expect(result.current.yamlApplyOpen).toBe(false)
+    expect(result.current.applyGuardOpen).toBe(false)
+    expect(result.current.statusMsg?.type).toBe('error')
+
+    // Even a direct confirm must not PUT.
+    await act(async () => {
+      await result.current.handleYamlApplyConfirm()
+    })
+    expect(putPayloads()).toHaveLength(0)
+    expect(result.current.yamlApplyError).toBeTruthy()
+  })
+
+  it('hot reload works again after the seed is retried successfully', async () => {
+    let failing = true
+    fetchMock.mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = typeof input === 'string' ? input : input.url
+      if (url.includes('/configs/raw')) {
+        return failing
+          ? Promise.resolve(
+              new Response('{"error":"backend restarting"}', {
+                status: 503,
+                headers: { 'content-type': 'application/json' },
+              }),
+            )
+          : Promise.resolve(
+              new Response(SERVER_YAML, {
+                status: 200,
+                headers: { 'content-type': 'application/yaml' },
+              }),
+            )
+      }
+      if (url.includes('/configs') && (init?.method ?? 'GET') === 'PUT') {
+        ;(fetchMock as unknown as { putCalls: string[] }).putCalls.push(String(init?.body ?? ''))
+        return Promise.resolve(new Response('', { status: 200 }))
+      }
+      return Promise.resolve(jsonResponse({}))
+    })
+    useConfigStore.setState({ seedStatus: 'failed', seedError: 'backend restarting' })
+    const wrapper = createWrapper()
+    const { result } = renderHook(() => useConfigCenter(), { wrapper })
+    await waitFor(() => expect(result.current.seedLoadFailed).toBe(true))
+
+    failing = false
+    act(() => {
+      result.current.retrySeed()
+    })
+    await waitFor(() => expect(result.current.yamlContent).toBe(SERVER_YAML))
+    await waitFor(() => expect(result.current.seedLoadFailed).toBe(false))
+
+    act(() => {
+      result.current.handleHotReload()
+    })
     expect(result.current.yamlApplyOpen).toBe(true)
   })
 })

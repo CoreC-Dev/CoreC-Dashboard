@@ -38,6 +38,19 @@ import type {
   TransportConfig,
 } from '@/types/config'
 
+/**
+ * True when "Create" (resetToEmpty) or "Apply" would risk wiping a server
+ * config we have never seen: the auto-seed fetch has not succeeded AND no
+ * saved baseline exists (UX audit D-16 — AppShell's own comment warns that
+ * applying without seeding "silently shuts down the control plane").
+ *
+ * Consumers can use it as a stable boolean Zustand selector:
+ *   const blocked = useConfigStore((s) => isSeedBlocked(s))
+ */
+export function isSeedBlocked(s: Pick<ConfigStoreState, 'savedConfig' | 'seedStatus'>): boolean {
+  return !s.savedConfig && (s.seedStatus === 'loading' || s.seedStatus === 'failed')
+}
+
 export interface ConfigStoreState {
   /** The config the user is currently editing (may have unsaved changes). */
   workingConfig: CoreCConfig | null
@@ -47,6 +60,14 @@ export interface ConfigStoreState {
   dirty: boolean
   /** Error message from the last failed operation (parse error, etc.). */
   error: string | null
+  /** Status of the auto-seed from GET /configs/raw (UX audit D-16). The
+   *  store owns it so every "Create"/"Apply" entry — on any admin page —
+   *  can consult one shared truth about whether the server config was
+   *  ever loaded. 'idle' = auto-load not started (pure path-B / tests). */
+  seedStatus: 'idle' | 'loading' | 'ready' | 'failed'
+  /** Why the auto-seed failed (fetch error or parse error). Diagnostic raw
+   *  string; user-facing copy is i18n'd at the display sites. */
+  seedError: string | null
 
   // ─── Loading ──────────────────────────────────────────────────────
 
@@ -62,8 +83,20 @@ export interface ConfigStoreState {
    *  silently dropped on the next Apply. No-op if both are already set. */
   seedFromServer: (yaml: string) => string | null
   /** Start a new empty config, preserving the global section (api.listen/secret)
-   *  from savedConfig when available so infrastructure settings are not lost. */
-  resetToEmpty: () => void
+   *  from savedConfig when available so infrastructure settings are not lost.
+   *  Returns false (no state change) when the server config has not been
+   *  loaded and no baseline exists — starting from scratch then would let
+   *  the next Apply PUT a config that wipes the running control plane
+   *  (D-16). Callers that open editors on "Create" should treat false as
+   *  "do not proceed". */
+  resetToEmpty: () => boolean
+  /** Record that the GET /configs/raw auto-seed fetch is in flight (D-16). */
+  markSeedLoading: () => void
+  /** Record that the auto-seed succeeded — Create/Apply are safe. */
+  markSeedReady: () => void
+  /** Record why the auto-seed failed — Create/Apply stay blocked until a
+   *  retry succeeds (or a config is loaded manually, which sets a baseline). */
+  markSeedFailed: (error: string) => void
 
   // ─── Entity CRUD (delegate to configYaml.ts pure helpers) ─────────
 
@@ -139,6 +172,8 @@ export const useConfigStore = create<ConfigStoreState>((set, get) => {
     savedConfig: null,
     dirty: false,
     error: null,
+    seedStatus: 'idle',
+    seedError: null,
 
     // ─── Loading ──────────────────────────────────────────────────────
 
@@ -185,7 +220,21 @@ export const useConfigStore = create<ConfigStoreState>((set, get) => {
     },
 
     resetToEmpty: () => {
-      const { savedConfig } = get()
+      const { savedConfig, seedStatus, seedError } = get()
+      if (isSeedBlocked({ savedConfig, seedStatus })) {
+        // D-16: the server config was never loaded (fetch in flight or
+        // failed) and there is no baseline. Starting an empty working
+        // config here would let the next Apply PUT a near-empty document
+        // and silently shut down the running control plane. Block instead.
+        set({
+          error:
+            seedError ??
+            (seedStatus === 'loading'
+              ? 'server config is still loading'
+              : 'server config could not be loaded'),
+        })
+        return false
+      }
       const global = savedConfig?.global
       set({
         workingConfig: global ? { global } : {},
@@ -193,7 +242,12 @@ export const useConfigStore = create<ConfigStoreState>((set, get) => {
         dirty: true,
         error: null,
       })
+      return true
     },
+
+    markSeedLoading: () => set({ seedStatus: 'loading' }),
+    markSeedReady: () => set({ seedStatus: 'ready', seedError: null }),
+    markSeedFailed: (error: string) => set({ seedStatus: 'failed', seedError: error }),
 
     // ─── Section updates ──────────────────────────────────────────────
 

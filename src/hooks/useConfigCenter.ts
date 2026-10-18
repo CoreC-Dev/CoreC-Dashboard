@@ -9,13 +9,7 @@
  */
 import { type ChangeEvent, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-  useConfigRaw,
-  useConfigs,
-  usePatchConfig,
-  useUpdateConfig,
-  useValidateConfig,
-} from '@/api/hooks'
+import { useConfigRaw, useConfigs, usePatchConfig, useValidateConfig } from '@/api/hooks'
 import { useApplyConfig } from '@/hooks/useApplyConfig'
 import { type ConfigSnapshot, useConfigHistory } from '@/hooks/useConfigHistory'
 import {
@@ -25,8 +19,8 @@ import {
 } from '@/hooks/useConfigValidation'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { useStatusMessage } from '@/hooks/useStatusMessage'
+import { useYamlApplyFlow } from '@/hooks/useYamlApplyFlow'
 import { type ConfigTemplate, DEFAULT_SAMPLE_YAML } from '@/lib/configTemplates'
-import { yamlDiffersFromConfig } from '@/lib/configYaml'
 import { generateRandomSecret } from '@/lib/utils'
 import { computeLcsDiff, type DiffLine } from '@/lib/yamlDiff'
 import { useConfigStore } from '@/stores/configStore'
@@ -46,8 +40,9 @@ export function useConfigCenter() {
     isFetching: isFetchingConfigs,
   } = useConfigs()
   const patchMutation = usePatchConfig()
-  const updateMutation = useUpdateConfig()
-  // Path A — full redacted config from GET /configs/raw + server-side dry-run.
+  // updateMutation lives in useYamlApplyFlow (the YAML-mode PUT owner) and
+  // is re-exported below for the page's pending-state props.
+  // Path A — full config from GET /configs/raw + server-side dry-run.
   const rawConfigQuery = useConfigRaw()
   const validateMutation = useValidateConfig()
 
@@ -56,11 +51,15 @@ export function useConfigCenter() {
   const getWorkingYaml = useConfigStore((s) => s.getWorkingYaml)
   const getSavedYaml = useConfigStore((s) => s.getSavedYaml)
   const markSaved = useConfigStore((s) => s.markSaved)
-  const markSavedFromYaml = useConfigStore((s) => s.markSavedFromYaml)
   const loadFromYaml = useConfigStore((s) => s.loadFromYaml)
   const seedFromServer = useConfigStore((s) => s.seedFromServer)
   const revertConfig = useConfigStore((s) => s.revert)
   const configWorkingExists = useConfigStore((s) => !!s.workingConfig)
+  // D-16 — auto-seed status for the failure banner and the Create/Apply
+  // guards. Driven by useAutoLoadConfig (mounted in AppShell).
+  const hasSavedBaseline = useConfigStore((s) => !!s.savedConfig)
+  const seedStatus = useConfigStore((s) => s.seedStatus)
+  const seedLoadFailed = !hasSavedBaseline && seedStatus === 'failed'
   // Pre-apply validation: run zod schema + cross-entity checks on the
   // working config. Errors are surfaced in the apply confirmation dialog
   // and block the apply button until resolved.
@@ -88,7 +87,7 @@ export function useConfigCenter() {
   const { statusMsg, setStatusMsg } = useStatusMessage(STATUS_AUTO_DISMISS_MS)
   // Change-history state: snapshots persisted to localStorage after every
   // successful PUT /configs, plus the last submitted YAML for the diff preview.
-  const { history, addSnapshot } = useConfigHistory()
+  const { history } = useConfigHistory()
   const [lastSubmittedYaml, setLastSubmittedYaml] = useState<string | null>(null)
   const [diffOpen, setDiffOpen] = useState(true)
   const [templatePickerOpen, setTemplatePickerOpen] = useState(false)
@@ -96,20 +95,38 @@ export function useConfigCenter() {
   // first successful fetch, so operators see the actual running config
   // instead of DEFAULT_SAMPLE_YAML without a manual "Load from Server" click.
   const [autoLoaded, setAutoLoaded] = useState(false)
-  // YAML-mode apply confirmation dialog state. The form-mode apply uses
-  // useApplyConfig's dialog (wired to the configStore), but YAML mode
-  // edits raw text in the Monaco editor — its "Hot Reload" must also
-  // pass through a confirmation gate before PUT /configs.
-  const [yamlApplyOpen, setYamlApplyOpen] = useState(false)
-  const [yamlApplyError, setYamlApplyError] = useState<string | null>(null)
-  // C-D1 bridge/guard state. `bridgeTarget` holds the mode the user tried to
-  // switch to while the form side and the YAML editor had diverged; the page
-  // renders a 3-way dialog (import / overwrite / cancel). `applyGuardOpen`
-  // holds the hot-reload entry when the editor content does not include the
-  // form side's unapplied edits — the user must explicitly acknowledge that
-  // those edits are NOT part of this apply before the confirm dialog opens.
-  const [bridgeTarget, setBridgeTarget] = useState<ConfigMode | null>(null)
-  const [applyGuardOpen, setApplyGuardOpen] = useState(false)
+
+  // YAML-mode apply flow: apply dialog + C-D1 divergence bridge/guard +
+  // D-16 seed guard. Extracted to useYamlApplyFlow (God-file limit); the
+  // page consumes it through this hook's return value unchanged.
+  const {
+    updateMutation,
+    yamlApplyOpen,
+    setYamlApplyOpen,
+    yamlApplyError,
+    handleYamlApplyConfirm,
+    requestModeSwitch,
+    bridgeTarget,
+    bridgeImport,
+    bridgeOverwrite,
+    bridgeCancel,
+    applyGuardOpen,
+    applyGuardProceed,
+    applyGuardCancel,
+    handleHotReload,
+  } = useYamlApplyFlow({
+    yamlContent,
+    setYamlContent,
+    mode,
+    setMode,
+    loadFromYaml,
+    getWorkingYaml,
+    setStatusMsg,
+    onApplied: (appliedYaml) => {
+      setLastSubmittedYaml(appliedYaml)
+      refetch()
+    },
+  })
 
   // Auto-load the live server config into the editor on first successful
   // fetch. Without this the editor shows DEFAULT_SAMPLE_YAML and the operator
@@ -256,100 +273,6 @@ export function useConfigCenter() {
     }
   }
 
-  // ── Form ↔ YAML divergence detection (C-D1) ──────────────────────
-  // The form view edits configStore.workingConfig; the YAML view edits the
-  // raw `yamlContent` string — two manually bridged states. Evaluated on
-  // demand (mode switch / hot reload click), never per keystroke.
-  const yamlDiffersFromForm = (): boolean =>
-    yamlDiffersFromConfig(yamlContent, useConfigStore.getState().workingConfig)
-
-  // C-D1 ② — ModeSwitcher entry point. Switching views with diverged content
-  // no longer silently keeps both stale states; the user picks a side.
-  const requestModeSwitch = (next: ConfigMode) => {
-    if (next === mode) return
-    if (yamlDiffersFromForm()) setBridgeTarget(next)
-    else setMode(next)
-  }
-
-  // Bridge choice: keep the YAML — parse the editor text into the form side
-  // (semantics of the manual "Import YAML → Form" button), then switch.
-  const bridgeImport = () => {
-    const target = bridgeTarget
-    setBridgeTarget(null)
-    const err = loadFromYaml(yamlContent)
-    if (err) {
-      setStatusMsg({ type: 'error', text: t('config.importYamlFailed', { error: err }) })
-      return
-    }
-    setStatusMsg({ type: 'success', text: t('config.importYamlSuccess') })
-    if (target) setMode(target)
-  }
-
-  // Bridge choice: keep the form — dump the working config into the editor
-  // (same semantics as the manual "View as YAML" button), then switch.
-  const bridgeOverwrite = () => {
-    const target = bridgeTarget
-    setBridgeTarget(null)
-    const yaml = getWorkingYaml()
-    if (!yaml) {
-      setStatusMsg({ type: 'error', text: t('config.syncFormEmpty') })
-      return
-    }
-    setYamlContent(yaml)
-    if (target) setMode(target)
-  }
-
-  const bridgeCancel = () => setBridgeTarget(null)
-
-  const handleHotReload = () => {
-    // Open the YAML-mode apply confirmation dialog instead of PUT-ting
-    // directly — same diff + explicit-confirmation safety gate as the
-    // form-mode apply, before the engine is suspended for reload.
-    setYamlApplyError(null)
-    // C-D1 ① — when the editor content does not include the form side's
-    // unapplied edits, gate the apply behind an explicit acknowledgement.
-    if (yamlDiffersFromForm()) {
-      setApplyGuardOpen(true)
-      return
-    }
-    setYamlApplyOpen(true)
-  }
-
-  const applyGuardProceed = () => {
-    setApplyGuardOpen(false)
-    setYamlApplyOpen(true)
-  }
-
-  const applyGuardCancel = () => setApplyGuardOpen(false)
-
-  // Confirmed YAML-mode apply: called by the dialog's onConfirm.
-  const handleYamlApplyConfirm = async () => {
-    setStatusMsg(null)
-    try {
-      await updateMutation.mutateAsync({ payload: yamlContent })
-      addSnapshot(yamlContent)
-      setLastSubmittedYaml(yamlContent)
-      setYamlApplyOpen(false)
-      // C-D1 — record what the SERVER actually accepted as the saved baseline.
-      // The old markSaved() snapped the baseline to the working config,
-      // marking never-sent form edits as "saved" and dismissing the
-      // unsaved-changes banner. Divergent edits stay pending (dirty).
-      const syncErr = markSavedFromYaml(yamlContent)
-      if (syncErr) {
-        setStatusMsg({
-          type: 'error',
-          text: t('configCenter.applySyncFailed', { error: syncErr }),
-        })
-      } else {
-        setStatusMsg({ type: 'success', text: t('config.reloadSuccess') })
-      }
-      refetch()
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : t('config.reloadFailed')
-      setYamlApplyError(msg || t('config.reloadFailed'))
-    }
-  }
-
   // Path A — "Load from Server": fetch the live server config (GET
   // /configs/raw, plaintext per the backend contract) into both the YAML
   // editor and the configStore so the operator edits the REAL configuration.
@@ -419,6 +342,11 @@ export function useConfigCenter() {
   // Revert the configStore working config to the last saved state.
   const revertWorkingConfig = () => revertConfig()
 
+  // D-16 — retry the failed server-config seed (banner "Retry" button).
+  const retrySeed = () => {
+    void rawConfigQuery.refetch()
+  }
+
   // Line-by-line diff between the editor content and the last submitted YAML.
   // Uses the debounced value so the O(m×n) LCS isn't recomputed on every
   // keystroke. hasDiffChanges is folded in here too, so the O(n) scan only
@@ -453,6 +381,10 @@ export function useConfigCenter() {
     openApplyDialog,
     revertWorkingConfig,
     getSavedYaml,
+    // D-16 seed-failure banner state
+    seedLoadFailed,
+    seedStatus,
+    retrySeed,
     // state
     mode,
     setMode,

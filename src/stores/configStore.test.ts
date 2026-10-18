@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { useConfigStore } from '@/stores/configStore'
+import { isSeedBlocked, useConfigStore } from '@/stores/configStore'
 import type {
   CoreCConfig,
   DriverConfig,
@@ -87,6 +87,8 @@ beforeEach(() => {
     savedConfig: null,
     dirty: false,
     error: null,
+    seedStatus: 'idle',
+    seedError: null,
   })
 })
 
@@ -119,11 +121,58 @@ drivers:
   })
 
   it('resetToEmpty starts a fresh empty config marked dirty', () => {
+    // Default seedStatus 'idle' (auto-load not started) must not block the
+    // pure path-B flow where the user deliberately starts from scratch.
     useConfigStore.getState().resetToEmpty()
     const s = useConfigStore.getState()
     expect(s.workingConfig).toEqual({})
     expect(s.savedConfig).toBeNull()
     expect(s.dirty).toBe(true)
+  })
+
+  it('resetToEmpty is blocked while the server config is still loading (D-16)', () => {
+    useConfigStore.getState().markSeedLoading()
+    const ok = useConfigStore.getState().resetToEmpty()
+    expect(ok).toBe(false)
+    const s = useConfigStore.getState()
+    // Nothing was created — the next Apply cannot wipe the control plane.
+    expect(s.workingConfig).toBeNull()
+    expect(s.savedConfig).toBeNull()
+    expect(s.dirty).toBe(false)
+    expect(s.error).toBeTruthy()
+  })
+
+  it('resetToEmpty is blocked after the server config failed to load (D-16)', () => {
+    useConfigStore.getState().markSeedFailed('backend restarting')
+    const ok = useConfigStore.getState().resetToEmpty()
+    expect(ok).toBe(false)
+    expect(useConfigStore.getState().workingConfig).toBeNull()
+    expect(useConfigStore.getState().seedError).toBe('backend restarting')
+    expect(useConfigStore.getState().error).toBe('backend restarting')
+  })
+
+  it('resetToEmpty is allowed once the seed succeeded (ready + baseline)', () => {
+    useConfigStore.getState().markSeedReady()
+    const ok = useConfigStore.getState().resetToEmpty()
+    expect(ok).toBe(true)
+    expect(useConfigStore.getState().workingConfig).toEqual({})
+  })
+
+  it('resetToEmpty is allowed when a saved baseline exists even if a later refetch failed', () => {
+    // Seeded once (e.g. previous page), then a background refetch failed:
+    // the stale status must not block — the baseline protects the Apply.
+    useConfigStore.setState({ savedConfig: baseConfig, seedStatus: 'failed' })
+    const ok = useConfigStore.getState().resetToEmpty()
+    expect(ok).toBe(true)
+    expect(useConfigStore.getState().workingConfig).toEqual({ global: baseConfig.global })
+  })
+
+  it('isSeedBlocked reflects the guard predicate', () => {
+    expect(isSeedBlocked({ savedConfig: null, seedStatus: 'idle' })).toBe(false)
+    expect(isSeedBlocked({ savedConfig: null, seedStatus: 'loading' })).toBe(true)
+    expect(isSeedBlocked({ savedConfig: null, seedStatus: 'failed' })).toBe(true)
+    expect(isSeedBlocked({ savedConfig: null, seedStatus: 'ready' })).toBe(false)
+    expect(isSeedBlocked({ savedConfig: baseConfig, seedStatus: 'failed' })).toBe(false)
   })
 
   it('resetToEmpty preserves global from savedConfig', () => {

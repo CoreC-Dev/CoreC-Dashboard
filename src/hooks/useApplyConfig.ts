@@ -1,6 +1,8 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useUpdateConfig } from '@/api/hooks'
 import { useConfigHistoryStore } from '@/stores/configHistoryStore'
+import { isSeedBlocked, useConfigStore } from '@/stores/configStore'
 
 /**
  * Shared apply-config dialog state for list/detail pages.
@@ -12,6 +14,11 @@ import { useConfigHistoryStore } from '@/stores/configHistoryStore'
  * (validate → get YAML → mutate → markSaved → close). The caller provides
  * page-specific functions and renders `<ConfigApplyConfirmationDialog
  * {...dialogProps} />`.
+ *
+ * D-16: onConfirm refuses to PUT while the server config has never been
+ * loaded (auto-seed in flight or failed and no saved baseline) — applying
+ * an unknown working config then could wipe the running control plane.
+ * The rejection surfaces as an applyError inside the dialog.
  */
 interface UseApplyConfigOptions {
   /** Get the current working YAML (null if no working config). */
@@ -37,6 +44,7 @@ export function useApplyConfig(options: UseApplyConfigOptions) {
     validationWarnings,
     onApplySuccess,
   } = options
+  const { t } = useTranslation()
   const updateConfig = useUpdateConfig()
   const addSnapshot = useConfigHistoryStore((s) => s.addSnapshot)
   const [open, setOpen] = useState(false)
@@ -62,6 +70,12 @@ export function useApplyConfig(options: UseApplyConfigOptions) {
     applyError: applyError ?? undefined,
     onConfirm: () => {
       if (validationErrors) return
+      // D-16: never PUT while the server config is unknown (seed in flight
+      // or failed, no baseline) — the apply could wipe the control plane.
+      if (isSeedBlocked(useConfigStore.getState())) {
+        setApplyError(t('configCenter.applyBlockedSeed'))
+        return
+      }
       const yaml = getWorkingYaml()
       if (!yaml) return
       setApplyError(null)

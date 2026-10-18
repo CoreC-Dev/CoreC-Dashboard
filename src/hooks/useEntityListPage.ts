@@ -14,8 +14,10 @@ interface UseEntityListPageOptions<T> {
   find: (name: string) => T | undefined
   /** Remove an entity by name from the config store. */
   remove: (name: string) => void
-  /** Reset the working config to an empty document. */
-  resetToEmpty: () => void
+  /** Reset the working config to an empty document. Returns false when the
+   *  server config has not been loaded yet (D-16 guard in configStore) —
+   *  Create must then not proceed. */
+  resetToEmpty: () => boolean
   /** Whether a working config currently exists. */
   hasWorkingConfig: boolean
 }
@@ -27,7 +29,11 @@ export function useEntityListPage<T>(options: UseEntityListPageOptions<T>) {
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
 
   const handleCreate = () => {
-    if (!hasWorkingConfig) resetToEmpty()
+    // D-16: when the server config was never loaded, resetToEmpty refuses
+    // (it would let the next Apply wipe the running control plane). Do not
+    // open the wizard onto a null working config either — upserts there
+    // would silently fail on Finish.
+    if (!hasWorkingConfig && !resetToEmpty()) return
     setEditing(undefined)
     setWizardOpen(true)
   }
