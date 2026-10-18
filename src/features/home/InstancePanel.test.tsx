@@ -351,3 +351,33 @@ describe('InstancePanel — storage failure banner (A-11)', () => {
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
 })
+
+describe('InstancePanel — help links (A-06)', () => {
+  const HELP_URL = 'https://github.com/CoreC-Dev/CoreC-Dashboard'
+
+  it('exposes an outbound help button in the header', () => {
+    render(
+      <MemoryRouter>
+        <InstancePanel />
+      </MemoryRouter>,
+    )
+
+    const help = screen.getByRole('link', { name: t('instances.help') })
+    expect(help).toHaveAttribute('href', HELP_URL)
+    // Opened in a new tab without a window.opener handle.
+    expect(help).toHaveAttribute('target', '_blank')
+    expect(help).toHaveAttribute('rel', expect.stringContaining('noopener'))
+  })
+
+  it('links the first-run empty state to the help docs', () => {
+    render(
+      <MemoryRouter>
+        <InstancePanel />
+      </MemoryRouter>,
+    )
+
+    const hint = screen.getByRole('link', { name: t('instances.emptyHelpHint') })
+    expect(hint).toHaveAttribute('href', HELP_URL)
+    expect(hint).toHaveAttribute('target', '_blank')
+  })
+})

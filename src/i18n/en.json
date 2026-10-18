@@ -57,6 +57,8 @@
     "deleteConfirm": "Are you sure you want to delete instance \"{{name}}\"? This cannot be undone.",
     "emptyTitle": "No CoreC Instances Yet",
     "emptyDesc": "Add your first CoreC edge gateway instance to start monitoring and managing.",
+    "help": "Help",
+    "emptyHelpHint": "Where do I find the address and API key? See help",
     "addNew": "Add New CoreC",
     "myInstances": "My CoreC Instances",
     "instanceCount": "{{count}} instance(s)",

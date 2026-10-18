@@ -1,4 +1,14 @@
-import { Check, Download, Moon, Palette, Plus, Settings, Sun, Upload } from 'lucide-react'
+import {
+  Check,
+  Download,
+  HelpCircle,
+  Moon,
+  Palette,
+  Plus,
+  Settings,
+  Sun,
+  Upload,
+} from 'lucide-react'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
@@ -27,6 +37,13 @@ import i18n, { setLocale } from '@/i18n'
 import { useInstanceStore } from '@/stores/instanceStore'
 import { THEME_I18N_KEYS, THEME_VARIANTS, useThemeStore } from '@/stores/themeStore'
 import type { CoreCInstance } from '@/types/models'
+
+/**
+ * A-06: the whole UI previously had zero outbound help links — an operator
+ * stuck on "what do I put in this form?" had nowhere to click. Both the
+ * header help button and the empty-state hint link point here.
+ */
+const HELP_URL = 'https://github.com/CoreC-Dev/CoreC-Dashboard'
 
 export const InstancePanel: React.FC = () => {
   const { t } = useTranslation()
@@ -240,6 +257,20 @@ export const InstancePanel: React.FC = () => {
               <Settings className="w-4 h-4" />
             </Link>
           </Button>
+          {/* A-06: an outbound help entry — the audit found the entire UI had
+              none, leaving first-time operators with a form and no docs. */}
+          <Button
+            variant="ghost"
+            size="icon"
+            asChild
+            aria-label={t('instances.help')}
+            title={t('instances.help')}
+            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+          >
+            <a href={HELP_URL} target="_blank" rel="noopener noreferrer">
+              <HelpCircle className="w-4 h-4" />
+            </a>
+          </Button>
         </div>
       </header>
 
@@ -260,9 +291,19 @@ export const InstancePanel: React.FC = () => {
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <img src="/logo-animated.svg" alt="CoreC" className="w-32 h-32 mb-4" />
             <h2 className="text-xl font-semibold mb-2">{t('instances.emptyTitle')}</h2>
-            <p className="text-sm text-muted-foreground mb-6 max-w-md">
+            <p className="text-sm text-muted-foreground mb-2 max-w-md">
               {t('instances.emptyDesc')}
             </p>
+            {/* A-06: the first-run question ("what even is an API key?") gets
+                an actionable link instead of a dead end. */}
+            <a
+              href={HELP_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-primary underline underline-offset-4 hover:text-primary/80 mb-6"
+            >
+              {t('instances.emptyHelpHint')}
+            </a>
             <div className="flex items-center gap-3">
               <Button onClick={handleAdd} size="lg">
                 <Plus className="w-4 h-4 mr-2" />
