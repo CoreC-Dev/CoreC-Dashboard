@@ -6,8 +6,37 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; connect-src * ws: wss:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data:; script-src 'self'; frame-ancestors 'none';"
+      content="default-src 'self'; connect-src * ws: wss:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data:; script-src 'self' 'sha256-Xtud0sY1MHE9MWVP9W/re3IE1J0q2irGI4BZ5eG0mGU='; frame-ancestors 'none';"
     />
+    <script>
+  // Theme bootstrap (UX audit D-10) — must stay inline and synchronous: it
+  // runs before the first paint so dark/midnight/forest users never flash a
+  // light frame on refresh. Mirrors themeStore.applyThemeToDOM: data-theme
+  // selects the CSS variable block (explicit variants keep their own name),
+  // the .dark class toggles Tailwind dark: utilities. themeStore re-applies
+  // the same values when its module loads — idempotent. The CSP meta above
+  // pins this script's sha256 hash; keep both in sync (guarded by
+  // src/themeBoot.test.ts).
+  (function () {
+    try {
+      var theme = localStorage.getItem('corec_theme')
+      var dark = theme === 'dark' || theme === 'dark-midnight' || theme === 'dark-forest'
+      if (
+        theme !== 'light' &&
+        theme !== 'dark' &&
+        theme !== 'light-sepia' &&
+        theme !== 'light-nord' &&
+        theme !== 'dark-midnight' &&
+        theme !== 'dark-forest'
+      ) {
+        dark = window.matchMedia('(prefers-color-scheme: dark)').matches
+        theme = dark ? 'dark' : 'light'
+      }
+      document.documentElement.setAttribute('data-theme', theme)
+      if (dark) document.documentElement.classList.add('dark')
+    } catch (e) {}
+  })();
+</script>
     <title>CoreC Dashboard — Industrial IoT Control Core</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
