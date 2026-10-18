@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeOff, Loader2, PlugZap } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
@@ -31,7 +31,9 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
+import { testInstanceConnection } from '@/features/home/useHomepageProbe'
 import { DEFAULT_COREC_URL } from '@/lib/constants'
+import { PROBE_ERROR_I18N_KEYS, type ProbeErrorKind } from '@/stores/instanceStore'
 import type { CoreCInstance } from '@/types/models'
 
 const instanceSchema = (t: (k: string) => string) =>
@@ -105,6 +107,14 @@ export const InstanceDialog: React.FC<InstanceDialogProps> = ({
     },
   })
 
+  // D-13: verdict of the one-shot "test connection" probe. Never blocks the
+  // save — it is a preview of what the homepage card will show.
+  const [testResult, setTestResult] = useState<{
+    status: 'idle' | 'testing' | 'ok' | 'fail'
+    version?: string
+    kind?: ProbeErrorKind
+  }>({ status: 'idle' })
+
   useEffect(() => {
     if (open) {
       form.reset({
@@ -116,8 +126,33 @@ export const InstanceDialog: React.FC<InstanceDialogProps> = ({
         notes: instance?.notes ?? '',
         tags: instance?.tags?.join(', ') ?? '',
       })
+      // Each open is a fresh session — a previous test verdict is stale.
+      setTestResult({ status: 'idle' })
     }
   }, [open, instance, form])
+
+  // A verdict only stays valid while the values it tested are unchanged —
+  // editing the address, key or mode invalidates it instead of letting a
+  // green "Connected" lie next to freshly edited fields.
+  useEffect(() => {
+    const sub = form.watch((_values, { name }) => {
+      if (name === 'baseUrl' || name === 'secret' || name === 'useProxy') {
+        setTestResult({ status: 'idle' })
+      }
+    })
+    return () => sub.unsubscribe()
+  }, [form])
+
+  const handleTestConnection = async () => {
+    const { baseUrl, secret, useProxy } = form.getValues()
+    setTestResult({ status: 'testing' })
+    const result = await testInstanceConnection({ baseUrl, secret, useProxy })
+    setTestResult(
+      result.ok
+        ? { status: 'ok', version: result.info?.version ?? '?' }
+        : { status: 'fail', kind: result.kind },
+    )
+  }
 
   const handleSubmit = (data: InstanceFormData) => {
     onSubmit({
@@ -302,7 +337,38 @@ export const InstanceDialog: React.FC<InstanceDialogProps> = ({
               )}
             />
 
+            {/* D-13: one-shot test verdict — visible right above the actions
+                so the operator can fix the fields and re-test before saving. */}
+            {testResult.status === 'testing' && (
+              <p className="text-sm text-muted-foreground flex items-center gap-1.5">
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                {t('instances.testRunning')}
+              </p>
+            )}
+            {testResult.status === 'ok' && (
+              <p className="text-sm text-status-running" role="status">
+                {t('instances.testSuccess', { version: testResult.version })}
+              </p>
+            )}
+            {testResult.status === 'fail' && testResult.kind && (
+              <p className="text-sm text-status-error" role="alert">
+                {t(PROBE_ERROR_I18N_KEYS[testResult.kind])}
+              </p>
+            )}
+
             <DialogFooter>
+              {/* D-13: verify address + key BEFORE saving; runs the same
+                  authenticated probe as the homepage card, so a bad key
+                  reports the exact 401 copy the card would show. */}
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => void handleTestConnection()}
+                disabled={testResult.status === 'testing'}
+              >
+                <PlugZap className="w-3.5 h-3.5 mr-1.5" />
+                {t('instances.testConnection')}
+              </Button>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 {t('common.cancel')}
               </Button>

@@ -8,12 +8,10 @@
 //  2. CSP — script-src pins the script's sha256 hash; editing the script
 //     without re-pinning gets it BLOCKED by the CSP, so the test recomputes
 //     the hash and compares.
-import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
+// The html source comes in via Vite's ?raw import (works in vitest, no node
+// APIs — the web tsconfig has none); the hash uses WebCrypto.
 import { describe, expect, it } from 'vitest'
-
-// vitest runs with cwd at the repo root (where vitest.config.ts lives).
-const html = readFileSync(resolve(process.cwd(), 'index.html'), 'utf-8')
+import html from '../index.html?raw'
 
 function extractInlineScript(source: string): string {
   const match = source.match(/<script>([\s\S]*?)<\/script>/)
@@ -63,6 +61,12 @@ function bootWith(savedTheme: string | null, prefersDark = false) {
   }
 }
 
+async function sha256Base64(text: string): Promise<string> {
+  const bytes = new TextEncoder().encode(text)
+  const digest = await globalThis.crypto.subtle.digest('SHA-256', bytes)
+  return btoa(String.fromCharCode(...new Uint8Array(digest)))
+}
+
 describe('theme bootstrap (D-10)', () => {
   it('index.html has the bootstrap before the app module script', () => {
     const bootPos = html.indexOf('<script>')
@@ -72,8 +76,7 @@ describe('theme bootstrap (D-10)', () => {
   })
 
   it('CSP pins the exact sha256 hash of the inline script', async () => {
-    const { createHash } = await import('node:crypto')
-    const digest = createHash('sha256').update(script, 'utf-8').digest('base64')
+    const digest = await sha256Base64(script)
     expect(cspScriptSrc(html)).toContain(`'sha256-${digest}'`)
   })
 

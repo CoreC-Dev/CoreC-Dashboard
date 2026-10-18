@@ -322,3 +322,47 @@ export async function probeOneInstance(id: string): Promise<void> {
     setProbing(id, false)
   }
 }
+
+/**
+ * Outcome of a one-shot connection test (D-13). On failure, `kind` is the
+ * same vocabulary the homepage cards use — render it via
+ * PROBE_ERROR_I18N_KEYS so the dialog and the card never disagree about
+ * why a connection failed.
+ */
+export interface ConnectionTestResult {
+  ok: boolean
+  /** Server info on success (name/version/status/uptime). */
+  info?: CoreCInstance['lastKnownInfo']
+  /** Failure kind — undefined on success. */
+  kind?: ProbeErrorKind
+}
+
+/**
+ * One-shot connection test for the add/edit dialog (D-13): an operator had
+ * no way to verify address + key before saving, and a wrong key was only
+ * discovered after entering the instance. Runs the exact same probe as the
+ * homepage (authenticated /stats included, so a bad key reports
+ * 'unauthorized' rather than a false pass) but records nothing in the
+ * store — it is a pure preview of what the card would show.
+ */
+export async function testInstanceConnection(
+  data: Pick<CoreCInstance, 'baseUrl' | 'secret'> & { useProxy?: CoreCInstance['useProxy'] },
+): Promise<ConnectionTestResult> {
+  // A throwaway instance shape — probeInstance only reads the connection
+  // fields; the result never touches the store.
+  const probeTarget: CoreCInstance = {
+    id: 'connection-test',
+    name: 'connection-test',
+    baseUrl: data.baseUrl.trim().replace(/\/+$/, ''),
+    secret: data.secret.trim(),
+    useProxy: data.useProxy,
+    createdAt: '',
+    sortOrder: 0,
+  }
+  try {
+    const info = await probeInstance(probeTarget)
+    return { ok: true, info }
+  } catch (err) {
+    return { ok: false, kind: err instanceof ProbeError ? err.kind : 'unreachable' }
+  }
+}

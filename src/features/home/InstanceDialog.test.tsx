@@ -7,7 +7,7 @@
 // exercised through the rendered react-hook-form + zodResolver form rather than
 // imported directly.
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { InstanceDialog } from '@/features/home/InstanceDialog'
 import i18n from '@/i18n'
 
@@ -18,7 +18,7 @@ afterEach(cleanup)
 // Locale-agnostic lookup: the component renders with the same global i18n
 // instance, so resolving the expected strings through it keeps assertions
 // stable regardless of the saved locale.
-const t = (key: string) => i18n.t(key)
+const t = (key: string, opts?: Record<string, unknown>) => i18n.t(key, opts)
 
 function renderDialog() {
   const onSubmit = vi.fn()
@@ -131,5 +131,105 @@ describe('InstanceDialog form validation (TD-TEST-007)', { timeout: 15_000 }, ()
   it('discloses plain-text local storage under the API key field (A-10)', () => {
     renderDialog()
     expect(screen.getByText(t('instances.secretStorageNote'))).toBeInTheDocument()
+  })
+})
+
+// D-13 — a one-shot "test connection" in the add/edit dialog: the operator
+// verifies address + key BEFORE saving instead of discovering a bad key
+// only after entering the instance. Exercises the same authenticated probe
+// as the homepage card (mocked here at the fetch boundary).
+describe('InstanceDialog — test connection (D-13)', { timeout: 15_000 }, () => {
+  const mockFetch = vi.fn<(url: string, init?: RequestInit) => Promise<Response>>()
+  globalThis.fetch = mockFetch as unknown as typeof globalThis.fetch
+
+  function jsonRes(body: unknown, status = 200): Response {
+    return new Response(JSON.stringify(body), {
+      status,
+      headers: { 'content-type': 'application/json' },
+    })
+  }
+
+  beforeEach(() => {
+    mockFetch.mockReset()
+  })
+
+  /** Healthy GET / + 200 /stats; per-URL overrides for failure cases. */
+  function mockProbe(overrides: Record<string, Response> = {}) {
+    mockFetch.mockImplementation((url: string) => {
+      if (url in overrides) return Promise.resolve(overrides[url])
+      if (url === '/corec-proxy/') {
+        return Promise.resolve(
+          jsonRes({ name: 'edge', version: '1.2.3', status: 'running', uptime: '1h' }),
+        )
+      }
+      return Promise.resolve(jsonRes({ drivers: 0 }))
+    })
+  }
+
+  async function clickTest() {
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: t('instances.testConnection') }))
+    })
+  }
+
+  it('reports success with the server version and does not submit', async () => {
+    mockProbe()
+    const { onSubmit } = renderDialog()
+    await typeIn(secretInput(), 'secret123')
+
+    await clickTest()
+
+    await waitFor(() => {
+      expect(screen.getByText(t('instances.testSuccess', { version: '1.2.3' }))).toBeInTheDocument()
+    })
+    // The test is a preview only — saving stays a separate explicit action.
+    expect(onSubmit).not.toHaveBeenCalled()
+  })
+
+  it("reports a rejected key as 'unauthorized' with the card's copy", async () => {
+    mockProbe({ '/corec-proxy/stats': jsonRes({ error: 'unauthorized' }, 401) })
+    renderDialog()
+    await typeIn(secretInput(), 'secret123')
+
+    await clickTest()
+
+    await waitFor(() => {
+      expect(screen.getByText(t('instances.probeUnauthorized'))).toBeInTheDocument()
+    })
+  })
+
+  it('does not block saving after a failed test', async () => {
+    mockProbe({ '/corec-proxy/stats': jsonRes({ error: 'unauthorized' }, 401) })
+    const { onSubmit } = renderDialog()
+    await typeIn(nameInput(), 'Test Instance')
+    await typeIn(secretInput(), 'secret123')
+
+    await clickTest()
+    await waitFor(() => {
+      expect(screen.getByText(t('instances.probeUnauthorized'))).toBeInTheDocument()
+    })
+
+    // The verdict is informational — submit still works.
+    await submit()
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  it('invalidates a stale verdict when the connection fields change', async () => {
+    mockProbe()
+    renderDialog()
+    await typeIn(secretInput(), 'secret123')
+    await clickTest()
+    await waitFor(() => {
+      expect(screen.getByText(t('instances.testSuccess', { version: '1.2.3' }))).toBeInTheDocument()
+    })
+
+    // Editing the address must clear the green verdict — it no longer
+    // describes the values in the form.
+    await typeIn(baseUrlInput(), 'http://10.0.0.5:9090')
+    expect(
+      screen.queryByText(t('instances.testSuccess', { version: '1.2.3' })),
+    ).not.toBeInTheDocument()
   })
 })
