@@ -15,8 +15,10 @@ const src = resolve(root, 'src');
 const MAX_LINES = 500;
 
 // 已登记豁免：当前超标文件（阶段 4 拆分后从本表删除以收紧门禁）
+// TD-CPLX-003 (RulesPage) and TD-CPLX-010 (RuleParts) exemptions removed
+// 2026-10-18: the C-B1 unification (rule dual-editor merge + dead-code
+// removal) shrank both files back under the 500-line limit.
 const SIZE_EXEMPTIONS = [
-  { file: 'features/admin/RulesPage.tsx', td: 'TD-CPLX-003', batch: 'F' },
   { file: 'features/admin/DriverDetailPage.tsx', td: 'TD-CPLX-006', batch: 'D' },
   { file: 'features/admin/TransportDetailPage.tsx', td: 'TD-CPLX-006', batch: 'D' },
   { file: 'features/admin/RuleGroupEditor.tsx', td: 'TD-CPLX-008', batch: 'G' },
@@ -24,7 +26,6 @@ const SIZE_EXEMPTIONS = [
   { file: 'features/admin/DriversPage.tsx', td: 'TD-DUP-005', batch: 'E' },
   { file: 'features/admin/DriverWizard.tsx', td: 'TD-CPLX-009', batch: 'H' },
   { file: 'features/admin/DiagnosticsPage.tsx', td: 'TD-CPLX-003', batch: 'F' },
-  { file: 'components/admin/RuleParts.tsx', td: 'TD-CPLX-010', batch: 'H' },
 ];
 const exemptSet = new Set(SIZE_EXEMPTIONS.map((e) => e.file));
 

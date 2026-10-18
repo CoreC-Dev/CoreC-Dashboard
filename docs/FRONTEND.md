@@ -41,3 +41,19 @@ Conventional Commits；单一职责；重构与行为变更不混提；改造仅
   遗漏会导致 DOM 残留、后续测试断言串扰。纯函数测试（无 DOM 渲染）不需要 cleanup。
 - Mock 约定：`globalThis.fetch` 用 `vi.fn()` mock；无 msw、无 user-event。Biome 强制单引号。
 - 覆盖率门禁：`npm run test:coverage`（v8 provider），阈值在 `vitest.config.ts` 中配置（ratchet，只升不降）。CI（`ci.yml`）已接入。
+
+
+## UX 修复波（2026-10-18）：行为变更登记
+
+本批按 UX 审计（ux-audit A/B/C/D 四组报告）落地的可观察行为变更，登记如下：
+
+- **连接探测改打带鉴权的 `GET /stats`**：密钥错误现在显示为明确的"密钥无效 (401)"，不再假装已连接；`ConnectionContext` 每 15s 周期复核（后端掉线一周期内可见）。
+- **401 全局拦截**：任何查询/变更收到 401 即切换到全屏"认证已失效"遮罩，提供重输密钥与返回实例列表两条出路。
+- **WS 断线可见**：`/tags/stream`、`/logs`、`/traffic`、`/memory` 四条流的状态汇入 `wsStatusStore`；监控三页顶部横幅在断线/放弃重连时可见；侧栏"实时流"徽标绑定真实 socket 状态；`rejected` 状态提供"重新连接"按钮。
+- **告警全局触达**：`/logs` 订阅由 AppShell 级 `AlertStreamProvider` 独占持有，告警页只是消费者；侧栏"告警事件"显示未读 error 计数徽标（死信计数兜底）；声音/浏览器通知在任何路由下生效。
+- **危险操作归一**：`PUT /configs` 仅有一个门——所有入口经 `ConfigApplyConfirmationDialog`（diff+变更摘要+暂停警告）确认后触发；`RuleEditDialog` 直发路径已删除（规则运行区编辑并入向导，延迟应用）。
+- **死信单条重放加两步确认**（对齐批量重放与手动写入标杆），列出上次失败时间/次数/错误原文。
+- **向导取消守卫**：三个向导的取消/关闭/遮罩点击在脏草稿时先弹放弃确认。
+- **配置中心**：YAML 重载不再把未应用的表单编辑标成已保存（蒸发修复）；模式切换分歧时三选一桥接；播种失败红色横幅+创建/应用守卫；`POST /configs/validate` 接入两条应用确认流；变更历史按钮改名"载入到编辑器"（"恢复"仅指服务端备份真恢复）。
+- **诚实性**：`GET /configs/raw` 明文（无脱敏/无 sentinel-merge）在注释与提示文案中如实标注；`settings.subtitle`/`secretsRedactedNote` 等死键与失实文案清除。
+- **门禁收紧**：`SIZE_EXEMPTIONS` 移除 RulesPage/RuleParts 两项（C-B1 死代码删除后回到 500 行内）。
