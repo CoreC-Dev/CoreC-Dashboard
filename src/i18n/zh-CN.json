@@ -314,7 +314,12 @@
     "drivers": "驱动",
     "sinks": "接收端",
     "connectedSuffix": "已连接",
-    "onlineSuffix": "在线",
+    "onlineFull": "100% 在线",
+    "onlinePercent": "{{n}}% 在线",
+    "allOffline": "全部离线",
+    "connectedFull": "100% 已连接",
+    "connectedPercent": "{{n}}% 已连接",
+    "allDisconnected": "全部断开",
     "totalRead": "累计读取",
     "pub": "发布",
     "dropped": "丢弃",
@@ -334,8 +339,7 @@
     "sysMemMb": "系统内存 (MB)",
     "tags": "测点",
     "reads": "读取",
-    "realtimeMonitor": "实时监控与控制",
-    "connected": "已连接"
+    "realtimeMonitor": "实时监控与控制"
   },
   "tags": {
     "title": "实时测点监控",

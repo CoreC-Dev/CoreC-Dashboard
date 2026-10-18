@@ -314,7 +314,12 @@
     "drivers": "Drivers",
     "sinks": "Sinks",
     "connectedSuffix": "Connected",
-    "onlineSuffix": "Online",
+    "onlineFull": "100% online",
+    "onlinePercent": "{{n}}% online",
+    "allOffline": "All offline",
+    "connectedFull": "100% connected",
+    "connectedPercent": "{{n}}% connected",
+    "allDisconnected": "All disconnected",
     "totalRead": "Total Read",
     "pub": "Pub",
     "dropped": "Dropped",
@@ -334,8 +339,7 @@
     "sysMemMb": "Sys Mem (MB)",
     "tags": "Tags",
     "reads": "Reads",
-    "realtimeMonitor": "Real-time monitoring & control",
-    "connected": "Connected"
+    "realtimeMonitor": "Real-time monitoring & control"
   },
   "tags": {
     "title": "Real-time Tag Explorer",

@@ -220,3 +220,62 @@ describe('DashboardPage — stale snapshot instead of page collapse (B04)', () =
     expect(screen.queryByText('Dead Letter Queue (failed writes)')).toBeNull()
   })
 })
+
+describe('DashboardPage — online-ratio coloring (B05)', () => {
+  const toneClassOf = (el: HTMLElement) => el.className
+
+  it('100% online renders green with the "100% online" label', async () => {
+    renderPage()
+
+    const label = await screen.findByText('100% online')
+    expect(toneClassOf(label)).toContain('text-status-running')
+    expect(screen.getByText('100% connected').className).toContain('text-status-running')
+  })
+
+  it('partial outage renders amber with the percentage visible', async () => {
+    vi.mocked(api.getDrivers).mockResolvedValue({
+      drivers: [driver(2, 'plc1'), driver(0, 'plc2')],
+    })
+    vi.mocked(api.getTransports).mockResolvedValue({
+      transports: [transport(0), transport(2, 'http1')],
+    })
+
+    renderPage()
+
+    const driversLabel = await screen.findByText('50% online')
+    expect(toneClassOf(driversLabel)).toContain('text-status-warning')
+    const transportsLabel = screen.getByText('50% connected')
+    expect(toneClassOf(transportsLabel)).toContain('text-status-warning')
+  })
+
+  it('full outage renders red and says "All offline" / "All disconnected"', async () => {
+    vi.mocked(api.getDrivers).mockResolvedValue({
+      drivers: [driver(0, 'plc1'), driver(0, 'plc2')],
+    })
+    vi.mocked(api.getTransports).mockResolvedValue({
+      transports: [transport(0)],
+    })
+
+    renderPage()
+
+    const driversLabel = await screen.findByText('All offline')
+    expect(toneClassOf(driversLabel)).toContain('text-status-error')
+    const transportsLabel = screen.getByText('All disconnected')
+    expect(toneClassOf(transportsLabel)).toContain('text-status-error')
+    expect(screen.queryByText(/% online/)).toBeNull()
+  })
+
+  it('no configured drivers/transports renders a muted N/A, not a green claim', async () => {
+    vi.mocked(api.getDrivers).mockResolvedValue({ drivers: [] })
+    vi.mocked(api.getTransports).mockResolvedValue({ transports: [] })
+
+    renderPage()
+
+    const labels = await screen.findAllByText('N/A')
+    expect(labels).toHaveLength(2)
+    for (const label of labels) {
+      expect(label.className).toContain('text-muted-foreground')
+      expect(label.className).not.toContain('text-status-running')
+    }
+  })
+})

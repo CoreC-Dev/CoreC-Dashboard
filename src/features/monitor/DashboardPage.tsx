@@ -68,6 +68,46 @@ export const DashboardPage: React.FC = () => {
     [transports],
   )
 
+  // B05 — online-ratio coloring: 100% green, 1–99% amber, 0% red. The old
+  // hardcoded `text-status-running` kept "0% online" green, so a full
+  // driver/transport outage was invisible during a night-shift page scan.
+  // With no drivers/transports configured the honest color is muted "N/A",
+  // not a green percentage.
+  const ONLINE_TONE_CLASS = {
+    full: 'text-status-running',
+    partial: 'text-status-warning',
+    none: 'text-status-error',
+  } as const
+  const onlineToneOf = (connected: number, total: number): keyof typeof ONLINE_TONE_CLASS =>
+    connected === total ? 'full' : connected === 0 ? 'none' : 'partial'
+  const driverTone = drivers.length > 0 ? onlineToneOf(connectedDrivers, drivers.length) : null
+  const transportTone =
+    transports.length > 0 ? onlineToneOf(connectedTransports, transports.length) : null
+  const ratioPercent = (connected: number, total: number): number =>
+    Math.round((connected / total) * 100)
+  const driverToneClass = driverTone ? ONLINE_TONE_CLASS[driverTone] : 'text-muted-foreground'
+  const transportToneClass = transportTone
+    ? ONLINE_TONE_CLASS[transportTone]
+    : 'text-muted-foreground'
+  const driverStatusLabel =
+    driverTone === 'full'
+      ? t('dashboard.onlineFull')
+      : driverTone === 'partial'
+        ? t('dashboard.onlinePercent', { n: ratioPercent(connectedDrivers, drivers.length) })
+        : driverTone === 'none'
+          ? t('dashboard.allOffline')
+          : t('dashboard.notAvailable', { defaultValue: 'N/A' })
+  const transportStatusLabel =
+    transportTone === 'full'
+      ? t('dashboard.connectedFull')
+      : transportTone === 'partial'
+        ? t('dashboard.connectedPercent', {
+            n: ratioPercent(connectedTransports, transports.length),
+          })
+        : transportTone === 'none'
+          ? t('dashboard.allDisconnected')
+          : t('dashboard.notAvailable', { defaultValue: 'N/A' })
+
   // Engine status dot — reflect the actual stats.status instead of a hardcoded
   // green. "running"/"ok" (and the loading state with no status yet) are
   // healthy (green); error-like states are red; anything else is amber.
@@ -198,11 +238,7 @@ export const DashboardPage: React.FC = () => {
             <CountUpNumber value={connectedDrivers} duration={600} />{' '}
             <span className="text-xs text-muted-foreground font-normal">/ {drivers.length}</span>
           </div>
-          <div className="text-xs text-status-running mt-0.5">
-            {drivers.length === 0
-              ? t('dashboard.notAvailable', { defaultValue: 'N/A' })
-              : `${Math.round((connectedDrivers / drivers.length) * 100)}%${t('dashboard.onlineSuffix')}`}
-          </div>
+          <div className={`text-xs mt-0.5 ${driverToneClass}`}>{driverStatusLabel}</div>
         </div>
         {/* Transports */}
         <div className="min-w-0 overflow-hidden rounded-lg border border-border bg-card p-3 card-hover card-enter">
@@ -214,11 +250,7 @@ export const DashboardPage: React.FC = () => {
             <CountUpNumber value={connectedTransports} duration={600} />{' '}
             <span className="text-xs text-muted-foreground font-normal">/ {transports.length}</span>
           </div>
-          <div className="text-xs text-status-running mt-0.5">
-            {transports.length === 0
-              ? t('dashboard.notAvailable', { defaultValue: 'N/A' })
-              : `${Math.round((connectedTransports / transports.length) * 100)}% ${t('dashboard.connected')}`}
-          </div>
+          <div className={`text-xs mt-0.5 ${transportToneClass}`}>{transportStatusLabel}</div>
         </div>
         {/* Total Read */}
         <div className="min-w-0 overflow-hidden rounded-lg border border-border bg-card p-3 card-hover card-enter">
