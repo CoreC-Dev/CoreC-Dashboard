@@ -31,6 +31,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { deriveTopologyView } from '@/features/home/instanceTopology'
+import { probeOneInstance } from '@/features/home/useHomepageProbe'
 import { ConnStateLabel } from '@/lib/constants'
 import { formatRelativeTime } from '@/lib/formatters'
 import { formatCompact, formatUptime } from '@/lib/utils'
@@ -380,13 +381,22 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
             <Pencil className="w-3.5 h-3.5" />
           </Button>
           {status === 'error' && (
+            /* A-08: the refresh icon on a failed card used to NAVIGATE INTO
+               the instance — the exact opposite of retrying, with no label
+               to say either. It now re-probes (same immediate path as a
+               save), announces itself as "retry connection", and spins
+               while the re-probe is in flight (the card keeps its red
+               verdict per A-07 until a new one lands). */
             <Button
               size="sm"
               variant="outline"
               className="h-8 text-status-warning"
-              onClick={handleEnter}
+              onClick={() => void probeOneInstance(instance.id)}
+              disabled={probing}
+              aria-label={t('instances.retryConnection')}
+              title={t('instances.retryConnection')}
             >
-              <RefreshCw className="w-3.5 h-3.5" />
+              <RefreshCw className={`w-3.5 h-3.5 ${probing ? 'animate-spin' : ''}`} />
             </Button>
           )}
         </div>
