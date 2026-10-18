@@ -58,3 +58,4 @@ Conventional Commits；单一职责；重构与行为变更不混提；改造仅
 - **诚实性**：`GET /configs/raw` 明文（无脱敏/无 sentinel-merge）在注释与提示文案中如实标注；`settings.subtitle`/`secretsRedactedNote` 等死键与失实文案清除。
 - **门禁收紧**：`SIZE_EXEMPTIONS` 移除 RulesPage/RuleParts 两项（C-B1 死代码删除后回到 500 行内）。
 - **总览页第 5 行卡片诚实化（B03）**：标题由名不副实的「近期告警事件」改为「死信队列 (写入失败)」，空态不再凭死信为空就宣称"系统健康"；卡片头新增全局告警流的当前 error 级事件计数徽标（消费 `alertStore.events`），点击直达告警页。
+- **总览页数据降级契约（B04）**：stats 轮询失败不再把整页坍缩成一行红字——保留已渲染数据，顶部显示琥珀色横幅「数据刷新失败，正在显示 {{time}} 的快照」并附手动重试按钮；仅首次加载且无数据时才整页回退。

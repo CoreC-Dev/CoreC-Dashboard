@@ -1,10 +1,12 @@
 import {
   Activity,
   AlertCircle,
+  AlertTriangle,
   ArrowUpRight,
   Clock,
   Cpu,
   Database,
+  RefreshCw,
   Send,
   TrendingDown,
   TrendingUp,
@@ -16,6 +18,7 @@ import { Link, useParams } from 'react-router-dom'
 import { useDeadLetters, useDrivers, useStats, useTransports } from '@/api/hooks'
 import { MemoryChart } from '@/components/charts/MemoryChart'
 import { TrafficChart } from '@/components/charts/TrafficChart'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { CountUpNumber } from '@/components/ui/count-up-number'
 import { LoadingState } from '@/components/ui/loading-state'
@@ -33,11 +36,24 @@ import { formatNumber, formatUptime } from '@/lib/utils'
  * Row 5: Dead letters (failed writes) + current error-event count (B03)
  *
  * No customizable layout — fixed design for out-of-the-box best experience.
+ *
+ * Degradation contract (B04): a failed stats poll keeps the last good
+ * snapshot rendered with a stale-data banner + manual retry; only a
+ * first-load failure with NO data falls back to the full-page error.
  */
 export const DashboardPage: React.FC = () => {
   const { t } = useTranslation()
   const { id } = useParams<{ id: string }>()
-  const { data: stats, isLoading: statsLoading, isError: statsError } = useStats()
+  const {
+    data: stats,
+    isLoading: statsLoading,
+    isError: statsError,
+    // Timestamp of the last SUCCESSFUL stats fetch — the "snapshot from
+    // {{time}}" the stale-data banner shows (B04).
+    dataUpdatedAt: statsUpdatedAt,
+    isFetching: statsFetching,
+    refetch: refetchStats,
+  } = useStats()
   const { data: driversData } = useDrivers()
   const { data: transportsData } = useTransports()
   const { data: deadLettersData } = useDeadLetters()
@@ -77,10 +93,13 @@ export const DashboardPage: React.FC = () => {
     return <LoadingState className="py-24" />
   }
 
-  // Error fallback — shown if the stats fetch fails (connection lost, server
-  // down). The rest of the page degrades gracefully with empty arrays, but the
-  // KPI row needs a visible error indicator.
-  if (statsError) {
+  // Error fallback — only when the FIRST load fails and there is no data to
+  // show at all (B04). A failed background poll no longer collapses the whole
+  // page: the last good snapshot stays rendered and the banner below tells
+  // the operator exactly how old it is, with a manual retry that doesn't wait
+  // for the 5s poll to recover on its own.
+  const statsStale = statsError && !!stats
+  if (statsError && !stats) {
     return (
       <div className="flex items-center justify-center py-24 text-status-error">
         <AlertCircle className="w-6 h-6 mr-3" />
@@ -100,6 +119,38 @@ export const DashboardPage: React.FC = () => {
           {t('dashboard.realtimeMonitor', { defaultValue: 'Real-time monitoring & control' })}
         </p>
       </div>
+
+      {/* Stale-snapshot banner (B04) — a failed refresh keeps the rendered
+       *  data and says so, instead of collapsing the page into one red line.
+       *  Auto-dismisses when the next poll succeeds. */}
+      {statsStale && (
+        <div
+          role="status"
+          className="flex items-center gap-2.5 rounded-xl border border-status-warning/40 bg-status-warning/10 px-4 py-2.5 text-sm text-status-warning"
+        >
+          <AlertTriangle className="w-4 h-4 shrink-0 animate-pulse" aria-hidden />
+          <span className="min-w-0">
+            {t('dashboard.refreshFailed', {
+              time: new Date(statsUpdatedAt).toLocaleTimeString(),
+            })}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              void refetchStats()
+            }}
+            disabled={statsFetching}
+            className="ml-auto h-7 shrink-0 border-status-warning/40 px-2.5 text-xs text-status-warning hover:bg-status-warning/10 hover:text-status-warning"
+          >
+            <RefreshCw
+              className={`w-3.5 h-3.5 ${statsFetching ? 'animate-spin' : ''}`}
+              aria-hidden
+            />
+            <span>{t('common.retry')}</span>
+          </Button>
+        </div>
+      )}
 
       {/* Row 1 — KPI indicators */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 card-stagger">

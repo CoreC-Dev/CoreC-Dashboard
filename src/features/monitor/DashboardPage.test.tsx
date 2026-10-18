@@ -4,7 +4,7 @@
 // mocked; the REAL react-query hooks run inside a real QueryClient so
 // polling/error semantics are exercised. i18n forced to English.
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { DashboardPage } from '@/features/monitor/DashboardPage'
@@ -17,13 +17,6 @@ import type { DeadLetterEntry, DriverStatus, EngineStats, TransportStatus } from
 // would open real sockets — a stub class keeps the page inert in jsdom.
 vi.mock('@/api/websocket', () => ({
   CoreCWebSocket: class {
-    constructor(
-      _path: string,
-      _params: Record<string, string>,
-      _onMessage: (data: unknown) => void,
-      _onStatus?: (status: string) => void,
-      _onDrop?: (count: number) => void,
-    ) {}
     destroy = vi.fn()
   },
 }))
@@ -165,5 +158,65 @@ describe('DashboardPage — dead-letter card honesty (B03)', () => {
 
     expect(await screen.findByText('[plc1] pump = true')).toBeTruthy()
     expect(screen.getByText('3 retries')).toBeTruthy()
+  })
+})
+
+describe('DashboardPage — stale snapshot instead of page collapse (B04)', () => {
+  it('keeps the last good data and shows a retry banner when a refresh fails', async () => {
+    const { qc } = renderPage()
+    expect(await screen.findByText('Dead Letter Queue (failed writes)')).toBeTruthy()
+    // Real data rendered (total publish from the stats snapshot).
+    expect(screen.getByText('Pub: 100')).toBeTruthy()
+    expect(screen.queryByText(/Refresh failed/)).toBeNull()
+
+    // Next poll fails — the page must NOT collapse into the full-page error.
+    vi.mocked(api.getStats).mockRejectedValue(new Error('network down'))
+    await act(async () => {
+      await qc.invalidateQueries({ queryKey: ['stats'] })
+    })
+
+    expect(await screen.findByText(/Refresh failed — showing snapshot from/)).toBeTruthy()
+    // The snapshot data is still on screen.
+    expect(screen.getByText('Pub: 100')).toBeTruthy()
+    expect(screen.queryByText('Failed to load dashboard data')).toBeNull()
+
+    // Manual retry re-fires the query instead of waiting for the 5s poll.
+    const callsBefore = vi.mocked(api.getStats).mock.calls.length
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Retry' }))
+    })
+    await waitFor(() =>
+      expect(vi.mocked(api.getStats).mock.calls.length).toBeGreaterThan(callsBefore),
+    )
+  })
+
+  it('the stale banner clears itself once a refresh succeeds again', async () => {
+    const { qc } = renderPage()
+    expect(await screen.findByText('Pub: 100')).toBeTruthy()
+
+    vi.mocked(api.getStats).mockRejectedValueOnce(new Error('network down'))
+    await act(async () => {
+      await qc.invalidateQueries({ queryKey: ['stats'] })
+    })
+    expect(await screen.findByText(/Refresh failed — showing snapshot from/)).toBeTruthy()
+
+    // The manual retry now lands on the healthy mock — banner auto-dismisses.
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Retry' }))
+    })
+    await waitFor(() =>
+      expect(screen.queryByText(/Refresh failed — showing snapshot from/)).toBeNull(),
+    )
+    expect(screen.getByText('Pub: 100')).toBeTruthy()
+  })
+
+  it('still falls back to the full-page error only when the FIRST load fails with no data', async () => {
+    vi.mocked(api.getStats).mockRejectedValue(new Error('server down'))
+
+    renderPage()
+
+    expect(await screen.findByText('Failed to load dashboard data')).toBeTruthy()
+    expect(screen.queryByText(/Refresh failed/)).toBeNull()
+    expect(screen.queryByText('Dead Letter Queue (failed writes)')).toBeNull()
   })
 })
