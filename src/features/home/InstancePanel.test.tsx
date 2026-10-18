@@ -3,7 +3,16 @@
 // sees the connecting → verdict transition within seconds instead of a
 // grey dot for up to 15s. Exercises the full panel → dialog → store →
 // probe chain with real fetch mocked at the transport boundary.
-import { act, cleanup, configure, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import {
+  act,
+  cleanup,
+  configure,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { InstancePanel } from '@/features/home/InstancePanel'
@@ -15,7 +24,7 @@ import type { CoreCInstance } from '@/types/models'
 // agents on a 2-core host, and RTL waitFor's 1s default flakes under contention.
 configure({ asyncUtilTimeout: 4000 })
 
-const t = (key: string) => i18n.t(key)
+const t = (key: string, opts?: Record<string, unknown>) => i18n.t(key, opts)
 
 // themeStore reads the system theme via matchMedia at module scope, which
 // jsdom does not implement — stub it before any module import evaluates.
@@ -171,5 +180,174 @@ describe('InstancePanel — immediate probe after save (A-03)', { timeout: 15_00
     await waitFor(() => {
       expect(useInstanceStore.getState().instances[0]?.lastConnectedAt).toBeTruthy()
     })
+  })
+})
+
+describe('InstancePanel — import result clarity (A-09)', () => {
+  /** Open the import dialog from the empty state and return its scope. */
+  async function openImportDialog() {
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: t('instances.import') }))
+    })
+    return within(screen.getByRole('dialog'))
+  }
+
+  /** Paste a payload into the dialog textarea (scoped: getByLabelText also
+   matches the dialog element via aria-labelledby). */
+  async function pastePayload(payload: string, scope: ReturnType<typeof within>) {
+    await act(async () => {
+      fireEvent.change(scope.getByRole('textbox'), {
+        target: { value: payload },
+      })
+    })
+  }
+
+  function validItemsJson() {
+    return JSON.stringify([
+      { id: 'imp-1', name: 'Imported A', baseUrl: 'http://a:9090', secret: 'import-secret' },
+    ])
+  }
+
+  it('shows the invalid-JSON message and keeps the dialog open', async () => {
+    vi.useFakeTimers()
+    render(
+      <MemoryRouter>
+        <InstancePanel />
+      </MemoryRouter>,
+    )
+
+    const dialog = await openImportDialog()
+    await pastePayload('{not valid json', dialog)
+    await act(async () => {
+      fireEvent.click(dialog.getByRole('button', { name: t('instances.import') }))
+    })
+
+    // A parse failure is reported as what it is — not "added 0, skipped 0".
+    expect(screen.getByText(t('instances.importInvalid'))).toBeInTheDocument()
+    // …and the dialog stays open so the operator can fix the payload.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2_000)
+    })
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+  })
+
+  it('shows success, then closes the dialog ~1.5s later (result not swallowed)', async () => {
+    vi.useFakeTimers()
+    render(
+      <MemoryRouter>
+        <InstancePanel />
+      </MemoryRouter>,
+    )
+
+    const dialog = await openImportDialog()
+    await pastePayload(validItemsJson(), dialog)
+    await act(async () => {
+      fireEvent.click(dialog.getByRole('button', { name: t('instances.import') }))
+    })
+
+    // The result is rendered first…
+    expect(screen.getByText(t('instances.importSuccess', { added: 1 }))).toBeInTheDocument()
+
+    // …and only then does the dialog close, instead of vanishing instantly.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_600)
+    })
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(useInstanceStore.getState().instances).toHaveLength(1)
+    expect(useInstanceStore.getState().instances[0].name).toBe('Imported A')
+  })
+
+  it('reports an all-duplicates import and keeps the dialog open', async () => {
+    vi.useFakeTimers()
+    resetStore([makeInstance()])
+    render(
+      <MemoryRouter>
+        <InstancePanel />
+      </MemoryRouter>,
+    )
+
+    // Header import button (non-empty state) — open the dialog.
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: t('instances.import') }))
+    })
+    const dialog = within(screen.getByRole('dialog'))
+    await pastePayload(
+      JSON.stringify([{ id: 'inst-1', name: 'Gateway A', baseUrl: 'http://x:9090' }]),
+      dialog,
+    )
+    await act(async () => {
+      fireEvent.click(dialog.getByRole('button', { name: t('instances.import') }))
+    })
+
+    expect(screen.getByText(t('instances.importAllSkipped', { skipped: 1 }))).toBeInTheDocument()
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2_000)
+    })
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+  })
+
+  it('reports a partial import with separate duplicate and invalid counts', async () => {
+    vi.useFakeTimers()
+    resetStore([makeInstance()])
+    render(
+      <MemoryRouter>
+        <InstancePanel />
+      </MemoryRouter>,
+    )
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: t('instances.import') }))
+    })
+    const dialog = within(screen.getByRole('dialog'))
+    await pastePayload(
+      JSON.stringify([
+        { id: 'imp-9', name: 'Fresh One', baseUrl: 'http://fresh:9090', secret: 's' }, // added
+        { id: 'inst-1', name: 'Gateway A', baseUrl: 'http://x:9090' }, // duplicate → skipped
+        { name: 'no-id', baseUrl: 'http://bad' }, // malformed → invalid
+      ]),
+      dialog,
+    )
+    await act(async () => {
+      fireEvent.click(dialog.getByRole('button', { name: t('instances.import') }))
+    })
+
+    expect(
+      screen.getByText(t('instances.importPartial', { added: 1, skipped: 1, invalid: 1 })),
+    ).toBeInTheDocument()
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_600)
+    })
+    // Partial success closes after showing the numbers.
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(useInstanceStore.getState().instances).toHaveLength(2)
+  })
+})
+
+describe('InstancePanel — storage failure banner (A-11)', () => {
+  it('warns visibly when the last persist to localStorage failed', () => {
+    resetStore([makeInstance()])
+    useInstanceStore.setState({ persistFailed: true })
+
+    render(
+      <MemoryRouter>
+        <InstancePanel />
+      </MemoryRouter>,
+    )
+
+    const alert = screen.getByRole('alert')
+    expect(alert).toHaveTextContent(t('instances.storagePersistFailed'))
+  })
+
+  it('shows no banner when persistence is healthy', () => {
+    resetStore([makeInstance()])
+    useInstanceStore.setState({ persistFailed: false })
+
+    render(
+      <MemoryRouter>
+        <InstancePanel />
+      </MemoryRouter>,
+    )
+
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
 })

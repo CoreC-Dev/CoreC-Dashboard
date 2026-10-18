@@ -34,6 +34,9 @@ export const InstancePanel: React.FC = () => {
   const addInstance = useInstanceStore((s) => s.addInstance)
   const updateInstance = useInstanceStore((s) => s.updateInstance)
   const importInstances = useInstanceStore((s) => s.importInstances)
+  // A-11: surfaced as a banner when localStorage writes fail (quota /
+  // private mode) so the data-loss risk is not discovered the hard way.
+  const persistFailed = useInstanceStore((s) => s.persistFailed)
 
   // Probe all instances in parallel every 15s — simultaneous multi-instance monitoring
   useHomepageProbe()
@@ -45,6 +48,7 @@ export const InstancePanel: React.FC = () => {
   const [importOpen, setImportOpen] = React.useState(false)
   const [importText, setImportText] = React.useState('')
   const [importResult, setImportResult] = React.useState<string | null>(null)
+  const [importIsError, setImportIsError] = React.useState(false)
   const [importDragOver, setImportDragOver] = React.useState(false)
   const fileInputRef = React.useRef<HTMLInputElement>(null)
   const [exportOpen, setExportOpen] = React.useState(false)
@@ -84,14 +88,53 @@ export const InstancePanel: React.FC = () => {
     setExportOpen(true)
   }
 
-  const handleImport = () => {
-    const result = importInstances(importText, 'merge')
-    setImportResult(t('instances.importResult', { added: result.added, skipped: result.skipped }))
-    if (result.added > 0) {
+  /** Close the import dialog ~1.5s after a successful import so the
+   * operator actually reads the outcome before the dialog disappears
+   * (A-09: the old flow closed instantly and swallowed the result). */
+  const closeImportDialogSoon = () => {
+    window.setTimeout(() => {
       setImportOpen(false)
       setImportText('')
       setImportResult(null)
+    }, 1500)
+  }
+
+  const handleImport = () => {
+    const result = importInstances(importText, 'merge')
+
+    // Broken payload / every entry malformed → the same fix-it message.
+    if (result.parseError || (result.added === 0 && result.skipped === 0)) {
+      setImportIsError(true)
+      setImportResult(t('instances.importInvalid'))
+      return // keep the dialog open — there is nothing to celebrate
     }
+
+    setImportIsError(false)
+    if (result.added > 0) {
+      // Full or partial success: render the numbers first, then close.
+      setImportResult(
+        result.skipped > 0 || result.invalid > 0
+          ? t('instances.importPartial', {
+              added: result.added,
+              skipped: result.skipped,
+              invalid: result.invalid,
+            })
+          : t('instances.importSuccess', { added: result.added }),
+      )
+      closeImportDialogSoon()
+      return
+    }
+    // Nothing added: duplicates and/or invalid entries — show the verdict,
+    // keep the dialog open so the operator can fix the payload or cancel.
+    setImportResult(
+      result.invalid === 0
+        ? t('instances.importAllSkipped', { skipped: result.skipped })
+        : t('instances.importPartial', {
+            added: result.added,
+            skipped: result.skipped,
+            invalid: result.invalid,
+          }),
+    )
   }
 
   const handleFileRead = (file: File) => {
@@ -202,6 +245,16 @@ export const InstancePanel: React.FC = () => {
 
       {/* Content */}
       <main className="max-w-[1400px] mx-auto p-4 md:p-8">
+        {/* A-11: localStorage writes failed (quota/private mode) — without
+            this warning the list silently evaporates on the next refresh. */}
+        {persistFailed && (
+          <div
+            role="alert"
+            className="mb-6 rounded-md border border-status-warning/40 bg-status-warning/10 px-4 py-3 text-sm text-status-warning"
+          >
+            {t('instances.storagePersistFailed')}
+          </div>
+        )}
         {instances.length === 0 ? (
           /* Empty state */
           <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -280,7 +333,17 @@ export const InstancePanel: React.FC = () => {
       />
 
       {/* Import dialog */}
-      <Dialog open={importOpen} onOpenChange={setImportOpen}>
+      <Dialog
+        open={importOpen}
+        onOpenChange={(open) => {
+          setImportOpen(open)
+          if (open) {
+            // Fresh session — a previous result must not linger.
+            setImportResult(null)
+            setImportIsError(false)
+          }
+        }}
+      >
         <DialogContent className="sm:max-w-[480px]">
           <DialogHeader>
             <DialogTitle>{t('instances.importTitle')}</DialogTitle>
@@ -322,7 +385,13 @@ export const InstancePanel: React.FC = () => {
             value={importText}
             onChange={(e) => setImportText(e.target.value)}
           />
-          {importResult && <p className="text-sm text-muted-foreground">{importResult}</p>}
+          {importResult && (
+            <p
+              className={`text-sm ${importIsError ? 'text-status-error' : 'text-muted-foreground'}`}
+            >
+              {importResult}
+            </p>
+          )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setImportOpen(false)}>
               {t('common.cancel')}

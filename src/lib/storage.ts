@@ -1,9 +1,15 @@
-/** Best-effort localStorage write — never throws on quota/privacy errors. */
-export const safePersist = (key: string, value: string): void => {
+/**
+ * Best-effort localStorage write — never throws on quota/privacy errors.
+ * Returns false when the write failed so callers can surface the data-loss
+ * risk instead of silently swallowing it (A-11).
+ */
+export const safePersist = (key: string, value: string): boolean => {
   try {
     localStorage.setItem(key, value)
+    return true
   } catch {
     /* QuotaExceededError, private mode, disabled storage — best-effort */
+    return false
   }
 }
 
@@ -22,11 +28,13 @@ export const safeRead = (key: string): string | null => {
  * beyond the current browser tab session, reducing the exposure window
  * if an XSS attack reads stored credentials.
  */
-export const safePersistSession = (key: string, value: string): void => {
+export const safePersistSession = (key: string, value: string): boolean => {
   try {
     sessionStorage.setItem(key, value)
+    return true
   } catch {
     /* QuotaExceededError, private mode, disabled storage — best-effort */
+    return false
   }
 }
 

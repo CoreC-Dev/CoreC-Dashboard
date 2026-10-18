@@ -62,12 +62,36 @@ export const PROBE_ERROR_I18N_KEYS: Record<ProbeErrorKind, string> = {
   timeout: 'instances.probeTimeout',
 }
 
+/**
+ * Outcome of an importInstances call (A-09): the previously single
+ * "skipped" counter conflated two very different stories ("this entry is
+ * a duplicate" vs "this entry is not a valid instance at all") and parse
+ * failures were reported as "added 0, skipped 0" — both lies. The counts
+ * are now distinct so the UI can tell the operator what actually happened.
+ */
+export interface ImportResult {
+  /** Entries successfully added. */
+  added: number
+  /** Entries skipped because an instance with the same id/name already exists. */
+  skipped: number
+  /** Entries that failed per-entry validation (invalid shape — not duplicates). */
+  invalid: number
+  /** True when the payload itself was unusable (not JSON / not an array / forbidden keys) — nothing was imported. */
+  parseError: boolean
+}
+
 interface InstanceState {
   instances: CoreCInstance[]
   /** IDs of instances currently being probed (connection test). */
   probing: Record<string, boolean>
   /** Per-instance failure kind from the last probe (null = last probe ok). */
   probeErrors: Record<string, ProbeErrorKind | null>
+  /**
+   * True when the last persist to localStorage FAILED (quota exceeded /
+   * private mode / storage disabled) — the in-memory list will be lost on
+   * refresh. Surfaced as a visible warning instead of silent data loss (A-11).
+   */
+  persistFailed: boolean
 
   addInstance: (data: Omit<CoreCInstance, 'id' | 'createdAt' | 'sortOrder'>) => string
   updateInstance: (id: string, data: Partial<Omit<CoreCInstance, 'id' | 'createdAt'>>) => void
@@ -82,7 +106,7 @@ interface InstanceState {
   ) => void
   setProbing: (id: string, probing: boolean) => void
   exportInstances: (includeSecrets?: boolean) => string
-  importInstances: (json: string, mode?: 'merge' | 'replace') => { added: number; skipped: number }
+  importInstances: (json: string, mode?: 'merge' | 'replace') => ImportResult
   clearAll: () => void
 }
 
@@ -106,7 +130,7 @@ function loadInstances(): CoreCInstance[] {
     if (raw) {
       const parsed = JSON.parse(raw)
       if (Array.isArray(parsed)) {
-        // Merge secrets from sessionStorage back into instances.
+        // Merge secrets from the localStorage secret map back into instances.
         const secrets = loadSecrets()
         return parsed.map((inst: CoreCInstance) => ({
           ...inst,
@@ -134,10 +158,15 @@ function loadSecrets(): Record<string, string> {
   return {}
 }
 
-function persistInstances(instances: CoreCInstance[]): void {
+/**
+ * Persist metadata + secrets to localStorage. Returns false when either
+ * write failed (A-11) so callers can flag `persistFailed` and the UI can
+ * warn about the data being lost on refresh.
+ */
+function persistInstances(instances: CoreCInstance[]): boolean {
   // Store non-sensitive metadata in localStorage (persistent).
   const safeInstances = instances.map((i) => stripSecret(i))
-  safePersist(STORAGE_KEY, JSON.stringify(safeInstances))
+  const metaOk = safePersist(STORAGE_KEY, JSON.stringify(safeInstances))
   // Store secrets in localStorage (persist across tabs and sessions).
   const secrets: Record<string, string> = {}
   for (const inst of instances) {
@@ -145,7 +174,8 @@ function persistInstances(instances: CoreCInstance[]): void {
       secrets[inst.id] = inst.secret
     }
   }
-  safePersist(SECRETS_STORAGE_KEY, JSON.stringify(secrets))
+  const secretsOk = safePersist(SECRETS_STORAGE_KEY, JSON.stringify(secrets))
+  return metaOk && secretsOk
 }
 
 function generateId(): string {
@@ -158,6 +188,7 @@ export const useInstanceStore = create<InstanceState>((set, get) => ({
   instances: initialInstances,
   probing: {},
   probeErrors: {},
+  persistFailed: false,
 
   addInstance: (data) => {
     const id = generateId()
@@ -170,24 +201,29 @@ export const useInstanceStore = create<InstanceState>((set, get) => ({
       sortOrder: maxSort + 1,
     }
     const next = [...get().instances, instance]
-    persistInstances(next)
-    set({ instances: next })
+    const persisted = persistInstances(next)
+    set({ instances: next, persistFailed: !persisted })
     return id
   },
 
   updateInstance: (id, data) => {
     const next = get().instances.map((i) => (i.id === id ? { ...i, ...data } : i))
-    persistInstances(next)
-    set({ instances: next })
+    const persisted = persistInstances(next)
+    set({ instances: next, persistFailed: !persisted })
   },
 
   deleteInstance: (id) => {
     const next = get().instances.filter((i) => i.id !== id)
-    persistInstances(next)
+    const persisted = persistInstances(next)
     const { probing, probeErrors } = get()
     const { [id]: _p, ...restProbing } = probing
     const { [id]: _e, ...restErrors } = probeErrors
-    set({ instances: next, probing: restProbing, probeErrors: restErrors })
+    set({
+      instances: next,
+      probing: restProbing,
+      probeErrors: restErrors,
+      persistFailed: !persisted,
+    })
   },
 
   getInstance: (id) => get().instances.find((i) => i.id === id),
@@ -197,8 +233,8 @@ export const useInstanceStore = create<InstanceState>((set, get) => ({
     const next = get()
       .instances.map((i) => ({ ...i, sortOrder: map.get(i.id) ?? i.sortOrder }))
       .sort((a, b) => a.sortOrder - b.sortOrder)
-    persistInstances(next)
-    set({ instances: next })
+    const persisted = persistInstances(next)
+    set({ instances: next, persistFailed: !persisted })
   },
 
   setProbing: (id, probing) => {
@@ -219,8 +255,8 @@ export const useInstanceStore = create<InstanceState>((set, get) => ({
             }
           : i,
       )
-      persistInstances(next)
-      set({ instances: next })
+      const persisted = persistInstances(next)
+      set({ instances: next, persistFailed: !persisted })
     }
   },
 
@@ -236,7 +272,9 @@ export const useInstanceStore = create<InstanceState>((set, get) => ({
       if (!Array.isArray(raw)) throw new Error('Not an array')
       rejectProtoKeys(raw)
     } catch {
-      return { added: 0, skipped: 0 }
+      // The payload itself is unusable (A-09): report it as such instead
+      // of "added 0, skipped 0" — which reads as a mysterious non-event.
+      return { added: 0, skipped: 0, invalid: 0, parseError: true }
     }
 
     const existing = mode === 'replace' ? [] : get().instances
@@ -245,12 +283,14 @@ export const useInstanceStore = create<InstanceState>((set, get) => ({
 
     let added = 0
     let skipped = 0
+    let invalid = 0
     const next = [...existing]
     for (const item of raw) {
-      // Validate with zod — strips unknown keys, rejects invalid shapes (TD-SEC-011)
+      // Validate with zod — strips unknown keys, rejects invalid shapes (TD-SEC-011).
+      // A per-entry validation failure is NOT a duplicate skip (A-09).
       const parsed = importInstanceSchema.safeParse(item)
       if (!parsed.success) {
-        skipped++
+        invalid++
         continue
       }
       const inst = parsed.data
@@ -278,13 +318,13 @@ export const useInstanceStore = create<InstanceState>((set, get) => ({
       added++
     }
 
-    persistInstances(next)
-    set({ instances: next })
-    return { added, skipped }
+    const persisted = persistInstances(next)
+    set({ instances: next, persistFailed: !persisted })
+    return { added, skipped, invalid, parseError: false }
   },
 
   clearAll: () => {
-    persistInstances([])
-    set({ instances: [], probing: {}, probeErrors: {} })
+    const persisted = persistInstances([])
+    set({ instances: [], probing: {}, probeErrors: {}, persistFailed: !persisted })
   },
 }))

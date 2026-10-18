@@ -35,7 +35,8 @@ beforeEach(() => {
   sessionStorage.clear()
   // Reset the store to a clean state (the module-level initialInstances was
   // captured once at import time; setState overrides it for each test).
-  useInstanceStore.setState({ instances: [], probing: {}, probeErrors: {} })
+  useInstanceStore.setState({ instances: [], probing: {}, probeErrors: {}, persistFailed: false })
+  vi.restoreAllMocks()
 })
 
 describe('instanceStore — secret persistence', () => {
@@ -146,7 +147,7 @@ describe('instanceStore — importInstances', () => {
     const result = useInstanceStore
       .getState()
       .importInstances(JSON.stringify([validImportItem()]), 'merge')
-    expect(result).toEqual({ added: 1, skipped: 0 })
+    expect(result).toEqual({ added: 1, skipped: 0, invalid: 0, parseError: false })
     expect(useInstanceStore.getState().instances).toHaveLength(2)
   })
 
@@ -155,7 +156,7 @@ describe('instanceStore — importInstances', () => {
     const result = useInstanceStore
       .getState()
       .importInstances(JSON.stringify([validImportItem()]), 'replace')
-    expect(result).toEqual({ added: 1, skipped: 0 })
+    expect(result).toEqual({ added: 1, skipped: 0, invalid: 0, parseError: false })
     const instances = useInstanceStore.getState().instances
     expect(instances).toHaveLength(1)
     expect(instances[0].id).toBe('imp-1')
@@ -170,7 +171,7 @@ describe('instanceStore — importInstances', () => {
         JSON.stringify([validImportItem({ id: existingId, name: 'different-name' })]),
         'merge',
       )
-    expect(result).toEqual({ added: 0, skipped: 1 })
+    expect(result).toEqual({ added: 0, skipped: 1, invalid: 0, parseError: false })
   })
 
   it('deduplicates by name (skips items whose name already exists)', () => {
@@ -181,47 +182,68 @@ describe('instanceStore — importInstances', () => {
         JSON.stringify([validImportItem({ id: 'other-id', name: 'existing' })]),
         'merge',
       )
-    expect(result).toEqual({ added: 0, skipped: 1 })
+    expect(result).toEqual({ added: 0, skipped: 1, invalid: 0, parseError: false })
   })
 
-  it('skips malformed entries with an invalid baseUrl', () => {
+  it('counts malformed entries (invalid baseUrl) as invalid, not skipped (A-09)', () => {
     const result = useInstanceStore
       .getState()
       .importInstances(JSON.stringify([validImportItem({ baseUrl: 'not-a-url' })]), 'merge')
-    expect(result).toEqual({ added: 0, skipped: 1 })
+    expect(result).toEqual({ added: 0, skipped: 0, invalid: 1, parseError: false })
   })
 
-  it('skips malformed entries missing the id', () => {
+  it('counts malformed entries missing the id as invalid', () => {
     const result = useInstanceStore
       .getState()
       .importInstances(JSON.stringify([{ name: 'x', baseUrl: 'http://x', secret: '' }]), 'merge')
-    expect(result).toEqual({ added: 0, skipped: 1 })
+    expect(result).toEqual({ added: 0, skipped: 0, invalid: 1, parseError: false })
   })
 
-  it('skips malformed entries with an empty name', () => {
+  it('counts malformed entries with an empty name as invalid', () => {
     const result = useInstanceStore
       .getState()
       .importInstances(JSON.stringify([validImportItem({ name: '' })]), 'merge')
-    expect(result).toEqual({ added: 0, skipped: 1 })
+    expect(result).toEqual({ added: 0, skipped: 0, invalid: 1, parseError: false })
   })
 
-  it('non-array JSON returns {added:0, skipped:0}', () => {
+  it('non-array JSON is reported as a parse error (A-09)', () => {
     expect(useInstanceStore.getState().importInstances('{"foo":"bar"}')).toEqual({
       added: 0,
       skipped: 0,
+      invalid: 0,
+      parseError: true,
     })
     expect(useInstanceStore.getState().importInstances('"hello"')).toEqual({
       added: 0,
       skipped: 0,
+      invalid: 0,
+      parseError: true,
     })
-    expect(useInstanceStore.getState().importInstances('42')).toEqual({ added: 0, skipped: 0 })
+    expect(useInstanceStore.getState().importInstances('42')).toEqual({
+      added: 0,
+      skipped: 0,
+      invalid: 0,
+      parseError: true,
+    })
   })
 
-  it('unparseable JSON returns {added:0, skipped:0}', () => {
+  it('unparseable JSON is reported as a parse error', () => {
     expect(useInstanceStore.getState().importInstances('{not valid json')).toEqual({
       added: 0,
       skipped: 0,
+      invalid: 0,
+      parseError: true,
     })
+    // Nothing was touched.
+    expect(useInstanceStore.getState().instances).toHaveLength(0)
+  })
+
+  it('rejects payloads with prototype-polluting keys as a parse error', () => {
+    const result = useInstanceStore
+      .getState()
+      .importInstances('[{"id":"a","name":"a","baseUrl":"http://a","__proto__":{"x":1}}]')
+    expect(result).toEqual({ added: 0, skipped: 0, invalid: 0, parseError: true })
+    expect(useInstanceStore.getState().instances).toHaveLength(0)
   })
 
   it('imports multiple valid items in one call', () => {
@@ -234,20 +256,22 @@ describe('instanceStore — importInstances', () => {
         ]),
         'merge',
       )
-    expect(result).toEqual({ added: 2, skipped: 0 })
+    expect(result).toEqual({ added: 2, skipped: 0, invalid: 0, parseError: false })
   })
 
-  it('counts valid and malformed items separately in a mixed batch', () => {
-    const result = useInstanceStore
-      .getState()
-      .importInstances(
-        JSON.stringify([
-          validImportItem({ id: 'a', name: 'a' }),
-          validImportItem({ id: 'b', name: 'b', baseUrl: 'bad' }),
-        ]),
-        'merge',
-      )
-    expect(result).toEqual({ added: 1, skipped: 1 })
+  it('counts added, duplicate-skipped and invalid items separately in a mixed batch (A-09)', () => {
+    useInstanceStore.getState().addInstance(newInstanceData({ name: 'dup' }))
+    const existingId = useInstanceStore.getState().instances[0].id
+    const result = useInstanceStore.getState().importInstances(
+      JSON.stringify([
+        validImportItem({ id: 'a', name: 'a' }), // added
+        validImportItem({ id: existingId, name: 'dup' }), // duplicate → skipped
+        validImportItem({ id: 'b', name: 'b', baseUrl: 'bad' }), // malformed → invalid
+      ]),
+      'merge',
+    )
+    expect(result).toEqual({ added: 1, skipped: 1, invalid: 1, parseError: false })
+    expect(useInstanceStore.getState().instances).toHaveLength(2)
   })
 })
 
@@ -364,5 +388,53 @@ describe('instanceStore — loadInstances resilience', () => {
     expect(instances).toHaveLength(1)
     expect(instances[0].id).toBe(id)
     expect(instances[0].secret).toBe('restored-secret')
+  })
+})
+
+describe('instanceStore — persist failure surfacing (A-11)', () => {
+  /** Make every localStorage write throw, like a full quota / private mode. */
+  function breakLocalStorage() {
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('The quota has been exceeded', 'QuotaExceededError')
+    })
+  }
+
+  it('flags persistFailed when the localStorage write throws on addInstance', () => {
+    breakLocalStorage()
+    useInstanceStore.getState().addInstance(newInstanceData({ name: 'a' }))
+
+    // The instance exists in memory…
+    expect(useInstanceStore.getState().instances).toHaveLength(1)
+    // …but the UI is told it could NOT be persisted (will be lost on refresh).
+    expect(useInstanceStore.getState().persistFailed).toBe(true)
+    // Nothing landed in storage.
+    expect(localStorage.getItem(STORAGE_KEY)).toBeNull()
+  })
+
+  it('clears persistFailed once a later write succeeds again', () => {
+    breakLocalStorage()
+    const id = useInstanceStore.getState().addInstance(newInstanceData({ name: 'a' }))
+    expect(useInstanceStore.getState().persistFailed).toBe(true)
+
+    vi.restoreAllMocks()
+    useInstanceStore.getState().updateInstance(id, { name: 'a-fixed' })
+    expect(useInstanceStore.getState().persistFailed).toBe(false)
+    const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) as string) as Array<{
+      name: string
+    }>
+    expect(parsed[0].name).toBe('a-fixed')
+  })
+
+  it('flags persistFailed from setProbeResult success persists too', () => {
+    breakLocalStorage()
+    const id = useInstanceStore.getState().addInstance(newInstanceData({ name: 'a' }))
+    useInstanceStore.getState().setProbeResult(id, true, { name: 'CoreC', version: '1' })
+    expect(useInstanceStore.getState().persistFailed).toBe(true)
+  })
+
+  it('keeps persistFailed false on a healthy write', () => {
+    useInstanceStore.getState().addInstance(newInstanceData({ name: 'a' }))
+    expect(useInstanceStore.getState().persistFailed).toBe(false)
+    expect(localStorage.getItem(STORAGE_KEY)).toBeTruthy()
   })
 })
