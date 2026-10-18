@@ -533,6 +533,100 @@ describe('configStore — field-level updates', () => {
   })
 })
 
+describe('configStore — markSavedFromYaml (C-D1 evaporation regression)', () => {
+  // The audit's evaporation scenario: the operator edits the FORM (engine
+  // workers), switches to YAML, edits the YAML differently (log level), and
+  // hot-reloads. The applied YAML must become the saved baseline, while the
+  // form edit stays pending — never silently marked as saved.
+  const serverYaml = `
+global:
+  log-level: info
+drivers:
+  - name: d1
+    type: modbus-tcp
+    settings: { host: 10.0.0.1 }
+    tags:
+      - name: t1
+        address: "40001"
+        type: float32
+`
+  const yamlModeEdit = `
+global:
+  log-level: debug
+drivers:
+  - name: d1
+    type: modbus-tcp
+    settings: { host: 10.0.0.1 }
+    tags:
+      - name: t1
+        address: "40001"
+        type: float32
+`
+
+  it('keeps unapplied form edits pending when the applied YAML does not include them', () => {
+    useConfigStore.getState().seedFromServer(serverYaml)
+    // Form-side edit not present in the YAML that will be applied.
+    useConfigStore.getState().updateGlobalField('engine.workers', 8)
+    expect(useConfigStore.getState().dirty).toBe(true)
+
+    useConfigStore.getState().markSavedFromYaml(yamlModeEdit)
+
+    const s = useConfigStore.getState()
+    // The applied YAML is the server truth → saved baseline.
+    expect(s.savedConfig?.global?.['log-level']).toBe('debug')
+    expect(s.savedConfig?.global?.engine?.workers).toBeUndefined()
+    // The form edit was never sent — it must survive as a pending edit.
+    expect(s.workingConfig?.global?.engine?.workers).toBe(8)
+    expect(s.dirty).toBe(true)
+    expect(s.error).toBeNull()
+  })
+
+  it('adopts the applied YAML on both sides when the form has no divergent edits', () => {
+    useConfigStore.getState().seedFromServer(serverYaml)
+    useConfigStore.getState().markSavedFromYaml(yamlModeEdit)
+    const s = useConfigStore.getState()
+    expect(s.workingConfig).toEqual(s.savedConfig)
+    expect(s.workingConfig?.global?.['log-level']).toBe('debug')
+    expect(s.dirty).toBe(false)
+  })
+
+  it('adopts the applied YAML when the form edits are included in it (synced before apply)', () => {
+    useConfigStore.getState().seedFromServer(serverYaml)
+    useConfigStore.getState().updateGlobalField('log-level', 'debug')
+    // Operator bridged form → YAML before applying, so the YAML carries the edit.
+    const syncedYaml = `
+global:
+  log-level: debug
+drivers:
+  - name: d1
+    type: modbus-tcp
+    settings: { host: 10.0.0.1 }
+    tags:
+      - name: t1
+        address: "40001"
+        type: float32
+`
+    useConfigStore.getState().markSavedFromYaml(syncedYaml)
+    const s = useConfigStore.getState()
+    expect(s.workingConfig?.global?.['log-level']).toBe('debug')
+    expect(s.savedConfig?.global?.['log-level']).toBe('debug')
+    expect(s.dirty).toBe(false)
+  })
+
+  it('changes nothing and reports the error when the applied YAML cannot be parsed', () => {
+    useConfigStore.getState().seedFromServer(serverYaml)
+    useConfigStore.getState().updateGlobalField('engine.workers', 8)
+    const err = useConfigStore.getState().markSavedFromYaml('{ not yaml : :')
+    expect(err).toBeTruthy()
+    const s = useConfigStore.getState()
+    // State untouched: the pending edit and the old baseline remain.
+    expect(s.workingConfig?.global?.engine?.workers).toBe(8)
+    expect(s.savedConfig?.global?.['log-level']).toBe('info')
+    expect(s.dirty).toBe(true)
+    expect(s.error).toBeTruthy()
+  })
+})
+
 describe('configStore — YAML output', () => {
   beforeEach(() => {
     useConfigStore.setState({

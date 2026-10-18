@@ -25,6 +25,58 @@ export interface ConfigTemplate {
   yaml: string
 }
 
+/**
+ * Fallback editor content shown before the live server config is (auto-)loaded.
+ * Pure data, moved here from useConfigCenter so the hook stays under the
+ * custom-lint 500-line God-file limit. The Config Center auto-replaces it
+ * with the real config from GET /configs/raw on the first successful fetch.
+ */
+export const DEFAULT_SAMPLE_YAML = `# CoreC Gateway Configuration
+global:
+  log-level: info
+  log-format: text
+  api:
+    listen: 0.0.0.0:9090
+    rate-limit-per-sec: 100
+  engine:
+    data-bus-size: 8192
+    workers: 0
+    stale-threshold: 30s
+    write-retry-count: 3
+    command-concurrency: 16
+
+drivers:
+  - name: plc-modbus
+    type: modbus-tcp
+    settings:
+      host: 192.168.1.100
+      port: 502
+      slave-id: 1
+      timeout: 3s
+    tags:
+      - name: temperature
+        address: "40001"
+        type: float32
+        group: sensors
+        interval: 1s
+
+transports:
+  - name: cloud-mqtt
+    type: mqtt
+    batch-size: 50
+    flush-interval: 1s
+    settings:
+      broker: tcp://broker.emqx.io:1883
+      topic-template: "factory/{{.Driver}}/{{.Tag}}"
+
+rules:
+  - name: default-forward
+    match: "ALL"
+    action: forward
+    target: cloud-mqtt
+    priority: 100
+`
+
 export const CONFIG_TEMPLATES: ConfigTemplate[] = [
   {
     id: 'modbus-mqtt',

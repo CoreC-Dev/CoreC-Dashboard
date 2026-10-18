@@ -25,56 +25,11 @@ import {
 } from '@/hooks/useConfigValidation'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { useStatusMessage } from '@/hooks/useStatusMessage'
-import type { ConfigTemplate } from '@/lib/configTemplates'
+import { type ConfigTemplate, DEFAULT_SAMPLE_YAML } from '@/lib/configTemplates'
+import { yamlDiffersFromConfig } from '@/lib/configYaml'
 import { generateRandomSecret } from '@/lib/utils'
 import { computeLcsDiff, type DiffLine } from '@/lib/yamlDiff'
 import { useConfigStore } from '@/stores/configStore'
-
-const DEFAULT_SAMPLE_YAML = `# CoreC Gateway Configuration
-global:
-  log-level: info
-  log-format: text
-  api:
-    listen: 0.0.0.0:9090
-    rate-limit-per-sec: 100
-  engine:
-    data-bus-size: 8192
-    workers: 0
-    stale-threshold: 30s
-    write-retry-count: 3
-    command-concurrency: 16
-
-drivers:
-  - name: plc-modbus
-    type: modbus-tcp
-    settings:
-      host: 192.168.1.100
-      port: 502
-      slave-id: 1
-      timeout: 3s
-    tags:
-      - name: temperature
-        address: "40001"
-        type: float32
-        group: sensors
-        interval: 1s
-
-transports:
-  - name: cloud-mqtt
-    type: mqtt
-    batch-size: 50
-    flush-interval: 1s
-    settings:
-      broker: tcp://broker.emqx.io:1883
-      topic-template: "factory/{{.Driver}}/{{.Tag}}"
-
-rules:
-  - name: default-forward
-    match: "ALL"
-    action: forward
-    target: cloud-mqtt
-    priority: 100
-`
 
 const STATUS_AUTO_DISMISS_MS = 4500
 
@@ -101,6 +56,7 @@ export function useConfigCenter() {
   const getWorkingYaml = useConfigStore((s) => s.getWorkingYaml)
   const getSavedYaml = useConfigStore((s) => s.getSavedYaml)
   const markSaved = useConfigStore((s) => s.markSaved)
+  const markSavedFromYaml = useConfigStore((s) => s.markSavedFromYaml)
   const loadFromYaml = useConfigStore((s) => s.loadFromYaml)
   const seedFromServer = useConfigStore((s) => s.seedFromServer)
   const revertConfig = useConfigStore((s) => s.revert)
@@ -146,6 +102,14 @@ export function useConfigCenter() {
   // pass through a confirmation gate before PUT /configs.
   const [yamlApplyOpen, setYamlApplyOpen] = useState(false)
   const [yamlApplyError, setYamlApplyError] = useState<string | null>(null)
+  // C-D1 bridge/guard state. `bridgeTarget` holds the mode the user tried to
+  // switch to while the form side and the YAML editor had diverged; the page
+  // renders a 3-way dialog (import / overwrite / cancel). `applyGuardOpen`
+  // holds the hot-reload entry when the editor content does not include the
+  // form side's unapplied edits — the user must explicitly acknowledge that
+  // those edits are NOT part of this apply before the confirm dialog opens.
+  const [bridgeTarget, setBridgeTarget] = useState<ConfigMode | null>(null)
+  const [applyGuardOpen, setApplyGuardOpen] = useState(false)
 
   // Auto-load the live server config into the editor on first successful
   // fetch. Without this the editor shows DEFAULT_SAMPLE_YAML and the operator
@@ -292,14 +256,71 @@ export function useConfigCenter() {
     }
   }
 
+  // ── Form ↔ YAML divergence detection (C-D1) ──────────────────────
+  // The form view edits configStore.workingConfig; the YAML view edits the
+  // raw `yamlContent` string — two manually bridged states. Evaluated on
+  // demand (mode switch / hot reload click), never per keystroke.
+  const yamlDiffersFromForm = (): boolean =>
+    yamlDiffersFromConfig(yamlContent, useConfigStore.getState().workingConfig)
+
+  // C-D1 ② — ModeSwitcher entry point. Switching views with diverged content
+  // no longer silently keeps both stale states; the user picks a side.
+  const requestModeSwitch = (next: ConfigMode) => {
+    if (next === mode) return
+    if (yamlDiffersFromForm()) setBridgeTarget(next)
+    else setMode(next)
+  }
+
+  // Bridge choice: keep the YAML — parse the editor text into the form side
+  // (semantics of the manual "Import YAML → Form" button), then switch.
+  const bridgeImport = () => {
+    const target = bridgeTarget
+    setBridgeTarget(null)
+    const err = loadFromYaml(yamlContent)
+    if (err) {
+      setStatusMsg({ type: 'error', text: t('config.importYamlFailed', { error: err }) })
+      return
+    }
+    setStatusMsg({ type: 'success', text: t('config.importYamlSuccess') })
+    if (target) setMode(target)
+  }
+
+  // Bridge choice: keep the form — dump the working config into the editor
+  // (same semantics as the manual "View as YAML" button), then switch.
+  const bridgeOverwrite = () => {
+    const target = bridgeTarget
+    setBridgeTarget(null)
+    const yaml = getWorkingYaml()
+    if (!yaml) {
+      setStatusMsg({ type: 'error', text: t('config.syncFormEmpty') })
+      return
+    }
+    setYamlContent(yaml)
+    if (target) setMode(target)
+  }
+
+  const bridgeCancel = () => setBridgeTarget(null)
+
   const handleHotReload = () => {
     // Open the YAML-mode apply confirmation dialog instead of PUT-ting
-    // directly. This gives the operator a diff preview and explicit
-    // confirmation before the engine is suspended for reload — same
-    // safety gate as the form-mode apply.
+    // directly — same diff + explicit-confirmation safety gate as the
+    // form-mode apply, before the engine is suspended for reload.
     setYamlApplyError(null)
+    // C-D1 ① — when the editor content does not include the form side's
+    // unapplied edits, gate the apply behind an explicit acknowledgement.
+    if (yamlDiffersFromForm()) {
+      setApplyGuardOpen(true)
+      return
+    }
     setYamlApplyOpen(true)
   }
+
+  const applyGuardProceed = () => {
+    setApplyGuardOpen(false)
+    setYamlApplyOpen(true)
+  }
+
+  const applyGuardCancel = () => setApplyGuardOpen(false)
 
   // Confirmed YAML-mode apply: called by the dialog's onConfirm.
   const handleYamlApplyConfirm = async () => {
@@ -309,8 +330,19 @@ export function useConfigCenter() {
       addSnapshot(yamlContent)
       setLastSubmittedYaml(yamlContent)
       setYamlApplyOpen(false)
-      markSaved()
-      setStatusMsg({ type: 'success', text: t('config.reloadSuccess') })
+      // C-D1 — record what the SERVER actually accepted as the saved baseline.
+      // The old markSaved() snapped the baseline to the working config,
+      // marking never-sent form edits as "saved" and dismissing the
+      // unsaved-changes banner. Divergent edits stay pending (dirty).
+      const syncErr = markSavedFromYaml(yamlContent)
+      if (syncErr) {
+        setStatusMsg({
+          type: 'error',
+          text: t('configCenter.applySyncFailed', { error: syncErr }),
+        })
+      } else {
+        setStatusMsg({ type: 'success', text: t('config.reloadSuccess') })
+      }
       refetch()
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : t('config.reloadFailed')
@@ -318,12 +350,9 @@ export function useConfigCenter() {
     }
   }
 
-  // Path A — "Load from Server": fetch the live server config (GET /configs/raw,
-  // secrets redacted to ***) into both the YAML editor and the configStore so
-  // the operator edits the server's REAL configuration rather than the sample.
-  // The redacted "***" placeholders are restored to real values by the
-  // executor's sentinel-merge on the next PUT /configs, so the operator never
-  // needs to type a secret.
+  // Path A — "Load from Server": fetch the live server config (GET
+  // /configs/raw, plaintext per the backend contract) into both the YAML
+  // editor and the configStore so the operator edits the REAL configuration.
   const handleLoadFromServer = () => {
     setStatusMsg(null)
     // Trigger a fresh fetch (refetch ignores stale cache so the editor shows
@@ -451,6 +480,15 @@ export function useConfigCenter() {
     handleLoadFromServer,
     handleDryRunValidate,
     handleRestore,
+    // C-D1 form↔YAML divergence bridge + hot-reload guard
+    requestModeSwitch,
+    bridgeTarget,
+    bridgeImport,
+    bridgeOverwrite,
+    bridgeCancel,
+    applyGuardOpen,
+    applyGuardProceed,
+    applyGuardCancel,
     // YAML-mode apply dialog
     yamlApplyOpen,
     setYamlApplyOpen,

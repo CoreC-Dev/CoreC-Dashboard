@@ -1,3 +1,4 @@
+import { AlertTriangle } from 'lucide-react'
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
 import { ConfigBackupsPanel } from '@/components/admin/ConfigBackupsPanel'
@@ -12,6 +13,16 @@ import {
 } from '@/components/admin/ConfigCenterParts'
 import { ChangeHistoryCard, DiffPreview, YamlEditorCard } from '@/components/admin/ConfigCenterYaml'
 import { EventLogTerminal } from '@/components/admin/EventLogTerminal'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { ConfigApplyConfirmationDialog } from '@/components/wizard/ConfigApplyConfirmationDialog'
 import { UnsavedChangesBanner } from '@/components/wizard/UnsavedChangesBanner'
 import { ValidationBanner } from '@/components/wizard/ValidationBanner'
@@ -55,7 +66,14 @@ export const ConfigCenterPage: React.FC = () => {
     revertWorkingConfig,
     getSavedYaml,
     mode,
-    setMode,
+    requestModeSwitch,
+    bridgeTarget,
+    bridgeImport,
+    bridgeOverwrite,
+    bridgeCancel,
+    applyGuardOpen,
+    applyGuardProceed,
+    applyGuardCancel,
     yamlContent,
     setYamlContent,
     currentLogLevel,
@@ -93,8 +111,9 @@ export const ConfigCenterPage: React.FC = () => {
         </div>
 
         <div className="flex items-center space-x-2 flex-wrap">
-          {/* Mode Switcher */}
-          <ModeSwitcher mode={mode} onSetMode={setMode} />
+          {/* Mode Switcher — routed through requestModeSwitch so a divergent
+              form/YAML state triggers the keep-one-side bridge (C-D1). */}
+          <ModeSwitcher mode={mode} onSetMode={requestModeSwitch} />
 
           {/* YAML ↔ Form bridge buttons */}
           <YamlFormBridgeButtons
@@ -221,6 +240,50 @@ export const ConfigCenterPage: React.FC = () => {
         onConfirm={handleYamlApplyConfirm}
         applyError={yamlApplyError ?? undefined}
       />
+
+      {/* C-D1 ① — hot-reload acknowledgement when the editor content does
+          not include the form side's unapplied edits. */}
+      <AlertDialog open={applyGuardOpen} onOpenChange={(v) => !v && applyGuardCancel()}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-base">
+              <AlertTriangle className="h-4 w-4 text-status-warning" />
+              {t('configCenter.applyGuardTitle')}
+            </AlertDialogTitle>
+            <AlertDialogDescription>{t('configCenter.applyGuardDesc')}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel className="h-8 text-xs" onClick={applyGuardCancel}>
+              {t('common.cancel')}
+            </AlertDialogCancel>
+            <AlertDialogAction className="h-8 text-xs" onClick={applyGuardProceed}>
+              {t('configCenter.applyGuardProceed')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* C-D1 ② — mode-switch bridge: the form side and the YAML editor
+          diverged; the operator picks which side to keep before switching. */}
+      <AlertDialog open={bridgeTarget !== null} onOpenChange={(v) => !v && bridgeCancel()}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('configCenter.bridgeTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>{t('configCenter.bridgeDesc')}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 sm:flex-col sm:items-stretch">
+            <AlertDialogAction className="h-8 text-xs" onClick={bridgeImport}>
+              {t('configCenter.bridgeImport')}
+            </AlertDialogAction>
+            <AlertDialogAction className="h-8 text-xs" onClick={bridgeOverwrite}>
+              {t('configCenter.bridgeOverwrite')}
+            </AlertDialogAction>
+            <AlertDialogCancel className="h-8 text-xs" onClick={bridgeCancel}>
+              {t('common.cancel')}
+            </AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

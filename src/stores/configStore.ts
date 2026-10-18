@@ -89,8 +89,18 @@ export interface ConfigStoreState {
 
   // ─── Save / revert ────────────────────────────────────────────────
 
-  /** Mark the current workingConfig as saved (call after successful PUT). */
+  /** Mark the current workingConfig as saved (call after successful PUT).
+   *  Only correct when the PUT payload WAS the working config (list-page
+   *  applies). For YAML-mode applies see markSavedFromYaml. */
   markSaved: () => void
+  /** Record a successful PUT /configs whose payload was the given YAML —
+   *  which may differ from the working config (YAML-mode hot reload).
+   *  The saved baseline becomes the parsed applied YAML (server truth).
+   *  The working config is adopted wholesale only when it has no divergent
+   *  edits; otherwise unapplied form edits stay pending and dirty remains
+   *  true, so the unsaved-changes banner keeps telling the truth (C-D1).
+   *  Returns the parse error message on failure (state unchanged), or null. */
+  markSavedFromYaml: (yaml: string) => string | null
   /** Discard working changes, revert to the last saved config. */
   revert: () => void
   /** Reset the store to its initial empty state (clears working + saved config, dirty, error). */
@@ -210,6 +220,40 @@ export const useConfigStore = create<ConfigStoreState>((set, get) => {
     markSaved: () => {
       const { workingConfig } = get()
       set({ savedConfig: workingConfig ? structuredClone(workingConfig) : null, dirty: false })
+    },
+
+    // C-D1: a YAML-mode hot reload PUTs the editor text, which can differ
+    // from the configStore working config (the form side). The old code
+    // called markSaved(), which snapped the baseline to the working config —
+    // marking form edits that were never sent as "saved" and dismissing the
+    // unsaved-changes banner. Instead: baseline = what the server actually
+    // accepted; the form side keeps its unapplied edits pending.
+    markSavedFromYaml: (yaml: string) => {
+      try {
+        const applied = parseConfigYaml(yaml)
+        const { workingConfig, savedConfig } = get()
+        // Adopt the applied YAML wholesale when the form side has nothing
+        // pending: either it is clean (working == last saved baseline) or its
+        // edits were included in the applied YAML (user bridged form → YAML
+        // before applying). Only genuinely pending, unsent edits are kept.
+        const formIsClean = !workingConfig || configEqual(workingConfig, savedConfig)
+        const editsIncluded = !!workingConfig && configEqual(workingConfig, applied)
+        if (formIsClean || editsIncluded) {
+          set({ workingConfig: applied, savedConfig: applied, dirty: false, error: null })
+        } else {
+          // Form edits exist that the applied YAML does not include. Keep
+          // them in the working config and only move the saved baseline.
+          set({ savedConfig: applied, dirty: true, error: null })
+        }
+        return null
+      } catch (err: unknown) {
+        // The server accepted the config but our parser rejects it (schema
+        // skew). Change nothing: keeping the stale baseline means the next
+        // apply diff shows MORE changes, which is the safe direction.
+        const message = err instanceof Error ? err.message : String(err)
+        set({ error: message })
+        return message
+      }
     },
 
     revert: () => {

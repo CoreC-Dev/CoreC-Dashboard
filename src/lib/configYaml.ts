@@ -10,6 +10,7 @@
  * safely.
  */
 import { dump, JSON_SCHEMA, load } from 'js-yaml'
+import { configEqual } from '@/lib/configHelpers'
 import type {
   CoreCConfig,
   DerivedTagConfig,
@@ -67,6 +68,26 @@ const DUMP_OPTS = {
 /** Serialize a typed config object back to a YAML string acceptable to CoreC. */
 export function dumpConfigYaml(config: CoreCConfig): string {
   return dump(config, DUMP_OPTS)
+}
+
+/**
+ * Whether a raw YAML document differs (semantically, not textually) from a
+ * config object. Used by the Config Center to detect divergence between the
+ * Monaco editor content and the configStore working copy (UX audit C-D1):
+ * the two are manually bridged states, and hot-reloading the YAML while the
+ * form side holds unsent edits must be gated, not silently merged.
+ *
+ * - A YAML string that cannot be parsed counts as diverged.
+ * - A null/undefined working config counts as NOT diverged (the form side
+ *   has nothing at risk).
+ */
+export function yamlDiffersFromConfig(yaml: string, working: CoreCConfig | null): boolean {
+  if (!working) return false
+  try {
+    return !configEqual(parseConfigYaml(yaml), working)
+  } catch {
+    return true
+  }
 }
 
 // ─── Array entity helpers (driver / transport / rule / rule-provider) ─

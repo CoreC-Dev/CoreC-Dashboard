@@ -879,6 +879,20 @@
     "backupsSnapshotCreated": "Backup created: {{name}}",
     "backupsSnapshotFailed": "Snapshot rejected"
   },
+  "configCenter": {
+    "bridgeTitle": "Form and YAML have diverged",
+    "bridgeDesc": "Before switching views, choose which side to keep. Unapplied edits on the other side will be overwritten.",
+    "bridgeImport": "Keep YAML (import into form)",
+    "bridgeOverwrite": "Keep form (overwrite YAML)",
+    "applyGuardTitle": "Unapplied form edits",
+    "applyGuardDesc": "Your form edits are NOT included in this YAML apply.",
+    "applyGuardProceed": "Apply anyway (without form edits)",
+    "applySyncFailed": "Config hot-reloaded, but local state sync failed: {{error}}. Reload the config from the server.",
+    "editedInFormView": "(edited in Form view)",
+    "seedLoadFailed": "Could not load the server config — create & apply are disabled to protect the running config",
+    "applyBlockedSeed": "The server config has not been loaded — apply is disabled to protect the running config. Retry the load first.",
+    "serverValidateFailed": "Server-side validation failed: {{error}}"
+  },
   "topology": {
     "title": "Chained-Core Mesh Topology",
     "subtitle": "Hexagonal port & adapter topology: Southbound drivers, priority data bus, rule pipeline, and northbound relay sinks",

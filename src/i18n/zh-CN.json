@@ -879,6 +879,20 @@
     "backupsSnapshotCreated": "备份已创建：{{name}}",
     "backupsSnapshotFailed": "快照被拒绝"
   },
+  "configCenter": {
+    "bridgeTitle": "表单与 YAML 内容不一致",
+    "bridgeDesc": "切换视图前请选择保留哪一侧的内容。另一侧未应用的修改将被覆盖。",
+    "bridgeImport": "保留 YAML（导入到表单）",
+    "bridgeOverwrite": "保留表单（覆盖 YAML）",
+    "applyGuardTitle": "有未应用的表单修改",
+    "applyGuardDesc": "工作配置有未应用的表单修改，本次 YAML 应用不会包含它们。",
+    "applyGuardProceed": "仍要应用（不含表单修改）",
+    "applySyncFailed": "配置已热重载，但本地状态同步失败：{{error}}。请从服务器重新加载配置。",
+    "editedInFormView": "（在表单视图中修改）",
+    "seedLoadFailed": "服务器配置加载失败，创建/应用已禁用以保护运行中的配置",
+    "applyBlockedSeed": "服务器配置尚未成功加载，应用已禁用以保护运行中的配置。请先重试加载。",
+    "serverValidateFailed": "服务端校验未通过：{{error}}"
+  },
   "topology": {
     "title": "链式核心网格拓扑",
     "subtitle": "六边形端口与适配器拓扑：南向驱动、优先级数据总线、规则管线与北向中继接收端",
