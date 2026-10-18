@@ -4,7 +4,17 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { InstanceExportDialog } from '@/components/home/InstanceExportDialog'
-import { Button } from '@/components/ui/button'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import { Button, buttonVariants } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
@@ -275,29 +285,31 @@ export const GlobalSettingsPage: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Clear all dialog */}
-      <Dialog open={clearOpen} onOpenChange={setClearOpen}>
-        <DialogContent className="sm:max-w-[400px]">
-          <DialogHeader>
-            <DialogTitle>{t('instances.clearAllTitle')}</DialogTitle>
-            <DialogDescription>{t('instances.clearAllDesc')}</DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setClearOpen(false)}>
-              {t('common.cancel')}
-            </Button>
-            <Button
-              variant="destructive"
+      {/* Clear all dialog — D-07: the most destructive action in the app used
+          a plain Dialog (a stray outside click dismisses/defuses it) and its
+          confirm button repeated the trigger's exact wording. Aligned with
+          the admin domain's AlertDialog discipline: cannot be dismissed by
+          accident, and the confirm key states the consequence. */}
+      <AlertDialog open={clearOpen} onOpenChange={setClearOpen}>
+        <AlertDialogContent className="sm:max-w-[400px]">
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('instances.clearAllTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>{t('instances.clearAllDesc')}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              className={buttonVariants({ variant: 'destructive' })}
               onClick={() => {
                 clearAll()
                 setClearOpen(false)
               }}
             >
-              {t('instances.clearAll')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+              {t('instances.clearAllConfirm')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <InstanceExportDialog open={exportOpen} onOpenChange={setExportOpen} />
     </div>
   )

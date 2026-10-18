@@ -174,3 +174,68 @@ describe('GlobalSettingsPage import dialog (D-08)', () => {
     expect(feedback).toHaveTextContent('Added 0 instance(s), skipped 0 duplicate(s)')
   })
 })
+
+describe('GlobalSettingsPage clear-all confirm (D-07)', () => {
+  function seedInstances() {
+    useInstanceStore.setState({
+      instances: [
+        {
+          id: 'inst_keep',
+          name: 'Keepme',
+          baseUrl: 'http://keep',
+          secret: 's',
+          createdAt: '',
+          sortOrder: 1,
+        },
+      ],
+      probing: {},
+      probeErrors: {},
+    })
+  }
+
+  function openClearAll() {
+    renderPage()
+    fireEvent.click(screen.getByRole('button', { name: 'Clear All Data' }))
+    return screen.getByRole('alertdialog')
+  }
+
+  it('uses a non-dismissable alert dialog with a consequence-stating confirm key', () => {
+    const dialog = openClearAll()
+
+    expect(screen.getByText('Clear All Local Data')).toBeTruthy()
+    const confirm = within(dialog).getByRole('button', {
+      name: 'Yes, clear everything (irreversible)',
+    })
+    // Destructive styling — same red family as every other delete confirm.
+    expect(confirm.className).toContain('bg-destructive')
+  })
+
+  it('does not close on an outside pointer-down (a stray click cannot defuse it)', () => {
+    // D-07's named danger: the plain Dialog version could be dismissed by a
+    // stray outside click. Radix's AlertDialog prevents pointer-down-outside
+    // dismissal — assert the dialog survives one.
+    openClearAll()
+    fireEvent.pointerDown(document.body)
+    expect(screen.getByRole('alertdialog')).toBeTruthy()
+  })
+
+  it('cancel keeps every instance', () => {
+    seedInstances()
+    const dialog = openClearAll()
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }))
+
+    expect(screen.queryByRole('alertdialog')).toBeNull()
+    expect(useInstanceStore.getState().instances).toHaveLength(1)
+  })
+
+  it('confirm clears the store and closes', () => {
+    seedInstances()
+    const dialog = openClearAll()
+    fireEvent.click(
+      within(dialog).getByRole('button', { name: 'Yes, clear everything (irreversible)' }),
+    )
+
+    expect(screen.queryByRole('alertdialog')).toBeNull()
+    expect(useInstanceStore.getState().instances).toHaveLength(0)
+  })
+})
