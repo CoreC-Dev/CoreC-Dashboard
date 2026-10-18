@@ -3,9 +3,9 @@ import { lazy, Suspense } from 'react'
 import { HashRouter, Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { AppShell } from '@/components/layout/AppShell'
-import { Button } from '@/components/ui/button'
+import { ConnectionGate } from '@/components/layout/ConnectionGate'
 import { Skeleton } from '@/components/ui/skeleton'
-import { ConnectionProvider, useConnection } from '@/contexts/ConnectionContext'
+import { ConnectionProvider } from '@/contexts/ConnectionContext'
 import i18n from '@/i18n'
 import { useInstanceStore } from '@/stores/instanceStore'
 
@@ -92,32 +92,6 @@ const InstanceGuard: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   }
 
   return <ConnectionProvider instanceId={id}>{children}</ConnectionProvider>
-}
-
-/**
- * ConnectionGate — inside ConnectionProvider, waits for the connection probe
- * to finish before rendering children. Shows a loading state while connecting,
- * or an error state if the connection failed.
- */
-const ConnectionGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isConnecting, isConnected, error, reconnect } = useConnection()
-
-  if (isConnecting && !isConnected) {
-    return <LoadingFallback />
-  }
-
-  if (!isConnected && error) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
-        <div className="text-status-error text-lg font-semibold">{error}</div>
-        <Button type="button" onClick={reconnect}>
-          {i18n.t('common.retry', { defaultValue: 'Retry' })}
-        </Button>
-      </div>
-    )
-  }
-
-  return <>{children}</>
 }
 
 export const App: React.FC = () => {
