@@ -26,6 +26,8 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { LoadingState } from '@/components/ui/loading-state'
+import { ConfigApplyConfirmationDialog } from '@/components/wizard/ConfigApplyConfirmationDialog'
+import type { EntityEditConfigState } from '@/hooks/useEntityEditConfig'
 import { useEntityEditConfig } from '@/hooks/useEntityEditConfig'
 import { useParsedConfig } from '@/hooks/useParsedConfig'
 import { dumpConfigYaml, parseConfigYaml, upsertTransport } from '@/lib/configYaml'
@@ -211,6 +213,9 @@ function buildTransportYaml(
 const TransportEditConfigSection: React.FC<{ transport: TransportStatus }> = ({ transport }) => {
   const { t } = useTranslation()
   const fields = useMemo(() => getTransportFields(transport.type), [transport.type])
+  // Saved server YAML — the "before" side of the reload confirmation diff.
+  const { data: rawYaml } = useConfigRaw()
+  const [confirmOpen, setConfirmOpen] = useState(false)
 
   const prefillValues = useCallback(
     (cfg: CoreCConfig): Record<string, string> | null => {
@@ -258,22 +263,53 @@ const TransportEditConfigSection: React.FC<{ transport: TransportStatus }> = ({ 
     failureKey: 'transports.editConfig.reloadFailed',
   })
 
+  // C-A1: the reload button no longer PUTs directly — it opens the SAME
+  // ConfigApplyConfirmationDialog the list pages use (YAML diff + change
+  // summary + engine-suspend warning). The PUT only fires from the dialog's
+  // explicit confirm, and the dialog stays open showing the verbatim error
+  // when the reload fails.
+  const editWithGate: EntityEditConfigState = {
+    ...edit,
+    handleReload: async () => {
+      // Gate: do not reload here — only stage the confirmation dialog.
+      // Resolves false because nothing was reloaded on this call; the
+      // dialog's confirm invokes the real (ungated) edit.handleReload.
+      setConfirmOpen(true)
+      return false
+    },
+  }
+
   return (
-    <EntityEditConfigCard
-      edit={edit}
-      fields={fields}
-      fieldIdPrefix="transport-field-"
-      labelFor={(f) => t(f.labelKey)}
-      labels={{
-        title: t('transports.editConfig.title'),
-        description: t('transports.editConfig.description'),
-        toggleAriaLabel: t('transports.editConfig.toggle'),
-        unsupportedMessage: t('transports.editConfig.unsupportedProtocol'),
-        yamlPreviewLabel: t('transports.editConfig.yamlPreview'),
-        reloadingLabel: t('transports.editConfig.reloading'),
-        reloadButtonLabel: t('transports.editConfig.generateAndReload'),
-      }}
-    />
+    <>
+      <EntityEditConfigCard
+        edit={editWithGate}
+        fields={fields}
+        fieldIdPrefix="transport-field-"
+        labelFor={(f) => t(f.labelKey)}
+        labels={{
+          title: t('transports.editConfig.title'),
+          description: t('transports.editConfig.description'),
+          toggleAriaLabel: t('transports.editConfig.toggle'),
+          unsupportedMessage: t('transports.editConfig.unsupportedProtocol'),
+          yamlPreviewLabel: t('transports.editConfig.yamlPreview'),
+          reloadingLabel: t('transports.editConfig.reloading'),
+          reloadButtonLabel: t('transports.editConfig.previewAndReload'),
+        }}
+      />
+      <ConfigApplyConfirmationDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        beforeYaml={rawYaml ?? null}
+        afterYaml={edit.applyYaml}
+        applying={edit.isReloading}
+        applyError={edit.reloadError ?? undefined}
+        onConfirm={() => {
+          void edit.handleReload().then((ok) => {
+            if (ok) setConfirmOpen(false)
+          })
+        }}
+      />
+    </>
   )
 }
 

@@ -49,7 +49,15 @@ export interface EntityEditConfigState {
   previewYaml: string
   applyYaml: string
   statusMsg: { type: 'success' | 'error'; text: string } | null
-  handleReload: () => Promise<void>
+  /**
+   * Hot-reload the apply YAML via PUT /configs. Resolves to whether the
+   * reload succeeded so the caller's confirmation dialog (C-A1: detail
+   * pages wrap this behind ConfigApplyConfirmationDialog) can stay open
+   * on failure.
+   */
+  handleReload: () => Promise<boolean>
+  /** Verbatim error of the last failed reload — surfaced inside the confirmation dialog. */
+  reloadError: string | null
   isReloading: boolean
 }
 
@@ -72,6 +80,9 @@ export function useEntityEditConfig<TField extends { key: string }>(
   const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(
     null,
   )
+  // Last failed reload's message, kept separately so the confirmation dialog
+  // can render it in place (applyError slot) while statusMsg feeds the card.
+  const [reloadError, setReloadError] = useState<string | null>(null)
 
   // Pre-fill form from the existing server config.
   useEffect(() => {
@@ -103,16 +114,18 @@ export function useEntityEditConfig<TField extends { key: string }>(
 
   const handleReload = async () => {
     setStatusMsg(null)
+    setReloadError(null)
     try {
       await updateConfig.mutateAsync({ payload: applyYaml })
       addSnapshot(applyYaml)
       setStatusMsg({ type: 'success', text: t(successKey) })
+      return true
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : ''
-      setStatusMsg({
-        type: 'error',
-        text: msg || t(failureKey),
-      })
+      const text = msg || t(failureKey)
+      setReloadError(text)
+      setStatusMsg({ type: 'error', text })
+      return false
     }
   }
 
@@ -125,6 +138,7 @@ export function useEntityEditConfig<TField extends { key: string }>(
     applyYaml,
     statusMsg,
     handleReload,
+    reloadError,
     isReloading: updateConfig.isPending,
   }
 }
