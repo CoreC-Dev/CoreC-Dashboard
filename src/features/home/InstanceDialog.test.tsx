@@ -115,4 +115,14 @@ describe('InstanceDialog form validation (TD-TEST-007)', { timeout: 15_000 }, ()
     renderDialog()
     expect(screen.getByText(t('instances.secretHint'))).toBeInTheDocument()
   })
+
+  // A-05 — the connection-mode select must explain its three options; the
+  // previous copy leaked the internal "server.mjs" file name.
+  it('explains the connection modes under the select (A-05)', () => {
+    renderDialog()
+    expect(screen.getByText(t('instances.proxyModeHint'))).toBeInTheDocument()
+    // The refreshed copy must not leak the internal file name in either pack.
+    expect(i18n.t('instances.proxyModeHint')).not.toContain('server.mjs')
+    expect(i18n.t('instances.proxyModeProxy')).not.toContain('server.mjs')
+  })
 })

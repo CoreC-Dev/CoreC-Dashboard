@@ -224,6 +224,9 @@ export const InstanceDialog: React.FC<InstanceDialogProps> = ({
                       <SelectItem value="direct">{t('instances.proxyModeDirect')}</SelectItem>
                     </SelectContent>
                   </Select>
+                  {/* A-05: the three modes were bare labels before — the hint
+                      explains what each one does and when to pick it. */}
+                  <FormDescription>{t('instances.proxyModeHint')}</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
