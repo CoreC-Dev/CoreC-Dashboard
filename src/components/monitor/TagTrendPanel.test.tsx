@@ -1,14 +1,27 @@
 // @vitest-environment jsdom
-// TagTrendPanel (B08 + 待验证-1) — the pause indicator carries the
+// TagTrendPanel (B08 + 待验证-1 + B21) — the pause indicator carries the
 // expectation-management copy, gap samples (whitespace markers) stay out of
-// the stats bar / count / CSV export, and the Back-to-live button jumps the
-// (mocked) chart to the live edge. useTrendChart is mocked (jsdom has no
+// the stats bar / count / CSV export, the Back-to-live button jumps the
+// (mocked) chart to the live edge, and the exported CSV leads with the
+// same-second aggregation note. useTrendChart is mocked (jsdom has no
 // canvas); i18n in English.
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { TagTrendPanel } from '@/components/monitor/TagTrendPanel'
 import i18n from '@/i18n'
 import type { DataPoint } from '@/types/models'
+
+// jsdom ships neither URL.createObjectURL nor anchor-click navigation —
+// stub both so the CSV export can be intercepted and its Blob inspected.
+const createObjectURL = vi.fn(() => 'blob:mock')
+beforeAll(() => {
+  Object.defineProperty(URL, 'createObjectURL', { value: createObjectURL, configurable: true })
+  Object.defineProperty(URL, 'revokeObjectURL', { value: vi.fn(), configurable: true })
+  Object.defineProperty(HTMLAnchorElement.prototype, 'click', {
+    value: vi.fn(),
+    configurable: true,
+  })
+})
 
 // Both the main and the fullscreen chart instances resolve to the same spy —
 // each TagTrendPanel render calls the hook twice.
@@ -121,5 +134,24 @@ describe('TagTrendPanel — back to live (待验证-1)', () => {
       fireEvent.click(dialogBtn)
     })
     expect(scrollToLive).toHaveBeenCalled()
+  })
+})
+
+describe('TagTrendPanel — CSV aggregation disclosure (B21)', () => {
+  it('prepends the same-second merge note to the exported CSV', async () => {
+    renderPanel({ trendSamples: [{ time: 10, value: 1.5 }] })
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Export CSV' }))
+    })
+
+    expect(createObjectURL).toHaveBeenCalledTimes(1)
+    const blob = createObjectURL.mock.calls[0][0] as Blob
+    const text = await blob.text()
+    // The analyst must know same-second records were coalesced before the
+    // data ever reaches their analysis tooling.
+    expect(text.startsWith('# Same-second records merged (last value kept)\n')).toBe(true)
+    expect(text).toContain('timestamp,datetime,value')
+    expect(text).toContain('10,')
   })
 })

@@ -31,9 +31,11 @@ function fmt(v: number): string {
   return v.toFixed(3)
 }
 
-/** Export trend samples as a CSV file download. */
-function exportCsv(tag: string, samples: TrendSample[]) {
-  const header = 'timestamp,datetime,value\n'
+/** Export trend samples as a CSV file download.
+ *  B21: the header carries the aggregation note — same-second WS updates
+ *  are coalesced to their last value, and the analyst must know. */
+function exportCsv(tag: string, samples: TrendSample[], mergedNote: string) {
+  const header = `# ${mergedNote}\ntimestamp,datetime,value\n`
   const rows = samples
     .map((s) => {
       const dt = new Date(s.time * 1000).toISOString()
@@ -155,7 +157,7 @@ export function TagTrendPanel({
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => exportCsv(trendTag.tag, valuedSamples)}
+                onClick={() => exportCsv(trendTag.tag, valuedSamples, t('tags.csvMergedNote'))}
                 disabled={valuedSamples.length === 0}
                 className="h-8 w-8 p-0"
                 title={t('tags.exportCsv')}

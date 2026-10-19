@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { CoreCWebSocket, makeStreamId, useWsStatusStore } from '@/api/hooks'
 import {
+  appendTrendSamples,
   insertPauseGap,
   isNumericType,
   MAX_TREND_SAMPLES,
@@ -178,18 +179,10 @@ export function useTagExplorerStream({
       if (pendingTrendRef.current.length > 0) {
         const staged = pendingTrendRef.current
         pendingTrendRef.current = []
-        setTrendSamples((prev) => {
-          let next = [...prev]
-          for (const s of staged) {
-            // lightweight-charts requires strictly-increasing, unique times.
-            const last = next[next.length - 1]
-            let time = s.time
-            if (last && time <= last.time) time = last.time + 1
-            next.push({ time, value: s.value })
-          }
-          if (next.length > MAX_TREND_SAMPLES) next = next.slice(next.length - MAX_TREND_SAMPLES)
-          return next
-        })
+        // B21: same-second updates coalesce into the existing sample (last
+        // value wins) — no more fabricated last.time + 1 timestamps drifting
+        // the chart axis and the exported CSV.
+        setTrendSamples((prev) => appendTrendSamples(prev, staged))
       }
     })
   }, [])

@@ -3,8 +3,10 @@
 // plus B08's pause-gap helper and B15's relative timestamps).
 import { describe, expect, it } from 'vitest'
 import {
+  appendTrendSamples,
   formatRelativeTime,
   insertPauseGap,
+  MAX_TREND_SAMPLES,
   matchesQualityFilter,
   type QualityFilter,
   type Translate,
@@ -107,5 +109,65 @@ describe('formatRelativeTime (B15)', () => {
 
   it('a missing timestamp is the most suspect: "-" and dimmed', () => {
     expect(formatRelativeTime(undefined, t)).toEqual({ text: '-', full: '-', dim: true })
+  })
+})
+
+describe('appendTrendSamples (B21)', () => {
+  it('coalesces same-second updates into one sample, keeping the last value', () => {
+    const out = appendTrendSamples(
+      [{ time: 100, value: 1 }],
+      [
+        { time: 101, value: 2 },
+        { time: 101, value: 3 },
+        { time: 101, value: 4 },
+      ],
+    )
+    expect(out).toEqual([
+      { time: 100, value: 1 },
+      { time: 101, value: 4 }, // one sample at the REAL second, last value
+    ])
+  })
+
+  it('coalesces onto the previous buffer tail too (rAF frame boundary)', () => {
+    const out = appendTrendSamples([{ time: 200, value: 5 }], [{ time: 200, value: 9 }])
+    expect(out).toEqual([{ time: 200, value: 9 }])
+  })
+
+  it('drops out-of-order samples instead of fabricating a later timestamp', () => {
+    const out = appendTrendSamples(
+      [{ time: 300, value: 1 }],
+      [
+        { time: 299, value: 0 },
+        { time: 301, value: 2 },
+      ],
+    )
+    expect(out).toEqual([
+      { time: 300, value: 1 },
+      { time: 301, value: 2 }, // 299 vanished — never re-dated to 300+1
+    ])
+  })
+
+  it('a valued sample landing on a pause-gap marker overwrites it (sub-second pause)', () => {
+    const out = appendTrendSamples(
+      [
+        { time: 400, value: 1 },
+        { time: 401 }, // B08 gap marker
+      ],
+      [{ time: 401, value: 2 }],
+    )
+    expect(out).toEqual([
+      { time: 400, value: 1 },
+      { time: 401, value: 2 },
+    ])
+  })
+
+  it('keeps the sliding window trimmed to MAX_TREND_SAMPLES', () => {
+    const staged = Array.from({ length: MAX_TREND_SAMPLES + 10 }, (_, i) => ({
+      time: 1000 + i,
+      value: i,
+    }))
+    const out = appendTrendSamples([], staged)
+    expect(out).toHaveLength(MAX_TREND_SAMPLES)
+    expect(out[0]).toEqual({ time: 1010, value: 10 }) // oldest trimmed
   })
 })

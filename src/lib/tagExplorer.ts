@@ -64,6 +64,31 @@ export const insertPauseGap = (samples: TrendSample[]): TrendSample[] => {
   return [...samples, { time: last.time + 1 }]
 }
 
+/**
+ * B21 — merge freshly staged WS samples into the trend buffer, coalescing
+ * same-second updates into ONE sample (last value wins). The old flush
+ * bumped a duplicate second to last.time + 1 — a FABRICATED timestamp that
+ * pushed the chart axis forward and then shipped in every exported CSV row.
+ * Out-of-order samples (clock skew) are dropped rather than re-dated.
+ * Pure; the MAX_TREND_SAMPLES window trim is included.
+ */
+export const appendTrendSamples = (prev: TrendSample[], staged: TrendSample[]): TrendSample[] => {
+  const next = [...prev]
+  for (const s of staged) {
+    const last = next[next.length - 1]
+    if (!last || s.time > last.time) {
+      next.push({ time: s.time, value: s.value })
+    } else if (s.time === last.time) {
+      // Same second — keep the freshest value under its REAL timestamp.
+      // (Also overwrites a pause-gap marker: a pause shorter than one
+      // second has no gap to blank out.)
+      next[next.length - 1] = { time: last.time, value: s.value }
+    }
+    // s.time < last.time — out of order: dropped, never re-dated (B21).
+  }
+  return next.length > MAX_TREND_SAMPLES ? next.slice(next.length - MAX_TREND_SAMPLES) : next
+}
+
 /** B07 — quality/staleness filter for the tag explorer's problem-point hunt.
  *  Quality codes come straight from DataPoint: 0=Good, 1=Bad, 2=Uncertain. */
 export type QualityFilter = 'all' | 'good' | 'bad' | 'uncertain'
