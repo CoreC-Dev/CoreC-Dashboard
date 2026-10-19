@@ -1398,6 +1398,8 @@
     "targetTransport": "Target Transport",
     "targetTransports": "Target Transports",
     "noTransports": "No transports configured. Create a transport first.",
+    "noTransportsHint": "Create one, then come back to continue this wizard.",
+    "goCreateTransport": "Go create a transport →",
     "selectedCount": "{{count}} transport(s) selected",
     "transformExpression": "Transform Expression",
     "transformExprHelp": "Arithmetic expression using variable \"value\". Supports +, -, *, /, parentheses. Example: value * 1.8 + 32",

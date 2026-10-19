@@ -1398,6 +1398,8 @@
     "targetTransport": "目标传输",
     "targetTransports": "目标传输列表",
     "noTransports": "未配置任何传输。请先创建传输。",
+    "noTransportsHint": "创建完成后返回本页继续向导。",
+    "goCreateTransport": "前往创建传输 →",
     "selectedCount": "已选择 {{count}} 个传输",
     "transformExpression": "转换表达式",
     "transformExprHelp": "使用变量 \"value\" 的算术表达式。支持 +, -, *, /, 括号。示例：value * 1.8 + 32",

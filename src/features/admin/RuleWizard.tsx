@@ -24,9 +24,11 @@
  *              contains, suffix, prefix, in (range), &&, ||, !
  *   Special: "ALL" matches everything
  */
+
 import type React from 'react'
 import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Link, useParams } from 'react-router-dom'
 import { RulePlayground } from '@/components/admin/RulePlayground'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
@@ -57,6 +59,20 @@ import type { RuleAction, RuleConfig } from '@/types/config'
 
 // ─── Component ───────────────────────────────────────────────────────
 
+// C-B8: the target step's no-transports dead end — links out instead
+// of forcing a cancel that eats the already-typed match expression.
+const NoTransportsNotice: React.FC<{ to: string }> = ({ to }) => {
+  const { t } = useTranslation()
+  return (
+    <div className="space-y-1.5 rounded-md border border-dashed p-6 text-center text-xs text-muted-foreground">
+      <p>{`${t('ruleWizard.noTransports')} ${t('ruleWizard.noTransportsHint')}`}</p>
+      <Link to={to} className="font-medium text-primary hover:underline">
+        {t('ruleWizard.goCreateTransport')}
+      </Link>
+    </div>
+  )
+}
+
 export interface RuleWizardProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -76,6 +92,9 @@ export const RuleWizard: React.FC<RuleWizardProps> = ({
   const workingConfig = useConfigStore((s) => s.workingConfig)
   const transportNames = useTransportNames()
   const isEdit = !!existingRule
+  // C-B8: route base for the no-transports exit link.
+  const { id } = useParams<{ id: string }>()
+  const adminBase = id ? `/corec/${id}/admin` : '/admin'
 
   // ─── Form state ──────────────────────────────────────────────────
   const [ruleName, setRuleName] = useState(existingRule?.name ?? '')
@@ -328,9 +347,7 @@ export const RuleWizard: React.FC<RuleWizardProps> = ({
                 <span className="text-destructive"> *</span>
               </Label>
               {transportNames.length === 0 ? (
-                <div className="rounded-md border border-dashed p-6 text-center text-xs text-muted-foreground">
-                  {t('ruleWizard.noTransports')}
-                </div>
+                <NoTransportsNotice to={`${adminBase}/transports`} />
               ) : (
                 <Select value={target} onValueChange={setTarget}>
                   <SelectTrigger className="h-9 text-xs">
@@ -357,9 +374,7 @@ export const RuleWizard: React.FC<RuleWizardProps> = ({
                 <span className="text-destructive"> *</span>
               </Label>
               {transportNames.length === 0 ? (
-                <div className="rounded-md border border-dashed p-6 text-center text-xs text-muted-foreground">
-                  {t('ruleWizard.noTransports')}
-                </div>
+                <NoTransportsNotice to={`${adminBase}/transports`} />
               ) : (
                 <div className="space-y-1.5 rounded-md border p-3">
                   {transportNames.map((name) => (
