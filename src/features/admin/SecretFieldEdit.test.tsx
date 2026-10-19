@@ -131,7 +131,7 @@ describe('secret fields in the quick-edit form (C-A4)', () => {
     expect(vi.mocked(updateConfigs)).not.toHaveBeenCalled()
 
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Apply Changes' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Confirm & hot-reload' }))
     })
 
     await waitFor(() => expect(vi.mocked(updateConfigs)).toHaveBeenCalledTimes(1))

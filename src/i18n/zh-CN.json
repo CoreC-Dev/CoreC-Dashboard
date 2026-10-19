@@ -243,7 +243,7 @@
     "discardTitle": "放弃未保存的更改？",
     "discardDesc": "所有未保存的编辑都将丢失。此操作无法撤销。",
     "applying": "应用中...",
-    "confirmApply": "应用变更",
+    "confirmApply": "确认并热重载",
     "drivers": "驱动",
     "transports": "传输",
     "rules": "规则",

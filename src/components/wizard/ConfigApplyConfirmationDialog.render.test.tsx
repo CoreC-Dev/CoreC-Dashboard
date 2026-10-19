@@ -62,7 +62,7 @@ describe('ConfigApplyConfirmationDialog (render)', () => {
   it('apply button is enabled when there are changes', () => {
     renderDialog({ beforeYaml: BEFORE_YAML, afterYaml: AFTER_YAML })
 
-    const applyButton = screen.getByRole('button', { name: /Apply Changes/ })
+    const applyButton = screen.getByRole('button', { name: /Confirm & hot-reload/ })
     expect(applyButton).toBeEnabled()
   })
 
@@ -72,7 +72,7 @@ describe('ConfigApplyConfirmationDialog (render)', () => {
     // the Apply button remains enabled.
     renderDialog({ beforeYaml: BEFORE_YAML, afterYaml: BEFORE_YAML })
 
-    const applyButton = screen.getByRole('button', { name: /Apply Changes/ })
+    const applyButton = screen.getByRole('button', { name: /Confirm & hot-reload/ })
     expect(applyButton).toBeEnabled()
   })
 

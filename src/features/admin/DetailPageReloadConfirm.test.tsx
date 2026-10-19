@@ -130,7 +130,7 @@ describe('detail-page quick-edit reload confirmation gate (C-A1)', () => {
 
     // Explicit confirm → exactly one PUT with the merged full config.
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Apply Changes' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Confirm & hot-reload' }))
     })
 
     await waitFor(() => expect(api.updateConfigs).toHaveBeenCalledTimes(1))
@@ -157,7 +157,7 @@ describe('detail-page quick-edit reload confirmation gate (C-A1)', () => {
     expect(await screen.findByText('Apply Configuration Changes')).toBeTruthy()
 
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Apply Changes' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Confirm & hot-reload' }))
     })
 
     // The dialog stays open and surfaces the server error in place.
