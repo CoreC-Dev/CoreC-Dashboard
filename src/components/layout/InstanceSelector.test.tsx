@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { act } from 'react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
-import { InstanceSelector } from '@/components/layout/InstanceSelector'
+import { InstanceSelector, switchInstanceTarget } from '@/components/layout/InstanceSelector'
 import i18n from '@/i18n'
 import { useInstanceStore } from '@/stores/instanceStore'
 
@@ -108,5 +108,101 @@ describe('InstanceSelector (#185 regression)', () => {
 
     expect(screen.getByText('Alpha')).toBeTruthy()
     expect(consoleErrors.some((m) => m.includes('Maximum update depth'))).toBe(false)
+  })
+})
+
+describe('switchInstanceTarget (D-20 route preservation)', () => {
+  it('keeps the monitor sub-page when switching instances', () => {
+    expect(switchInstanceTarget('/corec/inst-a/monitor/alerts', 'inst-b')).toBe(
+      '/corec/inst-b/monitor/alerts',
+    )
+  })
+
+  it('keeps the admin sub-page when switching instances', () => {
+    expect(switchInstanceTarget('/corec/inst-a/admin/config', 'inst-b')).toBe(
+      '/corec/inst-b/admin/config',
+    )
+  })
+
+  it('drops entity-scoped detail segments to the section list page', () => {
+    // The driver `drv-1` belongs to the OLD instance — the new one may not
+    // have it, so the switch lands on the drivers list, not a dead detail.
+    expect(switchInstanceTarget('/corec/inst-a/admin/drivers/drv-1', 'inst-b')).toBe(
+      '/corec/inst-b/admin/drivers',
+    )
+  })
+
+  it('falls back to the section root when only the section is in the path', () => {
+    expect(switchInstanceTarget('/corec/inst-a/monitor', 'inst-b')).toBe('/corec/inst-b/monitor')
+  })
+
+  it('defaults to the monitor section outside the instance tree', () => {
+    expect(switchInstanceTarget('/settings', 'inst-b')).toBe('/corec/inst-b/monitor')
+    expect(switchInstanceTarget('/', 'inst-b')).toBe('/corec/inst-b/monitor')
+  })
+})
+
+describe('InstanceSelector dropdown dots (D-20 live status)', () => {
+  /** Open the Radix Select via keyboard and return the listbox. */
+  function openDropdown() {
+    const { container } = render(
+      <MemoryRouter initialEntries={['/corec/inst_a/monitor/dashboard']}>
+        <InstanceSelector eff={false} />
+      </MemoryRouter>,
+    )
+    const trigger = screen.getByRole('combobox', { name: 'Switch Instance' })
+    fireEvent.keyDown(trigger, { key: 'ArrowDown' })
+    const listbox = screen.getByRole('listbox')
+    expect(listbox).toBeTruthy()
+    return { container, listbox }
+  }
+
+  it('greens an instance only when a probe actually succeeded', () => {
+    seed()
+    act(() => {
+      // Alpha probes OK; Bravo has never been reached (no lastConnectedAt).
+      useInstanceStore.getState().setProbeResult('inst_a', true, {
+        name: 'Alpha',
+        version: '1.0',
+        status: 'running',
+        uptime: '1h',
+      })
+    })
+    openDropdown()
+
+    const alpha = screen.getByRole('option', { name: /Alpha/ })
+    expect(alpha.querySelector('.bg-status-running')).not.toBeNull()
+    const bravo = screen.getByRole('option', { name: /Bravo/ })
+    expect(bravo.querySelector('.bg-status-running')).toBeNull()
+    expect(bravo.querySelector('.bg-status-idle')).not.toBeNull()
+  })
+
+  it('shows red for an instance the probe just reported dead — even one that connected before', () => {
+    seed()
+    act(() => {
+      useInstanceStore.getState().setProbeResult('inst_a', true, {
+        name: 'Alpha',
+        version: '1.0',
+      })
+      useInstanceStore.getState().setProbeResult('inst_a', false, undefined, 'unreachable')
+    })
+    openDropdown()
+
+    // The old dot went green from lastConnectedAt alone ("was ever
+    // connected"); a fresh failure verdict must override it.
+    const alpha = screen.getByRole('option', { name: /Alpha/ })
+    expect(alpha.querySelector('.bg-status-error')).not.toBeNull()
+    expect(alpha.querySelector('.bg-status-running')).toBeNull()
+  })
+
+  it('shows the connecting dot only for a first probe with no verdict yet', () => {
+    seed()
+    act(() => {
+      useInstanceStore.getState().setProbing('inst_b', true)
+    })
+    openDropdown()
+
+    const bravo = screen.getByRole('option', { name: /Bravo/ })
+    expect(bravo.querySelector('.bg-status-warning')).not.toBeNull()
   })
 })

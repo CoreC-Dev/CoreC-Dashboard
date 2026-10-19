@@ -14,18 +14,53 @@ interface InstanceSelectorProps {
   eff: boolean
 }
 
+/** Live per-instance verdict for the dropdown dots (audit D-20). */
+type InstanceDotStatus = 'connected' | 'error' | 'connecting' | 'unknown'
+
+const DOT_CLASS: Record<InstanceDotStatus, string> = {
+  connected: 'bg-status-running',
+  error: 'bg-status-error',
+  connecting: 'bg-status-warning',
+  unknown: 'bg-status-idle',
+}
+
 /**
- * Instance switcher dropdown. Navigates to the matching section (monitor or
- * admin) of the selected instance, preserving the current section. Renders
- * nothing when there is no active instance.
+ * D-20: where an instance switch lands. The old onValueChange always jumped
+ * to the section root ("monitor/dashboard" / "admin/drivers"), throwing the
+ * operator back to the overview from wherever they actually were — switching
+ * from the alerts page or the config center lost the page context. The
+ * target keeps the current section AND page segment: switching from
+ * /corec/a/monitor/alerts lands on /corec/b/monitor/alerts. Deeper segments
+ * are entity-scoped (drivers/:name belongs to the OLD instance) and drop to
+ * the section's list page; paths outside the instance tree default to the
+ * monitor section root (the index route redirects to the dashboard).
+ */
+export function switchInstanceTarget(pathname: string, targetId: string): string {
+  const m = /^\/corec\/[^/]+\/(monitor|admin)(?:\/([^/]+))?/.exec(pathname)
+  const section = m?.[1] === 'admin' ? 'admin' : 'monitor'
+  const page = m?.[2]
+  return page ? `/corec/${targetId}/${section}/${page}` : `/corec/${targetId}/${section}`
+}
+
+/**
+ * Instance switcher dropdown. Navigates to the selected instance while
+ * preserving the current page (audit D-20 — see switchInstanceTarget).
+ * Renders nothing when there is no active instance.
+ *
+ * The dropdown dots mirror the homepage card's live verdict (D-20): the old
+ * dot went green from lastConnectedAt alone ("was ever connected"), so an
+ * instance the 15s homepage probe had just reported dead still showed green
+ * in the sidebar. The dot now reads the same live signals the card does —
+ * probeErrors for the verdict, probing for the first-probe connecting state,
+ * lastConnectedAt for a past success — so the sidebar and the homepage agree.
  */
 export const InstanceSelector: React.FC<InstanceSelectorProps> = ({ eff }) => {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
   const { instance, isConnected, isConnecting } = useConnection()
-  // Select the raw instances array (a stable ref between store updates) and
-  // project to the fields this switcher needs via useMemo.
+  // Select the raw store slices (stable refs between updates) and project
+  // to the fields this switcher needs via useMemo.
   //
   // The previous code wrapped a `.map(...)` selector in useShallow. That loops:
   // zustand v5's useStore has no equalityFn arg — it uses
@@ -35,13 +70,28 @@ export const InstanceSelector: React.FC<InstanceSelectorProps> = ({ eff }) => {
   // "Maximum update depth exceeded" (#185) on every instance-scoped route
   // (SidebarNav → InstanceSelector). Returning the stable s.instances ref from
   // the selector and projecting in useMemo breaks the loop. (TD-PERF-009: this
-  // re-renders on any instances change rather than only id/name/lastConnectedAt;
-  // on instance routes the store changes at most once — the initial probe — so
-  // the cost is nil.)
+  // re-renders on any instances/probing/probeErrors change rather than only
+  // the projected fields; on instance routes the store changes at most once
+  // per probe tick, so the cost is nil.)
   const allInstances = useInstanceStore((s) => s.instances)
+  const probing = useInstanceStore((s) => s.probing)
+  const probeErrors = useInstanceStore((s) => s.probeErrors)
   const instances = useMemo(
-    () => allInstances.map((i) => ({ id: i.id, name: i.name, lastConnectedAt: i.lastConnectedAt })),
-    [allInstances],
+    () =>
+      allInstances.map((i) => ({
+        id: i.id,
+        name: i.name,
+        // Same precedence the homepage card uses (A-07): the connecting dot
+        // is reserved for the very first probe; a known verdict wins.
+        status: (probing[i.id] && !i.lastConnectedAt && !probeErrors[i.id]
+          ? 'connecting'
+          : probeErrors[i.id]
+            ? 'error'
+            : i.lastConnectedAt
+              ? 'connected'
+              : 'unknown') as InstanceDotStatus,
+      })),
+    [allInstances, probing, probeErrors],
   )
 
   if (!instance) return null
@@ -52,21 +102,13 @@ export const InstanceSelector: React.FC<InstanceSelectorProps> = ({ eff }) => {
       ? 'bg-status-running'
       : 'bg-status-error'
 
-  const isMonitor = location.pathname.includes('/monitor')
-  const isAdmin = location.pathname.includes('/admin')
-
   return (
     <Select
       value={instance.id}
       onValueChange={(id) => {
         const inst = instances.find((i) => i.id === id)
         if (!inst) return
-        const space = isMonitor
-          ? 'monitor/dashboard'
-          : isAdmin
-            ? 'admin/drivers'
-            : 'monitor/dashboard'
-        navigate(`/corec/${id}/${space}`)
+        navigate(switchInstanceTarget(location.pathname, id))
       }}
     >
       <SelectPrimitive.Trigger asChild>
@@ -102,10 +144,8 @@ export const InstanceSelector: React.FC<InstanceSelectorProps> = ({ eff }) => {
           <SelectItem key={inst.id} value={inst.id}>
             <span className="flex items-center gap-2">
               <span
-                className={cn(
-                  'w-1.5 h-1.5 rounded-full shrink-0',
-                  inst.lastConnectedAt ? 'bg-status-running' : 'bg-status-idle',
-                )}
+                aria-hidden
+                className={cn('w-1.5 h-1.5 rounded-full shrink-0', DOT_CLASS[inst.status])}
               />
               <span className="truncate">{inst.name}</span>
             </span>
