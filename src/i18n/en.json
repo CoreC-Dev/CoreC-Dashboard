@@ -1538,7 +1538,9 @@
     "onMissingDefault": "skip",
     "onMissingHelp": "Behavior when a referenced tag is absent: skip (default), bad-quality, or zero.",
     "staleGuard": "Stale Guard",
-    "staleGuardHelp": "Mark the derived tag stale if any referenced tag is older than this duration (e.g. 30s). Leave empty to disable."
+    "staleGuardHelp": "Mark the derived tag stale if any referenced tag is older than this duration (e.g. 30s). Leave empty to disable.",
+    "deleteTitle": "Delete derived tag",
+    "deleteConfirm": "Are you sure you want to delete the derived tag \"{{name}}\"? This change will be applied when you save the configuration."
   },
   "ruleGroup": {
     "title": "Rule Groups",

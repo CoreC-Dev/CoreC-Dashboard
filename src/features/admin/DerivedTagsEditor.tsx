@@ -15,10 +15,20 @@
  * Hot-reload: derived-tags are hot-updatable via PUT /configs (no restart
  * required — the engine re-evaluates expressions at the configured interval).
  */
-import { Calculator, Plus, Trash2 } from 'lucide-react'
+import { Calculator, Pencil, Plus, Trash2 } from 'lucide-react'
 import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -31,6 +41,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { ExprValidationMessages } from '@/components/wizard/ExprValidationMessages'
+import { validateTransformExpression } from '@/lib/transformExprValidator'
 import { useConfigStore } from '@/stores/configStore'
 import { DATA_TYPES, type DerivedTagConfig, ON_MISSING_POLICIES } from '@/types/config'
 
@@ -45,6 +57,8 @@ export const DerivedTagsEditor: React.FC = () => {
 
   const [editing, setEditing] = useState<DerivedTagConfig | null>(null)
   const [isNew, setIsNew] = useState(false)
+  // C-B7: deleting a derived tag asked nothing — it just vanished.
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
 
   const tags = workingConfig?.['derived-tags'] ?? []
 
@@ -171,19 +185,23 @@ export const DerivedTagsEditor: React.FC = () => {
                   </div>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
+                  {/* C-B7: Pencil for edit — the Calculator read as
+                      "compute", not "edit", unlike every other editor. */}
                   <button
                     type="button"
                     onClick={() => startEdit(tg.name)}
                     className="p-1.5 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground"
                     title={t('common.edit')}
+                    aria-label={t('common.edit')}
                   >
-                    <Calculator className="w-3.5 h-3.5" />
+                    <Pencil className="w-3.5 h-3.5" />
                   </button>
                   <button
                     type="button"
-                    onClick={() => removeDerivedTag(tg.name)}
+                    onClick={() => setDeleteTarget(tg.name)}
                     className="p-1.5 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
                     title={t('common.delete')}
+                    aria-label={t('common.delete')}
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -248,6 +266,12 @@ export const DerivedTagsEditor: React.FC = () => {
                   className="h-8 text-xs font-mono"
                 />
                 <p className="text-xs text-muted-foreground">{t('derivedTag.exprHelp')}</p>
+                {/* C-B7: live expression validation — a broken expr used to
+                    surface only at apply time (transform validator reused). */}
+                <ExprValidationMessages
+                  result={validateTransformExpression(editing.expr)}
+                  variant="prefix"
+                />
               </div>
 
               <div className="space-y-1">
@@ -339,6 +363,31 @@ export const DerivedTagsEditor: React.FC = () => {
             </div>
           </div>
         )}
+
+        {/* C-B7: delete confirmation — same gate as every other entity. */}
+        <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{t('derivedTag.deleteTitle')}</AlertDialogTitle>
+              <AlertDialogDescription>
+                {t('derivedTag.deleteConfirm', { name: deleteTarget ?? '' })}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+              <AlertDialogAction
+                variant="destructive"
+                className="danger-pulse"
+                onClick={() => {
+                  if (deleteTarget) removeDerivedTag(deleteTarget)
+                  setDeleteTarget(null)
+                }}
+              >
+                {t('common.delete')}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </CardContent>
     </Card>
   )

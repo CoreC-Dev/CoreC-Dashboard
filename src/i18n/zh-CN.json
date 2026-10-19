@@ -1538,7 +1538,9 @@
     "onMissingDefault": "skip",
     "onMissingHelp": "引用标签不存在时的行为：skip（默认）、bad-quality 或 zero。",
     "staleGuard": "过期保护",
-    "staleGuardHelp": "当任一引用标签早于此时长时标记派生标签为过期（如 30s）。留空则禁用。"
+    "staleGuardHelp": "当任一引用标签早于此时长时标记派生标签为过期（如 30s）。留空则禁用。",
+    "deleteTitle": "删除派生标签",
+    "deleteConfirm": "确定要删除派生标签 \"{{name}}\" 吗？此变更将在保存配置时应用。"
   },
   "ruleGroup": {
     "title": "规则组",
