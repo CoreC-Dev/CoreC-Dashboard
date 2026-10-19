@@ -77,6 +77,18 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
     unknown: 'bg-status-idle',
   }[status]
 
+  // A-13: the four colors carried no text, no tooltip and no aria-label —
+  // indistinguishable for a color-blind operator and unlabelled for screen
+  // readers. The dot itself gets a label in every state; error/unknown
+  // additionally render the word next to it (a colored dot alone cannot
+  // say "error" — the message below spells out the reason).
+  const statusLabel = {
+    connected: t('common.connected'),
+    error: t('common.error'),
+    connecting: t('common.connecting'),
+    unknown: t('common.unknown'),
+  }[status]
+
   const accentColor = instance.color || undefined
 
   const handleEnter = () => navigate(`/corec/${instance.id}/monitor/dashboard`)
@@ -98,7 +110,12 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
         <div className="p-4 pb-2">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-2 min-w-0">
-              <span className="relative w-2.5 h-2.5 shrink-0">
+              <span
+                className="relative w-2.5 h-2.5 shrink-0"
+                role="img"
+                title={statusLabel}
+                aria-label={statusLabel}
+              >
                 {status === 'connecting' && (
                   <span
                     aria-hidden
@@ -107,6 +124,17 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
                 )}
                 <span className={`w-2.5 h-2.5 rounded-full ${statusColor}`} />
               </span>
+              {(status === 'error' || status === 'unknown') && (
+                <span
+                  className={`shrink-0 text-[10px] leading-none px-1.5 py-0.5 rounded-full font-medium ${
+                    status === 'error'
+                      ? 'bg-status-error/10 text-status-error'
+                      : 'bg-muted text-muted-foreground'
+                  }`}
+                >
+                  {statusLabel}
+                </span>
+              )}
               <h3 className="font-semibold text-sm break-words">{instance.name}</h3>
             </div>
             <DropdownMenu>

@@ -209,6 +209,68 @@ describe('InstanceCard error-state retry (A-08/D-12)', { timeout: 15_000 }, () =
   })
 })
 
+// A-13 — the colored status dot carried no text, tooltip or aria-label:
+// color-blind operators could not tell the states apart and screen readers
+// announced nothing. The dot must label itself in every state, and the
+// error/unknown states must also render the word as a badge next to it.
+describe('InstanceCard status dot labeling (A-13)', () => {
+  function statusDot(container: HTMLElement): HTMLElement {
+    const dot = container.querySelector('span[role="img"]')
+    expect(dot).not.toBeNull()
+    return dot as HTMLElement
+  }
+
+  it('labels the error dot and renders the error word as a badge', () => {
+    useInstanceStore.setState({ probeErrors: { 'inst-1': 'unauthorized' } })
+
+    const { container } = renderCard(baseInstance)
+
+    const dot = statusDot(container)
+    expect(dot).toHaveAttribute('title', t('common.error'))
+    expect(dot).toHaveAttribute('aria-label', t('common.error'))
+    expect(screen.getByText(t('common.error'))).toBeInTheDocument()
+  })
+
+  it('labels the unknown dot and renders the unknown word as a badge', () => {
+    const { container } = renderCard(baseInstance)
+
+    const dot = statusDot(container)
+    expect(dot).toHaveAttribute('title', t('common.unknown'))
+    expect(dot).toHaveAttribute('aria-label', t('common.unknown'))
+    expect(screen.getByText(t('common.unknown'))).toBeInTheDocument()
+  })
+
+  it('labels the connected dot via title only — no badge for healthy states', () => {
+    useInstanceStore.setState({
+      instances: [{ ...baseInstance, lastConnectedAt: '2026-01-01T00:00:00.000Z' }],
+      probeErrors: { 'inst-1': null },
+    })
+
+    const { container } = renderCard({
+      ...baseInstance,
+      lastConnectedAt: '2026-01-01T00:00:00.000Z',
+    })
+
+    const dot = statusDot(container)
+    expect(dot).toHaveAttribute('title', t('common.connected'))
+    expect(dot).toHaveAttribute('aria-label', t('common.connected'))
+    // Healthy and mid-probe states rely on the label alone (audit: a badge
+    // on every card would be noise).
+    expect(screen.queryByText(t('common.error'))).not.toBeInTheDocument()
+    expect(screen.queryByText(t('common.unknown'))).not.toBeInTheDocument()
+  })
+
+  it('labels the first-probe connecting dot', () => {
+    useInstanceStore.setState({ probing: { 'inst-1': true } })
+
+    const { container } = renderCard(baseInstance)
+
+    const dot = statusDot(container)
+    expect(dot).toHaveAttribute('title', t('common.connecting'))
+    expect(dot).toHaveAttribute('aria-label', t('common.connecting'))
+  })
+})
+
 // D-07 — deleting an instance is irreversible; it gets the same AlertDialog
 // discipline as the other destructive actions: no dismissal on outside
 // click, a destructive-styled confirm, and confirm copy that differs from
