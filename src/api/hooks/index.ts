@@ -248,6 +248,17 @@ export function useMetrics(refetchInterval: number | false = 12_000) {
  * the other low-urgency queues (deadLetters, rules) — an audit log does
  * not need the 5s stats cadence.
  */
+/**
+ * Send one test point through a transport (POST /transports/{name}/test).
+ * Component-local mutations were an interim measure while the api layer
+ * was under parallel ownership; this is the proper home (C-A15 handoff).
+ */
+export function useTransportTest() {
+  return useMutation({
+    mutationFn: (name: string) => api.testTransport(name),
+  })
+}
+
 export function useWriteHistory() {
   return useConnectedQuery({
     queryKey: ['writeHistory'],

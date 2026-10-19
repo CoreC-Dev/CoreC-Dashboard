@@ -32,12 +32,26 @@ export async function detectProxyMode(): Promise<'proxy' | 'direct'> {
       method: 'HEAD',
       signal: AbortSignal.timeout(3000),
     })
-    mode = res.status === 404 ? 'direct' : 'proxy'
+    mode = isDirectSignal(res) ? 'direct' : 'proxy'
   } catch {
     // Network error or timeout — assume direct mode (no proxy available).
     mode = 'direct'
   }
   return mode
+}
+
+// A 404 (static host has no /corec-proxy/) or any status answered with an
+// HTML document means DIRECT: SPA-fallback hosts (Netlify/Vercel-style
+// "/* -> /index.html 200" rewrites) answer EVERY path with 200 +
+// text/html, which would otherwise be misjudged as proxy mode — and every
+// subsequent /corec-proxy/* call would silently fetch HTML instead of
+// JSON. The real proxy (server.mjs) answers JSON or a bare status.
+// (Audit A 待验证-1: verified GitHub Pages serves genuine 404s — no false
+// positives there; the content-type sniff closes the rewrite-host gap.)
+function isDirectSignal(res: Response): boolean {
+  if (res.status === 404) return true
+  const contentType = res.headers.get('content-type') ?? ''
+  return contentType.includes('text/html')
 }
 
 /**

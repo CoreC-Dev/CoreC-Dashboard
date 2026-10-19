@@ -15,25 +15,23 @@
  * api/hooks when that boundary frees up. No cache invalidation: a test
  * point mutates nothing.
  */
-import { useMutation } from '@tanstack/react-query'
+
 import { AlertCircle, CheckCircle2, Loader2, SendHorizonal } from 'lucide-react'
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
-import { testTransport } from '@/api/endpoints'
+import { useTransportTest } from '@/api/hooks'
 import { Button } from '@/components/ui/button'
 
 export const TransportTestSender: React.FC<{ name: string }> = ({ name }) => {
   const { t } = useTranslation()
-  const { mutate, isPending, data, error } = useMutation({
-    mutationFn: () => testTransport(name),
-  })
+  const { mutate, isPending, data, error } = useTransportTest()
 
   return (
     <div className="flex flex-wrap items-center gap-2" data-testid="transport-test-sender">
       <Button
         variant="outline"
         size="sm"
-        onClick={() => mutate()}
+        onClick={() => mutate(name)}
         disabled={isPending}
         className="h-8 text-xs"
       >
@@ -46,7 +44,7 @@ export const TransportTestSender: React.FC<{ name: string }> = ({ name }) => {
       </Button>
 
       <div aria-live="polite" className="min-w-0">
-        {data && data.ok && (
+        {data?.ok && (
           <span className="inline-flex items-center gap-1.5 rounded-md border border-status-running/30 bg-status-running/10 px-2 py-1 text-xs text-status-running">
             <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
             <span className="break-all">
