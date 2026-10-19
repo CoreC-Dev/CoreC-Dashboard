@@ -492,7 +492,7 @@
     "batches": "batches",
     "busDropped": "Bus Dropped",
     "pprofEndpoints": "Go pprof Profiling Endpoints",
-    "pprofDesc": "Authenticated heap, goroutine, and CPU profile downloads (Bearer token attached)",
+    "pprofDesc": "Authenticated heap, goroutine, and CPU profile downloads (Bearer token attached). These are Go runtime profiles of the CoreC process — mainly for CoreC developers; not needed for routine ops.",
     "pprofEndpoint": "/debug/pprof/{{name}}",
     "latencyDataAge": "Latency & Data Age",
     "histogramDesc": "Histogram snapshots (avg = Σ/n) and gauges parsed from /metrics",
@@ -550,7 +550,7 @@
     "navMetrics": "Metrics",
     "navWrites": "Write history",
     "navAdvanced": "Advanced debugging",
-    "advancedDebugging": "Advanced debugging (pprof)",
+    "advancedDebugging": "Advanced debugging (pprof) (developers)",
     "advancedToggle": "Toggle advanced debugging section"
   },
   "writeHistory": {

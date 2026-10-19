@@ -118,7 +118,7 @@ describe('diagnostics page IA (C-E1)', () => {
   it('pprof is folded by default and expands on demand', async () => {
     renderPage()
 
-    expect(await screen.findByText('Advanced debugging (pprof)')).toBeTruthy()
+    expect(await screen.findByText('Advanced debugging (pprof) (developers)')).toBeTruthy()
     expect(screen.queryByText('/debug/pprof/heap')).toBeNull()
 
     await act(async () => {

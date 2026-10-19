@@ -205,7 +205,7 @@ describe('render smoke (#185 regression)', () => {
     // C-E1: anchor chips render and pprof stays folded by default —
     // the deep behavior lives in DiagnosticsAnchors.test.
     expect(screen.getByTestId('section-anchor-nav')).toBeTruthy()
-    expect(screen.getByText('Advanced debugging (pprof)')).toBeTruthy()
+    expect(screen.getByText('Advanced debugging (pprof) (developers)')).toBeTruthy()
     expect(screen.queryByText('/debug/pprof/heap')).toBeNull()
     // Metrics query resolved: the goroutines tile shows the scraped value
     // and the per-driver read table gets its row.

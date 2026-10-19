@@ -492,7 +492,7 @@
     "batches": "批次",
     "busDropped": "总线丢弃",
     "pprofEndpoints": "Go pprof 性能剖析端点",
-    "pprofDesc": "经身份验证的堆、协程与 CPU profile 下载（附带 Bearer 令牌）",
+    "pprofDesc": "经身份验证的堆、协程与 CPU profile 下载（附带 Bearer 令牌）。这些是 CoreC（Go 程序）的性能剖析文件，通常交给 CoreC 开发者分析；日常运维无需使用。",
     "pprofEndpoint": "/debug/pprof/{{name}}",
     "latencyDataAge": "延迟与数据年龄",
     "histogramDesc": "直方图快照 (均值 = Σ/n) 及从 /metrics 解析的指标",
@@ -550,7 +550,7 @@
     "navMetrics": "指标",
     "navWrites": "写历史",
     "navAdvanced": "高级调试",
-    "advancedDebugging": "高级调试 (pprof)",
+    "advancedDebugging": "高级调试 (pprof)（开发者）",
     "advancedToggle": "展开/收起高级调试"
   },
   "writeHistory": {
