@@ -1,4 +1,5 @@
 import * as AlertDialogPrimitive from '@radix-ui/react-alert-dialog'
+import type { VariantProps } from 'class-variance-authority'
 import * as React from 'react'
 import { buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/cn'
@@ -79,11 +80,23 @@ const AlertDialogDescription = React.forwardRef<
 ))
 AlertDialogDescription.displayName = AlertDialogPrimitive.Description.displayName
 
+/**
+ * D-18/D-19: lossy confirmations (discard changes, delete, clear…) pass
+ * `variant="destructive"` instead of hand-writing bg-destructive classes
+ * — one spelling for the red confirm across the app, and it can never
+ * silently regress to the default (primary-colored) "OK" look that made
+ * habit-clicking the right button discard unsaved work.
+ */
 const AlertDialogAction = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Action>,
-  React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Action>
->(({ className, ...props }, ref) => (
-  <AlertDialogPrimitive.Action ref={ref} className={cn(buttonVariants(), className)} {...props} />
+  React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Action> &
+    Pick<VariantProps<typeof buttonVariants>, 'variant'>
+>(({ className, variant, ...props }, ref) => (
+  <AlertDialogPrimitive.Action
+    ref={ref}
+    className={cn(buttonVariants({ variant }), className)}
+    {...props}
+  />
 ))
 AlertDialogAction.displayName = AlertDialogPrimitive.Action.displayName
 

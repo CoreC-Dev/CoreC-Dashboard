@@ -21,6 +21,11 @@ interface DiscardChangesDialogProps {
  * previously-misleading "Cancel" banner button (which silently called
  * `revert()`) in an explicit AlertDialog so users don't accidentally lose
  * in-progress work. Shared by Drivers/Transports/Rules/ConfigCenter pages.
+ *
+ * D-18: the confirm is a lossy action but used to render as the default
+ * primary (lime) button — visually identical to a plain "OK", so
+ * habit-clicking the right button discarded the draft. It now uses the
+ * destructive variant, the same red family as every delete-class confirm.
  */
 export const DiscardChangesDialog: React.FC<DiscardChangesDialogProps> = ({
   open,
@@ -38,6 +43,7 @@ export const DiscardChangesDialog: React.FC<DiscardChangesDialogProps> = ({
         <AlertDialogFooter>
           <AlertDialogCancel className="h-8 text-xs">{t('common.cancel')}</AlertDialogCancel>
           <AlertDialogAction
+            variant="destructive"
             className="h-8 text-xs"
             onClick={() => {
               onConfirm()
