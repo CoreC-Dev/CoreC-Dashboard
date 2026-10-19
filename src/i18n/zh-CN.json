@@ -826,6 +826,8 @@
     "unsavedChanges": "您有未保存的配置变更。请应用以热重载引擎。",
     "configSection": "配置管理的规则",
     "runtimeSection": "运行时规则",
+    "runtimeSearch": "搜索运行规则（名称/匹配/目标）…",
+    "sortByPriority": "按优先级排序",
     "deleteTitle": "删除规则",
     "deleteConfirm": "确定要删除规则 \"{{name}}\" 吗？此变更将在您应用配置时生效。"
   },

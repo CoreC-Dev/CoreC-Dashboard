@@ -826,6 +826,8 @@
     "unsavedChanges": "You have unsaved configuration changes. Apply them to hot-reload the engine.",
     "configSection": "Config-Managed Rules",
     "runtimeSection": "Runtime Rules",
+    "runtimeSearch": "Search runtime rules (name/match/target)…",
+    "sortByPriority": "Sort by priority",
     "deleteTitle": "Delete Rule",
     "deleteConfirm": "Are you sure you want to delete the rule \"{{name}}\"? This change will be applied when you apply the configuration."
   },

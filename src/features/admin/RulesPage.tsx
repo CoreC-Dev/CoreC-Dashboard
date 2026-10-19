@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { AlertCircle, Pencil, Play, Plus, RefreshCw, Trash2 } from 'lucide-react'
+import { AlertCircle, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react'
 import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -11,12 +11,12 @@ import {
   getTargetDisplay,
   RuleTestDialog,
 } from '@/components/admin/RuleParts'
+import { RuntimeRulesTable } from '@/components/admin/RuntimeRulesTable'
 import { SeedBlockedBanner } from '@/components/admin/SeedBlockedBanner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { LoadingState } from '@/components/ui/loading-state'
-import { Switch } from '@/components/ui/switch'
 import { ConfigApplyConfirmationDialog } from '@/components/wizard/ConfigApplyConfirmationDialog'
 import { EntitySearchBar, filterEntities } from '@/components/wizard/EntitySearchBar'
 import { UnsavedChangesBanner } from '@/components/wizard/UnsavedChangesBanner'
@@ -32,8 +32,6 @@ import {
 import { useEntityListPage } from '@/hooks/useEntityListPage'
 import { useRuleToggle } from '@/hooks/useRuleToggle'
 import { parseConfigYaml } from '@/lib/configYaml'
-import { formatRelativeTime } from '@/lib/formatters'
-import { formatNumber, isZeroTime } from '@/lib/utils'
 import { useConfigStore } from '@/stores/configStore'
 import type { RuleConfig } from '@/types/config'
 import type { RuleStat } from '@/types/models'
@@ -95,6 +93,20 @@ export const RulesPage: React.FC = () => {
 
   const configRules = workingConfig?.rules ?? []
   const filteredConfigRules = filterEntities(configRules, searchQuery)
+
+  // C-B6: the runtime table gets the same search affordance as the config
+  // section (name/match/target) plus a clickable priority sort — hundreds of
+  // live rules otherwise need Ctrl+F to find one tag's rule.
+  const [runtimeSearch, setRuntimeSearch] = useState('')
+  const [runtimeSortDesc, setRuntimeSortDesc] = useState(false)
+  const filteredRuntimeRules = filterEntities(
+    rules,
+    runtimeSearch,
+    (r) => `${r.match} ${getTargetDisplay(r)}`,
+  )
+  const visibleRuntimeRules = runtimeSortDesc
+    ? [...filteredRuntimeRules].sort((a, b) => b.priority - a.priority)
+    : filteredRuntimeRules
 
   // Track the specific rules being toggled so only those rows' switches are
   // disabled while mutations are in flight (not every switch on the page).
@@ -306,6 +318,13 @@ export const RulesPage: React.FC = () => {
           <Badge variant="outline" className="text-xs">
             {rules.length}
           </Badge>
+          {rules.length > 6 && (
+            <EntitySearchBar
+              value={runtimeSearch}
+              onChange={setRuntimeSearch}
+              placeholder={t('rules.runtimeSearch')}
+            />
+          )}
         </div>
         <p className="text-xs text-muted-foreground">{t('rules.runtimeEditHint')}</p>
         <Card className="border-border bg-card overflow-hidden">
@@ -335,109 +354,20 @@ export const RulesPage: React.FC = () => {
             <div className="py-10 text-center text-xs text-muted-foreground">
               {t('rules.empty')}
             </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs text-left">
-                <thead className="bg-muted/50 border-b border-border uppercase font-semibold text-xs text-muted-foreground tracking-wider">
-                  <tr>
-                    <th className="px-4 py-3 w-16">{t('rules.colPriority')}</th>
-                    <th className="px-4 py-3">{t('rules.colName')}</th>
-                    <th className="px-4 py-3">{t('rules.colMatch')}</th>
-                    <th className="px-4 py-3">{t('rules.colAction')}</th>
-                    <th className="px-4 py-3">{t('rules.colTarget')}</th>
-                    <th className="px-4 py-3">{t('rules.colHitStats')}</th>
-                    <th className="px-4 py-3 text-right">{t('rules.colEnabled')}</th>
-                    <th className="px-4 py-3 text-right">{t('common.actions')}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/60">
-                  {rules.map((rule) => {
-                    return (
-                      <tr
-                        key={rule.index}
-                        className={`hover:bg-muted/30 transition-colors ${
-                          rule.disabled ? 'opacity-50' : ''
-                        }`}
-                      >
-                        <td className="px-4 py-3 font-mono font-bold text-muted-foreground">
-                          #{rule.priority}
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="font-semibold text-foreground">{rule.name}</div>
-                          <div className="text-xs text-muted-foreground font-mono">{rule.type}</div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <code className="px-2 py-1 rounded bg-muted/60 text-xs font-mono text-primary border border-border">
-                            {rule.match}
-                          </code>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <ActionBadge action={rule.action} />
-                            {rule.continue && <ContinueBadge />}
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 font-mono text-muted-foreground">
-                          {getTargetDisplay(rule)}
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center space-x-2 text-xs">
-                            <span className="text-status-running font-mono font-bold">
-                              {formatNumber(rule.hit_count)} {t('common.hits')}
-                            </span>
-                            <span className="text-muted-foreground">/</span>
-                            <span className="text-muted-foreground font-mono">
-                              {formatNumber(rule.miss_count)}
-                            </span>
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {t('rules.last')}:{' '}
-                            {isZeroTime(rule.hit_at)
-                              ? t('common.never')
-                              : new Date(rule.hit_at).toLocaleTimeString()}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {t('rules.lastMiss')}:{' '}
-                            {isZeroTime(rule.miss_at)
-                              ? t('common.never')
-                              : formatRelativeTime(rule.miss_at, t)}
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          <Switch
-                            checked={!rule.disabled}
-                            onCheckedChange={() => handleToggle(rule.name, rule.disabled)}
-                            disabled={togglingNames.has(rule.name)}
-                          />
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => openTest(rule)}
-                              className="h-9 text-xs"
-                            >
-                              <Play className="w-3 h-3 mr-1" />
-                              {t('rules.test')}
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => openRuntimeRuleInWizard(rule)}
-                              className="h-9 text-xs"
-                            >
-                              <Pencil className="w-3 h-3 mr-1" />
-                              {t('common.edit')}
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
+          ) : visibleRuntimeRules.length === 0 ? (
+            <div className="m-2 rounded-md border border-dashed py-10 text-center text-xs text-muted-foreground">
+              {t('common.noResults', { query: runtimeSearch })}
             </div>
+          ) : (
+            <RuntimeRulesTable
+              rules={visibleRuntimeRules}
+              sortDesc={runtimeSortDesc}
+              onToggleSort={() => setRuntimeSortDesc((d) => !d)}
+              togglingNames={togglingNames}
+              onToggle={handleToggle}
+              onTest={openTest}
+              onEdit={openRuntimeRuleInWizard}
+            />
           )}
         </Card>
       </div>
