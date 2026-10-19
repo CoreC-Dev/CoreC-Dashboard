@@ -259,7 +259,14 @@ export const DashboardPage: React.FC = () => {
             <Database className="w-3.5 h-3.5 text-status-warning" />
           </div>
           <div className="text-lg font-bold font-mono tnum truncate">
-            <CountUpNumber value={stats?.total_read ?? 0} duration={800} format={formatNumber} />
+            {/* B12: integer counters keep rounding INSIDE their format — the
+             * raw animated value is fractional mid-flight, and formatNumber
+             * itself does not round. */}
+            <CountUpNumber
+              value={stats?.total_read ?? 0}
+              duration={800}
+              format={(n) => formatNumber(Math.round(n))}
+            />
           </div>
           <div className="text-xs text-muted-foreground mt-0.5">
             {t('dashboard.pub', { defaultValue: 'Pub' })}: {formatNumber(stats?.total_publish || 0)}
@@ -272,7 +279,12 @@ export const DashboardPage: React.FC = () => {
             <TrendingDown className="w-3.5 h-3.5 text-status-error" />
           </div>
           <div className="text-lg font-bold font-mono tnum truncate text-status-error">
-            <CountUpNumber value={stats?.total_dropped ?? 0} duration={800} format={formatNumber} />
+            {/* B12: integer counter — round inside the format (see Total Read). */}
+            <CountUpNumber
+              value={stats?.total_dropped ?? 0}
+              duration={800}
+              format={(n) => formatNumber(Math.round(n))}
+            />
           </div>
           <div className="text-xs text-muted-foreground mt-0.5">
             {t('dashboard.errors', { defaultValue: 'Errors' })}: {stats?.total_errors || 0}

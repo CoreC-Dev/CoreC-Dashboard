@@ -17,7 +17,12 @@ interface CountUpNumberProps {
 export const CountUpNumber = memo(function CountUpNumber({
   value,
   duration = 800,
-  format = (n) => n.toLocaleString(),
+  // B12: rounding lives INSIDE the integer default, not before format — a
+  // custom format (e.g. the sample-rate card's one-decimal toFixed) now
+  // receives the raw animated value, so 12.4 pts/s no longer renders as
+  // "12.0" for the whole animation. Integer counters that want rounding
+  // pass it in their own format (DashboardPage wraps formatNumber).
+  format = (n) => Math.round(n).toLocaleString(),
   className,
 }: CountUpNumberProps) {
   const [animated, setValue] = useState(0)
@@ -55,5 +60,5 @@ export const CountUpNumber = memo(function CountUpNumber({
     }
   }, [value, duration])
 
-  return <span className={className}>{format(Math.round(animated))}</span>
+  return <span className={className}>{format(animated)}</span>
 })

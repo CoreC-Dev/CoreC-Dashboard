@@ -226,6 +226,25 @@ describe('DashboardPage — stale snapshot instead of page collapse (B04)', () =
   })
 })
 
+describe('DashboardPage — sample-rate honesty (B12)', () => {
+  it('renders the fractional points/sec verbatim instead of rounding it away', async () => {
+    // jsdom's rAF timestamps come from a clock offset seconds away from
+    // performance.now(), which corrupts the eased mid-animation values — so
+    // assert on the reduced-motion path, which snaps straight to the target
+    // (exactly what a reduced-motion user sees).
+    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: true }))
+    try {
+      renderPage()
+
+      // 12.4 pts/s must stay 12.4 — the old pipeline rounded inside
+      // CountUpNumber before the one-decimal format ever saw the value.
+      expect(await screen.findByText('12.4')).toBeTruthy()
+    } finally {
+      vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: false }))
+    }
+  })
+})
+
 describe('DashboardPage — online-ratio coloring (B05)', () => {
   const toneClassOf = (el: HTMLElement) => el.className
 
