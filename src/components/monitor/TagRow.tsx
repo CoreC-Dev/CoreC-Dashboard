@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/cn'
 import { QualityLabel } from '@/lib/constants'
-import { COLS, ROW_HEIGHT } from '@/lib/tagExplorer'
+import { COLS, formatRelativeTime, ROW_HEIGHT } from '@/lib/tagExplorer'
 import type { DataPoint } from '@/types/models'
 
 export interface TagRowProps {
@@ -66,6 +66,7 @@ export const TagRow = memo(function TagRow({
   }, [flashTick])
 
   const q = QualityLabel[point.quality] ?? QualityLabel[0]
+  const ts = formatRelativeTime(point.timestamp, t)
 
   return (
     <tr
@@ -133,11 +134,19 @@ export const TagRow = memo(function TagRow({
           {t(q.key)}
         </Badge>
       </td>
+      {/* B15: honest timestamps — fresh updates read "just now", anything
+       * ≥1min old becomes an explicit relative age, and past the 5-minute
+       * horizon the cell dims so yesterday's frozen value can't pass for a
+       * live one. Hover carries the full date-time. */}
       <td
-        className="px-4 py-2.5 shrink-0 min-w-0 truncate text-muted-foreground font-mono text-xs"
+        title={ts.full}
+        className={cn(
+          'px-4 py-2.5 shrink-0 min-w-0 truncate text-muted-foreground font-mono text-xs',
+          ts.dim && 'opacity-60',
+        )}
         style={{ width: COLS.timestamp }}
       >
-        {point.timestamp ? new Date(point.timestamp).toLocaleTimeString() : '-'}
+        {ts.text}
         {point.is_stale && (
           <span className="ml-1.5 text-xs text-status-warning border border-status-warning/30 px-1 rounded">
             {t('tags.stale')}

@@ -1,8 +1,14 @@
 // Pure-logic tests for the tag explorer lib (B07 quality/stale filter; the
 // page's filteredTags memo and these tests share the exact same predicate —
-// plus B08's pause-gap helper).
+// plus B08's pause-gap helper and B15's relative timestamps).
 import { describe, expect, it } from 'vitest'
-import { insertPauseGap, matchesQualityFilter, type QualityFilter } from '@/lib/tagExplorer'
+import {
+  formatRelativeTime,
+  insertPauseGap,
+  matchesQualityFilter,
+  type QualityFilter,
+  type Translate,
+} from '@/lib/tagExplorer'
 import type { DataPoint } from '@/types/models'
 
 const pt = (quality: number, is_stale?: boolean): Pick<DataPoint, 'quality' | 'is_stale'> => ({
@@ -61,5 +67,45 @@ describe('insertPauseGap (B08)', () => {
     const input = [{ time: 50, value: 1 }]
     insertPauseGap(input)
     expect(input).toEqual([{ time: 50, value: 1 }])
+  })
+})
+
+describe('formatRelativeTime (B15)', () => {
+  // Fake t: renders the key plus the count so assertions are locale-free.
+  const t: Translate = (key, opts) => `${key}${opts?.count ?? ''}`
+  const ago = (ms: number) => new Date(Date.now() - ms).toISOString()
+
+  it('sub-minute timestamps read "just now" and stay fully opaque', () => {
+    const out = formatRelativeTime(ago(30_000), t)
+    expect(out.text).toBe('common.justNow')
+    expect(out.dim).toBe(false)
+    expect(out.full).toBe(new Date(ago(30_000)).toLocaleString())
+  })
+
+  it('1–4 minutes render minutesAgo but are not dimmed yet (5-min horizon)', () => {
+    const out = formatRelativeTime(ago(3 * 60_000), t)
+    expect(out.text).toBe('common.minutesAgo3')
+    expect(out.dim).toBe(false)
+  })
+
+  it('past 5 minutes the timestamp dims (the stale value stops looking live)', () => {
+    const out = formatRelativeTime(ago(10 * 60_000), t)
+    expect(out.text).toBe('common.minutesAgo10')
+    expect(out.dim).toBe(true)
+  })
+
+  it('hours and days use their own keys and always dim', () => {
+    expect(formatRelativeTime(ago(3 * 3_600_000), t)).toEqual({
+      text: 'common.hoursAgo3',
+      full: new Date(ago(3 * 3_600_000)).toLocaleString(),
+      dim: true,
+    })
+    const twoDays = formatRelativeTime(ago(2 * 86_400_000), t)
+    expect(twoDays.text).toBe('common.daysAgo2')
+    expect(twoDays.dim).toBe(true)
+  })
+
+  it('a missing timestamp is the most suspect: "-" and dimmed', () => {
+    expect(formatRelativeTime(undefined, t)).toEqual({ text: '-', full: '-', dim: true })
   })
 })

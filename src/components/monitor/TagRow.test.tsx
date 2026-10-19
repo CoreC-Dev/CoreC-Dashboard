@@ -78,3 +78,33 @@ describe('TagRow — device column (B06)', () => {
     expect(cells[2].getAttribute('style')).toContain(COLS.device)
   })
 })
+
+describe('TagRow — honest timestamps (B15)', () => {
+  const row = (over: Partial<DataPoint> = {}) =>
+    render(
+      <table>
+        <tbody>
+          <TagRow point={point(over)} start={0} flashTick={0} onOpen={noop} onWrite={noop} />
+        </tbody>
+      </table>,
+    )
+
+  it('renders a relative age for a minutes-old value instead of a bare clock time', () => {
+    row({ timestamp: new Date(Date.now() - 3 * 60_000).toISOString() })
+    const cell = screen.getByText('3m ago')
+    // The full date-time rides along for the hover tooltip.
+    expect(cell.getAttribute('title')).toBe(new Date(Date.now() - 3 * 60_000).toLocaleString())
+  })
+
+  it('dims the timestamp cell past the 5-minute horizon', () => {
+    row({ timestamp: new Date(Date.now() - 10 * 60_000).toISOString() })
+    const cell = screen.getByText('10m ago')
+    expect(cell.className).toContain('opacity-60')
+  })
+
+  it('a sub-minute-fresh value reads "just now" and stays fully opaque', () => {
+    row({ timestamp: new Date(Date.now() - 5_000).toISOString() })
+    const cell = screen.getByText('just now')
+    expect(cell.className).not.toContain('opacity-60')
+  })
+})

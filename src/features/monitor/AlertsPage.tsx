@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { cn } from '@/lib/cn'
+import { formatRelativeTime } from '@/lib/tagExplorer'
 import { useAlertStore } from '@/stores/alertStore'
 import type { LogEvent } from '@/types/models'
 
@@ -260,25 +261,36 @@ export const AlertsPage: React.FC = () => {
             </div>
           ) : (
             <div className="space-y-2 max-h-[60vh] overflow-y-auto font-mono text-xs">
-              {filteredLogs.map((log: LogEvent) => (
-                <div
-                  key={`${log.timestamp}-${log.level}-${log.type}-${log.payload.slice(0, 20)}`}
-                  className={`p-2.5 rounded border flex items-start space-x-2 transition-colors hover:bg-muted/30 ${
-                    log.level >= 8
-                      ? 'border-status-error/30 bg-status-error/10 text-status-error'
-                      : 'border-status-warning/30 bg-status-warning/10 text-status-warning'
-                  }`}
-                >
-                  <span className="text-xs opacity-75 shrink-0 mt-0.5">
-                    {new Date(log.timestamp).toLocaleTimeString()}
-                  </span>
-                  <Badge variant="outline" className="text-xs py-0 h-5 uppercase shrink-0">
-                    {log.type ||
-                      (log.level >= 8 ? t('alerts.logLevelError') : t('alerts.logLevelWarn'))}
-                  </Badge>
-                  <span className="break-all">{log.payload}</span>
-                </div>
-              ))}
+              {filteredLogs.map((log: LogEvent) => {
+                // B15: relative age with the full time on hover — a
+                // yesterday-frozen event must not read as just-emitted.
+                const ts = formatRelativeTime(log.timestamp, t)
+                return (
+                  <div
+                    key={`${log.timestamp}-${log.level}-${log.type}-${log.payload.slice(0, 20)}`}
+                    className={`p-2.5 rounded border flex items-start space-x-2 transition-colors hover:bg-muted/30 ${
+                      log.level >= 8
+                        ? 'border-status-error/30 bg-status-error/10 text-status-error'
+                        : 'border-status-warning/30 bg-status-warning/10 text-status-warning'
+                    }`}
+                  >
+                    <span
+                      title={ts.full}
+                      className={cn(
+                        'text-xs shrink-0 mt-0.5 font-mono',
+                        ts.dim ? 'opacity-40' : 'opacity-75',
+                      )}
+                    >
+                      {ts.text}
+                    </span>
+                    <Badge variant="outline" className="text-xs py-0 h-5 uppercase shrink-0">
+                      {log.type ||
+                        (log.level >= 8 ? t('alerts.logLevelError') : t('alerts.logLevelWarn'))}
+                    </Badge>
+                    <span className="break-all">{log.payload}</span>
+                  </div>
+                )
+              })}
             </div>
           )}
         </CardContent>

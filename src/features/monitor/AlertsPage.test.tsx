@@ -118,6 +118,20 @@ describe('AlertsPage — shared feed rendering', () => {
     })
     expect(screen.getByText(/fatal write failure/)).toBeTruthy()
   })
+
+  it('renders the event age relatively and dims old feed entries (B15)', () => {
+    const old = {
+      ...evt(8, 'ancient failure'),
+      timestamp: new Date(Date.now() - 2 * 3_600_000).toISOString(),
+    }
+    useAlertStore.setState({ events: [old] })
+    renderPage()
+
+    const stamp = screen.getByText('2h ago')
+    // Hover carries the full date-time; the aged entry is visually muted.
+    expect(stamp.getAttribute('title')).toBe(new Date(Date.now() - 2 * 3_600_000).toLocaleString())
+    expect(stamp.className).toContain('opacity-40')
+  })
 })
 
 describe('AlertsPage — preference toggles (kept here, honored globally)', () => {

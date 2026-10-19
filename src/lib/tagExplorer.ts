@@ -85,3 +85,44 @@ export const matchesQualityFilter = (
   if (staleOnly && !point.is_stale) return false
   return true
 }
+
+// ─── B15: honest timestamps ─────────────────────────────────────────────────
+
+/** Past this age a timestamp cell dims — the audit's ">5 分钟降低透明度"
+ *  horizon: an old frozen value must stop looking as fresh as a live one. */
+export const RELATIVE_DIM_MS = 5 * 60_000
+
+/** Minimal t() surface — keeps this lib free of an i18n instance dependency
+ *  (FRONTEND.md: formatters take t explicitly). */
+export type Translate = (key: string, opts?: { count?: number }) => string
+
+/** Display shape for a monitor timestamp (B15).
+ *  - <60s old → common.justNow ("刚刚" / "just now")
+ *  - 1–59min  → common.minutesAgo ("3分钟前" / "3m ago")
+ *  - 1–23h    → common.hoursAgo; ≥24h → common.daysAgo
+ *  - older than RELATIVE_DIM_MS (5min) the caller dims the cell, and the
+ *    full locale date-time rides along for the hover tooltip — a stale
+ *    "09:15:32" from yesterday no longer reads as just-refreshed.
+ *  - a MISSING timestamp is the most suspect: renders '-' and dims. */
+export interface RelativeTimestamp {
+  text: string
+  /** Full date-time for the title tooltip. */
+  full: string
+  /** true when older than the 5-minute dim horizon (or unknown). */
+  dim: boolean
+}
+
+export const formatRelativeTime = (ts: string | undefined, t: Translate): RelativeTimestamp => {
+  const date = ts ? new Date(ts) : null
+  if (!date || Number.isNaN(date.getTime())) return { text: '-', full: '-', dim: true }
+  const full = date.toLocaleString()
+  const ageMs = Date.now() - date.getTime()
+  // Future timestamps (clock skew) count as "just now" — never a negative age.
+  if (ageMs < 60_000) return { text: t('common.justNow'), full, dim: false }
+  const minutes = Math.floor(ageMs / 60_000)
+  const dim = ageMs > RELATIVE_DIM_MS
+  if (minutes < 60) return { text: t('common.minutesAgo', { count: minutes }), full, dim }
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return { text: t('common.hoursAgo', { count: hours }), full, dim }
+  return { text: t('common.daysAgo', { count: Math.floor(hours / 24) }), full, dim }
+}
