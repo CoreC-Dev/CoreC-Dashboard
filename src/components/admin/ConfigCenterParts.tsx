@@ -10,8 +10,6 @@
  * cards in ConfigCenterYaml.tsx.
  */
 import {
-  AlertCircle,
-  CheckCircle2,
   CloudDownload,
   Code2,
   Download,
@@ -24,6 +22,7 @@ import {
 import type React from 'react'
 import { type ChangeEvent, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
+import { OperationResult } from '@/components/admin/OperationResult'
 import { useSlidingIndicator } from '@/components/layout/useSlidingIndicator'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -86,26 +85,16 @@ export const ComponentList: React.FC<{
   </div>
 )
 
-/** Transient success/error notice. Renders nothing when there is no message. */
-export const StatusMessageView: React.FC<{ statusMsg: StatusMessage }> = ({ statusMsg }) => {
-  if (!statusMsg) return null
-  return (
-    <div
-      className={`p-3 rounded-lg border text-xs flex items-center space-x-2 ${
-        statusMsg.type === 'success'
-          ? 'bg-status-running/10 border-status-running/20 text-status-running'
-          : 'bg-status-error/10 border-status-error/20 text-status-error'
-      }`}
-    >
-      {statusMsg.type === 'success' ? (
-        <CheckCircle2 className="w-4 h-4 shrink-0" />
-      ) : (
-        <AlertCircle className="w-4 h-4 shrink-0" />
-      )}
-      <span>{statusMsg.text}</span>
-    </div>
-  )
-}
+/**
+ * Transient success/error notice. Renders nothing when there is no message.
+ * D-17: delegates to the shared OperationResult strip — same visuals the
+ * detail pages show, plus a manual close. The auto-fade stays disabled
+ * here (autoDismissMs={0}) because the page's useStatusMessage hook owns
+ * the 4s state clearing; the strip's local hide covers the close button.
+ */
+export const StatusMessageView: React.FC<{ statusMsg: StatusMessage }> = ({ statusMsg }) => (
+  <OperationResult status={statusMsg} autoDismissMs={0} />
+)
 
 /** Form ↔ YAML mode toggle. */
 export const ModeSwitcher: React.FC<{

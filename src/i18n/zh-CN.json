@@ -834,7 +834,7 @@
     "hotReload": "热重载核心",
     "logLevelUpdated": "日志级别已在 CoreC 运行时更新为 {{level}}",
     "logLevelUpdateFailed": "更新日志级别失败",
-    "reloadSuccess": "配置差分已应用并热重载成功！",
+    "reloadSuccess": "配置已应用并热重载成功。",
     "reloadFailed": "热重载失败",
     "runtimeParams": "运行时实时参数 (零停机)",
     "runtimeParamsDesc": "可通过 PATCH /configs 瞬时修改的参数",

@@ -1,8 +1,6 @@
 import {
-  AlertCircle,
   AlertTriangle,
   ArrowLeft,
-  CheckCircle2,
   ChevronDown,
   Eye,
   EyeOff,
@@ -13,6 +11,7 @@ import {
 import type React from 'react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { OperationResult } from '@/components/admin/OperationResult'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -303,22 +302,10 @@ export const EntityEditConfigCard: React.FC<EntityEditConfigCardProps> = ({
                 </pre>
               </div>
 
-              {edit.statusMsg && (
-                <div
-                  className={`flex items-center gap-2 rounded-lg border p-3 text-xs ${
-                    edit.statusMsg.type === 'success'
-                      ? 'border-status-running/20 bg-status-running/10 text-status-running'
-                      : 'border-status-error/20 bg-status-error/10 text-status-error'
-                  }`}
-                >
-                  {edit.statusMsg.type === 'success' ? (
-                    <CheckCircle2 className="h-4 w-4 shrink-0" />
-                  ) : (
-                    <AlertCircle className="h-4 w-4 shrink-0" />
-                  )}
-                  <span className="break-all">{edit.statusMsg.text}</span>
-                </div>
-              )}
+              {/* D-17: the shared transient feedback strip — context label
+                  (the card/section title) + 5s auto-fade + manual close,
+                  replacing the page-local never-clearing status line. */}
+              <OperationResult status={edit.statusMsg} context={labels.title} />
 
               <div className="flex justify-end">
                 <Button
