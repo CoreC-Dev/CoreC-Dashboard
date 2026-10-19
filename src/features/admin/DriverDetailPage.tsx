@@ -11,7 +11,7 @@ import {
 import type React from 'react'
 import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { useConfigRaw, useDriver, useDriverTags } from '@/api/hooks'
 import {
   BackLink,
@@ -267,6 +267,12 @@ export const DriverDetailPage: React.FC = () => {
   const st = ConnStateLabel[driver.state] ?? ConnStateLabel[0]
   // Unknown drivers return {"tags": null} (not 404); treat null/empty as "no tags".
   const tags = tagsData?.tags ? Object.values(tagsData.tags) : []
+  // C-A10: the truncated-tag note points at the real Tag Explorer (the
+  // monitor route), pre-filtered to this driver — the old copy named a page
+  // that had no link or button anywhere on this page.
+  const tagExplorerTo = id
+    ? `/corec/${id}/monitor/tags?driver=${encodeURIComponent(driver.name)}`
+    : null
 
   return (
     <div className="space-y-5">
@@ -535,11 +541,19 @@ export const DriverDetailPage: React.FC = () => {
                   })}
                 </tbody>
               </table>
-              {tags.length > 200 && (
-                <div className="border-t border-border bg-muted/40 px-3 py-2 text-center text-xs text-muted-foreground">
-                  {t('drivers.showingFirstTags', { count: tags.length })}
-                </div>
-              )}
+              {tags.length > 200 &&
+                (tagExplorerTo ? (
+                  <Link
+                    to={tagExplorerTo}
+                    className="block border-t border-border bg-muted/40 px-3 py-2 text-center text-xs text-muted-foreground hover:text-primary hover:underline transition-colors"
+                  >
+                    {t('drivers.showingFirstTags', { count: tags.length })}
+                  </Link>
+                ) : (
+                  <div className="border-t border-border bg-muted/40 px-3 py-2 text-center text-xs text-muted-foreground">
+                    {t('drivers.showingFirstTags', { count: tags.length })}
+                  </div>
+                ))}
             </div>
           )}
         </CardContent>
