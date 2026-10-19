@@ -90,7 +90,7 @@ export const TagRow = memo(function TagRow({
       }}
     >
       <td
-        className="px-4 py-2.5 shrink-0 min-w-0 truncate font-mono font-semibold text-foreground"
+        className="px-4 py-2.5 shrink-0 min-w-0 truncate font-mono font-semibold text-foreground max-md:flex-1"
         style={{ width: COLS.tag }}
       >
         {point.tag}
@@ -109,8 +109,10 @@ export const TagRow = memo(function TagRow({
       >
         {point.device || '-'}
       </td>
+      {/* B24: group/type hide below md (matching the header cells) so the
+       * row keeps 测点/数值/质量/时间 visible on a phone. */}
       <td
-        className="px-4 py-2.5 shrink-0 min-w-0 truncate text-muted-foreground"
+        className="px-4 py-2.5 shrink-0 min-w-0 truncate text-muted-foreground hidden md:block"
         style={{ width: COLS.group }}
       >
         {point.group || '-'}
@@ -124,7 +126,7 @@ export const TagRow = memo(function TagRow({
             : String(point.value)}
         </span>
       </td>
-      <td className="px-4 py-2.5 shrink-0 min-w-0" style={{ width: COLS.type }}>
+      <td className="px-4 py-2.5 shrink-0 min-w-0 hidden md:block" style={{ width: COLS.type }}>
         <Badge variant="outline" className="font-mono text-xs py-0 h-5">
           {point.type}
         </Badge>

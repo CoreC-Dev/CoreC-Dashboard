@@ -86,10 +86,16 @@ export function TagTable({
         </div>
       ) : (
         <div ref={setScrollEl} className="overflow-auto max-h-[70vh]">
-          <table className="w-full min-w-[860px] text-xs text-left">
+          {/* B24: below md the type/group columns hide (see the th's below),
+           * so the 860px floor would only force a pointless horizontal
+           * scroll — the table fits the viewport instead. */}
+          <table className="w-full min-w-0 md:min-w-[860px] text-xs text-left">
             <thead className="sticky top-0 z-10 block bg-muted/80 border-b border-border uppercase font-semibold text-xs text-muted-foreground tracking-wider">
               <tr className="flex items-center">
-                <th className="px-4 py-2.5 shrink-0 overflow-hidden" style={{ width: COLS.tag }}>
+                <th
+                  className="px-4 py-2.5 shrink-0 overflow-hidden max-md:flex-1"
+                  style={{ width: COLS.tag }}
+                >
                   <button
                     type="button"
                     onClick={() => onToggleSort('tag')}
@@ -115,13 +121,23 @@ export function TagTable({
                 <th className="px-4 py-2.5 shrink-0 overflow-hidden" style={{ width: COLS.device }}>
                   {t('common.device')}
                 </th>
-                <th className="px-4 py-2.5 shrink-0 overflow-hidden" style={{ width: COLS.group }}>
+                {/* B24: group/type are the least critical columns — they
+                 * hide below md so the 9-column 860px floor doesn't push
+                 * timestamp/quality off a phone screen during a shift
+                 * emergency. */}
+                <th
+                  className="px-4 py-2.5 shrink-0 overflow-hidden hidden md:block"
+                  style={{ width: COLS.group }}
+                >
                   {t('tags.colGroup')}
                 </th>
                 <th className="px-4 py-2.5 shrink-0 overflow-hidden" style={{ width: COLS.value }}>
                   {t('tags.colValue')}
                 </th>
-                <th className="px-4 py-2.5 shrink-0 overflow-hidden" style={{ width: COLS.type }}>
+                <th
+                  className="px-4 py-2.5 shrink-0 overflow-hidden hidden md:block"
+                  style={{ width: COLS.type }}
+                >
                   {t('tags.colType')}
                 </th>
                 <th

@@ -77,6 +77,30 @@ describe('TagTable — device column header (B06)', () => {
     expect(widths.reduce((a, b) => a + b, 0)).toBe(100)
   })
 
+  it('hides the group and type columns below md and lifts the 860px floor (B24)', () => {
+    const { container } = renderTable()
+    const table = container.querySelector('table')
+    expect(table?.className).toContain('min-w-0')
+    expect(table?.className).toContain('md:min-w-[860px]')
+    // The 860px floor is md-only — no bare min-w-[860px] class remains.
+    expect(table?.classList.contains('min-w-[860px]')).toBe(false)
+
+    const headers = Array.from(container.querySelectorAll('thead th'))
+    const groupTh = headers.find((th) => th.textContent === 'Group')
+    const typeTh = headers.find((th) => th.textContent === 'Type')
+    expect(groupTh?.className).toContain('hidden md:block')
+    expect(typeTh?.className).toContain('hidden md:block')
+    // The tag column absorbs the freed width on narrow screens.
+    const tagTh = headers.find((th) => th.textContent === 'Tag Name')
+    expect(tagTh?.className).toContain('max-md:flex-1')
+    // The critical columns stay visible at every width (exact class match —
+    // 'overflow-hidden' must not false-positive).
+    for (const label of ['Value', 'Quality', 'Timestamp', 'Actions']) {
+      const th = headers.find((h) => h.textContent === label)
+      expect(th?.classList.contains('hidden')).toBe(false)
+    }
+  })
+
   it('keeps the no-points empty state between the header and the virtual body', () => {
     renderTable()
     expect(screen.getByText(/No tags yet/)).toBeTruthy()

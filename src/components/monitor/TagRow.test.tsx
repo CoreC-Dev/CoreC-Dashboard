@@ -120,3 +120,26 @@ describe('TagRow — honest timestamps (B15)', () => {
     expect(cell.className).not.toContain('opacity-60')
   })
 })
+
+describe('TagRow — narrow-screen columns (B24)', () => {
+  it('hides the group and type cells below md, matching the header', () => {
+    const { container } = render(
+      <table>
+        <tbody>
+          <TagRow point={point()} start={0} flashTick={0} onOpen={noop} onWrite={noop} />
+        </tbody>
+      </table>,
+    )
+    const cells = Array.from(container.querySelectorAll('td'))
+    // group is the 4th cell, type the 6th (tag/driver/device/group/value/type…)
+    expect(cells[3].className).toContain('hidden md:block')
+    expect(cells[5].className).toContain('hidden md:block')
+    // The tag cell flexes to absorb the freed width on narrow screens.
+    expect(cells[0].className).toContain('max-md:flex-1')
+    // Value / quality / timestamp / actions stay visible at every width
+    // (exact class match — 'overflow-hidden' must not false-positive).
+    for (const idx of [4, 6, 7, 8]) {
+      expect(cells[idx].classList.contains('hidden')).toBe(false)
+    }
+  })
+})
