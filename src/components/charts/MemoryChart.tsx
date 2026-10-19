@@ -9,7 +9,8 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { useCoreCWebSocket } from '@/api/hooks'
+import { useCoreCWebSocket, type WSStatus } from '@/api/hooks'
+import { ChartStatusOverlay } from '@/components/charts/ChartStatusOverlay'
 import type { MemoryFrame } from '@/types/models'
 
 // memo'd so a parent re-render (e.g. DashboardPage polling useStats) doesn't
@@ -22,19 +23,33 @@ export const MemoryChart = memo(function MemoryChart() {
     { time: string; allocMb: number; sysMb: number; goroutines: number }[]
   >([])
 
-  useCoreCWebSocket<MemoryFrame>('/memory', { interval: '1s' }, (frame) => {
-    const timeStr = new Date().toLocaleTimeString()
-    setData((prev) => {
-      const allocMb = Number((frame.alloc / (1024 * 1024)).toFixed(2))
-      const sysMb = Number((frame.sys / (1024 * 1024)).toFixed(2))
-      const next = [...prev, { time: timeStr, allocMb, sysMb, goroutines: frame.goroutines }]
-      if (next.length > 25) next.shift()
-      return next
-    })
-  })
+  // B20: chart-local status mirror — see TrafficChart for the rationale;
+  // the B01 wsStatusStore wiring inside useCoreCWebSocket is untouched.
+  const [status, setStatus] = useState<WSStatus>('connecting')
+  const [downOnce, setDownOnce] = useState(false)
+
+  useCoreCWebSocket<MemoryFrame>(
+    '/memory',
+    { interval: '1s' },
+    (frame) => {
+      const timeStr = new Date().toLocaleTimeString()
+      setData((prev) => {
+        const allocMb = Number((frame.alloc / (1024 * 1024)).toFixed(2))
+        const sysMb = Number((frame.sys / (1024 * 1024)).toFixed(2))
+        const next = [...prev, { time: timeStr, allocMb, sysMb, goroutines: frame.goroutines }]
+        if (next.length > 25) next.shift()
+        return next
+      })
+    },
+    (s) => {
+      setStatus(s)
+      setDownOnce((prev) => (s === 'open' ? false : s === 'connecting' ? prev : true))
+    },
+  )
+  const disconnected = downOnce && status !== 'open'
 
   return (
-    <div className="w-full h-56 pt-2 [&_*]:outline-none">
+    <div className="relative w-full h-56 pt-2 [&_*]:outline-none">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} />
@@ -74,6 +89,8 @@ export const MemoryChart = memo(function MemoryChart() {
           />
         </LineChart>
       </ResponsiveContainer>
+      {/* B20: empty axes say "waiting", a silent freeze says "paused". */}
+      <ChartStatusOverlay disconnected={disconnected} empty={data.length === 0} />
     </div>
   )
 })

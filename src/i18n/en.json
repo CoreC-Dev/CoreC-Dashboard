@@ -344,7 +344,9 @@
     "sysMemMb": "Sys Mem (MB)",
     "tags": "Tags",
     "reads": "Reads",
-    "realtimeMonitor": "Real-time monitoring & control"
+    "realtimeMonitor": "Real-time monitoring & control",
+    "chartWaiting": "Waiting for live data…",
+    "chartDisconnected": "Disconnected — chart updates paused"
   },
   "tags": {
     "title": "Real-time Tag Explorer",

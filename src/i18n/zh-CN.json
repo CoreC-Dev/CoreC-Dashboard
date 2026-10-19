@@ -344,7 +344,9 @@
     "sysMemMb": "系统内存 (MB)",
     "tags": "测点",
     "reads": "读取",
-    "realtimeMonitor": "实时监控与控制"
+    "realtimeMonitor": "实时监控与控制",
+    "chartWaiting": "等待实时数据…",
+    "chartDisconnected": "连接中断，图表已暂停更新"
   },
   "tags": {
     "title": "实时测点监控",

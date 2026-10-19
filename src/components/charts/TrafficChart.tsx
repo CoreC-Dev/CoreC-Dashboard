@@ -9,7 +9,8 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { useCoreCWebSocket } from '@/api/hooks'
+import { useCoreCWebSocket, type WSStatus } from '@/api/hooks'
+import { ChartStatusOverlay } from '@/components/charts/ChartStatusOverlay'
 import type { TrafficFrame } from '@/types/models'
 
 /**
@@ -36,31 +37,48 @@ export const TrafficChart = memo(function TrafficChart() {
   >([])
   const prevRef = useRef<TrafficFrame | null>(null)
 
-  useCoreCWebSocket<TrafficFrame>('/traffic', { interval: '1s' }, (frame) => {
-    const prev = prevRef.current
-    prevRef.current = frame
-    // First frame establishes the baseline; no rate to compute yet.
-    if (!prev) return
+  // B20: chart-local mirror of the socket status (the global wsStatusStore
+  // receives the same transitions via the sink useCoreCWebSocket chains
+  // after our callback — B01 wiring is untouched). downOnce mirrors the
+  // store's semantics: once the socket involuntarily left 'open', the
+  // chart is frozen — data may render, but it is stale.
+  const [status, setStatus] = useState<WSStatus>('connecting')
+  const [downOnce, setDownOnce] = useState(false)
 
-    const delta = (cur: number, old: number) => (cur >= old ? cur - old : cur)
-    const timeStr = new Date().toLocaleTimeString()
-    setData((old) => {
-      const next = [
-        ...old,
-        {
-          time: timeStr,
-          read: delta(frame.read, prev.read),
-          publish: delta(frame.publish, prev.publish),
-          dropped: delta(frame.dropped, prev.dropped),
-        },
-      ]
-      if (next.length > 25) next.shift() // keep last 25 points
-      return next
-    })
-  })
+  useCoreCWebSocket<TrafficFrame>(
+    '/traffic',
+    { interval: '1s' },
+    (frame) => {
+      const prev = prevRef.current
+      prevRef.current = frame
+      // First frame establishes the baseline; no rate to compute yet.
+      if (!prev) return
+
+      const delta = (cur: number, old: number) => (cur >= old ? cur - old : cur)
+      const timeStr = new Date().toLocaleTimeString()
+      setData((old) => {
+        const next = [
+          ...old,
+          {
+            time: timeStr,
+            read: delta(frame.read, prev.read),
+            publish: delta(frame.publish, prev.publish),
+            dropped: delta(frame.dropped, prev.dropped),
+          },
+        ]
+        if (next.length > 25) next.shift() // keep last 25 points
+        return next
+      })
+    },
+    (s) => {
+      setStatus(s)
+      setDownOnce((prev) => (s === 'open' ? false : s === 'connecting' ? prev : true))
+    },
+  )
+  const disconnected = downOnce && status !== 'open'
 
   return (
-    <div className="w-full h-56 pt-2 [&_*]:outline-none">
+    <div className="relative w-full h-56 pt-2 [&_*]:outline-none">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
           <defs>
@@ -111,6 +129,9 @@ export const TrafficChart = memo(function TrafficChart() {
           />
         </AreaChart>
       </ResponsiveContainer>
+      {/* B20: "waiting for data" on first load, "updates paused" after a
+       * drop — instead of silent empty axes / a silent freeze. */}
+      <ChartStatusOverlay disconnected={disconnected} empty={data.length === 0} />
     </div>
   )
 })
