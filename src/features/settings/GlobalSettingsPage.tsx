@@ -14,7 +14,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { Button, buttonVariants } from '@/components/ui/button'
+import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
@@ -299,7 +299,7 @@ export const GlobalSettingsPage: React.FC = () => {
           <AlertDialogFooter>
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
-              className={buttonVariants({ variant: 'destructive' })}
+              variant="destructive"
               onClick={() => {
                 clearAll()
                 setClearOpen(false)

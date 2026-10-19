@@ -415,6 +415,7 @@ export const ConfigBackupsPanel: React.FC = () => {
               {t('common.cancel')}
             </AlertDialogCancel>
             <AlertDialogAction
+              variant="destructive"
               onClick={(e) => {
                 // Keep the dialog open until the mutation resolves —
                 // AlertDialogAction closes by default; prevent it so the
@@ -423,7 +424,9 @@ export const ConfigBackupsPanel: React.FC = () => {
                 void handleRestoreConfirm()
               }}
               disabled={restoreMutation.isPending}
-              className="bg-status-error text-white shadow hover:bg-status-error/90 danger-pulse"
+              // D-19: the danger confirm joins the destructive variant —
+              // status-error red is reserved for status indication.
+              className="danger-pulse"
             >
               {restoreMutation.isPending ? (
                 <>

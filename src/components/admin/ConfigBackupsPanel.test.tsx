@@ -115,8 +115,13 @@ describe('ConfigBackupsPanel', () => {
     expect(api.restoreConfigBackup).not.toHaveBeenCalled()
 
     // Step 2: "Restore Now" fires the POST.
+    const confirm = screen.getByRole('button', { name: 'Restore Now' })
+    // D-19: danger confirms use the destructive red — status-error is
+    // reserved for status indication, not buttons.
+    expect(confirm.className).toContain('bg-destructive')
+    expect(confirm.className).not.toContain('bg-status-error')
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Restore Now' }))
+      fireEvent.click(confirm)
     })
 
     await waitFor(() => {

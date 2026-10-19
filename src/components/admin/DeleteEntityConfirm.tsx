@@ -41,7 +41,8 @@ export const DeleteEntityConfirm: React.FC<{
           <AlertDialogCancel className="h-8 text-xs">{t('common.cancel')}</AlertDialogCancel>
           <AlertDialogAction
             onClick={onConfirm}
-            className="h-8 text-xs bg-destructive text-destructive-foreground hover:bg-destructive/90 danger-pulse"
+            variant="destructive"
+            className="h-8 text-xs danger-pulse"
           >
             {t('common.delete')}
           </AlertDialogAction>
