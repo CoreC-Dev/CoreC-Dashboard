@@ -32,7 +32,7 @@ const FlowArrow: React.FC = () => (
 )
 
 export const TopologyPage: React.FC = () => {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { id } = useParams<{ id: string }>()
   const adminBase = id ? `/corec/${id}/admin` : '/admin'
   const { data: serverInfo, isError: serverInfoError } = useServerInfo()
@@ -71,7 +71,17 @@ export const TopologyPage: React.FC = () => {
     return m
   }, [config, transports])
 
-  const hasError = serverInfoError || driversError || transportsError || statsError || rulesError
+  // C-E7: name WHAT failed — five queries hid behind one generic "错误".
+  const failedQueries = useMemo(() => {
+    const f: string[] = []
+    if (serverInfoError) f.push(t('topology.errServerInfo'))
+    if (driversError) f.push(t('topology.errDrivers'))
+    if (transportsError) f.push(t('topology.errTransports'))
+    if (statsError) f.push(t('topology.errStats'))
+    if (rulesError) f.push(t('topology.errRules'))
+    return f
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- t/i18n stable per language
+  }, [serverInfoError, driversError, transportsError, statsError, rulesError, t])
 
   // C-E4: hover a driver row → highlight the runtime rules whose match DSL
   // consumes it and the transports those rules target — the first time the
@@ -107,11 +117,15 @@ export const TopologyPage: React.FC = () => {
         <p className="text-sm text-muted-foreground mt-1">{t('topology.subtitle')}</p>
       </div>
 
-      {hasError && (
+      {failedQueries.length > 0 && (
         <Card className="border-destructive/40 bg-destructive/5 p-4">
           <div className="flex items-center gap-2 text-xs text-destructive">
             <AlertCircle className="w-4 h-4" />
-            <span>{t('common.error')}</span>
+            <span>
+              {t('topology.loadFailed', {
+                failed: new Intl.ListFormat(i18n.language).format(failedQueries),
+              })}
+            </span>
           </div>
         </Card>
       )}

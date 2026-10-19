@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 // Topology-page behavior tests (C-E4 flow/hover, C-E5 loading states,
-// C-E6 row links; C-E7 cases join in their own commit).
+// C-E6 row links, C-E7 per-query errors).
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { act } from 'react'
@@ -175,5 +175,21 @@ describe('TopologyPage — loading is not "empty" (C-E5)', () => {
     expect(await screen.findByTestId('topo-driver-plc1')).toBeTruthy()
     expect(screen.queryByText('No northbound transports attached')).toBeNull()
     expect(screen.getByAltText('CoreC')).toBeTruthy()
+  })
+})
+
+describe('TopologyPage — the error banner names what failed (C-E7)', () => {
+  it('lists the failed queries instead of a generic error', async () => {
+    const { getRules, getStats } = await import('@/api/endpoints')
+    vi.mocked(getRules).mockReturnValueOnce(Promise.reject(new Error('boom')) as never)
+    vi.mocked(getStats).mockReturnValueOnce(Promise.reject(new Error('boom')) as never)
+
+    renderPage()
+
+    // Both failures are named, joined for the active locale — no more
+    // anonymous "Error" banner that hid WHICH query died.
+    expect(await screen.findByText(/Failed to load: /)).toBeTruthy()
+    expect(screen.getByText(/runtime stats/)).toBeTruthy()
+    expect(screen.getByText(/rules/)).toBeTruthy()
   })
 })

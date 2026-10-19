@@ -998,7 +998,13 @@
     "failed": "fail",
     "queueSize": "q",
     "droppedCmds": "drop",
-    "off": "OFF"
+    "off": "OFF",
+    "loadFailed": "Failed to load: {{failed}}",
+    "errServerInfo": "server info",
+    "errDrivers": "drivers",
+    "errTransports": "transports",
+    "errStats": "runtime stats",
+    "errRules": "rules"
   },
   "settings": {
     "title": "Settings",

@@ -998,7 +998,13 @@
     "failed": "失败",
     "queueSize": "队列",
     "droppedCmds": "丢弃",
-    "off": "关闭"
+    "off": "关闭",
+    "loadFailed": "部分数据加载失败：{{failed}}",
+    "errServerInfo": "服务器信息",
+    "errDrivers": "驱动列表",
+    "errTransports": "传输列表",
+    "errStats": "运行统计",
+    "errRules": "规则列表"
   },
   "settings": {
     "title": "系统设置",
