@@ -373,6 +373,9 @@ const GroupCard: React.FC<GroupCardProps> = ({
   const [addingRule, setAddingRule] = useState(false)
   const [editingRule, setEditingRule] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  // C-B4: sub-rule deletion asks too — the group delete had a confirm while
+  // the row delete (the easier one to mis-click) vanished instantly.
+  const [deleteRuleName, setDeleteRuleName] = useState<string | null>(null)
 
   const ruleNames = rules.map((r) => r.name)
 
@@ -513,8 +516,9 @@ const GroupCard: React.FC<GroupCardProps> = ({
                     </button>
                     <button
                       type="button"
-                      onClick={() => onDeleteRule(name, rl.name)}
+                      onClick={() => setDeleteRuleName(rl.name)}
                       className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
+                      aria-label={t('common.delete')}
                     >
                       <Trash2 className="w-3 h-3" />
                     </button>
@@ -568,7 +572,33 @@ const GroupCard: React.FC<GroupCardProps> = ({
                 onDelete(name)
                 setConfirmDelete(false)
               }}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 danger-pulse"
+              variant="destructive"
+              className="danger-pulse"
+            >
+              {t('common.delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* C-B4: sub-rule delete confirmation — same gate as the group delete. */}
+      <AlertDialog open={!!deleteRuleName} onOpenChange={(o) => !o && setDeleteRuleName(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('ruleGroup.deleteRuleTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('ruleGroup.deleteRuleConfirm', { name: deleteRuleName ?? '' })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              className="danger-pulse"
+              onClick={() => {
+                if (deleteRuleName) onDeleteRule(name, deleteRuleName)
+                setDeleteRuleName(null)
+              }}
             >
               {t('common.delete')}
             </AlertDialogAction>

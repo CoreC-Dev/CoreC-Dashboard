@@ -1557,6 +1557,8 @@
     "rulePriority": "Priority",
     "deleteGroupTitle": "Delete Rule Group",
     "deleteGroupConfirm": "Are you sure you want to delete the rule group \"{{name}}\" and all its rules?",
+    "deleteRuleTitle": "Delete sub-rule",
+    "deleteRuleConfirm": "Are you sure you want to delete sub-rule \"{{name}}\"? The change takes effect when you apply the config.",
     "usageHint": "Reference a group from a top-level rule: match: \"SUB-RULE:group-name\". The sub-engine evaluates all rules in the group and returns the first match.",
     "subRuleRef": "Insert SUB-RULE reference",
     "ruleTargets": "Multi-Targets",

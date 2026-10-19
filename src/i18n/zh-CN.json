@@ -1557,6 +1557,8 @@
     "rulePriority": "优先级",
     "deleteGroupTitle": "删除规则组",
     "deleteGroupConfirm": "确定要删除规则组 \"{{name}}\" 及其所有规则吗？",
+    "deleteRuleTitle": "删除子规则",
+    "deleteRuleConfirm": "确定要删除子规则 \"{{name}}\" 吗？此变更将在您应用配置时生效。",
     "usageHint": "从顶层规则引用组：match: \"SUB-RULE:组名\"。子引擎评估组中所有规则并返回第一个匹配。",
     "subRuleRef": "插入 SUB-RULE 引用",
     "ruleTargets": "多目标",
