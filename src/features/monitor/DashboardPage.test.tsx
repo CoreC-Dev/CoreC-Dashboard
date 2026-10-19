@@ -142,6 +142,18 @@ describe('DashboardPage — dead-letter card honesty (B03)', () => {
     expect(badge.closest('a')?.getAttribute('href')).toContain('/corec/inst1/monitor/alerts')
   })
 
+  it('the row-5 header link reads "View All" and points at the alerts page (B14)', async () => {
+    renderPage()
+
+    expect(await screen.findByText('Dead Letter Queue (failed writes)')).toBeTruthy()
+    // Not a third "Manage" clone — the link says view-all and means the
+    // alerts page.
+    const link = screen.getByText('View All').closest('a')
+    expect(link).toBeTruthy()
+    expect(link?.getAttribute('href')).toContain('/corec/inst1/monitor/alerts')
+    expect(screen.queryAllByText('Manage')).toHaveLength(2) // driver + transport rows only
+  })
+
   it('shows no error-event badge when the global feed holds no error events', async () => {
     renderPage()
 

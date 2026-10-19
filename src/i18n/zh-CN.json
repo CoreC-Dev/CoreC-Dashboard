@@ -333,6 +333,7 @@
     "noFailedWrites": "暂无写入失败记录",
     "retries": "{{count}} 次重试",
     "manage": "管理",
+    "viewAll": "查看全部",
     "unknownCardType": "未知卡片类型：{{type}}",
     "readPerSec": "读取 / 秒",
     "publishPerSec": "发布 / 秒",

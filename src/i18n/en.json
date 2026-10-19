@@ -333,6 +333,7 @@
     "noFailedWrites": "No failed writes recorded",
     "retries": "{{count}} retries",
     "manage": "Manage",
+    "viewAll": "View All",
     "unknownCardType": "Unknown card type: {{type}}",
     "readPerSec": "Read / s",
     "publishPerSec": "Publish / s",
