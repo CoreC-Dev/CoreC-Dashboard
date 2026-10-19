@@ -5,6 +5,7 @@ import {
   Cpu,
   Database,
   FileCode2,
+  GitBranch,
   RefreshCw,
   RotateCcw,
 } from 'lucide-react'
@@ -32,6 +33,7 @@ import { dumpConfigYaml, parseConfigYaml, upsertDriver } from '@/lib/configYaml'
 import { extractDriverYaml, getDriverConnectionFields } from '@/lib/connectionInfo'
 import { ConnStateLabel, QualityLabel } from '@/lib/constants'
 import { type RegistryEditField, registryToEditFields } from '@/lib/registryAdapter'
+import { rulesDependingOnDriver } from '@/lib/ruleDependencies'
 import { DRIVER_TOPLEVEL_FIELDS, getDriverFieldRegistry } from '@/lib/settingsRegistry'
 import { formatNumber } from '@/lib/utils'
 import type { CoreCConfig, DriverConfig } from '@/types/config'
@@ -227,6 +229,19 @@ export const DriverDetailPage: React.FC = () => {
     () => (rawYaml && driver ? extractDriverYaml(rawYaml, driver.name) : ''),
     [rawYaml, driver],
   )
+  // C-A11: rules whose match DSL consumes this driver's points — scanned
+  // from the saved config this page renders. The config entry (with its
+  // tag list) drives the scan; the runtime stat carries no tags.
+  const relatedRules = useMemo(() => {
+    if (!driver) return []
+    const cfgDriver = config?.drivers?.find((d) => d.name === driver.name) ?? { name: driver.name }
+    return rulesDependingOnDriver({
+      driver: cfgDriver,
+      allDrivers: config?.drivers ?? [],
+      rules: config?.rules ?? [],
+      groups: config?.['rule-groups'],
+    })
+  }, [config, driver])
   const [yamlOpen, setYamlOpen] = useState(false)
 
   if (isLoading) {
@@ -421,6 +436,44 @@ export const DriverDetailPage: React.FC = () => {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* C-A11: rules consuming this driver's data — the detail page is the
+          natural "where does this driver's data go?" surface, and the only
+          structural link between a rule and a driver is its match DSL, so
+          the scan reuses the C-A3 dependency scanner over the SAVED config
+          (this page renders server state, not the working draft). */}
+      <Card className="bg-card">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+            <GitBranch className="h-4 w-4 text-status-warning" />
+            {t('drivers.relatedRulesTitle', { count: relatedRules.length })}
+          </CardTitle>
+          <CardDescription>{t('drivers.relatedRulesDesc')}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {relatedRules.length === 0 ? (
+            <div className="text-xs text-muted-foreground">{t('drivers.noRelatedRules')}</div>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {relatedRules.slice(0, 10).map((r) => (
+                <Link
+                  key={r.name}
+                  to={`${adminBase}/rules`}
+                  className="rounded-lg border border-status-warning/30 bg-status-warning/5 px-2.5 py-1.5 font-mono text-xs text-foreground transition-colors hover:border-status-warning/60 hover:underline"
+                >
+                  {r.name}
+                  <span className="ml-1.5 text-muted-foreground">→ {r.action}</span>
+                </Link>
+              ))}
+              {relatedRules.length > 10 && (
+                <span className="self-center text-xs italic text-muted-foreground">
+                  {t('drivers.deleteAndMore', { count: relatedRules.length - 10 })}
+                </span>
+              )}
             </div>
           )}
         </CardContent>
