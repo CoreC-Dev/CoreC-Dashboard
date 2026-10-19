@@ -1,8 +1,10 @@
 // @vitest-environment jsdom
 // C-B4 regression: deleting a sub-rule inside a rule group must pass the
 // same confirmation gate the group delete already had — the row delete used
-// to vanish the sub-rule instantly. C-B5 cases (rename SUB-RULE reference
-// scan) join this file in their own commit.
+// to vanish the sub-rule instantly.
+// C-B5 regression: renaming a group must surface the SUB-RULE references
+// that would break and offer to rewrite them (default on) — the rename used
+// to leave dead references everywhere silently.
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { act } from 'react'
 import { MemoryRouter } from 'react-router-dom'
@@ -95,5 +97,121 @@ describe('RuleGroupEditor — sub-rule delete confirmation (C-B4)', () => {
     })
     expect(useConfigStore.getState().workingConfig?.['rule-groups']?.['group-a']).toHaveLength(2)
     expect(screen.queryByText('Delete sub-rule')).toBeNull()
+  })
+})
+
+// ─── C-B5: rename vs SUB-RULE references ──────────────────────────────
+
+/** Working config where group-a is referenced from a top-level rule and
+ *  from another group's sub-rule. */
+const REFS_WORKING: CoreCConfig = {
+  rules: [
+    {
+      name: 'top-ref',
+      match: 'SUB-RULE:group-a && value > 80',
+      action: 'alert',
+      priority: 10,
+    },
+  ],
+  'rule-groups': {
+    'group-a': [SUB_1],
+    'group-b': [{ name: 'nested', match: 'SUB-RULE:group-a', action: 'drop', priority: 100 }],
+  },
+}
+
+/** Open a group's rename input (by card order), type the new name, Enter. */
+async function renameGroup(from: string, to: string, cardIndex = 0) {
+  await screen.findByText(from)
+  await act(async () => {
+    fireEvent.click(screen.getAllByRole('button', { name: 'Edit' })[cardIndex]!)
+  })
+  const input = screen.getByDisplayValue(from)
+  await act(async () => {
+    fireEvent.change(input, { target: { value: to } })
+    fireEvent.keyDown(input, { key: 'Enter' })
+  })
+}
+
+describe('RuleGroupEditor — rename scans SUB-RULE references (C-B5)', () => {
+  beforeEach(() => {
+    useConfigStore.setState({
+      workingConfig: REFS_WORKING,
+      savedConfig: REFS_WORKING,
+      dirty: true,
+    })
+  })
+
+  it('lists the breaking references and rewrites them on confirm (default on)', async () => {
+    render(
+      <MemoryRouter>
+        <RuleGroupEditor />
+      </MemoryRouter>,
+    )
+
+    await renameGroup('group-a', 'group-z')
+
+    // The dialog counts both references (top-level + cross-group) and
+    // lists where each lives.
+    expect(
+      await screen.findByText('Renaming breaks 2 SUB-RULE reference(s). Update them too?'),
+    ).toBeTruthy()
+    expect(screen.getByText(/top-ref/)).toBeTruthy()
+    expect(screen.getByText(/nested/)).toBeTruthy()
+
+    // Checkbox defaults to rewriting.
+    const box = document.getElementById('rename-update-refs') as HTMLInputElement
+    expect(box.getAttribute('data-state')).toBe('checked')
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Rename' }))
+    })
+
+    const cfg = useConfigStore.getState().workingConfig
+    expect(cfg?.['rule-groups']?.['group-z']).toBeDefined()
+    expect(cfg?.['rule-groups']?.['group-a']).toBeUndefined()
+    expect(cfg?.rules?.find((r) => r.name === 'top-ref')?.match).toBe(
+      'SUB-RULE:group-z && value > 80',
+    )
+    expect(cfg?.['rule-groups']?.['group-b']?.[0]?.match).toBe('SUB-RULE:group-z')
+  })
+
+  it('unchecking the box renames without rewriting — references left as-is', async () => {
+    render(
+      <MemoryRouter>
+        <RuleGroupEditor />
+      </MemoryRouter>,
+    )
+
+    await renameGroup('group-a', 'group-z')
+    expect(await screen.findByText(/Renaming breaks 2 SUB-RULE reference\(s\)/)).toBeTruthy()
+
+    await act(async () => {
+      fireEvent.click(document.getElementById('rename-update-refs')!)
+    })
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Rename' }))
+    })
+
+    const cfg = useConfigStore.getState().workingConfig
+    expect(cfg?.['rule-groups']?.['group-z']).toBeDefined()
+    // Deliberately untouched — the operator opted out of the rewrite.
+    expect(cfg?.rules?.find((r) => r.name === 'top-ref')?.match).toBe(
+      'SUB-RULE:group-a && value > 80',
+    )
+    expect(cfg?.['rule-groups']?.['group-b']?.[0]?.match).toBe('SUB-RULE:group-a')
+  })
+
+  it('renames silently when nothing references the group', async () => {
+    render(
+      <MemoryRouter>
+        <RuleGroupEditor />
+      </MemoryRouter>,
+    )
+
+    await renameGroup('group-b', 'group-y', 1)
+
+    const cfg = useConfigStore.getState().workingConfig
+    expect(cfg?.['rule-groups']?.['group-y']).toBeDefined()
+    expect(screen.queryByText(/Renaming breaks/)).toBeNull()
   })
 })

@@ -138,3 +138,87 @@ describe('useTagExplorerStream — same-second coalescing (B21)', () => {
     ])
   })
 })
+
+describe('useTagExplorerStream — snapshot reconcile (B23)', () => {
+  const pt = (tag: string, value: number): DataPoint => ({
+    driver: 'plc1',
+    device: '',
+    tag,
+    value,
+    type: 'int32',
+    quality: 0,
+    timestamp: '2026-01-01T12:00:00Z',
+  })
+
+  function renderReconcile(onTagsDiscovered: (count: number) => void) {
+    return renderHook(
+      ({ tags }: { tags: Record<string, DataPoint> | undefined }) =>
+        useTagExplorerStream({ initialTags: tags, selectedDriver: 'all', onTagsDiscovered }),
+      { initialProps: { tags: undefined as Record<string, DataPoint> | undefined } },
+    )
+  }
+
+  it('seeds the FIRST snapshot without a discovery notice', () => {
+    const onTagsDiscovered = vi.fn()
+    const { result, rerender } = renderReconcile(onTagsDiscovered)
+
+    act(() => {
+      rerender({ tags: { a: pt('a', 1), b: pt('b', 2) } })
+    })
+
+    expect(Object.keys(result.current.tagMap)).toHaveLength(2)
+    expect(onTagsDiscovered).not.toHaveBeenCalled()
+  })
+
+  it('a LATER snapshot fills added tags, drops removed ones, and reports the count', () => {
+    const onTagsDiscovered = vi.fn()
+    const { result, rerender } = renderReconcile(onTagsDiscovered)
+    act(() => {
+      rerender({ tags: { a: pt('a', 1), b: pt('b', 2) } })
+    })
+
+    // Backend added 'c', deleted 'a'.
+    act(() => {
+      rerender({ tags: { b: pt('b', 2), c: pt('c', 3) } })
+    })
+
+    expect(result.current.tagMap['plc1::::c']?.value).toBe(3) // filled
+    expect(result.current.tagMap['plc1::::a']).toBeUndefined() // dropped
+    expect(Object.keys(result.current.tagMap)).toHaveLength(2)
+    expect(onTagsDiscovered).toHaveBeenCalledTimes(1)
+    expect(onTagsDiscovered).toHaveBeenCalledWith(1)
+  })
+
+  it('never overwrites a live value the map already holds (snapshot data is older)', () => {
+    const onTagsDiscovered = vi.fn()
+    const { result, rerender } = renderReconcile(onTagsDiscovered)
+    act(() => {
+      rerender({ tags: { a: pt('a', 1) } })
+    })
+
+    act(() => {
+      rerender({ tags: { a: pt('a', 99), b: pt('b', 2) } })
+    })
+
+    expect(result.current.tagMap['plc1::::a']?.value).toBe(1) // fresher WS value kept
+    expect(result.current.tagMap['plc1::::b']?.value).toBe(2) // new key filled
+    expect(onTagsDiscovered).toHaveBeenCalledWith(1) // only 'b' counts
+  })
+
+  it('re-rendering with the SAME snapshot object does not re-notify (StrictMode-safe)', () => {
+    const onTagsDiscovered = vi.fn()
+    const { rerender } = renderReconcile(onTagsDiscovered)
+    const second = { b: pt('b', 2), c: pt('c', 3) }
+    act(() => {
+      rerender({ tags: { a: pt('a', 1) } })
+    })
+    act(() => {
+      rerender({ tags: second })
+    })
+    act(() => {
+      rerender({ tags: second })
+    })
+
+    expect(onTagsDiscovered).toHaveBeenCalledTimes(1)
+  })
+})

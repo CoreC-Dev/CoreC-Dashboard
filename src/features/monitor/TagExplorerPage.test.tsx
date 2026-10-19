@@ -201,3 +201,30 @@ describe('TagExplorerPage — dead-letter deep-link prefill (B11)', () => {
     expect(socketArgs[0]?.[1]).toEqual({})
   })
 })
+
+describe('TagExplorerPage — snapshot discovery (B23)', () => {
+  it('a refresh that finds backend-added tags surfaces the discovery notice', async () => {
+    let call = 0
+    vi.mocked(api.getTags).mockImplementation(async () => {
+      call += 1
+      return call === 1
+        ? { tags: { ...SEED_TAGS } }
+        : {
+            tags: {
+              ...SEED_TAGS,
+              extra: point({ tag: 'extra', driver: 'plc1' }),
+            },
+          }
+    })
+
+    renderPage()
+    await screen.findByText('Points: 3')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }))
+
+    // The reconcile discovered one new tag — notice + updated count, no
+    // hidden "manual refresh" knowledge required.
+    expect(await screen.findByText('1 new tags discovered')).toBeTruthy()
+    await screen.findByText('Points: 4')
+  })
+})

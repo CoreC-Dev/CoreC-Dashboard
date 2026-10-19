@@ -1,5 +1,6 @@
+import { Sparkles } from 'lucide-react'
 import type React from 'react'
-import { useCallback, useDeferredValue, useMemo, useState } from 'react'
+import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router-dom'
 import { useDrivers, useTags } from '@/api/hooks'
@@ -13,6 +14,7 @@ import {
   isNumericType,
   matchesQualityFilter,
   type QualityFilter,
+  TAG_SNAPSHOT_POLL_MS,
   tagKey,
   toSeconds,
 } from '@/lib/tagExplorer'
@@ -32,13 +34,24 @@ export const TagExplorerPage: React.FC = () => {
     () => searchParams.get('driver') || 'all',
   )
 
+  // B23: transient "new tags discovered" notice — set by the stream's
+  // snapshot reconcile, auto-dismisses after a few seconds.
+  const [discoveryNotice, setDiscoveryNotice] = useState<number | null>(null)
+  const handleTagsDiscovered = useCallback((count: number) => {
+    setDiscoveryNotice(count)
+  }, [])
+  useEffect(() => {
+    if (discoveryNotice === null) return
+    const id = window.setTimeout(() => setDiscoveryNotice(null), 8000)
+    return () => window.clearTimeout(id)
+  }, [discoveryNotice])
+
   const {
     tagMap,
     flashTick,
     trendSamples,
     setTrendSamples,
     discardPendingTrend,
-    resetSeed,
     trendTag,
     setTrendTag,
     trendPaused,
@@ -46,7 +59,21 @@ export const TagExplorerPage: React.FC = () => {
   } = useTagExplorerStream({
     initialTags: initialTagsData?.tags,
     selectedDriver,
+    // B23: the stream's snapshot reconcile reports discovered tags so the
+    // page can surface the transient notice below.
+    onTagsDiscovered: handleTagsDiscovered,
   })
+
+  // B23: low-frequency snapshot poll — backend-added tags appear within a
+  // minute without the hidden "manual refresh" knowledge; removed tags
+  // leave the table on the same cadence. useTags itself stays unpolled
+  // (api/hooks is off-limits by design); the page owns this interval.
+  useEffect(() => {
+    const iv = setInterval(() => {
+      void refetch()
+    }, TAG_SNAPSHOT_POLL_MS)
+    return () => clearInterval(iv)
+  }, [refetch])
 
   // Search/filter/sort state. B11: the tag URL param prefills the search box.
   const [searchTerm, setSearchTerm] = useState(() => searchParams.get('tag') ?? '')
@@ -165,8 +192,8 @@ export const TagExplorerPage: React.FC = () => {
   }, [discardPendingTrend, setTrendTag, setTrendSamples])
 
   const handleRefresh = () => {
-    // Allow a single re-seed from the next REST snapshot to pick up new tags.
-    resetSeed()
+    // B23: a plain refetch is enough — every new snapshot object
+    // reconciles the live map (the seed-once guard is gone).
     refetch()
   }
 
@@ -237,6 +264,18 @@ export const TagExplorerPage: React.FC = () => {
           isFetching={isFetching}
           onRefresh={handleRefresh}
         />
+
+        {/* B23: backend-added tags surface within a snapshot cycle — the
+         * operator no longer needs the hidden "manual refresh" knowledge. */}
+        {discoveryNotice !== null && (
+          <div
+            role="status"
+            className="flex items-center gap-2 rounded-xl border border-status-running/30 bg-status-running/10 px-4 py-2 text-sm text-status-running"
+          >
+            <Sparkles className="h-4 w-4 shrink-0" aria-hidden />
+            <span>{t('tags.newTagsDiscovered', { count: discoveryNotice })}</span>
+          </div>
+        )}
 
         <TagTable
           filteredTags={filteredTags}

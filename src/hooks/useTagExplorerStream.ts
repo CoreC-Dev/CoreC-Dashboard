@@ -12,10 +12,15 @@ import {
 import type { DataPoint } from '@/types/models'
 
 interface UseTagExplorerStreamOptions {
-  /** REST snapshot of all tags, polled by useTags every 5s. Seeded once. */
+  /** REST snapshot of all tags (re-fetched by the page every
+   *  TAG_SNAPSHOT_POLL_MS; each NEW object reconciles the live map, B23). */
   initialTags: Record<string, DataPoint> | undefined
   /** Active driver filter ('all' = every driver); drives the WS params. */
   selectedDriver: string
+  /** B23: called with the number of tags a snapshot reconcile DISCOVERED
+   *  (filled keys the live map lacked) — the initial seed does not fire
+   *  it. Wire it to a transient "new tags" notice. */
+  onTagsDiscovered?: (count: number) => void
 }
 
 interface UseTagExplorerStreamResult {
@@ -31,9 +36,6 @@ interface UseTagExplorerStreamResult {
    *  trend session. Does NOT cancel the shared RAF (tag/flash flushes remain
    *  valid). */
   discardPendingTrend: () => void
-  /** Reset the one-time seed guard so the next REST snapshot re-merges
-   *  (used by the manual Refresh button to discover newly-added tags). */
-  resetSeed: () => void
   /** The tag currently shown in the trend drawer. */
   trendTag: DataPoint | null
   /** Set the trend tag. Updates the internal ref synchronously so the WS
@@ -60,6 +62,7 @@ interface UseTagExplorerStreamResult {
 export function useTagExplorerStream({
   initialTags,
   selectedDriver,
+  onTagsDiscovered,
 }: UseTagExplorerStreamOptions): UseTagExplorerStreamResult {
   // Live tag map, keyed by the composite tagKey() (driver::device::tag).
   const [tagMap, setTagMap] = useState<Record<string, DataPoint>>({})
@@ -99,32 +102,46 @@ export function useTagExplorerStream({
     })
   }, [trendPaused])
 
-  // Seed-once guard so the 5s REST poll never clobbers fresher WS values.
-  const hasSeeded = useRef(false)
-
-  // Seed the tag map from the REST snapshot ONCE on first load.
-  //
-  // useTags polls every 5s (refetchInterval: 5000) and returns a fresh object
-  // each poll. Re-running setTagMap(initialTags) on every poll — as the
-  // original [initialTagsData] effect did — overwrites the live WS-merged map
-  // and clobbers newer WS updates (the race condition). We seed once, then let
-  // WS merges own the live state. A manual Refresh re-enables a single merge
-  // to discover newly-added tags without clobbering fresher WS values.
+  // B23 — snapshot reconcile. Every NEW REST snapshot object (each fetch
+  // re-ran: manual refresh, config-reload invalidation, reconnect, or the
+  // page's 60s poll) diffs the live map:
+  //  - fills keys the live map lacks (new backend tags appear without the
+  //    hidden "manual refresh" knowledge) — never overwriting, since WS
+  //    values are always fresher than the snapshot;
+  //  - drops keys the snapshot no longer carries (deleted tags used to
+  //    squat in the table forever). A tag pushed by WS milliseconds before
+  //    the snapshot was taken can be removed for one cycle if the registry
+  //    hadn't caught up — the next snapshot self-heals;
+  //  - reports how many tags it DISCOVERED (not the initial seed) so the
+  //    page can show a transient notice.
+  const onDiscoveredRef = useRef(onTagsDiscovered)
+  onDiscoveredRef.current = onTagsDiscovered
+  const lastSnapshotRef = useRef<Record<string, DataPoint> | undefined>(undefined)
+  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed on the snapshot object identity only — reconcile must NOT re-run on every rAF tagMap flush; the map is read as of the snapshot's render.
   useEffect(() => {
-    if (hasSeeded.current) return
     if (!initialTags) return
-    hasSeeded.current = true
-    setTagMap((prev) => {
-      const next = { ...prev }
-      for (const point of Object.values(initialTags)) {
-        const k = tagKey(point)
-        // REST is keyed by tag name only; re-key by the composite identity.
-        // Only fill tags the live WS map doesn't already have — WS values are
-        // always fresher than the REST snapshot, so never overwrite them.
-        if (!next[k]) next[k] = point
+    const isFirstEver = lastSnapshotRef.current === undefined
+    const isSameObject = lastSnapshotRef.current === initialTags
+    lastSnapshotRef.current = initialTags
+
+    const snapshotKeys = new Set<string>()
+    let discovered = 0
+    const next = { ...tagMap }
+    for (const point of Object.values(initialTags)) {
+      const k = tagKey(point)
+      snapshotKeys.add(k)
+      if (!next[k]) {
+        next[k] = point
+        discovered += 1
       }
-      return next
-    })
+    }
+    for (const k of Object.keys(next)) {
+      if (!snapshotKeys.has(k)) delete next[k]
+    }
+    setTagMap(next)
+    if (discovered > 0 && !isFirstEver && !isSameObject) {
+      onDiscoveredRef.current?.(discovered)
+    }
   }, [initialTags])
 
   // rAF batching for the high-frequency /tags/stream. The WS cap is ~500
@@ -242,17 +259,12 @@ export function useTagExplorerStream({
     }
   }, [selectedDriver, scheduleFlush, discardPendingTrend])
 
-  const resetSeed = useCallback(() => {
-    hasSeeded.current = false
-  }, [])
-
   return {
     tagMap,
     flashTick,
     trendSamples,
     setTrendSamples,
     discardPendingTrend,
-    resetSeed,
     trendTag,
     setTrendTag,
     trendPaused,

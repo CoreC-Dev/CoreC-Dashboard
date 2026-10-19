@@ -57,6 +57,7 @@ import { ExprValidationMessages } from '@/components/wizard/ExprValidationMessag
 import { MatchExpressionChips } from '@/components/wizard/MatchExpressionChips'
 import { useTransportNames } from '@/hooks/useConfigValidation'
 import { validateRuleExpression } from '@/lib/ruleExprValidator'
+import { findSubRuleReferences, rewriteRuleListRefs, type SubRuleRef } from '@/lib/subRuleRefs'
 import { validateTransformExpression } from '@/lib/transformExprValidator'
 import { useConfigStore } from '@/stores/configStore'
 import { RULE_ACTIONS, type RuleAction, type RuleConfig } from '@/types/config'
@@ -616,12 +617,21 @@ export const RuleGroupEditor: React.FC = () => {
   const workingConfig = useConfigStore((s) => s.workingConfig)
   const upsertRuleGroup = useConfigStore((s) => s.upsertRuleGroup)
   const removeRuleGroup = useConfigStore((s) => s.removeRuleGroup)
+  const upsertRule = useConfigStore((s) => s.upsertRule)
   const isRuleGroupNameUnique = useConfigStore((s) => s.isRuleGroupNameUnique)
   const resetToEmpty = useConfigStore((s) => s.resetToEmpty)
   const dirty = useConfigStore((s) => s.dirty)
 
   const [newGroupName, setNewGroupName] = useState('')
   const [showCreate, setShowCreate] = useState(false)
+  // C-B5: rename → SUB-RULE reference scan → confirm dialog (with a
+  // default-on "rewrite the references too" checkbox).
+  const [pendingRename, setPendingRename] = useState<{
+    oldName: string
+    newName: string
+    refs: SubRuleRef[]
+  } | null>(null)
+  const [updateRefs, setUpdateRefs] = useState(true)
 
   const groups = workingConfig?.['rule-groups'] ?? {}
   const groupEntries = Object.entries(groups)
@@ -634,12 +644,49 @@ export const RuleGroupEditor: React.FC = () => {
     setShowCreate(false)
   }
 
+  /** Rename the group and (optionally) rewrite SUB-RULE refs to it. The
+   *  config snapshot is taken before the rename: top-level rules and OTHER
+   *  groups are untouched by the group's own rename, so the pre-rename
+   *  lists stay valid rewrite sources. */
+  const performRename = (
+    oldName: string,
+    newName: string,
+    refs: readonly SubRuleRef[],
+    withRefUpdate: boolean,
+  ) => {
+    const cfg = useConfigStore.getState().workingConfig
+    removeRuleGroup(oldName)
+    upsertRuleGroup(newName, groups[oldName] ?? [])
+    if (!withRefUpdate) return
+    for (const ref of refs) {
+      if (ref.inGroup === null) {
+        const topRule = cfg?.rules?.find((r) => r.name === ref.ruleName)
+        if (topRule) upsertRule(rewriteRuleListRefs([topRule], oldName, newName)[0]!)
+      } else {
+        const groupRules = cfg?.['rule-groups']?.[ref.inGroup] ?? []
+        upsertRuleGroup(ref.inGroup, rewriteRuleListRefs(groupRules, oldName, newName))
+      }
+    }
+  }
+
   const handleRename = (oldName: string, newName: string) => {
     if (oldName === newName) return
     if (!isRuleGroupNameUnique(newName)) return
-    const rules = groups[oldName] ?? []
-    removeRuleGroup(oldName)
-    upsertRuleGroup(newName, rules)
+    // C-B5: references break silently otherwise — list them and offer the
+    // rewrite before the rename lands in the working config.
+    const refs = findSubRuleReferences(workingConfig, oldName)
+    if (refs.length === 0) {
+      performRename(oldName, newName, refs, false)
+      return
+    }
+    setUpdateRefs(true)
+    setPendingRename({ oldName, newName, refs })
+  }
+
+  const confirmPendingRename = () => {
+    if (!pendingRename) return
+    performRename(pendingRename.oldName, pendingRename.newName, pendingRename.refs, updateRefs)
+    setPendingRename(null)
   }
 
   const handleDelete = (name: string) => {
@@ -795,6 +842,48 @@ export const RuleGroupEditor: React.FC = () => {
             {t('ruleGroup.usageHint')}
           </div>
         )}
+
+        {/* C-B5: rename confirmation when SUB-RULE references would break */}
+        <AlertDialog open={!!pendingRename} onOpenChange={(o) => !o && setPendingRename(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{t('ruleGroup.renameTitle')}</AlertDialogTitle>
+              <AlertDialogDescription>
+                {t('ruleGroup.renameRefsWarning', { count: pendingRename?.refs.length ?? 0 })}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <ul className="max-h-40 space-y-1 overflow-y-auto rounded-md border border-border bg-muted/30 p-2 text-xs">
+              {pendingRename?.refs.map((ref) => (
+                <li
+                  key={`${ref.inGroup ?? 'top'}-${ref.ruleName}`}
+                  className="truncate font-mono text-muted-foreground"
+                >
+                  {ref.ruleName}
+                  <span className="text-muted-foreground/60">
+                    {' '}
+                    ({ref.inGroup ?? t('ruleGroup.renameRefTopLevel')})
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="rename-update-refs"
+                checked={updateRefs}
+                onCheckedChange={(v) => setUpdateRefs(v === true)}
+              />
+              <label htmlFor="rename-update-refs" className="cursor-pointer text-xs font-medium">
+                {t('ruleGroup.renameUpdateRefs')}
+              </label>
+            </div>
+            <AlertDialogFooter>
+              <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmPendingRename}>
+                {t('ruleGroup.renameAction')}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </CardContent>
     </Card>
   )

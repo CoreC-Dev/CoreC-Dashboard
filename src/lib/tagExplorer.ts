@@ -4,6 +4,10 @@ import type { DataPoint } from '@/types/models'
 export const ROW_HEIGHT = 48
 /** Max samples retained in the live trend chart sliding window. */
 export const MAX_TREND_SAMPLES = 100
+/** B23: how often the REST /tags snapshot re-fetches so the live map
+ *  reconciles backend tag additions/removals (useTags itself stays
+ *  unpolled — the page owns this cadence). */
+export const TAG_SNAPSHOT_POLL_MS = 60_000
 
 /** Fixed percentage column widths — header and rows share these so columns
  *  stay aligned inside the virtualized (display:block) table. B06 added the
