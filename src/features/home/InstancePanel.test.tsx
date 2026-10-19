@@ -451,3 +451,42 @@ describe('InstancePanel — ?edit deep link (D-15)', { timeout: 15_000 }, () => 
     expect(screen.queryByText(t('instances.editTitle'))).not.toBeInTheDocument()
   })
 })
+
+// A-22 — the header language toggle displayed the CURRENT language ("中"
+// on a Chinese UI) with no title/aria-label: nobody could tell what a click
+// would do. It must offer the language it will switch TO, labeled properly.
+describe('InstancePanel — language toggle (A-22)', () => {
+  afterEach(async () => {
+    // Leave the suite in the language the other describes assert against.
+    await act(async () => {
+      i18n.changeLanguage('zh-CN')
+    })
+  })
+
+  it('shows the TARGET language and announces the switch', async () => {
+    await act(async () => {
+      i18n.changeLanguage('zh-CN')
+    })
+    render(
+      <MemoryRouter>
+        <InstancePanel />
+      </MemoryRouter>,
+    )
+
+    const expectedName = t('common.switchToLanguage', { language: 'English' })
+    const toggle = screen.getByRole('button', { name: expectedName })
+    // The visible label is the target language code, not the current one.
+    expect(toggle).toHaveTextContent('EN')
+    expect(toggle).toHaveAttribute('title', expectedName)
+
+    await act(async () => {
+      fireEvent.click(toggle)
+    })
+    // The UI flipped to English: the toggle now offers 中文.
+    const afterSwitchName = t('common.switchToLanguage', { language: '中文' })
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: afterSwitchName })).toHaveTextContent('中')
+    })
+    expect(i18n.language).toBe('en')
+  })
+})

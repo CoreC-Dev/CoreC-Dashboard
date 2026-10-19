@@ -190,6 +190,16 @@ export const InstancePanel: React.FC = () => {
     setLocale(nextLang)
   }
 
+  // A-22: the toggle used to display the CURRENT language ("中" while the
+  // UI was already Chinese) with no title or aria-label — an operator could
+  // not tell what a click would do. It now shows the language a click will
+  // switch TO, and announces the same in its accessible name.
+  const isZh = i18n.language.startsWith('zh')
+  const languageToggleLabel = isZh ? 'EN' : '中'
+  const languageToggleTitle = t('common.switchToLanguage', {
+    language: isZh ? 'English' : '中文',
+  })
+
   return (
     <div className="min-h-screen bg-background text-foreground relative">
       {/* Subtle decorative gradient orb */}
@@ -255,9 +265,11 @@ export const InstancePanel: React.FC = () => {
             variant="ghost"
             size="sm"
             onClick={toggleLanguage}
+            title={languageToggleTitle}
+            aria-label={languageToggleTitle}
             className="h-8 px-2 text-xs font-mono text-muted-foreground hover:text-foreground"
           >
-            {i18n.language.startsWith('zh') ? '中' : 'EN'}
+            {languageToggleLabel}
           </Button>
           <Button
             variant="ghost"
