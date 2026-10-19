@@ -28,6 +28,7 @@ import { useEntityListPage } from '@/hooks/useEntityListPage'
 import { useParsedConfig } from '@/hooks/useParsedConfig'
 import { getTransportConnectionSummary } from '@/lib/connectionInfo'
 import { ConnStateLabel } from '@/lib/constants'
+import { unionRulesForDependencyScan } from '@/lib/ruleDependencies'
 import { formatNumber, isZeroTime } from '@/lib/utils'
 import { useConfigStore } from '@/stores/configStore'
 import type { TransportConfig } from '@/types/config'
@@ -102,8 +103,11 @@ export const TransportsPage: React.FC = () => {
   // the operator is warned before removing a dependency. A rule depends on
   // a transport if its `target` matches (forward/alert) or its `targets`
   // array includes the transport name (mirror).
+  // C-A13: the scan covers the working ∪ saved rule sets — a rule created
+  // seconds ago (not yet applied) is exactly the dependency the operator
+  // would be surprised to break at apply time.
   const dependentRules = deleteTarget
-    ? (parsedConfig?.rules ?? []).filter(
+    ? unionRulesForDependencyScan(workingConfig, parsedConfig).rules.filter(
         (r) => r.target === deleteTarget || (r.targets ?? []).includes(deleteTarget),
       )
     : []
