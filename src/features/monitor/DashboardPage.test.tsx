@@ -245,6 +245,28 @@ describe('DashboardPage — sample-rate honesty (B12)', () => {
   })
 })
 
+describe('DashboardPage — status honesty (B13)', () => {
+  it('renders a missing status as amber "Unknown", never a green "running" claim', async () => {
+    vi.mocked(api.getStats).mockResolvedValue({ ...STATS, status: '' })
+
+    renderPage()
+
+    const label = await screen.findByText('Unknown')
+    // The dot beside the label is amber, not the green running glow —
+    // "don't know" must not look like "healthy" during a night scan.
+    expect(label.previousElementSibling?.className).toContain('bg-status-warning')
+    expect(label.previousElementSibling?.className).not.toContain('bg-status-running')
+    expect(screen.queryByText('Running')).toBeNull()
+  })
+
+  it('keeps the green running glow only for an actual running/ok status', async () => {
+    renderPage() // STATS ships status: 'running'
+
+    const label = await screen.findByText('running')
+    expect(label.previousElementSibling?.className).toContain('bg-status-running')
+  })
+})
+
 describe('DashboardPage — online-ratio coloring (B05)', () => {
   const toneClassOf = (el: HTMLElement) => el.className
 

@@ -109,10 +109,12 @@ export const DashboardPage: React.FC = () => {
           : t('dashboard.notAvailable', { defaultValue: 'N/A' })
 
   // Engine status dot — reflect the actual stats.status instead of a hardcoded
-  // green. "running"/"ok" (and the loading state with no status yet) are
-  // healthy (green); error-like states are red; anything else is amber.
+  // green. B13: an ABSENT status is not "running" — rendering "don't know"
+  // as a green dot was the audit's complaint. Only an actual running/ok
+  // goes green; error-like states are red; anything else — including an
+  // empty/missing status — is amber "Unknown" (common.unknown).
   const statusLower = stats?.status?.toLowerCase() ?? ''
-  const isStatusHealthy = statusLower === '' || statusLower === 'running' || statusLower === 'ok'
+  const isStatusHealthy = statusLower !== '' && (statusLower === 'running' || statusLower === 'ok')
   const isStatusError =
     statusLower.includes('error') ||
     statusLower.includes('fatal') ||
@@ -203,7 +205,9 @@ export const DashboardPage: React.FC = () => {
           <div className="flex items-center space-x-2">
             <span className={`w-2.5 h-2.5 rounded-full ${statusDotClass}`} />
             <span className="text-base font-bold capitalize">
-              {stats?.status || t('common.running')}
+              {/* B13: a missing status reads "Unknown" — never a green
+               * "running" claim the server never made. */}
+              {stats?.status || t('common.unknown')}
             </span>
           </div>
           <div className="text-xs text-muted-foreground mt-1 flex items-center space-x-1">
