@@ -448,7 +448,7 @@
     "errOutOfRange": "值 {{n}} 超出 {{dt}} 的范围（有效范围：{{min}} 到 {{max}}）",
     "clearAll": "全部清除",
     "clearAllConfirm": "确定要清除所有死信吗？",
-    "clearAllDesc": "这将从列表中移除所有失败的下发指令。",
+    "clearAllDesc": "仅在本页隐藏这些条目（后端暂不提供删除接口）。其他会话仍会显示；服务器上的死信记录不受影响。",
     "confirm": "确认",
     "cancel": "取消",
     "deadLettersCleared": "死信已清除",

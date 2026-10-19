@@ -448,7 +448,7 @@
     "errOutOfRange": "Value {{n}} is out of range for {{dt}} (valid: {{min}} to {{max}})",
     "clearAll": "Clear All",
     "clearAllConfirm": "Are you sure you want to clear all dead letters?",
-    "clearAllDesc": "This will remove all failed write commands from the list.",
+    "clearAllDesc": "Hides these entries in this browser session only (no server-side delete is available). Other sessions still show them; the dead-letter records on the server are unaffected.",
     "confirm": "Confirm",
     "cancel": "Cancel",
     "deadLettersCleared": "Dead letters cleared",
