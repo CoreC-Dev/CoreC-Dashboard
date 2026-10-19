@@ -96,3 +96,10 @@ Conventional Commits；单一职责；重构与行为变更不混提；改造仅
 - **死信搜索与过滤（B10）**：死信队列头部新增搜索框（搜索死信（驱动/测点）…）与驱动过滤（驱动: 全部），全选提示与「显示 X/Y」底部计数对齐可见（过滤后）集合；无匹配时显示「没有匹配的死信」。过滤规则抽为纯函数 filterDeadLetters 并配单测；死信重放确认对话框拆出 DeadLetterReplayDialogs（主文件 443 行/对话框 212 行，回到 500 行门禁内）。
 - **死信「查看测点」深链（B11）**：每条死信新增「查看测点」链接（alerts.viewTag），直达 #/corec/{{id}}/monitor/tags?driver={{driver}}&tag={{tag}}；TagExplorerPage 挂载时经 useSearchParams 预填驱动过滤与搜索词（driver/tag 参数驱动 WS 订阅与搜索框）。重放前核对当前实时值不再需要抄测点名、切页、粘贴。
 - **趋势「回到最新」按钮（B 域待验证-1，已验证落地）**：验证确认 lightweight-charts 仅在最新 bar 位于可视右缘时自动跟随（全库原无任何 scrollToRealTime/fitContent 调用），拖拽/缩放回历史后无回跳手段；TagTrendPanel 头部与全屏对话框新增「回到最新」（tags.backToLive，回到最新/Back to live），经 useTrendChart.scrollToLive 调 timeScale().scrollToRealTime()。
+- **冷启动白屏期有话说（A-12）**：main.tsx 等待 detectProxyMode（最长约 3s）期间 #root 原先是纯白一片——分不清在加载还是挂了；index.html 现在内置静态双语 splash（内联样式 logo +「正在加载 CoreC Dashboard…」/"Loading CoreC Dashboard…"，不依赖未加载的 CSS、不引入第二段内联脚本），createRoot().render 挂载即自动替换；splashBoot 测试对真实 react-dom 钉住"挂载替换 splash"与双语文案。
+- **实例状态点对色弱/读屏可读（A-13）**：灰/黄/绿/红状态点原先无文字、无 title、无 aria-label——每态 dot 现带 title+aria-label（复用 common.connected/connecting/error/unknown），错误/未知态额外在点旁渲染文字徽标（健康态靠 title 即可，避免满屏徽标噪音）。
+- **密钥输入不再被当登录密码（A-17）**：InstanceDialog 的 API 密钥字段补 autoComplete="off" + name="corec-api-secret" + data-1p-ignore——浏览器/密码管理器不再把 CoreC token 当本站登录密码弹保存/回填。
+- **实例可排序（A-18）**：instanceStore.reorderInstances 自诞生起无任何 UI 调用——实例多了一直无法排序；卡片 ⋮ 菜单新增「上移/下移」两项（首/末位对应禁用），与相邻实例交换位置并持久化 sortOrder。为守住 500 行门禁，卡片拓扑面板先行抽为 InstanceCardTopology 组件（纯重构、单独提交）。
+- **高对话框可滚动（A-19）**：DialogContent 原先无 max-h/overflow 约束——矮屏/横屏平板上七字段实例表单超出视口且滚不到底部按钮；类名追加 max-h-[calc(100vh-2rem)] overflow-y-auto（对所有弹窗普惠，短内容不出滚动条）。
+- **语言切换按钮表意（A-22）**：按钮由显示当前语言（中文界面显示「中」）改为显示目标语言（当前 zh → "EN"），并补 title/aria-label=「切换到 {{language}}」（新增 common.switchToLanguage）——点它会怎样不再靠猜。
+- **导入对话框二合一（A-14）**：同一操作两个入口两副面孔——首页有拖拽+选文件+粘贴三件套，设置页只有光秃秃 textarea；抽 components/home/InstanceImportDialog 单一实现，两处同一套 UI 与同一套结果语义（partial/allSkipped 不再自动关闭，对齐设置页 D-08 的"明细保持可读"，首页原 1.5s 关闭行为随之统一）；设置页测试新增 drop zone 可达断言。
