@@ -122,3 +122,36 @@ Conventional Commits；单一职责；重构与行为变更不混提；改造仅
 - **方向与告警语义解耦（B25）**：行级闪变升降同用中性 primary 色（液位下降不再整行闪红——工业界面红=报警/坏点），数值方向改由行内 ▲/▼ 小箭头（primary）承载，保留至下次更新；红色回归本职（坏质量/错误）。
 - **B 域移交（B17/B19）**：通知正文携带真实事件（`notify(title, \`${log.type||'ERROR'}: ${log.payload.slice(0,120)}\`)`）与警告级声音独立开关（默认关，错误级改三连音≈0.8s）——实现点在 components/layout/AlertStreamProvider.tsx（B02 后通知/声音唯一持有者）与 stores/alertStore.ts、lib/alertAudio.ts，均在 B 域文件所有权之外，未动。
 - **B 域待验证结案**：待验证-2（/tags/stream 逼近 500 msg/s 限流的丢点提示）已随 B01 落地——wsStatusStore.reportDropped 记账、StreamStatusBanner 消费 deriveRateLimited 展示限流提示，标已覆盖；待验证-3（慢测点趋势无历史回填）经判定为产品决策，无需行动。
+
+## UX 修复波（C 域 P2 批，2026-10-19）：行为变更登记
+
+管理八页 UX 审计 C 域 P2 批次（25 条）落地。逐发现一 commit，提交号在括号内；已被兄弟 commit 收编的注明宿主 commit。
+
+- **驱动详情测点术语统一（C-A9/C-G1）**：「查看标签」按钮与其打开的「测点值」弹窗同屏混用两名（118d3b3 内收编，内容已验证）；详情页测点值标题首次出现加注「测点值（标签的实时值）」。按「配置语境=标签、数据语境=测点、英文统一 Tag」规则做全域 sweep：settings.tagsFile/tagsInterval（详情编辑表单实际标签）与向导的「标签文件/标签采集间隔」对齐（8193813），writeHistory.desc、topology.tagsCount（数据→测点）与 wizard.tags（配置→标签）本就合规不动。
+- **测点截断提示可点击（C-A10）**：「使用测点浏览器查看完整虚拟化列表」从纯文字指路变为真链接——直达测点浏览器并按该驱动预过滤（driver= 深链，B11 同款），文案改为「已显示前 200 个测点。打开测点浏览器查看全部 N 个 →」（d04ffca，i18n 文案随 2151101 收编）。
+- **驱动详情「相关规则 (N)」卡（C-A11）**：复用 C-A3 的 match DSL 扫描器（==/contains/=~ 子句、SUB-RULE 一层、测点唯一归属回退）在已保存配置上扫出消费该驱动数据的规则，每条 chip 链到规则页并显示动作，>10 折叠；零计数给明确「没有规则引用此驱动的数据」（569f80e）。
+- **传输删除扫描覆盖未应用规则（C-A13）**：依赖扫描改喂已在 main 的 unionRulesForDependencyScan（工作 ∪ 已保存，按名去重）——刚创建尚未应用的规则不再漏报，Wave-2 结论的三行改法（175c783）。
+- **传输详情丢弃指令说明卡（C-A14）**：dropped_commands 非零时在统计卡下渲染警示卡——写明「丢弃=不可恢复」与「重试耗尽的指令归档在写入控制页死信队列」，并附直达链接（3fa36c1）。
+- **子规则删除过确认门（C-B4）**：组内子规则删除与组删除同级——AlertDialog 列名确认、延迟应用语义写明、destructive 确认键；组删除的旧手写红色类顺带并入 variant 拼法（d3570a8）。
+- **规则组重命名扫描 SUB-RULE 引用（C-B5）**：重命名前扫顶层规则与他组子规则里的 `SUB-RULE:旧名`（lib/subRuleRefs，前缀安全：改 group-a 不碰 group-ab）；有引用则确认框列出所在位置并提供默认勾选的「一并更新」，未勾选则保持原文（d0f31cf）。
+- **规则运行区搜索与优先级排序（C-B6）**：运行区表头复用 EntitySearchBar（匹配名称/匹配表达式/目标，>6 条显示），优先级表头可点切换升/降序，无匹配渲染明确空态；表格抽出 components/admin/RuntimeRulesTable 保 500 行门禁（85a098d）。
+- **派生测点编辑三件套（C-B7）**：删除加确认（复用 drivers.deleteConfirm 句式）、编辑图标 Calculator→Pencil、expr 输入下挂 ExprValidationMessages（transform 校验器复用）实时报错（ad1dc55）。
+- **规则向导无传输空态给出路（C-B8）**：目标步骤空态加「前往创建传输 →」链接（admin 传输页）与「创建完成后返回本页继续」提示；跨路由草稿持久化需向导草稿 store，超出 P2 范围，登记为移交（acdc860）。
+- **写入页死信搜索与驱动过滤（C-C4）**：死信卡头部加搜索框（测点名/错误原文）与驱动下拉；100 条截断与「显示 X/Y」计数对齐过滤后集合；纯函数 lib/deadLetterFilter 配单测（04f670c）。
+- **写入页直连写历史（C-C5）**：成功消息旁与死信卡描述下加「查看写操作历史 →」，深链 `/diagnostics?section=writes`；诊断页挂载时按 ?section= scrollIntoView（HashRouter 下 hash 锚点不可用，与页内 chips 同机制）（95e9acf）。
+- **提交按钮语义修正（C-C2）**：单条写入表单主按钮「立即写入/Write to PLC」实际打开确认框——改为「下一步：确认写入 / Next: confirm write」，「立即/确认写入」专属确认框内的 destructive 按钮（45e00d0）。
+- **死信清除如实披露（C-C3）**：「全部清除」确认文案改为「仅在本页隐藏这些条目（后端暂不提供删除接口）。其他会话仍会显示；服务器上的死信记录不受影响。」（c6e28de）。
+- **pprof 卡自我说明（C-E2）**：标题加「（开发者）」、描述追加「这些是 CoreC（Go 程序）的性能剖析文件，通常交给 CoreC 开发者分析；日常运维无需使用」；卡片保持页尾默认折叠（25531f3）。
+- **诊断计数表行可下钻（C-E3）**：各驱动/各传输计数表每行名称变为链接直达对应详情页；两卡抽出 components/admin/DiagnosticsCounterTables。**有意保留双显示面**：诊断表读 /metrics 计数器做跨实体对比，列表页读运行时 API——审计「删除重复计数」的另一半经评估为不取（两处数据源不同，删任一侧都会损失信息）（3804ab3）。
+- **拓扑页表达数据流（C-E4/C-G4）**：标题副标题去架构黑话（「数据流拓扑 / Data Flow Topology」；南向设备 → 引擎 → 规则 → 北向总览），三栏之间加纯 CSS 流向箭头（移动端旋转 90°）；悬停驱动行点亮其规则 chip 与目标传输行（C-A3 语义经 matchMentionsDriver 导出复用，落在 C-E6 的链接行上）（c94acac）。
+- **拓扑列加载态（C-E5）**：驱动/传输列查询在途时渲染 LoadingState，「未接入南向驱动」空态仅在加载完成且真为空时出现（107dde2）。
+- **拓扑行可点（C-E6）**：驱动行/传输行/规则 chip 全部改为 Link（对应详情页/规则页），hover 下划线（849842f）。
+- **拓扑错误条点名失败项（C-E7）**：五个查询不再共用一句「错误」——逐项列出失败查询（服务器信息/驱动列表/传输列表/运行统计/规则列表），Intl.ListFormat 按语言连接（9412cea，断言收紧 ba1b045）。
+- **应用确认键变红（C-F2）**：会暂停整个引擎且失败不回滚的确认按钮换 variant="destructive"+danger-pulse（26800dc）。
+- **应用确认键改名（C-F4）**：确认框内按钮「应用变更」→「确认并热重载 / Confirm & hot-reload」，与外层「应用变更」按钮区分（1194d5c）。
+- **死信卡标题大白话（C-G3）**：「死信队列 (重试耗尽指令)」→「失败下发指令（重试耗尽）」，描述保留（7cc9b67）。
+- **详情页快编按钮语义（C-G2）**：drivers/transports editConfig.previewAndReload 统一为「预览变更并热重载 / Preview & hot-reload」（ccb47a4）；rules.edit.generateAndReload 已随 C-B1 的 RuleEditDialog 删除而消失。
+- **空闲模式告警中文化（C-G5）**：三处「idle 模式告警」统一为「空闲模式告警（无数据源/无接收端）」（应用确认框/驱动向导/配置中心），英文侧保留后端原词；derivedTag.desc 的「通过 PUT /configs 热更新」改为「随配置热重载更新」——用户文案不再报 HTTP 方法（ffb27f3）。
+- **C-F3 注册为已知限制**：应用确认框打开瞬间的 beforeYaml 基线在确认时不会重取校验——若两名操作者同时改配置，后应用者会覆盖先应用者（last-write-wins）。多人同时编辑配置不在当前产品范围（单运维值守场景），故不实现 onConfirm 前的哈希比对拦截；若未来支持多人协作，在 useApplyConfig 的 onConfirm 前 GET /configs/raw 比对基线即可。
+- **C-E8 已核实无需行动**：useAutoLoadConfig（AppShell 级）+ isSeedBlocked 使「配置未加载时点创建」的竞态窗口已被种子守卫关闭——resetToEmpty 拒绝空配置启动、useApplyConfig 拒绝 PUT、创建按钮禁用并显示 SeedBlockedBanner（SeedGuardCreate.test 钉住）；竞态兜底只合并 global 的老问题不再可达破坏性路径。
+- **跨波收编与移交**：D-19 移交的 WriteControlPage 清死信确认换 variant="destructive"（ce164fe）；D-17 移交的 drivers/transports editConfig.reloadSuccess 收敛为统一文案「配置已应用并热重载成功。/ Config applied and hot-reloaded.」，DetailPageReloadConfirm 断言随迁（83a83c1）。本批 i18n 键全部双语同步，localeParity 钉住键集与占位符一致。
