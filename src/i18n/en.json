@@ -1227,6 +1227,7 @@
     "alertRulesConfigured": "Alert Rules Configured",
     "activeAlarmTriggers": "Active alarm triggers",
     "systemErrorStream": "System Error Stream",
+    "errorStreamKpi": "{{count}} of the last {{max}} events",
     "warningsErrorsReceived": "Warnings & errors received",
     "deadLetterControlQueue": "Dead Letter Control Queue",
     "deadLetterDesc": "Commands that failed after maximum retry attempts (write-retry-count: 3)",

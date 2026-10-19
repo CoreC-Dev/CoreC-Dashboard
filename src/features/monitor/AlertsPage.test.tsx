@@ -134,6 +134,19 @@ describe('AlertsPage — shared feed rendering', () => {
   })
 })
 
+describe('AlertsPage — error-stream KPI honesty (B18)', () => {
+  it('labels the big number as the bounded feed watermark, not a lifetime total', () => {
+    useAlertStore.setState({
+      events: [evt(8, 'first failure'), evt(4, 'second warning'), evt(8, 'third failure')],
+    })
+    renderPage()
+
+    // 3 events held in the 50-slot feed — the caption must scope the
+    // number to the buffer, not let it read as "3 errors ever" or a rate.
+    expect(screen.getByText('3 of the last 50 events')).toBeTruthy()
+  })
+})
+
 describe('AlertsPage — preference toggles (kept here, honored globally)', () => {
   it('sound toggle flips the shared preference and persists the legacy key', () => {
     renderPage()

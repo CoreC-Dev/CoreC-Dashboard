@@ -25,7 +25,7 @@ import {
 } from '@/components/ui/select'
 import { cn } from '@/lib/cn'
 import { formatRelativeTime } from '@/lib/tagExplorer'
-import { useAlertStore } from '@/stores/alertStore'
+import { MAX_ALERT_EVENTS, useAlertStore } from '@/stores/alertStore'
 import type { LogEvent } from '@/types/models'
 
 /**
@@ -142,9 +142,15 @@ export const AlertsPage: React.FC = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="p-4 pt-0">
+            {/* B18: the big number is the bounded feed's watermark (cap
+             * MAX_ALERT_EVENTS), not a lifetime total or a rate — the
+             * caption says "of the last N" so it can't read as one. */}
             <div className="text-2xl font-bold font-mono text-foreground">{liveLogs.length}</div>
             <div className="text-xs text-muted-foreground mt-1">
-              {t('alerts.realtimeWarningDesc', { defaultValue: 'Warnings & errors received' })}
+              {t('alerts.errorStreamKpi', {
+                count: liveLogs.length,
+                max: MAX_ALERT_EVENTS,
+              })}
             </div>
           </CardContent>
         </Card>

@@ -1227,6 +1227,7 @@
     "alertRulesConfigured": "已配置告警规则",
     "activeAlarmTriggers": "活跃告警触发器",
     "systemErrorStream": "系统错误流",
+    "errorStreamKpi": "最近 {{max}} 条中的 {{count}} 条",
     "warningsErrorsReceived": "接收的警告与错误",
     "deadLetterControlQueue": "死信控制队列",
     "deadLetterDesc": "达到最大重试次数后仍失败的指令 (write-retry-count: 3)",
