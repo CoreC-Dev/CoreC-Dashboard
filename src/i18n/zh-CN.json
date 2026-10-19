@@ -521,6 +521,8 @@
     "perTransportPublishCounts": "各传输发布计数",
     "perTransportPublishCountsDesc": "corec_transport_published_total{transport,type} 计数器",
     "noTransportPublishCounters": "不可用 — 未暴露传输发布计数器",
+    "viewDriverDetail": "查看驱动 {{name}} 详情",
+    "viewTransportDetail": "查看传输 {{name}} 详情",
     "pprofFetchNote": "配置文件通过 Authorization 头获取并在本地下载 — 直接链接会收到 401，因为 pprof 挂载在 CoreC 的认证路由组内。",
     "instanceHealth": "实例健康状态",
     "instanceHealthDesc": "已连接 CoreC 的版本号与存活/就绪状态（GET /version、/healthz/live、/healthz/ready）",

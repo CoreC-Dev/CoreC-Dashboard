@@ -211,6 +211,9 @@ describe('render smoke (#185 regression)', () => {
     // and the per-driver read table gets its row.
     expect(await screen.findByText('42')).toBeTruthy()
     expect(await screen.findByText('plc1')).toBeTruthy()
+    // C-E3: the counter-table row drills into the driver's detail page.
+    const driverLink = await screen.findByRole('link', { name: /View driver plc1 detail/ })
+    expect(driverLink.getAttribute('href')).toBe('/admin/drivers/plc1')
     // InstanceHealthBar resolved the mocked public probes.
     expect(await screen.findByText('v0.9.2-mock')).toBeTruthy()
   })

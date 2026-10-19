@@ -521,6 +521,8 @@
     "perTransportPublishCounts": "Per-Transport Publish Counts",
     "perTransportPublishCountsDesc": "corec_transport_published_total{transport,type} counters",
     "noTransportPublishCounters": "N/A — no transport publish counters exposed",
+    "viewDriverDetail": "View driver {{name}} detail",
+    "viewTransportDetail": "View transport {{name}} detail",
     "pprofFetchNote": "Profiles are fetched with the Authorization header and downloaded locally — direct links would receive a 401 because pprof is mounted inside CoreC's authed route group.",
     "instanceHealth": "Instance Health",
     "instanceHealthDesc": "Version and liveness/readiness of the connected CoreC (GET /version, /healthz/live, /healthz/ready)",

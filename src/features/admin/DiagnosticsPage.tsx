@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router-dom'
 import { useMetrics } from '@/api/hooks'
+import { DiagnosticsCounterTables } from '@/components/admin/DiagnosticsCounterTables'
 import { EventLogTerminal } from '@/components/admin/EventLogTerminal'
 import { InstanceHealthBar } from '@/components/admin/InstanceHealthBar'
 import { PprofDownloads } from '@/components/admin/PprofDownloads'
@@ -374,107 +375,12 @@ export const DiagnosticsPage: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Per-Driver Read Counts */}
-        <Card className="border-border bg-card overflow-hidden">
-          <CardHeader className="p-4 pb-2">
-            <CardTitle className="text-sm font-semibold">
-              {t('diagnostics.perDriverReadCounts')}
-            </CardTitle>
-            <CardDescription className="text-xs">
-              {t('diagnostics.perDriverReadCountsDesc')}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs text-left">
-                <thead className="bg-muted/50 border-b border-border uppercase font-semibold text-xs text-muted-foreground tracking-wider">
-                  <tr>
-                    <th className="px-4 py-2">{t('common.driver')}</th>
-                    <th className="px-4 py-2">{t('common.type')}</th>
-                    <th className="px-4 py-2 text-right">{t('drivers.reads')}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/60">
-                  {driverReads.length === 0 ? (
-                    <tr>
-                      <td colSpan={3} className="py-6 text-center text-muted-foreground">
-                        {t('diagnostics.noDriverReadCounters')}
-                      </td>
-                    </tr>
-                  ) : (
-                    driverReads.map((m, i) => (
-                      <tr
-                        key={`driver-${m.labels.driver}-${m.labels.type}-${i}`}
-                        className="hover:bg-muted/30 transition-colors"
-                      >
-                        <td className="px-4 py-2 font-semibold text-foreground">
-                          {m.labels.driver || '—'}
-                        </td>
-                        <td className="px-4 py-2 font-mono text-muted-foreground">
-                          {m.labels.type || '—'}
-                        </td>
-                        <td className="px-4 py-2 text-right font-mono font-bold text-primary">
-                          {formatNumber(m.value)}
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Per-Transport Publish Counts */}
-        <Card className="border-border bg-card overflow-hidden">
-          <CardHeader className="p-4 pb-2">
-            <CardTitle className="text-sm font-semibold">
-              {t('diagnostics.perTransportPublishCounts')}
-            </CardTitle>
-            <CardDescription className="text-xs">
-              {t('diagnostics.perTransportPublishCountsDesc')}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs text-left">
-                <thead className="bg-muted/50 border-b border-border uppercase font-semibold text-xs text-muted-foreground tracking-wider">
-                  <tr>
-                    <th className="px-4 py-2">{t('transports.colTransport')}</th>
-                    <th className="px-4 py-2">{t('common.type')}</th>
-                    <th className="px-4 py-2 text-right">{t('transports.published')}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/60">
-                  {transportPublishes.length === 0 ? (
-                    <tr>
-                      <td colSpan={3} className="py-6 text-center text-muted-foreground">
-                        {t('diagnostics.noTransportPublishCounters')}
-                      </td>
-                    </tr>
-                  ) : (
-                    transportPublishes.map((m, i) => (
-                      <tr
-                        key={`transport-${m.labels.transport}-${m.labels.type}-${i}`}
-                        className="hover:bg-muted/30 transition-colors"
-                      >
-                        <td className="px-4 py-2 font-semibold text-foreground">
-                          {m.labels.transport || '—'}
-                        </td>
-                        <td className="px-4 py-2 font-mono text-muted-foreground">
-                          {m.labels.type || '—'}
-                        </td>
-                        <td className="px-4 py-2 text-right font-mono font-bold text-status-running">
-                          {formatNumber(m.value)}
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Per-driver/per-transport counters — extracted; rows link to the
+            entity detail pages (C-E3) */}
+        <DiagnosticsCounterTables
+          driverReads={driverReads}
+          transportPublishes={transportPublishes}
+        />
       </section>
 
       {/* Write Operation History (audit trail of every tag write) */}
