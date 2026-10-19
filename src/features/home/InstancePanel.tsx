@@ -13,15 +13,8 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useSearchParams } from 'react-router-dom'
 import { InstanceExportDialog } from '@/components/home/InstanceExportDialog'
+import { InstanceImportDialog } from '@/components/home/InstanceImportDialog'
 import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -50,7 +43,6 @@ export const InstancePanel: React.FC = () => {
   const instances = useInstanceStore((s) => s.instances)
   const addInstance = useInstanceStore((s) => s.addInstance)
   const updateInstance = useInstanceStore((s) => s.updateInstance)
-  const importInstances = useInstanceStore((s) => s.importInstances)
   const [searchParams, setSearchParams] = useSearchParams()
   // A-11: surfaced as a banner when localStorage writes fail (quota /
   // private mode) so the data-loss risk is not discovered the hard way.
@@ -64,11 +56,6 @@ export const InstancePanel: React.FC = () => {
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const [editingInstance, setEditingInstance] = React.useState<CoreCInstance | undefined>()
   const [importOpen, setImportOpen] = React.useState(false)
-  const [importText, setImportText] = React.useState('')
-  const [importResult, setImportResult] = React.useState<string | null>(null)
-  const [importIsError, setImportIsError] = React.useState(false)
-  const [importDragOver, setImportDragOver] = React.useState(false)
-  const fileInputRef = React.useRef<HTMLInputElement>(null)
   const [exportOpen, setExportOpen] = React.useState(false)
 
   const handleAdd = () => {
@@ -116,73 +103,6 @@ export const InstancePanel: React.FC = () => {
 
   const handleExport = () => {
     setExportOpen(true)
-  }
-
-  /** Close the import dialog ~1.5s after a successful import so the
-   * operator actually reads the outcome before the dialog disappears
-   * (A-09: the old flow closed instantly and swallowed the result). */
-  const closeImportDialogSoon = () => {
-    window.setTimeout(() => {
-      setImportOpen(false)
-      setImportText('')
-      setImportResult(null)
-    }, 1500)
-  }
-
-  const handleImport = () => {
-    const result = importInstances(importText, 'merge')
-
-    // Broken payload / every entry malformed → the same fix-it message.
-    if (result.parseError || (result.added === 0 && result.skipped === 0)) {
-      setImportIsError(true)
-      setImportResult(t('instances.importInvalid'))
-      return // keep the dialog open — there is nothing to celebrate
-    }
-
-    setImportIsError(false)
-    if (result.added > 0) {
-      // Full or partial success: render the numbers first, then close.
-      setImportResult(
-        result.skipped > 0 || result.invalid > 0
-          ? t('instances.importPartial', {
-              added: result.added,
-              skipped: result.skipped,
-              invalid: result.invalid,
-            })
-          : t('instances.importSuccess', { added: result.added }),
-      )
-      closeImportDialogSoon()
-      return
-    }
-    // Nothing added: duplicates and/or invalid entries — show the verdict,
-    // keep the dialog open so the operator can fix the payload or cancel.
-    setImportResult(
-      result.invalid === 0
-        ? t('instances.importAllSkipped', { skipped: result.skipped })
-        : t('instances.importPartial', {
-            added: result.added,
-            skipped: result.skipped,
-            invalid: result.invalid,
-          }),
-    )
-  }
-
-  const handleFileRead = (file: File) => {
-    const reader = new FileReader()
-    reader.onload = () => {
-      setImportText(typeof reader.result === 'string' ? reader.result : '')
-    }
-    reader.onerror = () => {
-      setImportResult(t('instances.importFileError', { error: reader.error?.message ?? '' }))
-    }
-    reader.readAsText(file)
-  }
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault()
-    setImportDragOver(false)
-    const file = e.dataTransfer.files[0]
-    if (file) handleFileRead(file)
   }
 
   const toggleLanguage = () => {
@@ -398,76 +318,10 @@ export const InstancePanel: React.FC = () => {
         onSubmit={handleSubmit}
       />
 
-      {/* Import dialog */}
-      <Dialog
-        open={importOpen}
-        onOpenChange={(open) => {
-          setImportOpen(open)
-          if (open) {
-            // Fresh session — a previous result must not linger.
-            setImportResult(null)
-            setImportIsError(false)
-          }
-        }}
-      >
-        <DialogContent className="sm:max-w-[480px]">
-          <DialogHeader>
-            <DialogTitle>{t('instances.importTitle')}</DialogTitle>
-            <DialogDescription>{t('instances.importDesc')}</DialogDescription>
-          </DialogHeader>
-          {/* Drop zone + file browse */}
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            onDragOver={(e) => {
-              e.preventDefault()
-              setImportDragOver(true)
-            }}
-            onDragLeave={() => setImportDragOver(false)}
-            onDrop={handleDrop}
-            className={`w-full cursor-pointer rounded-md border-2 border-dashed p-4 text-center transition-colors ${importDragOver ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}
-          >
-            <Upload className="w-5 h-5 mx-auto mb-1.5 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">{t('instances.importDrop')}</p>
-            <p className="text-xs text-primary font-medium mt-1">{t('instances.importBrowse')}</p>
-          </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="application/json,.json"
-            className="hidden"
-            onChange={(e) => {
-              const f = e.target.files?.[0]
-              if (f) handleFileRead(f)
-              e.target.value = ''
-            }}
-          />
-          {/* Paste textarea */}
-          <p className="text-xs text-muted-foreground">{t('instances.importOrPaste')}</p>
-          <textarea
-            className="w-full h-32 rounded-md border border-border bg-background px-3 py-2 text-xs font-mono resize-none focus:outline-none focus:ring-2 focus:ring-primary"
-            aria-label={t('instances.importTitle')}
-            placeholder='[{"id":"inst_...","name":"...","baseUrl":"...","secret":"..."}]'
-            value={importText}
-            onChange={(e) => setImportText(e.target.value)}
-          />
-          {importResult && (
-            <p
-              className={`text-sm ${importIsError ? 'text-status-error' : 'text-muted-foreground'}`}
-            >
-              {importResult}
-            </p>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setImportOpen(false)}>
-              {t('common.cancel')}
-            </Button>
-            <Button onClick={handleImport} disabled={!importText.trim()}>
-              {t('instances.import')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Import dialog — A-14: one shared component (drag & drop + file
+          browse + paste) for the homepage AND the settings page; the two
+          entry points used to offer different UI for the same operation. */}
+      <InstanceImportDialog open={importOpen} onOpenChange={setImportOpen} />
       <InstanceExportDialog open={exportOpen} onOpenChange={setExportOpen} />
     </div>
   )

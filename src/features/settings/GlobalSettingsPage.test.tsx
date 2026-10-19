@@ -175,6 +175,21 @@ describe('GlobalSettingsPage import dialog (D-08)', () => {
   })
 })
 
+// A-14 — the settings-page import used to be a bare textarea while the
+// homepage offered drag & drop + file browse for the same operation; both
+// entry points now render the one shared dialog, so the full affordance set
+// must be reachable from here too.
+describe('GlobalSettingsPage shared import UI (A-14)', () => {
+  it('offers the drag & drop + file browse + paste set on the settings page', () => {
+    renderPage()
+    fireEvent.click(screen.getByRole('button', { name: 'Import' }))
+    const dialog = screen.getByRole('dialog')
+    expect(within(dialog).getByText('Drop JSON file here, or')).toBeInTheDocument()
+    expect(within(dialog).getByText('Browse file')).toBeInTheDocument()
+    expect(within(dialog).getByLabelText('Import Instance Configs')).toBeInTheDocument()
+  })
+})
+
 describe('GlobalSettingsPage clear-all confirm (D-07)', () => {
   function seedInstances() {
     useInstanceStore.setState({

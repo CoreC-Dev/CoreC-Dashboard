@@ -323,8 +323,9 @@ describe('InstancePanel — import result clarity (A-09)', () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(1_600)
     })
-    // Partial success closes after showing the numbers.
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    // A-14: partial results keep the dialog open (unified with the settings
+    // page's D-08 semantics) — the breakdown stays readable until dismissed.
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
     expect(useInstanceStore.getState().instances).toHaveLength(2)
   })
 })
