@@ -136,28 +136,28 @@ describe('TagExplorerPage — problem-point filters (B07)', () => {
   it('seeds the REST snapshot and shows the total count', async () => {
     renderPage()
 
-    expect(await screen.findByText('Total: 3 points')).toBeTruthy()
+    expect(await screen.findByText('Points: 3')).toBeTruthy()
   })
 
   it('the stale-only toggle narrows the set to stale tags only', async () => {
     renderPage()
-    expect(await screen.findByText('Total: 3 points')).toBeTruthy()
+    expect(await screen.findByText('Points: 3')).toBeTruthy()
 
     fireEvent.click(screen.getByRole('checkbox', { name: 'Stale Tags Only' }))
 
     // pump + level are stale; temp is fresh.
-    await screen.findByText('Total: 2 points')
-    expect(screen.queryByText('Total: 3 points')).toBeNull()
+    await screen.findByText('Points: 2')
+    expect(screen.queryByText('Points: 3')).toBeNull()
   })
 
   it('combining stale-only with a search term can reach the empty state', async () => {
     renderPage()
-    expect(await screen.findByText('Total: 3 points')).toBeTruthy()
+    expect(await screen.findByText('Points: 3')).toBeTruthy()
 
     fireEvent.change(screen.getByPlaceholderText('Search...'), {
       target: { value: 'temp' },
     })
-    await screen.findByText('Total: 1 points')
+    await screen.findByText('Points: 1')
 
     fireEvent.click(screen.getByRole('checkbox', { name: 'Stale Tags Only' }))
     await screen.findByText('No points found matching current filter')
@@ -165,7 +165,7 @@ describe('TagExplorerPage — problem-point filters (B07)', () => {
 
   it('opens its /tags/stream socket exactly once for the unfiltered view', async () => {
     renderPage()
-    expect(await screen.findByText('Total: 3 points')).toBeTruthy()
+    expect(await screen.findByText('Points: 3')).toBeTruthy()
 
     expect(socketArgs).toHaveLength(1)
     expect(socketArgs[0]?.[0]).toBe('/tags/stream')
@@ -180,7 +180,7 @@ describe('TagExplorerPage — dead-letter deep-link prefill (B11)', () => {
     expect(await screen.findByDisplayValue('pump')).toBeTruthy()
     // Driver-scoped + tag-filtered: only pump matches (level is plc1 but
     // doesn't match 'pump'; temp is plc2).
-    await screen.findByText('Total: 1 points')
+    await screen.findByText('Points: 1')
     // The driver param reached the /tags/stream subscription too.
     expect(socketArgs[0]?.[1]).toEqual({ driver: 'plc1' })
   })
@@ -189,7 +189,7 @@ describe('TagExplorerPage — dead-letter deep-link prefill (B11)', () => {
     renderPage('/corec/inst1/monitor/tags?tag=temp')
 
     expect(await screen.findByDisplayValue('temp')).toBeTruthy()
-    await screen.findByText('Total: 1 points')
+    await screen.findByText('Points: 1')
     expect(socketArgs[0]?.[1]).toEqual({})
   })
 })

@@ -174,7 +174,7 @@ describe('DashboardPage — dead-letter card honesty (B03)', () => {
     renderPage()
 
     expect(await screen.findByText('[plc1] pump = true')).toBeTruthy()
-    expect(screen.getByText('3 retries')).toBeTruthy()
+    expect(screen.getByText('Retries: 3')).toBeTruthy()
   })
 })
 

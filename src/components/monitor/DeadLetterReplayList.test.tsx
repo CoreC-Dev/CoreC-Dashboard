@@ -233,7 +233,7 @@ describe('DeadLetterReplayList', () => {
     expect(screen.getByText(/This command previously failed \(driver disconnected\)/)).toBeTruthy()
     expect(screen.getByText('[plc1/meter-01] pump = true (bool)')).toBeTruthy()
     // "3 attempts exhausted" appears in both rows and once more in the dialog.
-    expect(screen.getAllByText('3 attempts exhausted').length).toBe(3)
+    expect(screen.getAllByText('Attempts exhausted: 3').length).toBe(3)
     // …and nothing has been sent yet.
     expect(api.writeTag).not.toHaveBeenCalled()
 
