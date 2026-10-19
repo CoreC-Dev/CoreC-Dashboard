@@ -132,6 +132,18 @@ describe('InstanceDialog form validation (TD-TEST-007)', { timeout: 15_000 }, ()
     renderDialog()
     expect(screen.getByText(t('instances.secretStorageNote'))).toBeInTheDocument()
   })
+
+  // A-17 — the API-key field must opt out of login heuristics: browsers and
+  // password managers used to treat it as this site's login password and
+  // offered save/fill prompts while the operator pasted a CoreC token.
+  it('suppresses password-manager save/fill on the API key field (A-17)', () => {
+    renderDialog()
+    const input = secretInput()
+    expect(input).toHaveAttribute('autocomplete', 'off')
+    expect(input).toHaveAttribute('name', 'corec-api-secret')
+    // 1Password honors this opt-out flag on its own initiative.
+    expect(input).toHaveAttribute('data-1p-ignore')
+  })
 })
 
 // D-13 — a one-shot "test connection" in the add/edit dialog: the operator

@@ -225,6 +225,15 @@ export const InstanceDialog: React.FC<InstanceDialogProps> = ({
                         placeholder="********"
                         className="pr-10"
                         {...field}
+                        // A-17: opt the API-key field out of browser/manager
+                        // login heuristics — without these, password managers
+                        // offer to save/fill the CoreC key as if it were this
+                        // site's login password. The explicit name overrides
+                        // the form's internal field name in the DOM only
+                        // (react-hook-form does not read it back).
+                        name="corec-api-secret"
+                        autoComplete="off"
+                        data-1p-ignore
                       />
                       <button
                         type="button"
