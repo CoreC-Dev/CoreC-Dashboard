@@ -622,7 +622,7 @@
       "savedSecret": "Saved — leave blank to keep",
       "showSecret": "Show secret",
       "hideSecret": "Hide secret",
-      "reloadSuccess": "Configuration generated and hot-reloaded successfully.",
+      "reloadSuccess": "Config applied and hot-reloaded.",
       "reloadFailed": "Failed to reload configuration.",
       "yamlPreview": "Generated YAML Preview",
       "unsupportedProtocol": "This driver protocol does not expose editable connection parameters via the form. Use the YAML editor in the Configuration Center."
@@ -731,7 +731,7 @@
       "savedSecret": "Saved — leave blank to keep",
       "showSecret": "Show secret",
       "hideSecret": "Hide secret",
-      "reloadSuccess": "Configuration generated and hot-reloaded successfully.",
+      "reloadSuccess": "Config applied and hot-reloaded.",
       "reloadFailed": "Failed to reload configuration.",
       "yamlPreview": "Generated YAML Preview",
       "unsupportedProtocol": "This transport protocol does not expose editable parameters via the form. Use the YAML editor in the Configuration Center."

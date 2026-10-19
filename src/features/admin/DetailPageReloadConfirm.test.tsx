@@ -140,9 +140,7 @@ describe('detail-page quick-edit reload confirmation gate (C-A1)', () => {
 
     // Dialog closes on success; the card shows the success status.
     await waitFor(() => expect(screen.queryByText('Apply Configuration Changes')).toBeNull())
-    expect(
-      await screen.findByText('Configuration generated and hot-reloaded successfully.'),
-    ).toBeTruthy()
+    expect(await screen.findByText('Config applied and hot-reloaded.')).toBeTruthy()
   })
 
   it('driver detail: a failed reload keeps the dialog open with the verbatim error', async () => {
