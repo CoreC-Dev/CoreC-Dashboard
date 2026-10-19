@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-// Topology-page behavior tests (C-E4 flow/hover, C-E6 row links;
-// C-E5/C-E7 cases join in their own commits).
+// Topology-page behavior tests (C-E4 flow/hover, C-E5 loading states,
+// C-E6 row links; C-E7 cases join in their own commit).
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { act } from 'react'
@@ -149,5 +149,31 @@ describe('TopologyPage — every row navigates (C-E6)', () => {
     renderPage()
     const chip = await screen.findByTestId('topo-rule-hot-rule')
     expect(chip.getAttribute('href')).toBe('/corec/i1/admin/rules')
+  })
+})
+
+describe('TopologyPage — loading is not "empty" (C-E5)', () => {
+  it('a pending drivers query shows a loading state, never the no-drivers alarm', async () => {
+    const { getDrivers } = await import('@/api/endpoints')
+    vi.mocked(getDrivers).mockReturnValueOnce(new Promise(() => {}) as never)
+
+    renderPage()
+
+    // Transports settled and render; the southbound column is still
+    // loading and must NOT claim "no southbound drivers attached".
+    expect(await screen.findByTestId('topo-transport-mqtt-out')).toBeTruthy()
+    expect(screen.queryByText('No southbound drivers attached')).toBeNull()
+    expect(screen.getByAltText('CoreC')).toBeTruthy()
+  })
+
+  it('a pending transports query shows a loading state, never the no-transports alarm', async () => {
+    const { getTransports } = await import('@/api/endpoints')
+    vi.mocked(getTransports).mockReturnValueOnce(new Promise(() => {}) as never)
+
+    renderPage()
+
+    expect(await screen.findByTestId('topo-driver-plc1')).toBeTruthy()
+    expect(screen.queryByText('No northbound transports attached')).toBeNull()
+    expect(screen.getByAltText('CoreC')).toBeTruthy()
   })
 })
