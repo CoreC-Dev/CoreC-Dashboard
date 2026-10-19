@@ -377,12 +377,13 @@ export const ConfigApplyConfirmationDialog: React.FC<ConfigApplyConfirmationDial
             {t('wizard.cancel')}
           </AlertDialogCancel>
           <AlertDialogAction
+            variant="destructive"
             onClick={(e) => {
               e.preventDefault()
               onConfirm()
             }}
             disabled={applying || hasValidationErrors}
-            className={cn('h-8 text-xs', hasValidationErrors && 'opacity-50')}
+            className={cn('h-8 text-xs danger-pulse', hasValidationErrors && 'opacity-50')}
           >
             {applying ? (
               <>
