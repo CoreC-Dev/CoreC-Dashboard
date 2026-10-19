@@ -1,6 +1,7 @@
 import { dump } from 'js-yaml'
 import {
   AlertCircle,
+  AlertTriangle,
   Archive,
   ChevronDown,
   Inbox,
@@ -13,7 +14,7 @@ import {
 import type React from 'react'
 import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { useConfigRaw, useTransport } from '@/api/hooks'
 import {
   BackLink,
@@ -458,6 +459,31 @@ export const TransportDetailPage: React.FC = () => {
           accent="border border-status-warning/20 bg-status-warning/10"
         />
       </div>
+
+      {/* C-A14: dropped_commands was a bare number with no meaning — the
+          counter card above says WHAT, this note says SO WHAT: dropped is
+          unrecoverable, and the retry-exhausted commands it counts are
+          reviewable (and manually replayable) in the write-control page's
+          dead-letter queue. */}
+      {transport.dropped_commands > 0 && (
+        <Card className="border-status-warning/40 bg-status-warning/5">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-sm font-semibold text-status-warning">
+              <AlertTriangle className="h-4 w-4" />
+              {t('transports.droppedCardTitle', { count: transport.dropped_commands })}
+            </CardTitle>
+            <CardDescription className="text-xs">{t('transports.droppedCardDesc')}</CardDescription>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <Link
+              to={`${adminBase}/write`}
+              className="text-xs font-medium text-primary hover:underline"
+            >
+              {t('transports.viewDeadLetters')} →
+            </Link>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Queue depth indicator */}
       <Card className={`bg-card ${queueActive ? 'border-status-warning/40' : ''}`}>
