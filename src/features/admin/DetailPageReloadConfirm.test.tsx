@@ -116,7 +116,7 @@ describe('detail-page quick-edit reload confirmation gate (C-A1)', () => {
 
     // The button is now a preview gate, not a direct PUT.
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Preview changes & reload' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Preview & hot-reload' }))
     })
 
     // The SHARED apply dialog opens — with the engine-suspend warning and
@@ -152,7 +152,7 @@ describe('detail-page quick-edit reload confirmation gate (C-A1)', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Toggle edit configuration section' }))
     })
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Preview changes & reload' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Preview & hot-reload' }))
     })
     expect(await screen.findByText('Apply Configuration Changes')).toBeTruthy()
 
@@ -179,7 +179,7 @@ describe('detail-page quick-edit reload confirmation gate (C-A1)', () => {
     expect(screen.getByLabelText('Broker URL')).toBeTruthy()
 
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Preview changes & reload' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Preview & hot-reload' }))
     })
 
     expect(await screen.findByText('Apply Configuration Changes')).toBeTruthy()

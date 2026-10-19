@@ -123,7 +123,7 @@ describe('secret fields in the quick-edit form (C-A4)', () => {
     })
 
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Preview changes & reload' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Preview & hot-reload' }))
     })
     expect(await screen.findByText('Apply Configuration Changes')).toBeTruthy()
 
