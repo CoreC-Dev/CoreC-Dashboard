@@ -1,6 +1,8 @@
 import {
   Activity,
   AlertTriangle,
+  ArrowDown,
+  ArrowUp,
   Ban,
   Cpu,
   MoreVertical,
@@ -28,6 +30,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { InstanceCardTopology } from '@/features/home/InstanceCardTopology'
@@ -46,8 +49,15 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
   const { t } = useTranslation()
   const navigate = useNavigate()
   const deleteInstance = useInstanceStore((s) => s.deleteInstance)
+  const reorderInstances = useInstanceStore((s) => s.reorderInstances)
   const probing = useInstanceStore((s) => s.probing[instance.id] ?? false)
   const probeError = useInstanceStore((s) => s.probeErrors[instance.id])
+  // A-18: the move menu items need this card's position in the list.
+  // Derived primitives keep the subscription narrow (TD-PERF-009): a card
+  // re-renders only when its own position or the list length changes, not
+  // on every probe result.
+  const position = useInstanceStore((s) => s.instances.findIndex((i) => i.id === instance.id))
+  const total = useInstanceStore((s) => s.instances.length)
   const [confirmDelete, setConfirmDelete] = React.useState(false)
 
   const stats = instance.lastKnownInfo?.stats
@@ -89,6 +99,20 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
   const accentColor = instance.color || undefined
 
   const handleEnter = () => navigate(`/corec/${instance.id}/monitor/dashboard`)
+
+  // A-18: reorderInstances renumbers sortOrder by the given id order; swap
+  // this card with its neighbor in the current display order. Reading the
+  // list from getState() inside the handler avoids subscribing this card
+  // to the whole instances array.
+  const handleMove = (dir: -1 | 1) => {
+    const list = useInstanceStore.getState().instances
+    const idx = list.findIndex((i) => i.id === instance.id)
+    const target = idx + dir
+    if (idx === -1 || target < 0 || target >= list.length) return
+    const ids = list.map((i) => i.id)
+    ;[ids[idx], ids[target]] = [ids[target], ids[idx]]
+    reorderInstances(ids)
+  }
 
   return (
     <>
@@ -139,6 +163,22 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                {/* A-18: the store has had reorderInstances since the first
+                    commit but no UI ever called it — with several instances
+                    the operator simply could not reorder them. The minimal
+                    remedy: move up/down items on the card's own menu. */}
+                <DropdownMenuItem onClick={() => handleMove(-1)} disabled={position <= 0}>
+                  <ArrowUp className="w-3.5 h-3.5 mr-2" />
+                  {t('instances.moveUp')}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => handleMove(1)}
+                  disabled={position < 0 || position >= total - 1}
+                >
+                  <ArrowDown className="w-3.5 h-3.5 mr-2" />
+                  {t('instances.moveDown')}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => onEdit(instance)}>
                   <Pencil className="w-3.5 h-3.5 mr-2" />
                   {t('common.edit')}

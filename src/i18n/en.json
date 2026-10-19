@@ -60,6 +60,8 @@
     "proxyModeHint": "Auto: detect the proxy at startup. Proxy: forward via the deployment server — for backends without CORS or across network segments. Direct: the browser connects to the backend; requires CORS on CoreC.",
     "add": "Add",
     "enter": "Enter",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
     "testConnection": "Test connection",
     "testRunning": "Testing connection…",
     "testSuccess": "Connected — server v{{version}}",

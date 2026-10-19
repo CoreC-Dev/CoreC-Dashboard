@@ -271,6 +271,84 @@ describe('InstanceCard status dot labeling (A-13)', () => {
   })
 })
 
+// A-18 — the store has had reorderInstances since the first commit but no
+// UI ever called it: an operator with several instances could not reorder
+// them at all. The card menu now offers move up/down wired to that action.
+describe('InstanceCard reorder menu (A-18)', { timeout: 15_000 }, () => {
+  const secondInstance: CoreCInstance = {
+    ...baseInstance,
+    id: 'inst-2',
+    name: 'Gateway B',
+    sortOrder: 2,
+  }
+
+  async function openMenu(): Promise<void> {
+    const trigger = screen.getByRole('button', { name: t('common.moreActions') })
+    // Radix opens the menu on pointerdown, then registers the click.
+    fireEvent.pointerDown(trigger)
+    fireEvent.click(trigger)
+    await waitFor(() => {
+      expect(screen.getByText(t('instances.moveUp'))).toBeInTheDocument()
+    })
+  }
+
+  function currentOrder(): string[] {
+    return useInstanceStore.getState().instances.map((i) => i.id)
+  }
+
+  it('moves the first card down by swapping with its neighbor', async () => {
+    useInstanceStore.setState({ instances: [baseInstance, secondInstance] })
+    renderCard(baseInstance)
+
+    await openMenu()
+    fireEvent.click(screen.getByText(t('instances.moveDown')))
+
+    // The neighbor moved up; sortOrder renumbered and persisted.
+    expect(currentOrder()).toEqual(['inst-2', 'inst-1'])
+  })
+
+  it('moves the second card up', async () => {
+    useInstanceStore.setState({ instances: [baseInstance, secondInstance] })
+    renderCard(secondInstance)
+
+    await openMenu()
+    fireEvent.click(screen.getByText(t('instances.moveUp')))
+
+    expect(currentOrder()).toEqual(['inst-2', 'inst-1'])
+  })
+
+  it('disables move-up on the first card and move-down on the last', async () => {
+    useInstanceStore.setState({ instances: [baseInstance, secondInstance] })
+    renderCard(baseInstance)
+
+    await openMenu()
+    const moveUp = screen.getByText(t('instances.moveUp')).closest('[role="menuitem"]')
+    expect(moveUp).toHaveAttribute('aria-disabled', 'true')
+
+    // The same two-item list, seen from the last card: move-down is dead.
+    cleanup()
+    renderCard(secondInstance)
+    await openMenu()
+    const moveDown = screen.getByText(t('instances.moveDown')).closest('[role="menuitem"]')
+    expect(moveDown).toHaveAttribute('aria-disabled', 'true')
+  })
+
+  it('shows both move items regardless of the card state', async () => {
+    // A healthy card must still offer reordering (the items are list-level,
+    // not connection-level).
+    useInstanceStore.setState({
+      instances: [{ ...baseInstance, lastConnectedAt: '2026-01-01T00:00:00.000Z' }, secondInstance],
+      probeErrors: { 'inst-1': null },
+    })
+    renderCard({ ...baseInstance, lastConnectedAt: '2026-01-01T00:00:00.000Z' })
+
+    await openMenu()
+    expect(screen.getByText(t('instances.moveUp'))).toBeInTheDocument()
+    expect(screen.getByText(t('instances.moveDown'))).toBeInTheDocument()
+    expect(screen.getByText(t('common.delete'))).toBeInTheDocument()
+  })
+})
+
 // D-07 — deleting an instance is irreversible; it gets the same AlertDialog
 // discipline as the other destructive actions: no dismissal on outside
 // click, a destructive-styled confirm, and confirm copy that differs from
