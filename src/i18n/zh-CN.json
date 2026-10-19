@@ -967,8 +967,8 @@
     "serverValidateFailed": "服务端校验未通过：{{error}}"
   },
   "topology": {
-    "title": "链式核心网格拓扑",
-    "subtitle": "六边形端口与适配器拓扑：南向驱动、优先级数据总线、规则管线与北向中继接收端",
+    "title": "数据流拓扑",
+    "subtitle": "南向设备 → CoreC 引擎 → 规则路由 → 北向接收端的实时数据流总览",
     "nodeId": "节点 ID",
     "role": "角色",
     "upstream": "上游",

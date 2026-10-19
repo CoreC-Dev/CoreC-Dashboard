@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
-// Topology-page behavior tests (C-E6 row links; C-E4/C-E5/C-E7 cases join
-// in their own commits).
+// Topology-page behavior tests (C-E4 flow/hover, C-E6 row links;
+// C-E5/C-E7 cases join in their own commits).
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act } from 'react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { TopologyPage } from '@/features/admin/TopologyPage'
@@ -84,6 +85,51 @@ beforeAll(async () => {
 
 afterEach(() => {
   cleanup()
+})
+
+describe('TopologyPage — data flow (C-E4)', () => {
+  it('plain-language title/subtitle replace the hexagon jargon (C-G4)', async () => {
+    renderPage()
+    expect(await screen.findByText('Data Flow Topology')).toBeTruthy()
+    expect(
+      screen.getByText('Live overview: southbound devices → engine → rules → northbound sinks'),
+    ).toBeTruthy()
+  })
+
+  it('hovering a driver lights its rules and their target transports', async () => {
+    renderPage()
+
+    const driverRow = await screen.findByTestId('topo-driver-plc1')
+    const hotRule = await screen.findByTestId('topo-rule-hot-rule')
+    const transportRow = screen.getByTestId('topo-transport-mqtt-out')
+
+    expect(driverRow.className).not.toContain('border-primary/60')
+    expect(hotRule.className).not.toContain('border-primary/70')
+    expect(transportRow.className).not.toContain('border-primary/60')
+
+    await act(async () => {
+      fireEvent.mouseEnter(driverRow)
+    })
+
+    // The plc1 rule lights up and so does the transport it targets —
+    // the driver → rule → transport flow becomes visible.
+    expect(driverRow.className).toContain('border-primary/60')
+    expect(hotRule.className).toContain('border-primary/70')
+    expect(transportRow.className).toContain('border-primary/60')
+
+    await act(async () => {
+      fireEvent.mouseLeave(driverRow)
+    })
+    expect(driverRow.className).not.toContain('border-primary/60')
+    expect(hotRule.className).not.toContain('border-primary/70')
+  })
+
+  it('the flow arrows render between the three columns', async () => {
+    renderPage()
+    await screen.findByTestId('topo-driver-plc1')
+    // Two decorative arrow markers (south→engine, engine→north).
+    expect(document.querySelectorAll('[aria-hidden="true"] .lucide-arrow-right').length).toBe(2)
+  })
 })
 
 describe('TopologyPage — every row navigates (C-E6)', () => {

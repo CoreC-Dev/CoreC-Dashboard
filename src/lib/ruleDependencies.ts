@@ -139,6 +139,20 @@ export function rulesDependingOnDriver(input: DriverDependencyInput): RuleConfig
   return rules.filter((r) => matchDepends(r.match, new Set()))
 }
 
+/**
+ * Does a match expression's driver clause single out `driverName` (==,
+ * contains, =~ — the same clause semantics as the full dependency scan)?
+ * Exported for the topology page's hover flow (C-E4): hovering a driver
+ * highlights the runtime rules (and their target transports) whose DSL
+ * consumes that driver.
+ */
+export function matchMentionsDriver(match: string, driverName: string): boolean {
+  if (!match || match === 'ALL') return false
+  return extractClauses(match).some(
+    (c) => c.field === 'driver' && driverClauseReferences(c, driverName),
+  )
+}
+
 /** Working ∪ saved rule sets, groups and drivers for the delete scan. */
 export interface DependencyScanSources {
   rules: RuleConfig[]

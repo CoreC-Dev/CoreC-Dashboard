@@ -1,6 +1,6 @@
-import { AlertCircle, Cpu, GitBranch, Radio, Send } from 'lucide-react'
+import { AlertCircle, ArrowRight, Cpu, GitBranch, Radio, Send } from 'lucide-react'
 import type React from 'react'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router-dom'
 import {
@@ -17,7 +17,18 @@ import { Card } from '@/components/ui/card'
 import { useParsedConfig } from '@/hooks/useParsedConfig'
 import { getDriverConnectionSummary, getTransportConnectionSummary } from '@/lib/connectionInfo'
 import { ConnStateLabel } from '@/lib/constants'
+import { matchMentionsDriver } from '@/lib/ruleDependencies'
 import { formatNumber, formatUptime } from '@/lib/utils'
+
+/** C-E4: pure-CSS flow arrow between the three columns — decorative, so
+ *  aria-hidden; rotated 90° in the mobile stacked layout. */
+const FlowArrow: React.FC = () => (
+  <div className="flex items-center justify-center" aria-hidden="true">
+    <div className="flex h-10 w-10 rotate-90 items-center justify-center rounded-full border border-primary/30 bg-primary/10 text-primary transition-transform md:rotate-0">
+      <ArrowRight className="h-5 w-5" />
+    </div>
+  </div>
+)
 
 export const TopologyPage: React.FC = () => {
   const { t } = useTranslation()
@@ -56,6 +67,33 @@ export const TopologyPage: React.FC = () => {
   }, [config, transports])
 
   const hasError = serverInfoError || driversError || transportsError || statsError || rulesError
+
+  // C-E4: hover a driver row → highlight the runtime rules whose match DSL
+  // consumes it and the transports those rules target — the first time the
+  // page shows WHERE a driver's data actually goes.
+  const [hoveredDriver, setHoveredDriver] = useState<string | null>(null)
+  const relatedRuleNames = useMemo(() => {
+    if (!hoveredDriver) return new Set<string>()
+    return new Set(
+      rules.filter((r) => matchMentionsDriver(r.match, hoveredDriver)).map((r) => r.name),
+    )
+  }, [hoveredDriver, rules])
+  const relatedTransportNames = useMemo(() => {
+    const s = new Set<string>()
+    if (!hoveredDriver) return s
+    for (const r of rules) {
+      if (!relatedRuleNames.has(r.name)) continue
+      if (r.target) s.add(r.target)
+      for (const t of r.targets ?? []) s.add(t)
+    }
+    return s
+  }, [hoveredDriver, relatedRuleNames, rules])
+  const isHighlighted = (kind: 'driver' | 'rule' | 'transport', name: string): boolean => {
+    if (!hoveredDriver) return false
+    if (kind === 'driver') return name === hoveredDriver
+    if (kind === 'rule') return relatedRuleNames.has(name)
+    return relatedTransportNames.has(name)
+  }
 
   return (
     <div className="space-y-5">
@@ -123,7 +161,13 @@ export const TopologyPage: React.FC = () => {
                       key={d.name}
                       data-testid={`topo-driver-${d.name}`}
                       to={`${adminBase}/drivers/${encodeURIComponent(d.name)}`}
-                      className="p-3 rounded-lg border border-border bg-card flex items-center justify-between text-xs transition-colors hover:border-primary/40 hover:underline"
+                      onMouseEnter={() => setHoveredDriver(d.name)}
+                      onMouseLeave={() => setHoveredDriver(null)}
+                      className={`p-3 rounded-lg border bg-card flex items-center justify-between text-xs transition-colors hover:border-primary/40 hover:underline ${
+                        isHighlighted('driver', d.name)
+                          ? 'border-primary/60 bg-primary/10'
+                          : 'border-border'
+                      }`}
                     >
                       <div className="flex items-center gap-2 min-w-0">
                         <span className={`w-2 h-2 rounded-full shrink-0 ${st.dotColor}`} />
@@ -154,6 +198,8 @@ export const TopologyPage: React.FC = () => {
             </div>
           </div>
 
+          <FlowArrow />
+
           {/* CoreC Engine Node */}
           <div className="shrink-0 flex flex-col items-center justify-center p-6 rounded-2xl bg-primary/5 border-2 border-primary/30 shadow-xl glow-primary text-center max-w-xs w-full">
             <div className="w-12 h-12 rounded-lg bg-primary text-primary-foreground flex items-center justify-center mb-3 shadow-lg">
@@ -181,6 +227,8 @@ export const TopologyPage: React.FC = () => {
             </div>
           </div>
 
+          <FlowArrow />
+
           {/* Northbound Layer */}
           <div className="flex-1 w-full space-y-3">
             <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center space-x-1.5">
@@ -204,7 +252,11 @@ export const TopologyPage: React.FC = () => {
                       key={transport.name}
                       data-testid={`topo-transport-${transport.name}`}
                       to={`${adminBase}/transports/${encodeURIComponent(transport.name)}`}
-                      className="block p-3 rounded-lg border border-border bg-card text-xs transition-colors hover:border-primary/40 hover:underline"
+                      className={`block p-3 rounded-lg border bg-card text-xs transition-colors hover:border-primary/40 hover:underline ${
+                        isHighlighted('transport', transport.name)
+                          ? 'border-primary/60 bg-primary/10'
+                          : 'border-border'
+                      }`}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 min-w-0">
@@ -289,7 +341,7 @@ export const TopologyPage: React.FC = () => {
                   rule.disabled
                     ? 'border-border/40 bg-muted/20 opacity-50'
                     : 'border-status-warning/30 bg-status-warning/5'
-                }`}
+                } ${isHighlighted('rule', rule.name) ? 'border-primary/70 bg-primary/10' : ''}`}
               >
                 <span className="font-mono text-xs text-muted-foreground">#{rule.priority}</span>
                 <span className="font-semibold text-foreground">{rule.name}</span>

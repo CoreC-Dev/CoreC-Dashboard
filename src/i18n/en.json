@@ -967,8 +967,8 @@
     "serverValidateFailed": "Server-side validation failed: {{error}}"
   },
   "topology": {
-    "title": "Chained-Core Mesh Topology",
-    "subtitle": "Hexagonal port & adapter topology: Southbound drivers, priority data bus, rule pipeline, and northbound relay sinks",
+    "title": "Data Flow Topology",
+    "subtitle": "Live overview: southbound devices → engine → rules → northbound sinks",
     "nodeId": "Node ID",
     "role": "Role",
     "upstream": "Upstream",
