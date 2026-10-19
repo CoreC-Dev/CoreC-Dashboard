@@ -468,7 +468,8 @@
     "batchConfirmDesc": "以下 {{count}} 条命令将逐条写入 PLC。",
     "batchConfirm": "全部写入",
     "batchWriting": "写入中...",
-    "batchResults": "批量结果"
+    "batchResults": "批量结果",
+    "viewHistory": "查看写操作历史 →"
   },
   "diagnostics": {
     "title": "系统可观测性与实时诊断",

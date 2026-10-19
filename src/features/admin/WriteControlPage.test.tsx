@@ -50,6 +50,7 @@ vi.mock('@/api/endpoints', () => ({
   writeTag: vi.fn(),
 }))
 
+import { MemoryRouter } from 'react-router-dom'
 import * as api from '@/api/endpoints'
 
 function renderPage() {
@@ -61,7 +62,9 @@ function renderPage() {
   })
   return render(
     <QueryClientProvider client={qc}>
-      <WriteControlPage />
+      <MemoryRouter>
+        <WriteControlPage />
+      </MemoryRouter>
     </QueryClientProvider>,
   )
 }

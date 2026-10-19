@@ -6,6 +6,7 @@
 // jsdom — same limitation the B10 alerts filter documented.)
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { act } from 'react'
+import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { DeadLetterTable } from '@/components/admin/WriteControlParts'
 import i18n from '@/i18n'
@@ -25,19 +26,21 @@ const ENTRIES = [
 
 function renderTable() {
   return render(
-    <DeadLetterTable
-      visibleDeadLetters={ENTRIES}
-      loadingDlq={false}
-      errorDlq={false}
-      fetchingDlq={false}
-      dlqError={null}
-      dlqClearedMsg={null}
-      replayError={null}
-      onRefresh={vi.fn()}
-      onClearAll={vi.fn()}
-      onReplay={vi.fn()}
-      isWritePending={false}
-    />,
+    <MemoryRouter>
+      <DeadLetterTable
+        visibleDeadLetters={ENTRIES}
+        loadingDlq={false}
+        errorDlq={false}
+        fetchingDlq={false}
+        dlqError={null}
+        dlqClearedMsg={null}
+        replayError={null}
+        onRefresh={vi.fn()}
+        onClearAll={vi.fn()}
+        onReplay={vi.fn()}
+        isWritePending={false}
+      />
+    </MemoryRouter>,
   )
 }
 

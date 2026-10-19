@@ -1,7 +1,8 @@
 import { Gauge, RefreshCw } from 'lucide-react'
 import type React from 'react'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useSearchParams } from 'react-router-dom'
 import { useMetrics } from '@/api/hooks'
 import { EventLogTerminal } from '@/components/admin/EventLogTerminal'
 import { InstanceHealthBar } from '@/components/admin/InstanceHealthBar'
@@ -123,6 +124,18 @@ const HistTile: React.FC<{
 
 export const DiagnosticsPage: React.FC = () => {
   const { t } = useTranslation()
+
+  // C-C5: deep links like /diagnostics?section=writes land on the write
+  // history (HashRouter routes eat #anchors, so the jump is a query
+  // param + scrollIntoView — the same mechanism the in-page chips use).
+  const [searchParams] = useSearchParams()
+  useEffect(() => {
+    const target = searchParams.get('section')
+    if (!target) return
+    document
+      .getElementById(`diagnostics-${target}`)
+      ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [searchParams])
 
   // Auto-refresh toggle — when off, refetchInterval is disabled (false).
   const [autoRefresh, setAutoRefresh] = useState(true)

@@ -6,6 +6,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { act } from 'react'
+import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { DiagnosticsPage } from '@/features/admin/DiagnosticsPage'
 import i18n from '@/i18n'
@@ -51,7 +52,9 @@ function renderPage() {
   })
   return render(
     <QueryClientProvider client={qc}>
-      <DiagnosticsPage />
+      <MemoryRouter>
+        <DiagnosticsPage />
+      </MemoryRouter>
     </QueryClientProvider>,
   )
 }
@@ -123,5 +126,24 @@ describe('diagnostics page IA (C-E1)', () => {
     })
     expect(screen.getByText('/debug/pprof/heap')).toBeTruthy()
     expect(screen.getByText('/debug/pprof/mutex')).toBeTruthy()
+  })
+
+  it('a ?section= deep link lands on that section (C-C5 write-history hop)', async () => {
+    const qc = new QueryClient({
+      defaultOptions: { queries: { retry: false, refetchInterval: false, staleTime: Infinity } },
+    })
+    render(
+      <QueryClientProvider client={qc}>
+        <MemoryRouter initialEntries={['/admin/diagnostics?section=writes']}>
+          <DiagnosticsPage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+    await screen.findByTestId('section-anchor-nav')
+    // The write-history deep link (WriteControlPage's "view write history")
+    // scrolled the page to the writes section, not the top.
+    expect(Element.prototype.scrollIntoView).toHaveBeenCalledWith(
+      expect.objectContaining({ behavior: 'smooth' }),
+    )
   })
 })

@@ -13,6 +13,7 @@ import {
 import type React from 'react'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { WriteHistoryLink } from '@/components/admin/WriteHistoryLink'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -158,6 +159,7 @@ export const WriteForm: React.FC<WriteFormProps> = ({
             <div className="p-3 rounded-lg bg-status-running/10 border border-status-running/20 text-status-running text-xs flex items-center space-x-2">
               <CheckCircle2 className="w-4 h-4 shrink-0" />
               <span>{successMsg}</span>
+              <WriteHistoryLink />
             </div>
           )}
 
@@ -333,6 +335,7 @@ export const DeadLetterTable: React.FC<DeadLetterTableProps> = ({
             <span>{t('write.deadLetterTitle')}</span>
           </CardTitle>
           <CardDescription className="text-xs">{t('write.deadLetterDesc')}</CardDescription>
+          <WriteHistoryLink />
         </div>
         <div className="flex items-center gap-2">
           {visibleDeadLetters.length > 0 && (

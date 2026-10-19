@@ -468,7 +468,8 @@
     "batchConfirmDesc": "The following {{count}} command(s) will be written to the PLC one by one.",
     "batchConfirm": "Write All",
     "batchWriting": "Writing...",
-    "batchResults": "Batch Results"
+    "batchResults": "Batch Results",
+    "viewHistory": "View write history →"
   },
   "diagnostics": {
     "title": "Observability & Diagnostics",
