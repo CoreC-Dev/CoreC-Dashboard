@@ -108,3 +108,17 @@ Conventional Commits；单一职责；重构与行为变更不混提；改造仅
 - **实例切换器诚实化（D-20）**：下拉项绿点不再"曾经连上过就绿"（lastConnectedAt 单一信号），改读与首页卡片同一套实时探测状态（probeErrors→红、首次探测 probing→黄、lastConnectedAt→绿、无结论→灰，A-07 优先级）；切换实例保留当前子路由段（switchInstanceTarget：/corec/a/monitor/alerts→/corec/b/monitor/alerts，不再被扔回总览大屏），实体详情段（drivers/:name 属旧实例）回落到对应列表页。
 - **危险确认统一 destructive 变体（D-18/D-19）**：AlertDialogAction 支持 variant 属性（buttonVariants 透传），「放弃未保存更改」确认（D-18）从主色"确定"变红——习惯性点右侧按钮不再丢草稿；备份恢复确认（D-19）从 bg-status-error 系红改 destructive 系红（status-error 从此只留状态指示），DeleteEntityConfirm/设置页清空确认迁移到同一 variant 拼法。WriteControlPage 清死信确认一处经移交由 C 域对齐（ce164fe）——全库危险确认至此统一完毕。
 - **统一反馈条 OperationResult（D-17）**：应用配置并热重载的结果不再是各页各说、永不清除的文字条——共享组件（成功绿/失败红 + 操作上下文标签 + 5s 自动淡出 + 手动关闭；可见性按 status 对象身份键控，重复操作重现提示）；驱动/传输详情编辑卡（DetailPageParts）与配置中心 StatusMessageView 均改采用（后者保留 useStatusMessage 4s 清理，禁用组件内淡出仅加手动关闭）。config.reloadSuccess 收敛为统一文案「配置已应用并热重载成功。/ Config applied and hot-reloaded.」；drivers/transports 两处 editConfig.reloadSuccess 旧措辞连同钉住它的 DetailPageReloadConfirm.test.tsx:144 断言一并移交 C 域收敛（features/admin+hooks 禁触）。
+- **采集速率如实显示（B12）**：CountUpNumber 的取整移进默认 format——自定义 format（速率卡一位小数）吃到原始动画值，12.4 点/秒不再整段动画期间显示 12.0；整数计数卡（累计读取/丢弃）在各自的 formatNumber 包装内自行取整，动画中途不再出现小数计数。
+- **缺失引擎状态渲染为未知（B13）**：stats.status 缺失/为空不再判绿——显示「未知」（common.unknown）+ 琥珀点；仅实际 running/ok 才绿。"不知道"不再被画成"健康"。
+- **Row5 卡片链接改名（B14）**：死信队列卡头部链接由误用的 dashboard.manage（渲染「管理」，与驱动/传输两个「管理」同貌异指）改为 dashboard.viewAll（「查看全部 / View All」），如实指向告警页。
+- **相对时间戳（B15）**：测点行与告警流时间戳改为「刚刚 / X分钟前 / X小时前 / X天前」（激活存量键 common.justNow/minutesAgo/hoursAgo/daysAgo），超过 5 分钟整格降低透明度，hover 显示完整日期时间；缺失时间戳视为最可疑（'-' + 置灰）——昨天的冻结值不再与刚刷新的值一样新鲜。
+- **英文复数硬伤清除（B16）**：dashboard.retries/tags.total/alerts.attemptsExhausted 改写为中英都不需要复数的形式（「重试次数：{{count}}」/「Retries: {{count}}」、「Points: {{count}}」、「Attempts exhausted: {{count}}」）——"1 retries"/"Total: 1 points" 语法错误消失；审计点名的死键 tags.fresh、alerts.noAlerts 两包同删（write.attemptsExhausted 同类问题属 write/admin 命名空间，移交对应域）。
+- **错误流 KPI 口径诚实（B18）**：「系统错误流」大数字是封顶 50 的缓冲区水位（MAX_ALERT_EVENTS），副文案改为「最近 {{max}} 条中的 {{count}} 条」/「{{count}} of the last {{max}} events」——不再冒充总量或速率。
+- **图表空态/断线浮层（B20）**：流量/内存图经 useCoreCWebSocket 的 onStatus 形参镜像 socket 状态（B01 的 wsStatusStore 接线不动）：无数据时浮「等待实时数据…」，断线后浮「连接中断，图表已暂停更新」（dashboard.chartWaiting/chartDisconnected）——空白坐标轴与静默定格不再是仅有的两种形态。
+- **同秒样本合并（B21）**：同一秒内多条 WS 更新合并为一点（取最后值），乱序样本丢弃而非 +1s 改期——时间轴不再漂移、导出 CSV 不再携带编造时间戳；CSV 表头注释披露聚合策略（tags.csvMergedNote「同秒多条记录已合并为最后一条 / Same-second records merged (last value kept)」）。
+- **测点表两种空态（B22）**：无筛选且零测点 → 「当前实例暂无测点。请确认驱动已连接并已配置测点。」；有筛选无结果 → 「没有匹配的测点 · [清除筛选]」一键重置五项筛选；误导性的 tags.noPoints（"未找到匹配当前筛选条件的测点"）死键移除。
+- **快照对账（B23）**：每 60s（TAG_SNAPSHOT_POLL_MS）重取 /tags 快照并与实时表对账——后端新增测点一分钟内自动补入（从不覆盖更新鲜的 WS 值）、删除的测点随之离表，发现新增时显示「发现 {{count}} 个新测点」（tags.newTagsDiscovered，8s 自动消失）；useTags 保持零轮询（api 层未动，页Own interval），resetSeed 退役（手动刷新=普通 refetch）。
+- **窄屏列收敛（B24）**：<md 隐藏分组/类型列（表头与行单元格同步 hidden md:block），860px 最小宽降为 md+，测点列 max-md:flex-1 吸收余宽——手机上测点/数值/质量/时间四列可见，值班应急不再横滑 800+px。
+- **方向与告警语义解耦（B25）**：行级闪变升降同用中性 primary 色（液位下降不再整行闪红——工业界面红=报警/坏点），数值方向改由行内 ▲/▼ 小箭头（primary）承载，保留至下次更新；红色回归本职（坏质量/错误）。
+- **B 域移交（B17/B19）**：通知正文携带真实事件（`notify(title, \`${log.type||'ERROR'}: ${log.payload.slice(0,120)}\`)`）与警告级声音独立开关（默认关，错误级改三连音≈0.8s）——实现点在 components/layout/AlertStreamProvider.tsx（B02 后通知/声音唯一持有者）与 stores/alertStore.ts、lib/alertAudio.ts，均在 B 域文件所有权之外，未动。
+- **B 域待验证结案**：待验证-2（/tags/stream 逼近 500 msg/s 限流的丢点提示）已随 B01 落地——wsStatusStore.reportDropped 记账、StreamStatusBanner 消费 deriveRateLimited 展示限流提示，标已覆盖；待验证-3（慢测点趋势无历史回填）经判定为产品决策，无需行动。
