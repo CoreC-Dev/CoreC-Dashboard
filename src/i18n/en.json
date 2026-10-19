@@ -1534,7 +1534,7 @@
   },
   "derivedTag": {
     "title": "Derived Tags",
-    "desc": "Computed KPI tags from arithmetic expressions over cached tag values (e.g. efficiency = output / input * 100). Hot-updated via PUT /configs — no restart required.",
+    "desc": "Computed KPI tags from arithmetic expressions over cached tag values (e.g. efficiency = output / input * 100). Hot-reloaded with the applied config — no restart required.",
     "add": "Add Derived Tag",
     "empty": "No derived tags configured. Click \"Add Derived Tag\" to create one.",
     "name": "Tag Name",
