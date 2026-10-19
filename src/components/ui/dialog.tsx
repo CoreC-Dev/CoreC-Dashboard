@@ -36,6 +36,11 @@ const DialogContent = React.forwardRef<
         ref={ref}
         className={cn(
           'fixed left-[50%] top-[50%] z-50 grid w-[calc(100%-1.5rem)] sm:w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border border-border bg-card p-5 sm:p-6 shadow-2xl data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-top-[2%] data-[state=open]:slide-in-from-top-[2%] sm:rounded-lg',
+          // A-19: a tall dialog (the seven-field instance form) overflowed
+          // the viewport on short/landscape screens — the bottom buttons were
+          // unreachable. Clamp the height to the viewport and scroll instead;
+          // overflow-y-auto only shows a scrollbar when content overflows.
+          'max-h-[calc(100vh-2rem)] overflow-y-auto',
           className,
         )}
         {...props}
