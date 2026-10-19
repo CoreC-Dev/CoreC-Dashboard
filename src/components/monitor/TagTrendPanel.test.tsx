@@ -13,7 +13,7 @@ import type { DataPoint } from '@/types/models'
 
 // jsdom ships neither URL.createObjectURL nor anchor-click navigation —
 // stub both so the CSV export can be intercepted and its Blob inspected.
-const createObjectURL = vi.fn(() => 'blob:mock')
+const createObjectURL = vi.fn<(blob: Blob) => string>(() => 'blob:mock')
 beforeAll(() => {
   Object.defineProperty(URL, 'createObjectURL', { value: createObjectURL, configurable: true })
   Object.defineProperty(URL, 'revokeObjectURL', { value: vi.fn(), configurable: true })

@@ -39,7 +39,9 @@ afterEach(() => {
 
 const frame = (over: Partial<MemoryFrame> = {}): MemoryFrame => ({
   alloc: 20 * 1024 * 1024,
+  total_alloc: 40 * 1024 * 1024,
   sys: 64 * 1024 * 1024,
+  num_gc: 2,
   goroutines: 42,
   ...over,
 })
