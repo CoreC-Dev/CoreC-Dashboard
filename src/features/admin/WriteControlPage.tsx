@@ -397,7 +397,8 @@ export const WriteControlPage: React.FC = () => {
             <AlertDialogCancel>{t('write.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleClearDeadLetters}
-              className="bg-status-error text-white shadow hover:bg-status-error/90 danger-pulse"
+              variant="destructive"
+              className="danger-pulse"
             >
               {t('write.confirm')}
             </AlertDialogAction>
