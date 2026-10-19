@@ -5,6 +5,7 @@ import {
   Clock,
   RefreshCw,
   RotateCcw,
+  Search,
   Send,
   Terminal,
   Trash2,
@@ -31,6 +32,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import type { DataTypeString } from '@/lib/constants'
+import { filterWriteDeadLetters } from '@/lib/deadLetterFilter'
 import { DATA_TYPES } from '@/types/config'
 import type { DeadLetterEntry } from '@/types/models'
 
@@ -303,9 +305,24 @@ export const DeadLetterTable: React.FC<DeadLetterTableProps> = ({
 }) => {
   const { t } = useTranslation()
 
-  // Cap rendered dead letters to prevent DOM overload (TD-PERF-005).
+  // C-C4: locate one driver's failures among hundreds of dead letters.
+  const [dlqSearch, setDlqSearch] = useState('')
+  const [dlqDriver, setDlqDriver] = useState('all')
+
+  const uniqueDlqDrivers = useMemo(
+    () => Array.from(new Set(visibleDeadLetters.map((dl) => dl.command.driver))).sort(),
+    [visibleDeadLetters],
+  )
+  const filteredDeadLetters = useMemo(
+    () => filterWriteDeadLetters(visibleDeadLetters, dlqSearch, dlqDriver),
+    [visibleDeadLetters, dlqSearch, dlqDriver],
+  )
+
+  // Cap rendered dead letters to prevent DOM overload (TD-PERF-005) — the
+  // cap applies to the FILTERED set, so entries beyond the first 100 stay
+  // findable through search/filter.
   const MAX_VISIBLE_DLQ = 100
-  const cappedDeadLetters = visibleDeadLetters.slice(0, MAX_VISIBLE_DLQ)
+  const cappedDeadLetters = filteredDeadLetters.slice(0, MAX_VISIBLE_DLQ)
 
   return (
     <Card className="border-border bg-card">
@@ -318,6 +335,37 @@ export const DeadLetterTable: React.FC<DeadLetterTableProps> = ({
           <CardDescription className="text-xs">{t('write.deadLetterDesc')}</CardDescription>
         </div>
         <div className="flex items-center gap-2">
+          {visibleDeadLetters.length > 0 && (
+            <>
+              {/* C-C4: search by tag name / verbatim error text. */}
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                <Input
+                  type="text"
+                  value={dlqSearch}
+                  onChange={(e) => setDlqSearch(e.target.value)}
+                  placeholder={t('write.searchDeadLetters')}
+                  className="h-8 w-44 pl-8 pr-2 text-xs"
+                />
+              </div>
+              {/* C-C4: narrow to one driver's failures. */}
+              <Select value={dlqDriver} onValueChange={setDlqDriver}>
+                <SelectTrigger className="h-8 w-36 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all" className="text-xs">
+                    {t('write.driverFilterAll')}
+                  </SelectItem>
+                  {uniqueDlqDrivers.map((d) => (
+                    <SelectItem key={d} value={d} className="font-mono text-xs">
+                      {d}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </>
+          )}
           <Button
             variant="outline"
             size="sm"
@@ -382,6 +430,10 @@ export const DeadLetterTable: React.FC<DeadLetterTableProps> = ({
             <CheckCircle2 className="w-6 h-6 text-status-running mb-1" />
             <span>{t('write.noDeadLetters')}</span>
           </div>
+        ) : filteredDeadLetters.length === 0 ? (
+          <div className="py-8 text-center text-xs text-muted-foreground">
+            {t('write.noMatchingDeadLetters')}
+          </div>
         ) : (
           <div className="space-y-2">
             {cappedDeadLetters.map((dl) => (
@@ -415,9 +467,12 @@ export const DeadLetterTable: React.FC<DeadLetterTableProps> = ({
                 </Button>
               </div>
             ))}
-            {visibleDeadLetters.length > MAX_VISIBLE_DLQ && (
+            {filteredDeadLetters.length > MAX_VISIBLE_DLQ && (
               <p className="text-xs text-muted-foreground text-center py-2">
-                {t('common.showing', { shown: MAX_VISIBLE_DLQ, total: visibleDeadLetters.length })}
+                {t('common.showing', {
+                  shown: MAX_VISIBLE_DLQ,
+                  total: filteredDeadLetters.length,
+                })}
               </p>
             )}
           </div>
