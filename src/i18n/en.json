@@ -407,7 +407,7 @@
     "targetValue": "Target Value",
     "submit": "Next: confirm write",
     "confirmWarning": "Warning: This action writes directly to PLC coils/registers. Ensure operational safety!",
-    "deadLetterTitle": "Dead Letter Queue (Retries Exhausted)",
+    "deadLetterTitle": "Failed writes (retries exhausted)",
     "deadLetterDesc": "Commands that exhausted write-retry-count (default 3) are held here for operator audit and manual replay",
     "retry": "Replay Command",
     "noDeadLetters": "No failed dead-letter commands found",

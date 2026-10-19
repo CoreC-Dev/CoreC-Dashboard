@@ -407,7 +407,7 @@
     "targetValue": "下发目标值",
     "submit": "下一步：确认写入",
     "confirmWarning": "注意：控制指令将直接写入现场 PLC 物理寄存器/线圈，请确保操作安全！",
-    "deadLetterTitle": "死信队列 (重试耗尽指令)",
+    "deadLetterTitle": "失败下发指令（重试耗尽）",
     "deadLetterDesc": "达到最大重试次数 (默认 3 次) 仍失败的控制指令，在此归档供排查与手动重新下发",
     "retry": "重新下发",
     "noDeadLetters": "当前无失败的死信指令",
