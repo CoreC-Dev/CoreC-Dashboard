@@ -193,7 +193,9 @@ describe('AlertStreamProvider — event flow into alertStore', () => {
       expect(constructed).toHaveLength(1)
       expect(constructed[0]).toEqual({
         title: 'CoreC Alert',
-        body: 'New error-level event detected',
+        // B17: the body carries the actual event payload so the operator
+        // can triage from the toast without switching pages.
+        body: 'ERROR: boom',
       })
     } finally {
       vi.unstubAllGlobals()

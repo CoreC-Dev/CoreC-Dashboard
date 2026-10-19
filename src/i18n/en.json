@@ -435,7 +435,7 @@
     "commandConcurrencyDesc": "Controlled via internal counting semaphore (default 16 concurrency), preventing slow or disconnected PLCs from exhausting core goroutines.",
     "writeRetryCount": "Write-Retry-Count",
     "writeRetryCountDesc": "Failed writes automatically retry up to 3 times before failing closed into Dead Letter Queue for operator review.",
-    "attemptsExhausted": "{{count}} attempts exhausted",
+    "attemptsExhausted": "Retries exhausted: {{count}}",
     "confirmWriteTitle": "Confirm Write Command",
     "confirmWriteDesc": "This command writes directly to the PLC. Verify every field below before confirming.",
     "confirmWrite": "Confirm Write",
@@ -1293,7 +1293,8 @@
     "levelWarning": "Warning",
     "levelError": "Error",
     "noMatchingEvents": "No events match the current filter",
-    "logLevelWarn": "WARN"
+    "logLevelWarn": "WARN",
+    "warningSound": "Warning-level sound"
   },
   "dashboardEditor": {
     "title": "Large-Screen Layout Editor",

@@ -46,19 +46,35 @@ export function primeAlertAudio(): void {
 
 /** Play the short 800 Hz alert beep (no-op without an AudioContext). */
 export function playAlertBeep(): void {
+  playTone(800, 0, 0.2)
+}
+
+/**
+ * Warning-level alert: three short beeps (~0.8 s total) at a lower
+ * pitch than the error beep so operators can tell severity by ear
+ * (audit B19). No-op without an AudioContext.
+ */
+export function playWarningBeep(): void {
+  playTone(620, 0, 0.15)
+  playTone(620, 0.25, 0.15)
+  playTone(620, 0.5, 0.15)
+}
+
+/** One sine tone: frequency (Hz), start offset and length (seconds). */
+function playTone(freq: number, offset: number, length: number): void {
   try {
     const audio = getAudioContext()
     if (!audio) return
     const osc = audio.createOscillator()
     const gain = audio.createGain()
     osc.type = 'sine'
-    osc.frequency.value = 800
+    osc.frequency.value = freq
     gain.gain.value = 0.2
     osc.connect(gain)
     gain.connect(audio.destination)
-    const now = audio.currentTime
+    const now = audio.currentTime + offset
     osc.start(now)
-    osc.stop(now + 0.2)
+    osc.stop(now + length)
   } catch {
     // AudioContext blocked or unavailable — fail silently
   }

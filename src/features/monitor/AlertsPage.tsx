@@ -49,8 +49,10 @@ export const AlertsPage: React.FC = () => {
   // unread counter is frozen at 0 and new events don't re-arm it.
   const liveLogs = useAlertStore((s) => s.events)
   const soundEnabled = useAlertStore((s) => s.soundEnabled)
+  const warnSoundEnabled = useAlertStore((s) => s.warningSoundEnabled)
   const notifEnabled = useAlertStore((s) => s.notificationsEnabled)
   const toggleSound = useAlertStore((s) => s.toggleSound)
+  const toggleWarnSound = useAlertStore((s) => s.toggleWarningSound)
   const toggleNotifications = useAlertStore((s) => s.toggleNotifications)
   const setViewing = useAlertStore((s) => s.setViewing)
   useEffect(() => {
@@ -192,6 +194,20 @@ export const AlertsPage: React.FC = () => {
                 <BellOff className="w-3.5 h-3.5 mr-1" />
               )}
               <span>{t(soundEnabled ? 'alerts.soundOn' : 'alerts.soundOff')}</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={toggleWarnSound}
+              aria-pressed={warnSoundEnabled}
+              className="h-8 text-xs"
+            >
+              {warnSoundEnabled ? (
+                <Bell className="w-3.5 h-3.5 mr-1" />
+              ) : (
+                <BellOff className="w-3.5 h-3.5 mr-1" />
+              )}
+              <span>{t('alerts.warningSound')}</span>
             </Button>
             <Button
               variant="outline"

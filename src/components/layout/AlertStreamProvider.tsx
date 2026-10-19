@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useParams } from 'react-router-dom'
 import { CoreCWebSocket, makeStreamId, useDeadLetters, useWsStatusStore } from '@/api/hooks'
-import { playAlertBeep } from '@/lib/alertAudio'
+import { playAlertBeep, playWarningBeep } from '@/lib/alertAudio'
 import { useAlertStore } from '@/stores/alertStore'
 import type { LogEvent } from '@/types/models'
 
@@ -84,18 +84,24 @@ export const AlertStreamProvider: React.FC = () => {
       if (batch.length === 0) return
       // Feed + unread count land in one store write per frame.
       useAlertStore.getState().pushEvents(batch)
-      const { soundEnabled, notificationsEnabled } = useAlertStore.getState()
+      const { soundEnabled, warningSoundEnabled, notificationsEnabled } = useAlertStore.getState()
       for (const evt of batch) {
         // level >= 8 are errors — audible + visual alerts when enabled
         // (per-event, not per-batch: same behavior the page had).
         if (evt.level >= 8) {
           if (soundEnabled) playAlertBeep()
           if (notificationsEnabled) {
+            // B17: the notification body carries the actual event so the
+            // operator can triage from the toast without switching pages.
             showNotification(
               tRef.current('alerts.notificationTitle'),
-              tRef.current('alerts.notificationBody'),
+              `${evt.type || 'ERROR'}: ${String(evt.payload ?? '').slice(0, 120)}`,
             )
           }
+        } else if (evt.level >= 4 && warningSoundEnabled) {
+          // B19: warning-level events get their own softer three-beep layer
+          // so severity is audible without enabling the harsh error beep.
+          playWarningBeep()
         }
       }
     }

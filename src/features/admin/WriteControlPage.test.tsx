@@ -106,7 +106,7 @@ describe('WriteControlPage dead-letter replay gate (C-C1)', () => {
     // exhausted, and the recorded error (the report's warning copy).
     expect(screen.getByText(/This command previously failed \(driver disconnected\)/)).toBeTruthy()
     expect(screen.getByText(/Last failed:/)).toBeTruthy()
-    expect(screen.getAllByText('3 attempts exhausted').length).toBe(2)
+    expect(screen.getAllByText('Retries exhausted: 3').length).toBe(2)
     // Nothing sent yet.
     expect(api.writeTag).not.toHaveBeenCalled()
 

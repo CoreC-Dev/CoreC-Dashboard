@@ -435,7 +435,7 @@
     "commandConcurrencyDesc": "通过内部计数信号量控制 (默认 16 并发)，防止响应缓慢或断连的 PLC 耗尽核心协程。",
     "writeRetryCount": "写入重试次数",
     "writeRetryCountDesc": "写入失败后自动重试最多 3 次，仍未成功则转入死信队列供运维人员审查。",
-    "attemptsExhausted": "{{count}} 次重试耗尽",
+    "attemptsExhausted": "重试耗尽: {{count}}",
     "confirmWriteTitle": "确认写入指令",
     "confirmWriteDesc": "此指令将直接写入 PLC。请在确认前仔细核对下方所有字段。",
     "confirmWrite": "确认写入",
@@ -1293,7 +1293,8 @@
     "levelWarning": "警告",
     "levelError": "错误",
     "noMatchingEvents": "当前筛选条件下没有事件",
-    "logLevelWarn": "警告"
+    "logLevelWarn": "警告",
+    "warningSound": "警告级声音"
   },
   "dashboardEditor": {
     "title": "大屏布局编辑器",

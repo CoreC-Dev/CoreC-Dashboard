@@ -27,6 +27,7 @@ import type { LogEvent } from '@/types/models'
  */
 
 const SOUND_KEY = 'corec_alert_sound'
+const WARN_SOUND_KEY = 'corec_alert_warning_sound'
 const NOTIF_KEY = 'corec_alert_notification'
 /** Live-feed cap — unchanged from AlertsPage's old local buffer. */
 export const MAX_ALERT_EVENTS = 50
@@ -45,6 +46,8 @@ interface AlertState {
   /** True while AlertsPage is mounted — events arriving are "being seen". */
   viewing: boolean
   soundEnabled: boolean
+  /** Warning-level (4–7) events get their own audible layer (B19). */
+  warningSoundEnabled: boolean
   notificationsEnabled: boolean
   /** Merge a flushed batch of events (called once per rAF by the provider). */
   pushEvents: (batch: LogEvent[]) => void
@@ -52,6 +55,7 @@ interface AlertState {
   /** AlertsPage mount/unmount; opening the page marks unread as seen. */
   setViewing: (viewing: boolean) => void
   toggleSound: () => void
+  toggleWarningSound: () => void
   toggleNotifications: () => Promise<void>
   /** Drop per-instance transient data (provider instance-switch hygiene). */
   resetTransient: () => void
@@ -65,6 +69,7 @@ export const useAlertStore = create<AlertState>((set, get) => ({
   // Read once at store creation — same keys/values the old page-local
   // useState(() => readPref(KEY)) initializers resolved on mount.
   soundEnabled: readPref(SOUND_KEY),
+  warningSoundEnabled: readPref(WARN_SOUND_KEY),
   notificationsEnabled: readPref(NOTIF_KEY),
 
   pushEvents: (batch) => {
@@ -99,6 +104,13 @@ export const useAlertStore = create<AlertState>((set, get) => ({
     writePref(SOUND_KEY, next)
     // Prime the AudioContext inside the click gesture (browser autoplay
     // policy) and play the preview beep — same as the old toggle.
+    if (next) primeAlertAudio()
+  },
+
+  toggleWarningSound: () => {
+    const next = !get().warningSoundEnabled
+    set({ warningSoundEnabled: next })
+    writePref(WARN_SOUND_KEY, next)
     if (next) primeAlertAudio()
   },
 
