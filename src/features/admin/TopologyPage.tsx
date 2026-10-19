@@ -2,6 +2,7 @@ import { AlertCircle, Cpu, GitBranch, Radio, Send } from 'lucide-react'
 import type React from 'react'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Link, useParams } from 'react-router-dom'
 import {
   useConfigRaw,
   useConfigs,
@@ -20,6 +21,8 @@ import { formatNumber, formatUptime } from '@/lib/utils'
 
 export const TopologyPage: React.FC = () => {
   const { t } = useTranslation()
+  const { id } = useParams<{ id: string }>()
+  const adminBase = id ? `/corec/${id}/admin` : '/admin'
   const { data: serverInfo, isError: serverInfoError } = useServerInfo()
   const { data: driversData, isError: driversError } = useDrivers()
   const { data: transportsData, isError: transportsError } = useTransports()
@@ -116,9 +119,11 @@ export const TopologyPage: React.FC = () => {
                   const st = ConnStateLabel[d.state] || ConnStateLabel[0]
                   const connSummary = driverConnSummaries.get(d.name) ?? ''
                   return (
-                    <div
+                    <Link
                       key={d.name}
-                      className="p-3 rounded-lg border border-border bg-card flex items-center justify-between text-xs"
+                      data-testid={`topo-driver-${d.name}`}
+                      to={`${adminBase}/drivers/${encodeURIComponent(d.name)}`}
+                      className="p-3 rounded-lg border border-border bg-card flex items-center justify-between text-xs transition-colors hover:border-primary/40 hover:underline"
                     >
                       <div className="flex items-center gap-2 min-w-0">
                         <span className={`w-2 h-2 rounded-full shrink-0 ${st.dotColor}`} />
@@ -142,7 +147,7 @@ export const TopologyPage: React.FC = () => {
                           {t(st.key)}
                         </Badge>
                       </div>
-                    </div>
+                    </Link>
                   )
                 })
               )}
@@ -195,9 +200,11 @@ export const TopologyPage: React.FC = () => {
                   const st = ConnStateLabel[transport.state] || ConnStateLabel[0]
                   const connSummary = transportConnSummaries.get(transport.name) ?? ''
                   return (
-                    <div
+                    <Link
                       key={transport.name}
-                      className="p-3 rounded-lg border border-border bg-card text-xs"
+                      data-testid={`topo-transport-${transport.name}`}
+                      to={`${adminBase}/transports/${encodeURIComponent(transport.name)}`}
+                      className="block p-3 rounded-lg border border-border bg-card text-xs transition-colors hover:border-primary/40 hover:underline"
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 min-w-0">
@@ -251,7 +258,7 @@ export const TopologyPage: React.FC = () => {
                           </div>
                         </div>
                       )}
-                    </div>
+                    </Link>
                   )
                 })
               )}
@@ -274,9 +281,11 @@ export const TopologyPage: React.FC = () => {
           </div>
           <div className="flex flex-wrap gap-2">
             {sortedRules.map((rule) => (
-              <div
+              <Link
                 key={rule.index}
-                className={`px-3 py-1.5 rounded-lg border text-xs flex items-center gap-2 ${
+                data-testid={`topo-rule-${rule.name}`}
+                to={`${adminBase}/rules`}
+                className={`px-3 py-1.5 rounded-lg border text-xs flex items-center gap-2 transition-colors hover:underline ${
                   rule.disabled
                     ? 'border-border/40 bg-muted/20 opacity-50'
                     : 'border-status-warning/30 bg-status-warning/5'
@@ -302,7 +311,7 @@ export const TopologyPage: React.FC = () => {
                     {rule.hit_count}↑/{rule.miss_count}↓
                   </span>
                 )}
-              </div>
+              </Link>
             ))}
           </div>
         </Card>
