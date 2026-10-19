@@ -21,7 +21,6 @@
     "closeSidebar": "Close sidebar",
     "expandSidebar": "Expand sidebar",
     "selectTheme": "Select theme",
-    "disconnect": "Disconnect",
     "openMenu": "Open menu"
   },
   "instances": {
@@ -92,7 +91,7 @@
     "importInvalid": "Import failed: not a valid instance-config JSON (expected an array of objects with id/name/baseUrl)",
     "importAllSkipped": "All {{skipped}} entries already exist",
     "storagePersistFailed": "Instances could not be saved to browser storage and will be lost on refresh.",
-    "backHome": "Back to Home",
+    "backHome": "Back to instances",
     "switchInstance": "Switch Instance",
     "dataManagement": "Data Management",
     "clearAllTitle": "Clear All Local Data",
@@ -284,7 +283,6 @@
     "testRequestFailed": "Test request failed"
   },
   "connection": {
-    "disconnect": "Disconnect",
     "authExpiredTitle": "Authentication expired",
     "authExpiredDesc": "The server rejected your access key. Re-enter it to reconnect.",
     "reconnect": "Reconnect",

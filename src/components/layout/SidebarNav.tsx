@@ -1,4 +1,4 @@
-import { ArrowLeft, ChevronLeft, ChevronRight, Globe, Unplug } from 'lucide-react'
+import { ArrowLeft, ChevronLeft, ChevronRight, Globe } from 'lucide-react'
 import type React from 'react'
 import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -53,9 +53,18 @@ const AlertsNavBadge: React.FC = () => {
 
 /**
  * Sidebar navigation content — brand mark, monitor/admin nav groups, the
- * collapse toggle, and the bottom function area (back home, instance
- * switcher, language toggle, theme selector, disconnect). Shared by the
+ * collapse toggle, and the bottom function area (back to the instance
+ * list, instance switcher, language toggle, theme selector). Shared by the
  * mobile sheet and the desktop aside.
+ *
+ * D-06: the old bottom-area "Disconnect" button was removed — it only
+ * called navigate('/'), byte-identical to "Back to instances" above it,
+ * while its label promised a distinct action. Leaving the instance route
+ * tree already tears the connection down for real: ConnectionProvider's
+ * unmount cleanups clear the active connection, evict the per-instance
+ * QueryClient and stop the probe, and every WebSocket unmounts with it.
+ * One honest button remains, labeled like every other escape in the app
+ * ("Back to instances" — the same copy as ConnectionGate D-15).
  */
 export const SidebarNav: React.FC<SidebarNavProps> = ({ collapsed, setCollapsed, isMobile }) => {
   const { t, i18n: i18nInst } = useTranslation()
@@ -257,27 +266,6 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ collapsed, setCollapsed,
 
           {/* Theme selector — dropdown (Select) */}
           <ThemeSelector eff={eff} />
-
-          {/* Disconnect */}
-          <button
-            type="button"
-            onClick={() => navigate('/')}
-            className={cn(
-              'grid place-items-center text-muted-foreground hover:text-status-error hover:bg-status-error/10 transition-all duration-200',
-              eff
-                ? 'w-9 h-9 rounded-full'
-                : 'w-full h-11 rounded-lg flex items-center px-2.5 gap-2.5',
-            )}
-            title={eff ? t('connection.disconnect') : undefined}
-            aria-label={t('aria.disconnect')}
-          >
-            <Unplug className="w-[18px] h-[18px] shrink-0" />
-            {!eff && (
-              <span className="text-sm font-medium truncate text-left flex-1">
-                {t('connection.disconnect')}
-              </span>
-            )}
-          </button>
         </div>
       </div>
     </>

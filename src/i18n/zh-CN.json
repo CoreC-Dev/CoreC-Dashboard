@@ -21,7 +21,6 @@
     "closeSidebar": "关闭侧边栏",
     "expandSidebar": "展开侧边栏",
     "selectTheme": "选择主题",
-    "disconnect": "断开连接",
     "openMenu": "打开菜单"
   },
   "instances": {
@@ -92,7 +91,7 @@
     "importInvalid": "导入失败：不是有效的实例配置 JSON（需要含 id/name/baseUrl 的对象数组）",
     "importAllSkipped": "全部跳过：{{skipped}} 个已存在",
     "storagePersistFailed": "实例未能保存到本地浏览器存储，刷新页面后将丢失。",
-    "backHome": "返回首页",
+    "backHome": "返回实例列表",
     "switchInstance": "切换实例",
     "dataManagement": "数据管理",
     "clearAllTitle": "清除所有本地数据",
@@ -284,7 +283,6 @@
     "testRequestFailed": "测试请求失败"
   },
   "connection": {
-    "disconnect": "断开连接",
     "authExpiredTitle": "认证已失效",
     "authExpiredDesc": "访问密钥被服务端拒绝，请重新输入以恢复连接。",
     "reconnect": "重新连接",
