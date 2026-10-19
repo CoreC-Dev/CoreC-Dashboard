@@ -5,6 +5,8 @@
     "tags": "实时测点",
     "alerts": "告警事件",
     "admin": "后台管理",
+    "adminConfig": "配置管理",
+    "adminOps": "运行与诊断",
     "drivers": "南向驱动",
     "transports": "北向传输",
     "rules": "规则编排",

@@ -5,6 +5,8 @@
     "tags": "Live Tags",
     "alerts": "Alerts & Events",
     "admin": "Administration",
+    "adminConfig": "Configuration",
+    "adminOps": "Operations & Diagnostics",
     "drivers": "Southbound Drivers",
     "transports": "Northbound Transports",
     "rules": "Rule Pipeline",

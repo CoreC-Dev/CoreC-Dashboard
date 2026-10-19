@@ -1,7 +1,6 @@
 import {
   Activity,
   AlertTriangle,
-  ArrowDown,
   Ban,
   Cpu,
   MoreVertical,
@@ -10,9 +9,8 @@ import {
   RefreshCw,
   Send,
   Trash2,
-  Zap,
 } from 'lucide-react'
-import React, { memo, useMemo } from 'react'
+import React, { memo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import {
@@ -32,9 +30,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { deriveTopologyView } from '@/features/home/instanceTopology'
+import { InstanceCardTopology } from '@/features/home/InstanceCardTopology'
 import { probeOneInstance } from '@/features/home/useHomepageProbe'
-import { ConnStateLabel } from '@/lib/constants'
 import { formatRelativeTime } from '@/lib/formatters'
 import { formatCompact, formatUptime } from '@/lib/utils'
 import { PROBE_ERROR_I18N_KEYS, useInstanceStore } from '@/stores/instanceStore'
@@ -92,13 +89,6 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
   const accentColor = instance.color || undefined
 
   const handleEnter = () => navigate(`/corec/${instance.id}/monitor/dashboard`)
-
-  // Driver stats for display — memoized so probe updates that don't change
-  // this card's stats don't recompute the topology arrays.
-  const { allInputs, allOutputs, ruleList, hasTopology } = useMemo(
-    () => deriveTopologyView(stats),
-    [stats],
-  )
 
   return (
     <>
@@ -250,110 +240,9 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
             </div>
           )}
 
-          {/* Topology flow: inputs → rules → outputs — three separate panels */}
-          {hasTopology && !probeError && (
-            <div className="space-y-1.5">
-              {/* Inputs (drivers + incoming transports) */}
-              {allInputs.length > 0 && (
-                <div className="rounded-lg bg-muted/30 px-2.5 py-2 space-y-1.5">
-                  {allInputs.map((item) => (
-                    <div key={`in-${item.name}`} className="text-xs space-y-0.5">
-                      <div className="flex items-center gap-1.5">
-                        <span
-                          className={`w-2 h-2 rounded-full shrink-0 ${ConnStateLabel[item.state]?.dotColor ?? 'bg-status-idle'}`}
-                        />
-                        <span className="font-mono break-words">{item.name}</span>
-                        <span className="ml-auto shrink-0 text-xs px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono">
-                          {item.type}
-                        </span>
-                      </div>
-                      {item.conn && (
-                        <div className="pl-4 text-muted-foreground/60 font-mono break-all text-xs">
-                          {item.conn}
-                        </div>
-                      )}
-                      {item.detail && (
-                        <div
-                          className={`pl-4 text-xs ${item.detail.includes('err') ? 'text-status-error' : 'text-muted-foreground/70'}`}
-                        >
-                          {item.detail}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Arrow down */}
-              {allInputs.length > 0 && ruleList.length > 0 && (
-                <div className="flex justify-center">
-                  <ArrowDown className="w-3.5 h-3.5 text-muted-foreground/50" />
-                </div>
-              )}
-
-              {/* Rules */}
-              {ruleList.length > 0 && (
-                <div className="rounded-lg bg-muted/30 px-2.5 py-2 space-y-1.5">
-                  {ruleList.map((rule) => (
-                    <div key={rule.name} className="text-xs space-y-0.5">
-                      <div className="flex items-center gap-1.5">
-                        <Zap
-                          className={`w-3.5 h-3.5 shrink-0 ${rule.disabled ? 'text-muted-foreground/40' : 'text-status-warning'}`}
-                        />
-                        <span
-                          className={`font-mono break-words ${rule.disabled ? 'line-through text-muted-foreground/50' : ''}`}
-                        >
-                          {rule.name}
-                        </span>
-                      </div>
-                      <div className="pl-4 text-muted-foreground/70 text-xs break-all">
-                        {rule.match} → {rule.action} → {rule.target}
-                        {rule.hit_count > 0 && (
-                          <span className="ml-1 text-muted-foreground/50">
-                            · {rule.hit_count} hits
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Arrow down */}
-              {ruleList.length > 0 && allOutputs.length > 0 && (
-                <div className="flex justify-center">
-                  <ArrowDown className="w-3.5 h-3.5 text-muted-foreground/50" />
-                </div>
-              )}
-
-              {/* Outputs */}
-              {allOutputs.length > 0 && (
-                <div className="rounded-lg bg-muted/30 px-2.5 py-2 space-y-1.5">
-                  {allOutputs.map((item) => (
-                    <div key={`out-${item.name}`} className="text-xs space-y-0.5">
-                      <div className="flex items-center gap-1.5">
-                        <span
-                          className={`w-2 h-2 rounded-full shrink-0 ${ConnStateLabel[item.state]?.dotColor ?? 'bg-status-idle'}`}
-                        />
-                        <span className="font-mono break-words">{item.name}</span>
-                        <span className="ml-auto shrink-0 text-xs px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono">
-                          {item.type}
-                        </span>
-                      </div>
-                      {item.conn && (
-                        <div className="pl-4 text-muted-foreground/60 font-mono break-all text-xs">
-                          {item.conn}
-                        </div>
-                      )}
-                      {item.detail && (
-                        <div className="pl-4 text-muted-foreground/70 text-xs">{item.detail}</div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+          {/* Topology flow: inputs → rules → outputs (extracted component;
+              renders nothing when the stats carry no topology) */}
+          {!probeError && <InstanceCardTopology stats={stats} />}
 
           {/* Summary line: tags · errors */}
           {stats && !probeError && (

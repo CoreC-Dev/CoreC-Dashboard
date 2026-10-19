@@ -1,10 +1,10 @@
 import { ArrowLeft, ChevronLeft, ChevronRight, Globe } from 'lucide-react'
 import type React from 'react'
-import { useRef } from 'react'
+import { Fragment, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, matchPath, NavLink, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { InstanceSelector } from '@/components/layout/InstanceSelector'
-import { buildAdminItems, buildMonitorItems, type RailItem } from '@/components/layout/navItems'
+import { buildAdminGroups, buildMonitorItems, type RailItem } from '@/components/layout/navItems'
 import { ThemeSelector } from '@/components/layout/ThemeSelector'
 import { useNavIndicator } from '@/components/layout/useNavIndicator'
 import { setLocale } from '@/i18n'
@@ -76,7 +76,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ collapsed, setCollapsed,
 
   const base = instanceId ? `/corec/${instanceId}` : ''
   const monitorItems = buildMonitorItems(base)
-  const adminItems = buildAdminItems(base)
+  const adminGroups = buildAdminGroups(base)
 
   // Sliding active-item indicator: measure the active nav link and overlay a
   // rounded highlight that slides between items with a small bounce.
@@ -85,7 +85,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ collapsed, setCollapsed,
   // still highlight the parent nav item, keeping the indicator and the text
   // color in sync.
   const { pathname } = useLocation()
-  const navItems = [...monitorItems, ...adminItems]
+  const navItems = [...monitorItems, ...adminGroups.flatMap((g) => g.items)]
   const activeItem = navItems.find((item) => matchPath({ path: item.path, end: false }, pathname))
   const activeKey = activeItem?.path
 
@@ -134,6 +134,21 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ collapsed, setCollapsed,
     if (eff) return null
     return (
       <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70 px-2.5 pt-2 pb-1">
+        {label}
+      </span>
+    )
+  }
+
+  // D-21: sub-group label inside a section — one size smaller than the
+  // section label so the hierarchy reads at a glance. In the collapsed
+  // rail the text would not fit, so a hairline divider keeps the halves
+  // separable instead of a wall of bare icons.
+  const renderSubgroupLabel = (label: string) => {
+    if (eff) {
+      return <div aria-hidden className="w-6 h-px bg-border/70 my-1.5 shrink-0" />
+    }
+    return (
+      <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/60 px-2.5 pt-1.5 pb-0.5 truncate">
         {label}
       </span>
     )
@@ -190,10 +205,16 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ collapsed, setCollapsed,
             {/* Admin group label */}
             {renderGroupLabel(t('nav.admin'))}
 
-            {/* Admin nav group */}
-            <nav className={cn('flex flex-col w-full', eff ? 'gap-1.5 items-center' : 'gap-1')}>
-              {adminItems.map(renderItem)}
-            </nav>
+            {/* Admin sub-groups (D-21): configuration management vs
+                operations & diagnostics, each with its own small label. */}
+            {adminGroups.map((group) => (
+              <Fragment key={group.labelKey}>
+                {renderSubgroupLabel(t(group.labelKey))}
+                <nav className={cn('flex flex-col w-full', eff ? 'gap-1.5 items-center' : 'gap-1')}>
+                  {group.items.map(renderItem)}
+                </nav>
+              </Fragment>
+            ))}
 
             {/* Sliding active-item highlight — measured overlay behind the links */}
             <div aria-hidden className="z-0 bg-foreground shadow-md" style={indicator.style} />
