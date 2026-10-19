@@ -143,3 +143,102 @@ describe('TagRow — narrow-screen columns (B24)', () => {
     }
   })
 })
+
+describe('TagRow — direction is information, not an alarm color (B25)', () => {
+  // jsdom ships no Web Animations API — stub el.animate so the flash
+  // effect runs its real state logic without the actual tween.
+  beforeEach(() => {
+    Object.defineProperty(HTMLElement.prototype, 'animate', {
+      configurable: true,
+      writable: true,
+      value: vi.fn().mockReturnValue({ cancel: vi.fn() }),
+    })
+  })
+
+  const renderRow = (value: number, tick: number) =>
+    render(
+      <table>
+        <tbody>
+          <TagRow
+            point={point({ value })}
+            start={0}
+            flashTick={tick}
+            onOpen={noop}
+            onWrite={noop}
+          />
+        </tbody>
+      </table>,
+    )
+
+  it('a FALLING value flashes neutral primary and shows ▼ — never red', () => {
+    const view = renderRow(50, 1)
+    // First flash has no previous value → no direction yet.
+    expect(screen.queryByText('▼')).toBeNull()
+
+    view.rerender(
+      <table>
+        <tbody>
+          <TagRow
+            point={point({ value: 40 })}
+            start={0}
+            flashTick={2}
+            onOpen={noop}
+            onWrite={noop}
+          />
+        </tbody>
+      </table>,
+    )
+
+    expect(screen.getByText('▼')).toBeTruthy()
+    const overlay = view.container.querySelector('div.pointer-events-none')
+    // Neutral tint for both directions — red stays reserved for bad
+    // quality/errors, green for healthy status.
+    expect(overlay?.className).toContain('bg-primary/10')
+    expect(overlay?.className).not.toContain('bg-status-error')
+    expect(overlay?.className).not.toContain('bg-status-running')
+  })
+
+  it('a RISING value shows ▲ with the same neutral flash', () => {
+    const view = renderRow(10, 1)
+
+    view.rerender(
+      <table>
+        <tbody>
+          <TagRow
+            point={point({ value: 12.5 })}
+            start={0}
+            flashTick={2}
+            onOpen={noop}
+            onWrite={noop}
+          />
+        </tbody>
+      </table>,
+    )
+
+    expect(screen.getByText('▲')).toBeTruthy()
+    const overlay = view.container.querySelector('div.pointer-events-none')
+    expect(overlay?.className).toContain('bg-primary/10')
+    expect(overlay?.className).not.toContain('bg-status-running')
+  })
+
+  it('a quality-error badge keeps its red — the direction arrow does not steal it', () => {
+    const view = renderRow(10, 1)
+    view.rerender(
+      <table>
+        <tbody>
+          <TagRow
+            point={point({ value: 3, quality: 1 })}
+            start={0}
+            flashTick={2}
+            onOpen={noop}
+            onWrite={noop}
+          />
+        </tbody>
+      </table>,
+    )
+
+    // Bad quality still reads red (QualityLabel color), the ▼ arrow reads
+    // primary — the two semantics no longer share a palette.
+    expect(screen.getByText('▼').className).toContain('text-primary')
+  })
+})

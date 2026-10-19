@@ -29,16 +29,19 @@ export const TagRow = memo(function TagRow({
 }: TagRowProps) {
   const { t } = useTranslation()
   const overlayRef = useRef<HTMLDivElement>(null)
-  // Last numeric value seen at a flash — used to tint the flash green (rise)
-  // or red (fall). Updated inside the flashTick effect so it stays in sync
-  // with the WAAPI replay. Ref (not state) to avoid extra re-renders.
+  // Last numeric value seen at a flash — drives the ▲/▼ direction arrow
+  // next to the value (B25: direction is information, not a color).
+  // Updated inside the flashTick effect so it stays in sync with the WAAPI
+  // replay. Ref (not state) to avoid extra re-renders.
   const lastValueRef = useRef<number | null>(null)
   const [flashDir, setFlashDir] = useState<'up' | 'down' | 'none'>('none')
 
   // Replay a 1s tint flash whenever this row receives a fresh WS update.
-  // Direction (green rise / red fall) is derived from the numeric value
-  // delta; non-numeric or unchanged values fall back to the primary tint.
-  // WAAPI animates only opacity — the tint comes from the overlay class.
+  // B25: the tint is NEUTRAL primary for BOTH directions — a falling tank
+  // level flashing red read as an alarm in an industrial UI, and red must
+  // stay reserved for bad quality/errors. The value's direction is shown
+  // by the in-row ▲/▼ arrow instead. WAAPI animates only opacity — the
+  // tint comes from the overlay class.
   // biome-ignore lint/correctness/useExhaustiveDependencies: point.value is coupled to flashTick (WS updates drive both); recompute only on flashTick.
   useEffect(() => {
     if (flashTick <= 0) return
@@ -125,6 +128,13 @@ export const TagRow = memo(function TagRow({
               : t('tags.falseValue')
             : String(point.value)}
         </span>
+        {/* B25: direction as a small neutral arrow beside the value — the
+         * last flash's direction persists until the next update. */}
+        {flashDir !== 'none' && (
+          <span aria-hidden className="ml-1 align-middle font-mono text-[10px] text-primary">
+            {flashDir === 'up' ? '▲' : '▼'}
+          </span>
+        )}
       </td>
       <td className="px-4 py-2.5 shrink-0 min-w-0 hidden md:block" style={{ width: COLS.type }}>
         <Badge variant="outline" className="font-mono text-xs py-0 h-5">
@@ -173,14 +183,7 @@ export const TagRow = memo(function TagRow({
         <div
           ref={overlayRef}
           aria-hidden
-          className={cn(
-            'pointer-events-none absolute inset-0',
-            flashDir === 'up'
-              ? 'bg-status-running/10'
-              : flashDir === 'down'
-                ? 'bg-status-error/10'
-                : 'bg-primary/10',
-          )}
+          className="pointer-events-none absolute inset-0 bg-primary/10"
         />
       )}
     </tr>
