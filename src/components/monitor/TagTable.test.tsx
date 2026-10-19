@@ -1,10 +1,12 @@
 // @vitest-environment jsdom
 // TagTable — B06: the header must expose the new device column between
-// driver and group, using the shared COLS widths. Rows themselves are
-// covered by TagRow.test; the virtualizer stays unexercised here (jsdom has
-// no layout), so we assert the sticky header structure. i18n in English.
-import { cleanup, render, screen } from '@testing-library/react'
-import { afterEach, beforeAll, describe, expect, it } from 'vitest'
+// driver and group, using the shared COLS widths. B22: the empty state
+// distinguishes "no tags on this instance yet" (guidance) from "filters
+// matched nothing" (one-click clear). Rows themselves are covered by
+// TagRow.test; the virtualizer stays unexercised here (jsdom has no
+// layout), so we assert the sticky header structure. i18n in English.
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { TagTable } from '@/components/monitor/TagTable'
 import i18n from '@/i18n'
 import { COLS } from '@/lib/tagExplorer'
@@ -20,7 +22,7 @@ afterEach(() => {
   cleanup()
 })
 
-function renderTable() {
+function renderTable(over: Partial<Parameters<typeof TagTable>[0]> = {}) {
   return render(
     <TagTable
       filteredTags={[]}
@@ -35,6 +37,9 @@ function renderTable() {
       error={null}
       isFetching={false}
       onRetry={noop}
+      hasActiveFilters={false}
+      onClearFilters={noop}
+      {...over}
     />,
   )
 }
@@ -74,7 +79,7 @@ describe('TagTable — device column header (B06)', () => {
 
   it('keeps the no-points empty state between the header and the virtual body', () => {
     renderTable()
-    expect(screen.getByText('No points found matching current filter')).toBeTruthy()
+    expect(screen.getByText(/No tags yet/)).toBeTruthy()
   })
 
   it('renders the DataPoint-typed table without type errors (compile-time guard)', () => {
@@ -93,8 +98,33 @@ describe('TagTable — device column header (B06)', () => {
         error={null}
         isFetching={false}
         onRetry={noop}
+        hasActiveFilters={false}
+        onClearFilters={noop}
       />,
     )
-    expect(screen.getByText('No points found matching current filter')).toBeTruthy()
+    expect(screen.getByText(/No tags yet/)).toBeTruthy()
+  })
+})
+
+describe('TagTable — two honest empty states (B22)', () => {
+  it('an unfiltered zero-tag instance shows setup guidance, not a filter complaint', () => {
+    renderTable({ hasActiveFilters: false })
+
+    expect(
+      screen.getByText('No tags yet. Check that a driver is connected and tags are configured.'),
+    ).toBeTruthy()
+    // The old copy blamed filters the operator never set.
+    expect(screen.queryByText(/matching current filter/)).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Clear filters' })).toBeNull()
+  })
+
+  it('a filter that matched nothing offers the one-click clear', () => {
+    const onClearFilters = vi.fn()
+    renderTable({ hasActiveFilters: true, onClearFilters })
+
+    expect(screen.getByText('No tags match your filters')).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }))
+    expect(onClearFilters).toHaveBeenCalledTimes(1)
   })
 })

@@ -1,5 +1,5 @@
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { AlertCircle, ArrowDown, ArrowUp, ChevronsUpDown, RefreshCw } from 'lucide-react'
+import { AlertCircle, ArrowDown, ArrowUp, ChevronsUpDown, FilterX, RefreshCw } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { TagRow } from '@/components/monitor/TagRow'
@@ -22,6 +22,10 @@ interface TagTableProps {
   error: unknown
   isFetching: boolean
   onRetry: () => void
+  /** B22: any filter active (search/driver/group/quality/stale-only)? */
+  hasActiveFilters: boolean
+  /** B22: reset every filter — wired to the "no match" empty state. */
+  onClearFilters: () => void
 }
 
 /** Virtualized tag data table with sticky sort header + loading/error states.
@@ -39,6 +43,8 @@ export function TagTable({
   error,
   isFetching,
   onRetry,
+  hasActiveFilters,
+  onClearFilters,
 }: TagTableProps) {
   const { t } = useTranslation()
   const [scrollEl, setScrollEl] = useState<HTMLDivElement | null>(null)
@@ -160,7 +166,26 @@ export function TagTable({
               {filteredTags.length === 0 ? (
                 <tr className="block">
                   <td className="block py-10 text-center text-muted-foreground">
-                    {t('tags.noPoints')}
+                    {/* B22: two honest empty states — a bare instance with
+                     * no tags must not claim "nothing matched your filter"
+                     * (the operator never set one); a real filter miss
+                     * offers the one-click way out. */}
+                    {hasActiveFilters ? (
+                      <div className="space-y-2">
+                        <div>{t('tags.noMatch')}</div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={onClearFilters}
+                          className="h-8 text-xs"
+                        >
+                          <FilterX className="w-3.5 h-3.5 mr-1.5" />
+                          {t('tags.clearFilters')}
+                        </Button>
+                      </div>
+                    ) : (
+                      t('tags.noTagsYet')
+                    )}
                   </td>
                 </tr>
               ) : (

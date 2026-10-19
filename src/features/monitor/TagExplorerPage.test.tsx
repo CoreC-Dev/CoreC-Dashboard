@@ -150,7 +150,7 @@ describe('TagExplorerPage — problem-point filters (B07)', () => {
     expect(screen.queryByText('Points: 3')).toBeNull()
   })
 
-  it('combining stale-only with a search term can reach the empty state', async () => {
+  it('combining stale-only with a search term can reach the empty state, and B22 clears it in one click', async () => {
     renderPage()
     expect(await screen.findByText('Points: 3')).toBeTruthy()
 
@@ -160,7 +160,15 @@ describe('TagExplorerPage — problem-point filters (B07)', () => {
     await screen.findByText('Points: 1')
 
     fireEvent.click(screen.getByRole('checkbox', { name: 'Stale Tags Only' }))
-    await screen.findByText('No points found matching current filter')
+    // Filters are active and matched nothing — the B22 empty state says
+    // so (instead of blaming filters the operator never set) and offers
+    // the one-click reset.
+    await screen.findByText('No tags match your filters')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }))
+    // One click restores the unfiltered view.
+    await screen.findByText('Points: 3')
+    expect(screen.queryByText('No tags match your filters')).toBeNull()
   })
 
   it('opens its /tags/stream socket exactly once for the unfiltered view', async () => {

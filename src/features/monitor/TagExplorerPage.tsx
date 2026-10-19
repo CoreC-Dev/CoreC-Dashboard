@@ -170,6 +170,22 @@ export const TagExplorerPage: React.FC = () => {
     refetch()
   }
 
+  // B22: whether ANY filter is active — the table's empty state tells an
+  // unfiltered zero-tag instance apart from a filter that matched nothing.
+  const hasActiveFilters =
+    searchTerm !== '' ||
+    selectedDriver !== 'all' ||
+    selectedGroup !== 'all' ||
+    selectedQuality !== 'all' ||
+    staleOnly
+  const clearFilters = useCallback(() => {
+    setSearchTerm('')
+    setSelectedDriver('all')
+    setSelectedGroup('all')
+    setSelectedQuality('all')
+    setStaleOnly(false)
+  }, [])
+
   const write = useTagWrite()
   // Stable row-action handler so memoized TagRow rows whose `point`/`start`/
   // `flashTick` haven't changed can skip re-rendering. `write.openWrite` is a
@@ -235,6 +251,8 @@ export const TagExplorerPage: React.FC = () => {
           error={error}
           isFetching={isFetching}
           onRetry={() => refetch()}
+          hasActiveFilters={hasActiveFilters}
+          onClearFilters={clearFilters}
         />
       </div>
 
