@@ -2,12 +2,12 @@
  * TransportWizard
  *
  * Multi-step wizard for creating or editing a transport configuration.
- * Steps:
+ * Steps (C-A12: the header used to claim a 5-step flow with an Advanced
+ * step that the wizard never had — the steps array below is the truth):
  *   Step 1 — Transport Type: choose protocol (mqtt, http, or notify)
  *   Step 2 — Connection: transport name + broker URL / HTTP endpoint settings
  *   Step 3 — Publishing: batch-size, flush-interval, retry-count, buffer-size, fallback
- *   Step 4 — Advanced: reconnect backoff, TLS, command channel (per type)
- *   Step 5 — Preview & Save: YAML preview → configStore.upsertTransport
+ *   Step 4 — Preview & Save: YAML preview → configStore.upsertTransport
  *
  * Edit mode: when `existingTransport` is provided, the form is pre-filled
  * and the type step is locked.
