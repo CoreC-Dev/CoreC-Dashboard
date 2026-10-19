@@ -3,7 +3,7 @@
 // device cell must render the sub-device (or '-') so same-name tags on
 // different devices are distinguishable. i18n forced to English.
 import { cleanup, render, screen } from '@testing-library/react'
-import { afterEach, beforeAll, describe, expect, it } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { TagRow } from '@/components/monitor/TagRow'
 import i18n from '@/i18n'
 import { COLS } from '@/lib/tagExplorer'
@@ -80,6 +80,18 @@ describe('TagRow — device column (B06)', () => {
 })
 
 describe('TagRow — honest timestamps (B15)', () => {
+  // Pin the clock: the point timestamp and the expected title are both
+  // derived from Date.now(); without freezing it, a second boundary between
+  // the two evaluations flipped the assertion ~1/1177 runs (A-domain
+  // flake report). Frozen now ⇒ both sides compute the same instant.
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-03-15T08:00:00Z'))
+  })
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   const row = (over: Partial<DataPoint> = {}) =>
     render(
       <table>

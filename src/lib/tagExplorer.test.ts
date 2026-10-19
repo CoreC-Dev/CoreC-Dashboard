@@ -1,7 +1,7 @@
 // Pure-logic tests for the tag explorer lib (B07 quality/stale filter; the
 // page's filteredTags memo and these tests share the exact same predicate —
 // plus B08's pause-gap helper and B15's relative timestamps).
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   appendTrendSamples,
   formatRelativeTime,
@@ -73,6 +73,18 @@ describe('insertPauseGap (B08)', () => {
 })
 
 describe('formatRelativeTime (B15)', () => {
+  // Pin the clock — under a loaded shared CI tree the test's Date.now()
+  // and the helper's Date.now() could straddle a second boundary and flip
+  // the expected title/age (A-domain flake report). Frozen now ⇒ the
+  // helper reads the exact instant these expectations compute.
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-03-15T08:00:00Z'))
+  })
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   // Fake t: renders the key plus the count so assertions are locale-free.
   const t: Translate = (key, opts) => `${key}${opts?.count ?? ''}`
   const ago = (ms: number) => new Date(Date.now() - ms).toISOString()

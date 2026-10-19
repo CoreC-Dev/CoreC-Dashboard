@@ -120,17 +120,27 @@ describe('AlertsPage — shared feed rendering', () => {
   })
 
   it('renders the event age relatively and dims old feed entries (B15)', () => {
-    const old = {
-      ...evt(8, 'ancient failure'),
-      timestamp: new Date(Date.now() - 2 * 3_600_000).toISOString(),
-    }
-    useAlertStore.setState({ events: [old] })
-    renderPage()
+    // Freeze the clock so the event timestamp and the expected hover title
+    // derive from the same instant (second-boundary flake, A-domain report).
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-03-15T08:00:00Z'))
+    try {
+      const old = {
+        ...evt(8, 'ancient failure'),
+        timestamp: new Date(Date.now() - 2 * 3_600_000).toISOString(),
+      }
+      useAlertStore.setState({ events: [old] })
+      renderPage()
 
-    const stamp = screen.getByText('2h ago')
-    // Hover carries the full date-time; the aged entry is visually muted.
-    expect(stamp.getAttribute('title')).toBe(new Date(Date.now() - 2 * 3_600_000).toLocaleString())
-    expect(stamp.className).toContain('opacity-40')
+      const stamp = screen.getByText('2h ago')
+      // Hover carries the full date-time; the aged entry is visually muted.
+      expect(stamp.getAttribute('title')).toBe(
+        new Date(Date.now() - 2 * 3_600_000).toLocaleString(),
+      )
+      expect(stamp.className).toContain('opacity-40')
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })
 
