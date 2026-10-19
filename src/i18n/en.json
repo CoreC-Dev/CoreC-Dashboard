@@ -405,7 +405,7 @@
     "tagName": "Tag Name",
     "dataType": "Data Type",
     "targetValue": "Target Value",
-    "submit": "Write to PLC",
+    "submit": "Next: confirm write",
     "confirmWarning": "Warning: This action writes directly to PLC coils/registers. Ensure operational safety!",
     "deadLetterTitle": "Dead Letter Queue (Retries Exhausted)",
     "deadLetterDesc": "Commands that exhausted write-retry-count (default 3) are held here for operator audit and manual replay",
