@@ -226,6 +226,19 @@ export const writeTag = (cmd: WriteCommand) =>
     method: 'POST',
     body: JSON.stringify(cmd),
   })
+
+/** Batch write (backend roadmap #37): sequential, per-command results. */
+export interface BatchWriteResponse {
+  results: WriteResponse[]
+  succeeded: number
+  failed: number
+}
+
+export const writeTagBatch = (cmds: WriteCommand[]) =>
+  apiRequest<BatchWriteResponse>('/write/batch', {
+    method: 'POST',
+    body: JSON.stringify({ writes: cmds }),
+  })
 export const getDeadLetters = () => apiRequest<DeadLetterResponse>('/write/failed')
 
 // First-class alerts (audit OBS-4/HUB-6): the engine's alert registry.
