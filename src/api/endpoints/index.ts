@@ -237,6 +237,14 @@ export const ackAlert = (key: string) =>
 
 // Rules Engine
 export const getRules = () => apiRequest<RulesListResponse>('/rules')
+// Resource-level DELETE (audit HUB-3): single-resource removal; the
+// backend splices internally and runs the full PUT /configs safety chain.
+export const deleteDriver = (name: string) =>
+  apiRequest<void>(`/drivers/${encodeURIComponent(name)}`, { method: 'DELETE' })
+export const deleteTransport = (name: string) =>
+  apiRequest<void>(`/transports/${encodeURIComponent(name)}`, { method: 'DELETE' })
+export const deleteRule = (name: string) =>
+  apiRequest<void>(`/rules/${encodeURIComponent(name)}`, { method: 'DELETE' })
 // Rule name is the stable identifier across config reloads (an index can
 // shift when rules are reordered); the backend resolves it server-side.
 export const toggleRule = (name: string, disabled: boolean) =>
