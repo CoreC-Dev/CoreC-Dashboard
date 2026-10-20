@@ -680,7 +680,14 @@
     "deleteConfirm": "确定要删除驱动 \"{{name}}\" 吗？此变更将在保存配置时应用。",
     "deleteDependentRules": "{{count}} 条规则将失去数据来源：",
     "deleteAndMore": "...还有 {{count}} 条",
-    "deleteDependentHint": "删除后这些规则将不再收到该驱动的数据。请在应用前更新或删除相关规则。"
+    "deleteDependentHint": "删除后这些规则将不再收到该驱动的数据。请在应用前更新或删除相关规则。",
+    "pause": "暂停采集",
+    "resume": "恢复采集",
+    "pauseAria": "暂停 {{name}} 的采集",
+    "resumeAria": "恢复 {{name}} 的采集",
+    "pauseDesc": "不动配置与连接，仅停止该驱动的采集任务——用于设备检修。数据将不再更新；恢复后从下一周期继续。",
+    "resumeDesc": "恢复该驱动的采集任务（下一周期起效）。",
+    "pausedBadge": "已暂停"
   },
   "transports": {
     "title": "北向传输",

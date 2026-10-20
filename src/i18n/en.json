@@ -680,7 +680,14 @@
     "deleteConfirm": "Are you sure you want to delete driver \"{{name}}\"? This change will be applied when you save the configuration.",
     "deleteDependentRules": "{{count}} rule(s) will lose their data source:",
     "deleteAndMore": "...and {{count}} more",
-    "deleteDependentHint": "After the delete these rules stop receiving this driver's data. Update or remove them before applying."
+    "deleteDependentHint": "After the delete these rules stop receiving this driver's data. Update or remove them before applying.",
+    "pause": "Pause Collection",
+    "resume": "Resume Collection",
+    "pauseAria": "Pause collection for {{name}}",
+    "resumeAria": "Resume collection for {{name}}",
+    "pauseDesc": "Stop this driver's collection tasks without touching its config or connection — for device maintenance. Data goes stale; resume from the next tick.",
+    "resumeDesc": "Resume this driver's collection tasks (next tick).",
+    "pausedBadge": "Paused"
   },
   "transports": {
     "title": "Northbound Transports",

@@ -6,6 +6,8 @@ import {
   Database,
   FileCode2,
   GitBranch,
+  Pause,
+  Play,
   RefreshCw,
   RotateCcw,
 } from 'lucide-react'
@@ -13,7 +15,14 @@ import type React from 'react'
 import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router-dom'
-import { useConfigRaw, useDriver, useDriverTags } from '@/api/hooks'
+import {
+  useConfigRaw,
+  useDriver,
+  useDriverTags,
+  usePauseDriver,
+  usePausedDrivers,
+  useResumeDriver,
+} from '@/api/hooks'
 import {
   BackLink,
   EntityEditConfigCard,
@@ -219,6 +228,12 @@ export const DriverDetailPage: React.FC = () => {
   const adminBase = id ? `/corec/${id}/admin` : '/admin'
   const { data: driver, isLoading, error, refetch, isFetching } = useDriver(name ?? '')
   const { data: tagsData, isLoading: tagsLoading } = useDriverTags(name ?? '')
+  // Pause/resume collection (audit RES-4): scheduler-level switch, no
+  // config round trip. Membership drives the button's verb + badge.
+  const { data: pausedData } = usePausedDrivers()
+  const pauseMut = usePauseDriver(name ?? '')
+  const resumeMut = useResumeDriver(name ?? '')
+  const paused = !!name && (pausedData?.paused?.includes(name) ?? false)
   const { data: rawYaml } = useConfigRaw()
   const config = useParsedConfig(rawYaml)
   const connFields = useMemo(
@@ -319,10 +334,35 @@ export const DriverDetailPage: React.FC = () => {
               <CardDescription className="font-mono text-xs">{driver.type}</CardDescription>
             </div>
           </div>
-          <Badge variant="outline" className={`text-xs ${st.badgeColor}`}>
-            <span className={`mr-1.5 h-1.5 w-1.5 rounded-full ${st.dotColor}`} />
-            {t(st.key)}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className={`text-xs ${st.badgeColor}`}>
+              <span className={`mr-1.5 h-1.5 w-1.5 rounded-full ${st.dotColor}`} />
+              {t(st.key)}
+            </Badge>
+            {paused && (
+              <Badge variant="secondary" className="text-xs">
+                {t('drivers.pausedBadge')}
+              </Badge>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 text-xs"
+              onClick={() => (paused ? resumeMut.mutate() : pauseMut.mutate())}
+              disabled={pauseMut.isPending || resumeMut.isPending}
+              aria-label={t(paused ? 'drivers.resumeAria' : 'drivers.pauseAria', {
+                name: driver.name,
+              })}
+              title={t(paused ? 'drivers.resumeDesc' : 'drivers.pauseDesc')}
+            >
+              {paused ? (
+                <Play className="mr-1.5 h-3.5 w-3.5" />
+              ) : (
+                <Pause className="mr-1.5 h-3.5 w-3.5" />
+              )}
+              <span>{t(paused ? 'drivers.resume' : 'drivers.pause')}</span>
+            </Button>
+          </div>
         </CardHeader>
       </Card>
 

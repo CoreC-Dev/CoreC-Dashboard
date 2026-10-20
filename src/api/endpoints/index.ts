@@ -189,6 +189,16 @@ export const getDriverTags = (name: string) =>
 export const getTransports = () => apiRequest<TransportsListResponse>('/transports')
 export const getTransport = (name: string) =>
   apiRequest<TransportStatus>(`/transports/${encodeURIComponent(name)}`)
+// Driver collection pause/resume (audit RES-4): scheduler-level switch,
+// config and connection untouched; tasks resume at the next tick.
+export const pauseDriver = (name: string) =>
+  apiRequest<void>(`/drivers/${encodeURIComponent(name)}/pause`, { method: 'POST' })
+
+export const resumeDriver = (name: string) =>
+  apiRequest<void>(`/drivers/${encodeURIComponent(name)}/resume`, { method: 'POST' })
+
+export const getPausedDrivers = () => apiRequest<{ paused: string[] }>('/drivers/paused')
+
 export const testTransport = (name: string) =>
   apiRequest<{ ok: boolean; message?: string }>(`/transports/${encodeURIComponent(name)}/test`, {
     method: 'POST',

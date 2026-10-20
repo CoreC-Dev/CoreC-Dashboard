@@ -52,6 +52,8 @@ export function useDriver(name: string) {
   })
 }
 
+export { usePauseDriver, usePausedDrivers, useResumeDriver } from '@/api/hooks/driverPause'
+
 export function useDriverTags(name: string) {
   return useConnectedQuery({
     queryKey: ['driverTags', name],
