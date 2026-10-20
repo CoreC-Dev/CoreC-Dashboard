@@ -76,6 +76,12 @@ export interface DeadLetterEntry {
   error: string
   failed_at: string
   attempts: number
+  /**
+   * Present only on ingress drops (GET /write/failed?source=ingress):
+   * the transport that dropped the command (e.g. the MQTT transport
+   * whose command channel was full). Absent on engine dead letters.
+   */
+  transport?: string
 }
 
 export interface EngineStats {
