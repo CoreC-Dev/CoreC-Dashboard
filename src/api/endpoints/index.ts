@@ -48,7 +48,11 @@ export const updateConfigs = (data: { path?: string; payload?: string }) =>
     method: 'PUT',
     body: JSON.stringify(data),
   })
-export const patchConfigs = (data: { 'log-level'?: string }) =>
+export const patchConfigs = (data: {
+  'log-level'?: string
+  'log-format'?: string
+  'stale-threshold'?: string
+}) =>
   apiRequest<void>('/configs', {
     method: 'PATCH',
     body: JSON.stringify(data),
