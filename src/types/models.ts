@@ -17,8 +17,15 @@ export interface WriteCommand {
   driver: string
   device?: string
   tag: string
+  /** Engineering value by default; the backend inverts the tag's scale/offset before encoding. */
   value: unknown
   type: DataTypeString | number
+  /**
+   * Optional escape hatch (audit DRV-1): when true the backend writes the
+   * device-side raw representation as-is, skipping the scale/offset
+   * inversion. Default false — UI flows send engineering values.
+   */
+  raw?: boolean
 }
 
 export interface DriverStatus {

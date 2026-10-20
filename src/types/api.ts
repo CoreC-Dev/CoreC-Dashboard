@@ -97,6 +97,12 @@ export const writeAuditEntrySchema = z.object({
   source: writeAuditSourceSchema,
   /** Originating client address — only set for source="api" writes. */
   remote: z.string().optional(),
+  /**
+   * true when the write bypassed the tag's scale/offset inversion
+   * (audit DRV-1): the recorded value IS the device-side raw
+   * representation. Omitted (false) for engineering-value writes.
+   */
+  raw: z.boolean().optional(),
 })
 
 export const writeHistoryResponseSchema = z.object({
