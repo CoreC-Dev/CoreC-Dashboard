@@ -63,6 +63,8 @@ vi.mock('@/api/endpoints', () => ({
         hit_at: '0001-01-01T00:00:00Z',
         miss_count: 1,
         miss_at: '0001-01-01T00:00:00Z',
+        eval_errors: 0,
+        eval_at: '0001-01-01T00:00:00Z',
       },
     ],
   }),

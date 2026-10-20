@@ -835,7 +835,9 @@
     "runtimeSearch": "Search runtime rules (name/match/target)…",
     "sortByPriority": "Sort by priority",
     "deleteTitle": "Delete Rule",
-    "deleteConfirm": "Are you sure you want to delete the rule \"{{name}}\"? This change will be applied when you apply the configuration."
+    "deleteConfirm": "Are you sure you want to delete the rule \"{{name}}\"? This change will be applied when you apply the configuration.",
+    "evalErrors": "{{count}} eval errors",
+    "evalErrorsTitle": "The match expression failed to evaluate {{count}} time(s) — e.g. a numeric comparison against a string value. The rule never matches on those points; fix the expression or the tag's type."
   },
   "config": {
     "title": "Configuration Center",

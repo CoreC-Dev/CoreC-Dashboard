@@ -19,7 +19,9 @@ import type { AlertEvent, LogEvent } from '@/types/models'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
-type WsMessageHandler = (data: LogEvent) => void
+/** Both streams flow through the same mock: /logs LogEvents and
+ * /alerts/stream AlertEvents (OBS-4) — typed unknown at the recorder. */
+type WsMessageHandler = (data: unknown) => void
 type WsStatusHandler = (status: string) => void
 type WsDropHandler = (dropped: number) => void
 
@@ -132,7 +134,9 @@ describe('AlertStreamProvider — mount/unmount lifecycle', () => {
   it('applies /alerts/stream lifecycle events to the rule-alert store (OBS-4)', () => {
     renderProvider()
     const alertsSocket = sockets.find((s) => s.path === '/alerts/stream')
-    expect(alertsSocket).toBeDefined()
+    if (!alertsSocket) {
+      throw new Error('alerts stream socket not opened')
+    }
 
     const fired: AlertEvent = {
       type: 'fired',

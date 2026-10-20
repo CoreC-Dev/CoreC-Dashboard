@@ -835,7 +835,9 @@
     "runtimeSearch": "搜索运行规则（名称/匹配/目标）…",
     "sortByPriority": "按优先级排序",
     "deleteTitle": "删除规则",
-    "deleteConfirm": "确定要删除规则 \"{{name}}\" 吗？此变更将在您应用配置时生效。"
+    "deleteConfirm": "确定要删除规则 \"{{name}}\" 吗？此变更将在您应用配置时生效。",
+    "evalErrors": "{{count}} 次求值失败",
+    "evalErrorsTitle": "匹配表达式求值失败 {{count}} 次——例如对 string 值做数值比较。该规则在这些点上永远不命中；请修正表达式或标签类型。"
   },
   "config": {
     "title": "配置中心",

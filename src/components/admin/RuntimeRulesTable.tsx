@@ -108,6 +108,14 @@ export const RuntimeRulesTable: React.FC<RuntimeRulesTableProps> = ({
                       ? t('common.never')
                       : new Date(rule.hit_at).toLocaleTimeString()}
                   </div>
+                  {rule.eval_errors > 0 && (
+                    <div
+                      className="text-xs text-status-error mt-0.5"
+                      title={t('rules.evalErrorsTitle', { count: rule.eval_errors })}
+                    >
+                      {t('rules.evalErrors', { count: rule.eval_errors })}
+                    </div>
+                  )}
                   <div className="text-xs text-muted-foreground">
                     {t('rules.lastMiss')}:{' '}
                     {isZeroTime(rule.miss_at)

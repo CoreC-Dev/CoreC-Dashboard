@@ -69,6 +69,13 @@ export interface RuleStat {
   hit_at: string
   miss_count: number
   miss_at: string
+  /**
+   * Match-expression EVALUATION failures (e.g. value > 90 against a
+   * string). Non-zero means the rule never matches on those points and
+   * previously gave no signal at all (backend audit PIPE-3/RULE-2).
+   */
+  eval_errors: number
+  eval_at: string
 }
 
 export interface DeadLetterEntry {
