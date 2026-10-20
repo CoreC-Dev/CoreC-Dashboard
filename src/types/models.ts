@@ -106,6 +106,38 @@ export interface LogEvent {
   timestamp: string
 }
 
+/**
+ * A first-class rule alert from the engine's registry (backend
+ * core.Alert; audit OBS-4/HUB-6 — alerts previously had to be
+ * reconstructed from log lines). Identity is rule|driver|tag: the same
+ * rule firing on the same tag updates Count/LastFired instead of
+ * duplicating.
+ */
+export interface Alert {
+  /** Stable identity "rule|driver|tag" — used for ack and dedup. */
+  key: string
+  rule: string
+  driver: string
+  tag: string
+  value?: unknown
+  /** 0=Good, 1=Bad, 2=Uncertain (same vocabulary as DataPoint). */
+  quality: number
+  first_fired: string
+  last_fired: string
+  /** Fires while active (deduplicated by identity). */
+  count: number
+  /** Operator acknowledged; sticks until the alert clears. */
+  acked: boolean
+  acked_at?: string
+}
+
+/** Alert lifecycle transitions streamed over WS /alerts/stream. */
+export interface AlertEvent {
+  type: 'fired' | 'acked' | 'cleared'
+  alert: Alert
+  at: string
+}
+
 export interface TrafficFrame {
   read: number
   publish: number

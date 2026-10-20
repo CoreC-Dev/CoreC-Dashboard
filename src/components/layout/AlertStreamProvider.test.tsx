@@ -1,9 +1,11 @@
 // @vitest-environment jsdom
-// AlertStreamProvider — the instance-level /logs subscription (audit B02).
+// AlertStreamProvider — the instance-level /logs + /alerts/stream
+// subscriptions (audit B02; alerts stream added with OBS-4/HUB-6).
 // The WebSocket class is mocked with a controllable stub; the REAL provider
-// is under test: exactly one /logs socket on mount, events → alertStore
-// (bounded feed + unread badge count), per-pref sound/notification on error
-// events, status wiring into wsStatusStore, and full cleanup on unmount.
+// is under test: one /logs socket + one /alerts/stream socket on mount,
+// events → alertStore (bounded feed + rule alerts + unread badge count),
+// per-pref sound/notification on error events, status wiring into
+// wsStatusStore, and full cleanup on unmount.
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { act } from 'react'
@@ -13,7 +15,7 @@ import { AlertStreamProvider } from '@/components/layout/AlertStreamProvider'
 import i18n from '@/i18n'
 import { useAlertStore } from '@/stores/alertStore'
 import { useWsStatusStore } from '@/stores/wsStatusStore'
-import type { LogEvent } from '@/types/models'
+import type { AlertEvent, LogEvent } from '@/types/models'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -103,18 +105,20 @@ afterEach(() => {
 })
 
 describe('AlertStreamProvider — mount/unmount lifecycle', () => {
-  it('opens exactly one /logs socket on mount (the only alert subscription in the app)', () => {
+  it('opens one /logs and one /alerts/stream socket on mount (the only alert subscriptions in the app)', () => {
     renderProvider()
-    expect(sockets).toHaveLength(1)
-    expect(sockets[0].path).toBe('/logs')
+    expect(sockets).toHaveLength(2)
+    expect(sockets.map((s) => s.path).sort()).toEqual(['/alerts/stream', '/logs'])
   })
 
-  it('destroys the socket and detaches from the status store on unmount', () => {
+  it('destroys both sockets and detaches from the status store on unmount', () => {
     const { unmount } = renderProvider()
-    expect(Object.keys(useWsStatusStore.getState().streams)).toHaveLength(1)
+    expect(Object.keys(useWsStatusStore.getState().streams)).toHaveLength(2)
 
     unmount()
-    expect(sockets[0].destroy).toHaveBeenCalledTimes(1)
+    for (const sock of sockets) {
+      expect(sock.destroy).toHaveBeenCalledTimes(1)
+    }
     expect(Object.keys(useWsStatusStore.getState().streams)).toHaveLength(0)
   })
 
@@ -123,6 +127,46 @@ describe('AlertStreamProvider — mount/unmount lifecycle', () => {
     act(() => sockets[0].onStatus('rejected'))
     const entry = Object.values(useWsStatusStore.getState().streams)[0]
     expect(entry?.status).toBe('rejected')
+  })
+
+  it('applies /alerts/stream lifecycle events to the rule-alert store (OBS-4)', () => {
+    renderProvider()
+    const alertsSocket = sockets.find((s) => s.path === '/alerts/stream')
+    expect(alertsSocket).toBeDefined()
+
+    const fired: AlertEvent = {
+      type: 'fired',
+      at: '2026-01-01T00:00:00Z',
+      alert: {
+        key: 'hot|plc1|temp',
+        rule: 'hot',
+        driver: 'plc1',
+        tag: 'temp',
+        quality: 0,
+        first_fired: '2026-01-01T00:00:00Z',
+        last_fired: '2026-01-01T00:00:00Z',
+        count: 1,
+        acked: false,
+      },
+    }
+    act(() => alertsSocket.onMessage(fired))
+    expect(alertState().ruleAlerts).toHaveLength(1)
+    expect(alertState().ruleAlerts[0].key).toBe('hot|plc1|temp')
+
+    // Acked event flips the flag; cleared removes the alert.
+    act(() =>
+      alertsSocket.onMessage({
+        type: 'acked',
+        at: '2026-01-01T00:01:00Z',
+        alert: { ...fired.alert, acked: true, acked_at: '2026-01-01T00:01:00Z' },
+      }),
+    )
+    expect(alertState().ruleAlerts[0].acked).toBe(true)
+
+    act(() =>
+      alertsSocket.onMessage({ type: 'cleared', at: '2026-01-01T00:20:00Z', alert: fired.alert }),
+    )
+    expect(alertState().ruleAlerts).toHaveLength(0)
   })
 
   it('wires a reconnect handle for the banner rejected-retry button', () => {
@@ -227,7 +271,7 @@ describe('AlertStreamProvider — instance hygiene', () => {
         </MemoryRouter>
       </QueryClientProvider>,
     )
-    expect(sockets).toHaveLength(1)
+    expect(sockets).toHaveLength(2)
 
     useAlertStore.setState({ unreadErrorCount: 5, deadLetterCount: 3 })
 
@@ -236,8 +280,10 @@ describe('AlertStreamProvider — instance hygiene', () => {
     // The previous instance's counts must not leak into the new one.
     await waitFor(() => expect(alertState().unreadErrorCount).toBe(0))
     expect(alertState().deadLetterCount).toBe(0)
-    // The socket was recreated for the new instance id.
-    expect(sockets).toHaveLength(2)
-    expect(sockets[0].destroy).toHaveBeenCalledTimes(1)
+    // Both sockets were recreated for the new instance id.
+    expect(sockets).toHaveLength(4)
+    for (const sock of sockets.slice(0, 2)) {
+      expect(sock.destroy).toHaveBeenCalledTimes(1)
+    }
   })
 })

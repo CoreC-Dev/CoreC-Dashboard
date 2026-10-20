@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { MAX_ALERT_EVENTS, useAlertStore } from '@/stores/alertStore'
-import type { LogEvent } from '@/types/models'
+import type { Alert, LogEvent } from '@/types/models'
 
 /**
  * alertStore — the state behind the instance-level alert subscription
@@ -166,5 +166,95 @@ describe('resetTransient — instance-switch hygiene', () => {
     expect(s.unreadErrorCount).toBe(0)
     expect(s.deadLetterCount).toBe(0)
     expect(s.soundEnabled).toBe(true) // persisted pref survives
+  })
+})
+
+// --- First-class rule alerts (audit OBS-4/HUB-6) ---
+
+const mkAlert = (key: string, first: string, over: Partial<Alert> = {}): Alert => ({
+  key,
+  rule: key.split('|')[0],
+  driver: 'plc1',
+  tag: 'temp',
+  quality: 0,
+  first_fired: first,
+  last_fired: first,
+  count: 1,
+  acked: false,
+  ...over,
+})
+
+describe('ruleAlerts — stream event reducer', () => {
+  it('fired inserts new alerts oldest-first', () => {
+    useAlertStore.setState({ ruleAlerts: [] })
+    const store2 = useAlertStore.getState()
+
+    // Fire the NEWER alert first, then the older one: insertion must
+    // order by first_fired (oldest first), matching GET /alerts.
+    store2.applyAlertEvent({
+      type: 'fired',
+      at: '2026-10-20T10:01:00Z',
+      alert: mkAlert('hot|plc1|temp', '2026-10-20T10:01:00Z'),
+    })
+    store2.applyAlertEvent({
+      type: 'fired',
+      at: '2026-10-20T10:02:00Z',
+      alert: mkAlert('old|plc2|hum', '2026-10-20T09:00:00Z'),
+    })
+
+    const alerts = useAlertStore.getState().ruleAlerts
+    expect(alerts.map((a) => a.key)).toEqual(['old|plc2|hum', 'hot|plc1|temp'])
+  })
+
+  it('fired on an existing key replaces by identity (count merge lives server-side)', () => {
+    useAlertStore.setState({ ruleAlerts: [mkAlert('hot|plc1|temp', '2026-10-20T10:00:00Z')] })
+    useAlertStore.getState().applyAlertEvent({
+      type: 'fired',
+      at: '2026-10-20T10:05:00Z',
+      alert: mkAlert('hot|plc1|temp', '2026-10-20T10:00:00Z', { count: 7 }),
+    })
+    const alerts = useAlertStore.getState().ruleAlerts
+    expect(alerts).toHaveLength(1)
+    expect(alerts[0].count).toBe(7)
+  })
+
+  it('acked carries the acked flag through the reducer', () => {
+    useAlertStore.setState({ ruleAlerts: [mkAlert('hot|plc1|temp', '2026-10-20T10:00:00Z')] })
+    useAlertStore.getState().applyAlertEvent({
+      type: 'acked',
+      at: '2026-10-20T10:06:00Z',
+      alert: mkAlert('hot|plc1|temp', '2026-10-20T10:00:00Z', {
+        acked: true,
+        acked_at: '2026-10-20T10:06:00Z',
+      }),
+    })
+    expect(useAlertStore.getState().ruleAlerts[0].acked).toBe(true)
+  })
+
+  it('cleared drops the alert by key', () => {
+    useAlertStore.setState({
+      ruleAlerts: [
+        mkAlert('a|d|t', '2026-10-20T10:00:00Z'),
+        mkAlert('b|d|t', '2026-10-20T10:01:00Z'),
+      ],
+    })
+    useAlertStore.getState().applyAlertEvent({
+      type: 'cleared',
+      at: '2026-10-20T10:30:00Z',
+      alert: mkAlert('a|d|t', '2026-10-20T10:00:00Z'),
+    })
+    expect(useAlertStore.getState().ruleAlerts.map((a) => a.key)).toEqual(['b|d|t'])
+  })
+
+  it('setRuleAlerts replaces the whole set (GET /alerts hydration)', () => {
+    useAlertStore.setState({ ruleAlerts: [mkAlert('stale|d|t', '2026-10-20T09:00:00Z')] })
+    useAlertStore.getState().setRuleAlerts([mkAlert('fresh|d|t', '2026-10-20T10:00:00Z')])
+    expect(useAlertStore.getState().ruleAlerts.map((a) => a.key)).toEqual(['fresh|d|t'])
+  })
+
+  it('resetTransient clears rule alerts on instance switch', () => {
+    useAlertStore.setState({ ruleAlerts: [mkAlert('x|d|t', '2026-10-20T10:00:00Z')] })
+    useAlertStore.getState().resetTransient()
+    expect(useAlertStore.getState().ruleAlerts).toEqual([])
   })
 })

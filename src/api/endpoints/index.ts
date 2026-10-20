@@ -1,5 +1,7 @@
 import { ApiError, apiRequest, extractApiError } from '@/api/client'
 import {
+  type AlertsResponse,
+  alertsResponseSchema,
   type ConfigBackupCreateResult,
   type ConfigBackupRestoreResult,
   type ConfigBackupsResponse,
@@ -200,6 +202,18 @@ export const writeTag = (cmd: WriteCommand) =>
     body: JSON.stringify(cmd),
   })
 export const getDeadLetters = () => apiRequest<DeadLetterResponse>('/write/failed')
+
+// First-class alerts (audit OBS-4/HUB-6): the engine's alert registry.
+// Zod-validated at the boundary (AGENTS.md: 后端响应不可信任).
+export const getAlerts = async (): Promise<AlertsResponse> =>
+  alertsResponseSchema.parse(await apiRequest<unknown>('/alerts'))
+
+/** Acknowledge an active alert by its "rule|driver|tag" key (204 on success). */
+export const ackAlert = (key: string) =>
+  apiRequest<void>('/alerts/ack', {
+    method: 'POST',
+    body: JSON.stringify({ key }),
+  })
 
 // Rules Engine
 export const getRules = () => apiRequest<RulesListResponse>('/rules')

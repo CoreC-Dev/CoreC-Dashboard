@@ -116,6 +116,42 @@ export type WriteAuditSource = z.infer<typeof writeAuditSourceSchema>
 export type WriteAuditEntry = z.infer<typeof writeAuditEntrySchema>
 export type WriteHistoryResponse = z.infer<typeof writeHistoryResponseSchema>
 
+// ─── First-class alerts (GET /alerts, POST /alerts/ack) ──────────────
+//
+// The engine's alert registry (audit OBS-4/HUB-6): active alerts have
+// identity (rule|driver|tag), a fire count, and an ack flag; the
+// bounded history carries fired/acked/cleared events newest-first.
+// Validated with zod at the endpoint boundary (后端响应不可信任).
+
+export const alertSchema = z.object({
+  key: z.string(),
+  rule: z.string(),
+  driver: z.string(),
+  tag: z.string(),
+  value: z.unknown().optional(),
+  quality: z.number(),
+  first_fired: z.string(),
+  last_fired: z.string(),
+  count: z.number(),
+  acked: z.boolean(),
+  acked_at: z.string().optional(),
+})
+
+export const alertEventSchema = z.object({
+  type: z.enum(['fired', 'acked', 'cleared']),
+  alert: alertSchema,
+  at: z.string(),
+})
+
+export const alertsResponseSchema = z.object({
+  alerts: z.array(alertSchema),
+  history: z.array(alertEventSchema),
+  active_count: z.number(),
+  acked_count: z.number(),
+})
+
+export type AlertsResponse = z.infer<typeof alertsResponseSchema>
+
 // ─── Public instance endpoints (/version, /healthz/*) ────────────────
 //
 // These are registered OUTSIDE CoreC's auth group (hub/route/router.go)

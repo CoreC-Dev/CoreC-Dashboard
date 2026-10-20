@@ -1294,7 +1294,15 @@
     "levelError": "Error",
     "noMatchingEvents": "No events match the current filter",
     "logLevelWarn": "WARN",
-    "warningSound": "Warning-level sound"
+    "warningSound": "Warning-level sound",
+    "ruleAlertsCard": "Active Rule Alerts",
+    "ruleAlertsDesc": "Rule-triggered alerts from the engine registry, streamed live over WS /alerts/stream",
+    "noActiveAlerts": "No active rule alerts — conditions are quiet",
+    "ackAlert": "Acknowledge",
+    "ackAlertAria": "Acknowledge alert {{rule}} on {{driver}}/{{tag}}",
+    "alertFires": "{{count}} fires since {{time}}",
+    "ackedLabel": "Acknowledged",
+    "alertQuality": "quality"
   },
   "dashboardEditor": {
     "title": "Large-Screen Layout Editor",

@@ -1294,7 +1294,15 @@
     "levelError": "错误",
     "noMatchingEvents": "当前筛选条件下没有事件",
     "logLevelWarn": "警告",
-    "warningSound": "警告级声音"
+    "warningSound": "警告级声音",
+    "ruleAlertsCard": "活动规则告警",
+    "ruleAlertsDesc": "引擎告警注册表中的规则触发告警，经 WS /alerts/stream 实时推送",
+    "noActiveAlerts": "当前没有活动规则告警——工况平稳",
+    "ackAlert": "确认",
+    "ackAlertAria": "确认 {{driver}}/{{tag}} 上的告警 {{rule}}",
+    "alertFires": "自 {{time}} 起 {{count}} 次触发",
+    "ackedLabel": "已确认",
+    "alertQuality": "质量"
   },
   "dashboardEditor": {
     "title": "大屏布局编辑器",

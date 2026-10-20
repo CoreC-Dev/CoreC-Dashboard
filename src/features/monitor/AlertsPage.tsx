@@ -10,6 +10,7 @@ import {
 import type React from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { ackAlert } from '@/api/endpoints'
 import { useDeadLetters, useRules } from '@/api/hooks'
 import { DeadLetterReplayList } from '@/components/monitor/DeadLetterReplayList'
 import { Badge } from '@/components/ui/badge'
@@ -26,7 +27,7 @@ import {
 import { cn } from '@/lib/cn'
 import { formatRelativeTime } from '@/lib/tagExplorer'
 import { MAX_ALERT_EVENTS, useAlertStore } from '@/stores/alertStore'
-import type { LogEvent } from '@/types/models'
+import type { Alert, LogEvent } from '@/types/models'
 
 /**
  * Alerts — live warning/error feed + dead letter queue.
@@ -48,6 +49,10 @@ export const AlertsPage: React.FC = () => {
   // mounted, arriving error events count as "seen" — the sidebar badge's
   // unread counter is frozen at 0 and new events don't re-arm it.
   const liveLogs = useAlertStore((s) => s.events)
+  // First-class rule alerts (audit OBS-4/HUB-6): fed by the provider's
+  // /alerts/stream + GET /alerts hydration; acknowledged here by key.
+  const ruleAlerts = useAlertStore((s) => s.ruleAlerts)
+  const applyAlertEvent = useAlertStore((s) => s.applyAlertEvent)
   const soundEnabled = useAlertStore((s) => s.soundEnabled)
   const warnSoundEnabled = useAlertStore((s) => s.warningSoundEnabled)
   const notifEnabled = useAlertStore((s) => s.notificationsEnabled)
@@ -55,6 +60,23 @@ export const AlertsPage: React.FC = () => {
   const toggleWarnSound = useAlertStore((s) => s.toggleWarningSound)
   const toggleNotifications = useAlertStore((s) => s.toggleNotifications)
   const setViewing = useAlertStore((s) => s.setViewing)
+  // Acknowledge an active alert: optimistic local state (the store event
+  // reducer is idempotent — the stream's acked event re-applies it),
+  // with the server call authoritative on error (404 = already cleared).
+  const handleAckAlert = async (alert: Alert) => {
+    try {
+      await ackAlert(alert.key)
+      applyAlertEvent({
+        type: 'acked',
+        at: new Date().toISOString(),
+        alert: { ...alert, acked: true, acked_at: new Date().toISOString() },
+      })
+    } catch {
+      // A stale key (alert cleared between render and click) or a
+      // transport failure — the next stream event reconciles.
+    }
+  }
+
   useEffect(() => {
     setViewing(true)
     return () => setViewing(false)
@@ -103,7 +125,30 @@ export const AlertsPage: React.FC = () => {
       </div>
 
       {/* Top Banner */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 card-stagger">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 card-stagger">
+        <Card className="border-border bg-card card-enter">
+          <CardHeader className="p-4 pb-2">
+            <CardDescription className="text-xs flex items-center justify-between">
+              <span>{t('alerts.ruleAlertsCard')}</span>
+              <BellRing className="w-4 h-4 text-status-error" />
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-4 pt-0">
+            <div className="text-2xl font-bold font-mono text-status-error">
+              {ruleAlerts.filter((a) => !a.acked).length}
+            </div>
+            <div className="text-xs text-muted-foreground mt-1">
+              {t('alerts.alertFires', {
+                count: ruleAlerts.reduce((sum, a) => sum + a.count, 0),
+                time:
+                  ruleAlerts.length > 0
+                    ? formatRelativeTime(ruleAlerts[0].first_fired, t).text
+                    : '—',
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
         <Card className="border-border bg-card card-enter">
           <CardHeader className="p-4 pb-2">
             <CardDescription className="text-xs flex items-center justify-between">
@@ -157,6 +202,72 @@ export const AlertsPage: React.FC = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Active Rule Alerts (audit OBS-4/HUB-6) — the engine registry's
+          first-class alerts, streamed live; acknowledgement sticks until
+          the alert clears. */}
+      <Card className="border-border bg-card card-enter">
+        <CardHeader className="p-4 pb-2">
+          <CardTitle className="text-sm font-semibold flex items-center space-x-2">
+            <BellRing className="w-4 h-4 text-status-warning" />
+            <span>{t('alerts.ruleAlertsCard')}</span>
+          </CardTitle>
+          <CardDescription className="text-xs">{t('alerts.ruleAlertsDesc')}</CardDescription>
+        </CardHeader>
+        <CardContent className="p-4 pt-0 space-y-2">
+          {ruleAlerts.length === 0 && (
+            <div className="text-sm text-muted-foreground py-2">{t('alerts.noActiveAlerts')}</div>
+          )}
+          {ruleAlerts.map((a) => (
+            <div
+              key={a.key}
+              className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3 rounded-md border border-border/60 px-3 py-2"
+            >
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge
+                    variant={a.acked ? 'secondary' : 'destructive'}
+                    className="text-[10px] px-1.5 py-0 h-4"
+                  >
+                    {a.acked ? t('alerts.ackedLabel') : a.rule}
+                  </Badge>
+                  <span className="text-sm font-mono truncate">
+                    {a.driver}/{a.tag}
+                  </span>
+                  {a.value !== undefined && a.value !== null && (
+                    <span className="text-sm font-mono font-semibold text-status-warning">
+                      {String(a.value)}
+                    </span>
+                  )}
+                </div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  {t('alerts.alertFires', {
+                    count: a.count,
+                    time: formatRelativeTime(a.first_fired, t).text,
+                  })}
+                  {a.acked && a.acked_at
+                    ? ` · ${t('alerts.ackedLabel')} ${formatRelativeTime(a.acked_at, t).text}`
+                    : ''}
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={a.acked}
+                onClick={() => handleAckAlert(a)}
+                aria-label={t('alerts.ackAlertAria', {
+                  rule: a.rule,
+                  driver: a.driver,
+                  tag: a.tag,
+                })}
+                className="h-7 text-xs shrink-0"
+              >
+                {t('alerts.ackAlert')}
+              </Button>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
 
       {/* Dead Letters List — selection + per-batch-confirmed replay
           (component extracted to keep this page under the 500-line lint

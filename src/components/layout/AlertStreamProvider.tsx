@@ -2,10 +2,11 @@ import type React from 'react'
 import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useParams } from 'react-router-dom'
+import { getAlerts } from '@/api/endpoints'
 import { CoreCWebSocket, makeStreamId, useDeadLetters, useWsStatusStore } from '@/api/hooks'
 import { playAlertBeep, playWarningBeep } from '@/lib/alertAudio'
 import { useAlertStore } from '@/stores/alertStore'
-import type { LogEvent } from '@/types/models'
+import type { AlertEvent, LogEvent } from '@/types/models'
 
 /**
  * Shows a browser notification iff the user has granted permission
@@ -129,6 +130,56 @@ export const AlertStreamProvider: React.FC = () => {
       statusStore.unregisterStream(streamId)
       if (rafId !== null) cancelAnimationFrame(rafId)
       pending.length = 0
+    }
+  }, [id])
+
+  // The /alerts/stream subscription + GET /alerts hydration (audit
+  // OBS-4/HUB-6): rule alerts are first-class now — the store keeps the
+  // active set, the page renders it with ack actions, and a "fired"
+  // event gets the same audible/visual treatment as an error log line.
+  // Same instance-keyed lifecycle as the /logs socket above.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: id is the intentional stable dep — same rationale as the /logs effect above.
+  useEffect(() => {
+    const alertStore = useAlertStore.getState()
+    const streamId = makeStreamId('alerts')
+    const statusStore = useWsStatusStore.getState()
+    const sink = statusStore.registerStream(streamId)
+    let alertsWs: CoreCWebSocket<AlertEvent> | null = null
+    statusStore.attachReconnect(streamId, () => alertsWs?.reconnect())
+
+    // Hydrate the active set once per instance connection; the stream
+    // keeps it current afterwards.
+    getAlerts()
+      .then((resp) => alertStore.setRuleAlerts(resp.alerts))
+      .catch(() => {
+        // Engines without the alert role answer 501 — keep the empty
+        // set; the page shows the "not supported" state via absence.
+      })
+
+    alertsWs = new CoreCWebSocket<AlertEvent>(
+      '/alerts/stream',
+      {},
+      (ev) => {
+        statusStore.touchStream(streamId)
+        useAlertStore.getState().applyAlertEvent(ev)
+        if (ev.type === 'fired') {
+          const { soundEnabled, notificationsEnabled } = useAlertStore.getState()
+          if (soundEnabled) playAlertBeep()
+          if (notificationsEnabled) {
+            showNotification(
+              tRef.current('alerts.notificationTitle'),
+              `${ev.alert.rule}: ${ev.alert.driver}/${ev.alert.tag} = ${String(ev.alert.value ?? '')}`,
+            )
+          }
+        }
+      },
+      sink,
+      (dropped) => statusStore.reportDropped(streamId, dropped),
+    )
+
+    return () => {
+      alertsWs?.destroy()
+      statusStore.unregisterStream(streamId)
     }
   }, [id])
 

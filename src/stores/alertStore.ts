@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { primeAlertAudio } from '@/lib/alertAudio'
 import { safePersist, safeRead } from '@/lib/storage'
-import type { LogEvent } from '@/types/models'
+import type { Alert, AlertEvent, LogEvent } from '@/types/models'
 
 /**
  * alertStore — instance-level alert state (audit B02).
@@ -39,6 +39,12 @@ const writePref = (key: string, value: boolean): boolean => safePersist(key, val
 interface AlertState {
   /** Warn/error events (level ≥ 4), newest first, capped at MAX_ALERT_EVENTS. */
   events: LogEvent[]
+  /**
+   * Active rule alerts from the engine registry (audit OBS-4/HUB-6),
+   * hydrated by GET /alerts and kept current by WS /alerts/stream.
+   * Oldest-first, mirroring the backend's order.
+   */
+  ruleAlerts: Alert[]
   /** Error events received while the AlertsPage was closed (badge count). */
   unreadErrorCount: number
   /** Current dead-letter queue size (badge fallback count). */
@@ -51,6 +57,10 @@ interface AlertState {
   notificationsEnabled: boolean
   /** Merge a flushed batch of events (called once per rAF by the provider). */
   pushEvents: (batch: LogEvent[]) => void
+  /** Replace the active rule-alert set (GET /alerts hydration). */
+  setRuleAlerts: (alerts: Alert[]) => void
+  /** Apply one stream lifecycle event (fired/acked/cleared). */
+  applyAlertEvent: (ev: AlertEvent) => void
   setDeadLetterCount: (count: number) => void
   /** AlertsPage mount/unmount; opening the page marks unread as seen. */
   setViewing: (viewing: boolean) => void
@@ -63,6 +73,7 @@ interface AlertState {
 
 export const useAlertStore = create<AlertState>((set, get) => ({
   events: [],
+  ruleAlerts: [],
   unreadErrorCount: 0,
   deadLetterCount: 0,
   viewing: false,
@@ -85,6 +96,29 @@ export const useAlertStore = create<AlertState>((set, get) => ({
           ? state.unreadErrorCount + newErrors
           : state.unreadErrorCount
       return { events, unreadErrorCount }
+    })
+  },
+
+  setRuleAlerts: (alerts) => {
+    // Oldest-first from the backend; keep the order stable for render.
+    set({ ruleAlerts: alerts })
+  },
+
+  applyAlertEvent: (ev) => {
+    set((state) => {
+      const key = ev.alert.key
+      // fired/acked → upsert (acked events carry the acked flag; fired
+      // replaces or inserts by identity); cleared → drop.
+      if (ev.type === 'cleared') {
+        return { ruleAlerts: state.ruleAlerts.filter((a) => a.key !== key) }
+      }
+      const alerts = state.ruleAlerts.filter((a) => a.key !== key)
+      const idx = alerts.findIndex((a) => a.first_fired > ev.alert.first_fired)
+      if (idx === -1) {
+        return { ruleAlerts: [...alerts, ev.alert] }
+      }
+      alerts.splice(idx, 0, ev.alert)
+      return { ruleAlerts: alerts }
     })
   },
 
@@ -129,6 +163,6 @@ export const useAlertStore = create<AlertState>((set, get) => ({
   },
 
   resetTransient: () => {
-    set({ events: [], unreadErrorCount: 0, deadLetterCount: 0 })
+    set({ events: [], ruleAlerts: [], unreadErrorCount: 0, deadLetterCount: 0 })
   },
 }))
