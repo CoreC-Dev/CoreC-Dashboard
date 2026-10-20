@@ -116,6 +116,28 @@ export type WriteAuditSource = z.infer<typeof writeAuditSourceSchema>
 export type WriteAuditEntry = z.infer<typeof writeAuditEntrySchema>
 export type WriteHistoryResponse = z.infer<typeof writeHistoryResponseSchema>
 
+// ─── Config change audit (GET /configs/audit) ────────────────────────
+//
+// Bounded, newest-first trail of successful configuration mutations
+// (backend audit HUB-4). In-memory only: the on-disk truth is the
+// config file + backups.
+
+export const configAuditEntrySchema = z.object({
+  at: z.string(),
+  action: z.enum(['reload', 'patch', 'restore']),
+  remote: z.string().optional(),
+  keys: z.array(z.string()).optional(),
+  details: z.string().optional(),
+})
+
+export const configAuditResponseSchema = z.object({
+  changes: z.array(configAuditEntrySchema),
+  count: z.number(),
+})
+
+export type ConfigAuditEntry = z.infer<typeof configAuditEntrySchema>
+export type ConfigAuditResponse = z.infer<typeof configAuditResponseSchema>
+
 // ─── First-class alerts (GET /alerts, POST /alerts/ack) ──────────────
 //
 // The engine's alert registry (audit OBS-4/HUB-6): active alerts have

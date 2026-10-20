@@ -2,10 +2,12 @@ import { ApiError, apiRequest, extractApiError } from '@/api/client'
 import {
   type AlertsResponse,
   alertsResponseSchema,
+  type ConfigAuditResponse,
   type ConfigBackupCreateResult,
   type ConfigBackupRestoreResult,
   type ConfigBackupsResponse,
   type ConfigSummaryResponse,
+  configAuditResponseSchema,
   configBackupsResponseSchema,
   createdBackupSchema,
   type DeadLetterResponse,
@@ -215,6 +217,10 @@ export const getDeadLetters = () => apiRequest<DeadLetterResponse>('/write/faile
 
 // First-class alerts (audit OBS-4/HUB-6): the engine's alert registry.
 // Zod-validated at the boundary (AGENTS.md: 后端响应不可信任).
+/** Config change audit trail (audit HUB-4): newest-first successful mutations. */
+export const getConfigAudit = async (): Promise<ConfigAuditResponse> =>
+  configAuditResponseSchema.parse(await apiRequest<unknown>('/configs/audit'))
+
 export const getAlerts = async (): Promise<AlertsResponse> =>
   alertsResponseSchema.parse(await apiRequest<unknown>('/alerts'))
 
