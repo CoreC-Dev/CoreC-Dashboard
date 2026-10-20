@@ -40,9 +40,11 @@ afterEach(() => {
 })
 
 const frame = (over: Partial<TrafficFrame> = {}): TrafficFrame => ({
-  read: 10,
-  publish: 5,
-  dropped: 0,
+  // Rate frames (backend roadmap #32): the chart appends each frame
+  // directly — no baseline dance.
+  read_rate: 10,
+  publish_rate: 5,
+  dropped_rate: 0,
   ...over,
 })
 
@@ -63,10 +65,10 @@ describe('TrafficChart — status honesty overlay (B20)', () => {
   it('clears the overlay once frames flow', () => {
     render(<TrafficChart />)
     driveStatus('open')
-    // First frame is only the delta baseline; the second renders a point.
+    // Rate frames render a point immediately; the second keeps it live.
     act(() => {
       handlers.message?.(frame())
-      handlers.message?.(frame({ read: 20 }))
+      handlers.message?.(frame({ read_rate: 20 }))
     })
 
     expect(screen.queryByText('Waiting for live data…')).toBeNull()
@@ -77,7 +79,7 @@ describe('TrafficChart — status honesty overlay (B20)', () => {
     driveStatus('open')
     act(() => {
       handlers.message?.(frame())
-      handlers.message?.(frame({ read: 20 }))
+      handlers.message?.(frame({ read_rate: 20 }))
     })
 
     driveStatus('closed')
@@ -90,7 +92,7 @@ describe('TrafficChart — status honesty overlay (B20)', () => {
     driveStatus('open')
     act(() => {
       handlers.message?.(frame())
-      handlers.message?.(frame({ read: 20 }))
+      handlers.message?.(frame({ read_rate: 20 }))
     })
     driveStatus('closed')
     expect(screen.getByText('Disconnected — chart updates paused')).toBeTruthy()

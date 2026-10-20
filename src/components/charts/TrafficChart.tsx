@@ -1,4 +1,4 @@
-import { memo, useRef, useState } from 'react'
+import { memo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   Area,
@@ -35,7 +35,6 @@ export const TrafficChart = memo(function TrafficChart() {
   const [data, setData] = useState<
     { time: string; read: number; publish: number; dropped: number }[]
   >([])
-  const prevRef = useRef<TrafficFrame | null>(null)
 
   // B20: chart-local mirror of the socket status (the global wsStatusStore
   // receives the same transitions via the sink useCoreCWebSocket chains
@@ -46,24 +45,23 @@ export const TrafficChart = memo(function TrafficChart() {
   const [downOnce, setDownOnce] = useState(false)
 
   useCoreCWebSocket<TrafficFrame>(
+    // Backend roadmap #32: the stream pushes server-side diffed rates,
+    // so the chart appends frames directly — no client baseline dance,
+    // no negative spike on restart-to-zero, and the first frame already
+    // carries the engine's 60s windowed rate instead of dead air.
     '/traffic',
     { interval: '1s' },
     (frame) => {
-      const prev = prevRef.current
-      prevRef.current = frame
-      // First frame establishes the baseline; no rate to compute yet.
-      if (!prev) return
-
-      const delta = (cur: number, old: number) => (cur >= old ? cur - old : cur)
+      if (frame.read_rate === undefined) return
       const timeStr = new Date().toLocaleTimeString()
       setData((old) => {
         const next = [
           ...old,
           {
             time: timeStr,
-            read: delta(frame.read, prev.read),
-            publish: delta(frame.publish, prev.publish),
-            dropped: delta(frame.dropped, prev.dropped),
+            read: frame.read_rate ?? 0,
+            publish: frame.publish_rate ?? 0,
+            dropped: frame.dropped_rate ?? 0,
           },
         ]
         if (next.length > 25) next.shift() // keep last 25 points

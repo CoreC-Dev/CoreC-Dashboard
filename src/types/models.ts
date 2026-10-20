@@ -146,9 +146,18 @@ export interface AlertEvent {
 }
 
 export interface TrafficFrame {
-  read: number
-  publish: number
-  dropped: number
+  /**
+   * Rate mode (default, backend roadmap #32): per-second rates,
+   * server-side diffed — read_rate carries the engine's 60s windowed
+   * rate on the first frame (no baseline), never a negative spike.
+   */
+  read_rate?: number
+  publish_rate?: number
+  dropped_rate?: number
+  /** Totals mode (?mode=totals): cumulative counters (legacy diff consumers). */
+  read?: number
+  publish?: number
+  dropped?: number
   timestamp?: number
 }
 
