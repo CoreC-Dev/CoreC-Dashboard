@@ -212,6 +212,15 @@ export const testTransport = (name: string) =>
 
 // Realtime Tags & Control
 export const getTags = () => apiRequest<GlobalTagsResponse>('/tags')
+/** Server-side filtered /tags (roadmap #35): driver snapshot / name prefix / substring. */
+export const getTagsFiltered = (params: { driver?: string; prefix?: string; tag?: string }) => {
+  const q = new URLSearchParams()
+  if (params.driver) q.set('driver', params.driver)
+  if (params.prefix) q.set('prefix', params.prefix)
+  if (params.tag) q.set('tag', params.tag)
+  const qs = q.toString()
+  return apiRequest<GlobalTagsResponse>(`/tags${qs ? `?${qs}` : ''}`)
+}
 export const writeTag = (cmd: WriteCommand) =>
   apiRequest<WriteResponse>('/write', {
     method: 'POST',
@@ -270,6 +279,24 @@ export const getMetricsText = () => apiRequest<string>('/metrics')
 // every other endpoint (see getStats / getServerInfo).
 export const getWriteHistory = async (): Promise<WriteHistoryResponse> =>
   writeHistoryResponseSchema.parse(await apiRequest<unknown>('/write/history'))
+
+/** Server-side filtered write history (roadmap #35): compliance retrieval in one call. */
+export const getWriteHistoryFiltered = async (params: {
+  driver?: string
+  tag?: string
+  since?: string
+  limit?: number
+}): Promise<WriteHistoryResponse> => {
+  const q = new URLSearchParams()
+  if (params.driver) q.set('driver', params.driver)
+  if (params.tag) q.set('tag', params.tag)
+  if (params.since) q.set('since', params.since)
+  if (params.limit !== undefined) q.set('limit', String(params.limit))
+  const qs = q.toString()
+  return writeHistoryResponseSchema.parse(
+    await apiRequest<unknown>(`/write/history${qs ? `?${qs}` : ''}`),
+  )
+}
 
 export const getVersion = async (): Promise<VersionResponse> =>
   versionResponseSchema.parse(await apiRequest<unknown>('/version'))
