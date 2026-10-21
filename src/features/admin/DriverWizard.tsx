@@ -21,7 +21,6 @@
  * Decision-independent: works under both backend paths because it only
  * interacts with configStore, not the API directly.
  */
-import {} from 'lucide-react'
 import type React from 'react'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
