@@ -19,7 +19,7 @@
 
 | 文件 | 触发条件 | 覆盖平台 | 是否自动发布 | 备注 |
 |---|---|---|---|---|
-| `.github/workflows/deploy.yml` | `push` 到 `main` + `workflow_dispatch` | `ubuntu-latest`（仅构建，非多平台打包） | 是（构建后部署到 GitHub Pages） | 单 `build` job 依次执行 `npm ci` → `npm run lint` → `npm run build` → `npm test` → 上传 Pages 产物；`deploy` job 部署。Node 24，`cache: npm`。 |
+| `.github/workflows/deploy.yml` | `push` 到 `main` + `workflow_dispatch` | `ubuntu-latest` | 是（构建后部署到 GitHub Pages） | 复用 `ci.yml`（`workflow_call`：lint → typecheck → docs/structure/custom/any 四 lint → build → test → coverage 全门禁）后 `build-pages` job 再构建产物并上传 Pages；concurrency `pages` 取消旧跑。Node 24，`cache: npm`。（2026-10-21 质量审计修正：本行原文描述的是 Phase 3 改造前的单 build job 布局） |
 
 ## 3. 交互确认记录（仅 Tauri 填写）
 
@@ -33,7 +33,7 @@
 - **已落地**（Phase 3 完成）：
   - `.github/workflows/ci.yml`：PR 与所有分支推送时触发，独立运行 lint + type-check + build + test + 覆盖率门禁，与 `deploy.yml` 解耦。
   - `deploy.yml`：保留发布职责，质量校验复用 ci.yml（`workflow_call`）。
-  - pre-commit hook（lint-staged / biome check on staged files）+ commit-msg hook（Conventional Commits 校验）。
+  - pre-commit hook（husky：全量 biome check + 4 个自定义 lint）+ commit-msg hook（Conventional Commits 校验）。（2026-10-21 质量审计修正：原文声称 lint-staged——package.json 从未引入该依赖，钩子跑的是全量 `biome check`）
   - 覆盖率配置（vitest `coverage`，整体下限 + 关键模块下限）。
   - lockfile 治理：已确定 npm（`package-lock.json`）为唯一权威 lockfile，`pnpm-lock.yaml` 已删除。
 - **与现有配置的关系**：改造（非重建）。`deploy.yml` 的发布链路（GitHub Pages、custom domain、CNAME）经验证有效，保留；质量校验已解耦并补齐 PR 门禁。

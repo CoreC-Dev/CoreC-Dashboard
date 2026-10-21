@@ -239,7 +239,15 @@ export const writeTagBatch = (cmds: WriteCommand[]) =>
     method: 'POST',
     body: JSON.stringify({ writes: cmds }),
   })
-export const getDeadLetters = () => apiRequest<DeadLetterResponse>('/write/failed')
+/**
+ * Dead-letter queue view. `?source=` selects the queue (backend roadmap #5):
+ * - 'engine' (default): the write pipeline's retry-exhausted commands
+ * - 'ingress': commands rejected at the transport command channel — entries
+ *   carry the extra `transport` field naming the rejecting transport
+ *   (DeadLetterEntry.transport in types/models).
+ */
+export const getDeadLetters = (source?: 'engine' | 'ingress') =>
+  apiRequest<DeadLetterResponse>(`/write/failed${source ? `?source=${source}` : ''}`)
 
 // First-class alerts (audit OBS-4/HUB-6): the engine's alert registry.
 // Zod-validated at the boundary (AGENTS.md: 后端响应不可信任).
