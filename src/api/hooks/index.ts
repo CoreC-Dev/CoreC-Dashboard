@@ -261,10 +261,17 @@ export function useTransportTest() {
   })
 }
 
-export function useWriteHistory() {
+export function useWriteHistory(params?: {
+  driver?: string
+  tag?: string
+  since?: string
+  limit?: number
+}) {
+  // The query key includes the filter params so a param change refetches
+  // rather than serving a stale cached page (backend roadmap #35).
   return useConnectedQuery({
-    queryKey: ['writeHistory'],
-    queryFn: api.getWriteHistory,
+    queryKey: ['writeHistory', params?.driver, params?.tag, params?.since, params?.limit],
+    queryFn: () => api.getWriteHistoryFiltered(params ?? {}),
     refetchInterval: 15000,
   })
 }

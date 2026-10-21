@@ -24,7 +24,12 @@ const MAX_VISIBLE_ROWS = 100
 
 export const WriteHistoryTable: React.FC = () => {
   const { t } = useTranslation()
-  const { data, isLoading, isError, error, isFetching, refetch } = useWriteHistory()
+  // Server-side truncation (backend roadmap #35): the table previously
+  // pulled the full 1000-entry compliance history every 15s and sliced to
+  // 100 client-side — the audit trail now arrives already capped.
+  const { data, isLoading, isError, error, isFetching, refetch } = useWriteHistory({
+    limit: MAX_VISIBLE_ROWS,
+  })
 
   const writes = data?.writes ?? []
   const visibleWrites = writes.slice(0, MAX_VISIBLE_ROWS)

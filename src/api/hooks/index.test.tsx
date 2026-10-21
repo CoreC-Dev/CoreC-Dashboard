@@ -31,6 +31,7 @@ vi.mock('@/api/endpoints', () => ({
   getDeadLetters: vi.fn(),
   getMetricsText: vi.fn(),
   getWriteHistory: vi.fn(),
+  getWriteHistoryFiltered: vi.fn(),
   getVersion: vi.fn(),
   getHealthzLive: vi.fn(),
   getHealthzReady: vi.fn(),
@@ -418,7 +419,7 @@ describe('useWriteHistory — write audit trail', () => {
   }
 
   it('fetches the write history when connected and returns the parsed data', async () => {
-    vi.mocked(api.getWriteHistory).mockResolvedValue(history)
+    vi.mocked(api.getWriteHistoryFiltered).mockResolvedValue(history)
     useConnectionStore.setState({ isConnected: true })
 
     const { result } = renderHook(() => useWriteHistory(), {
@@ -426,12 +427,12 @@ describe('useWriteHistory — write audit trail', () => {
     })
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(api.getWriteHistory).toHaveBeenCalledTimes(1)
+    expect(api.getWriteHistoryFiltered).toHaveBeenCalledTimes(1)
     expect(result.current.data).toEqual(history)
   })
 
   it('skips the query when disconnected (useConnectedQuery gating)', async () => {
-    vi.mocked(api.getWriteHistory).mockResolvedValue(history)
+    vi.mocked(api.getWriteHistoryFiltered).mockResolvedValue(history)
     useConnectionStore.setState({ isConnected: false })
 
     const { result } = renderHook(() => useWriteHistory(), {
@@ -439,11 +440,11 @@ describe('useWriteHistory — write audit trail', () => {
     })
 
     await waitFor(() => expect(result.current.fetchStatus).toBe('idle'))
-    expect(api.getWriteHistory).not.toHaveBeenCalled()
+    expect(api.getWriteHistoryFiltered).not.toHaveBeenCalled()
   })
 
   it('surfaces an endpoint failure as isError (zod/transport errors alike)', async () => {
-    vi.mocked(api.getWriteHistory).mockRejectedValue(new Error('write history unavailable'))
+    vi.mocked(api.getWriteHistoryFiltered).mockRejectedValue(new Error('write history unavailable'))
     useConnectionStore.setState({ isConnected: true })
 
     const { result } = renderHook(() => useWriteHistory(), {
@@ -458,7 +459,7 @@ describe('useWriteHistory — write audit trail', () => {
     // The audit trail must reflect a fresh write immediately: the mutation
     // invalidates ['writeHistory'], which refetches the mounted query
     // without waiting for the 15s poll.
-    vi.mocked(api.getWriteHistory).mockResolvedValue(history)
+    vi.mocked(api.getWriteHistoryFiltered).mockResolvedValue(history)
     vi.mocked(api.writeTag).mockResolvedValue({ success: true })
     useConnectionStore.setState({ isConnected: true })
 
@@ -466,7 +467,7 @@ describe('useWriteHistory — write audit trail', () => {
       wrapper: createWrapper(),
     })
     await waitFor(() => expect(historyQuery.current.isSuccess).toBe(true))
-    expect(api.getWriteHistory).toHaveBeenCalledTimes(1)
+    expect(api.getWriteHistoryFiltered).toHaveBeenCalledTimes(1)
 
     const { result: write } = renderHook(() => useWriteTag(), {
       wrapper: createWrapper(),
@@ -475,7 +476,7 @@ describe('useWriteHistory — write audit trail', () => {
       await write.current.mutateAsync({ driver: 'plc1', tag: 'temp', value: 1, type: 'int16' })
     })
 
-    await waitFor(() => expect(api.getWriteHistory).toHaveBeenCalledTimes(2))
+    await waitFor(() => expect(api.getWriteHistoryFiltered).toHaveBeenCalledTimes(2))
   })
 })
 

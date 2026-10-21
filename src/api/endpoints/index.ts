@@ -293,6 +293,18 @@ export const getMetricsText = () => apiRequest<string>('/metrics')
 export const getWriteHistory = async (): Promise<WriteHistoryResponse> =>
   writeHistoryResponseSchema.parse(await apiRequest<unknown>('/write/history'))
 
+/**
+ * Staged API surface (2026-10-21 quality audit D1 disposition) — typed
+ * wrappers with zero UI callers YET, kept deliberately because they mirror
+ * real backend routes built for this frontend. Adoption status:
+ * - getWriteHistoryFiltered: WIRED (WriteHistoryTable, server-side limit)
+ * - getTagsFiltered: not adopted — TagExplorer's live WS stream pushes the
+ *   full tag set, so server-side initial filtering would desync the view
+ * - deleteDriver/Transport/Rule, getConfigAudit, writeTagBatch: awaiting
+ *   their UI (delete-confirm flows, config-center audit view, batch-write
+ *   panel migration) — tracked in CoreC docs/exec-plans/active/
+ * Do not "clean these up" without checking that plan first.
+ */
 /** Server-side filtered write history (roadmap #35): compliance retrieval in one call. */
 export const getWriteHistoryFiltered = async (params: {
   driver?: string
