@@ -91,6 +91,15 @@ const FORBIDDEN = {
     'i18n',
   ],
   lib: ['stores', 'api', 'hooks', 'contexts', 'components', 'components-ui', 'features', 'i18n'],
+  // D4 (quality audit 2026-10-21), explicit by design: 'stores' is NOT in
+  // the api ban list. AGENTS.md's directory map places react-query/WS hooks
+  // in api/hooks ("api/ — HTTP client、WebSocket、endpoints、react-query
+  // hooks"), and data-layer hooks legitimately consume the connection +
+  // WS-status stores. The api-below-stores chain rule targets the HTTP
+  // client and endpoints (which must not import stores); the hooks
+  // sub-layer is the sanctioned bridge. The type-only back-edge this
+  // arrangement used to hide (stores importing WSStatus from
+  // api/websocket) was fixed properly: WSStatus lives in types/models.ts.
   api: ['contexts', 'components', 'components-ui', 'features'],
   stores: ['hooks', 'contexts', 'components', 'components-ui', 'features'],
   hooks: ['components', 'components-ui', 'features'],

@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { WSStatus } from '@/api/websocket'
+import type { WSStatus } from '@/types/models'
 
 /**
  * wsStatusStore — aggregation of the live CoreC WebSocket streams' connection

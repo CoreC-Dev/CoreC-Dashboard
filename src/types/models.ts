@@ -255,3 +255,7 @@ export interface CoreCInstance {
   /** Per-instance proxy mode (ADR-004a). 'auto' follows global detection. */
   useProxy?: 'auto' | 'proxy' | 'direct'
 }
+
+/** WebSocket connection lifecycle state (shared by the client, status
+ * store, and UI — lives in types/ so no layer back-edges are needed). */
+export type WSStatus = 'connecting' | 'open' | 'closed' | 'error' | 'rejected'

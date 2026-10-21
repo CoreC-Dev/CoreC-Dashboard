@@ -10,7 +10,7 @@ React 19 + Vite 8（rolldown）+ TypeScript 7 + Zustand（本地状态）+ @tans
 | 域 | 路径 | 职责 |
 |---|---|---|
 | admin | `features/admin` | 配置中心、驱动/传输/规则 CRUD、拓扑、写入控制、诊断 |
-| monitor | `features/monitor` | 标签浏览（实时流+图表）、告警（WS 日志流） |
+| monitor | `features/monitor` | 标签浏览（实时流+图表）、告警（一等 /alerts 注册表 + `/alerts/stream` 实时流，M9 修正：此前误述为日志流重建） |
 | home | `features/home` | 实例管理、首页多实例探测 |
 | settings | `features/settings` | 全局设置、实例导入导出 |
 
@@ -20,6 +20,8 @@ React 19 + Vite 8（rolldown）+ TypeScript 7 + Zustand（本地状态）+ @tans
 
 ```
 types ← lib ← api ← stores ← hooks/contexts ← components ← features ← App
+
+**D4 明示（2026-10-21 质量审计）**：`api/hooks`（react-query/WS 数据钩子，见上方目录地图对 api/ 的定义）是本链的** sanctioned bridge**——它可引用 `stores`（connection/wsStatus），其余 api 成员（HTTP client、endpoints）仍然禁止。`WSStatus` 类型归 `types/models.ts`（此前由 stores 反向 type-only 引用 api/websocket，属隐藏回边）。规则本体与豁免表见 `scripts/structure-lint.mjs`。
 ```
 
 **规则**：每层只能依赖左侧（更底层）。具体禁边：

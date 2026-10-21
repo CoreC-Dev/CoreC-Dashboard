@@ -1,7 +1,9 @@
 import { getActiveConnection } from '@/api/activeConnection'
 import { resolveProxyMode } from '@/api/proxyMode'
 
-export type WSStatus = 'connecting' | 'open' | 'closed' | 'error' | 'rejected'
+import type { WSStatus } from '@/types/models'
+
+export type { WSStatus }
 
 export class CoreCWebSocket<T = unknown> {
   private path: string
