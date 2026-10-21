@@ -158,10 +158,13 @@ for (const importer of files) {
 const unusedExemptions = EXEMPTIONS.filter((e) => !usedExemptions.has(e.td))
 
 // --- TD-ARCH-011 / TD-DUP-001: detail pages must single-source field metadata
-//     from the registry adapter (no local *_FIELDS arrays). ---
+//     from the registry adapter (no local *_FIELDS arrays). D2 note
+//     (2026-10-21 quality audit): the registry consumption moved into the
+//     extracted EditConfigSection modules — the requirement follows the
+//     code it governs. ---
 const SINGLE_SOURCE_FILES = [
-  'features/admin/DriverDetailPage.tsx',
-  'features/admin/TransportDetailPage.tsx',
+  'features/admin/driverDetail/EditConfigSection.tsx',
+  'features/admin/transportDetail/EditConfigSection.tsx',
 ]
 const singleSourceViolations = []
 for (const rel of SINGLE_SOURCE_FILES) {

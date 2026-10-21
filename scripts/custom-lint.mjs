@@ -19,8 +19,6 @@ const MAX_LINES = 500
 // dead-code removal) and DiagnosticsPage (C-E1 anchor/pprof restructure,
 // 542 -> 476 lines) all returned under the 500-line limit.
 const SIZE_EXEMPTIONS = [
-  { file: 'features/admin/DriverDetailPage.tsx', td: 'TD-CPLX-006', batch: 'D' },
-  { file: 'features/admin/TransportDetailPage.tsx', td: 'TD-CPLX-006', batch: 'D' },
   { file: 'features/admin/DriversPage.tsx', td: 'TD-DUP-005', batch: 'E' },
   { file: 'features/admin/DriverWizard.tsx', td: 'TD-CPLX-009', batch: 'H' },
 ]
