@@ -27,6 +27,7 @@
 |---|---|---|
 | `FRONTEND.md` | 前端约定：分层、状态、查询、表单、i18n | ✅ |
 | `SECURITY.md` | 安全态势 + 已确认决策 | ✅ |
+| `SECURITY-POSTURE.md` | 安全态势补充（质量审计后） | ✅ |
 | `RELIABILITY.md` | 性能与可靠性态势 | ✅ |
 | `DESIGN.md` | 设计理据（为什么这样选） | ✅ |
 | `engineering.md` | 工程化说明：开发/构建/测试/调试/部署/排障 | ✅ |

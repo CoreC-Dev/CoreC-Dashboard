@@ -1,0 +1,9 @@
+# Code owners (H6, quality audit 2026-10-21).
+# Gates and the production proxy need maintainer review.
+/.github/ @lsy1291455142
+/scripts/ @lsy1291455142
+/server.mjs @lsy1291455142
+# The API boundary mirrors CoreC's backend — cross-repo changes.
+/src/api/ @lsy1291455142
+/src/types/ @lsy1291455142
+* @lsy1291455142
