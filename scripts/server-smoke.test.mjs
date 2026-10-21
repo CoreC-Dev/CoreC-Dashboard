@@ -4,13 +4,12 @@
 // server against a temp dist and asserts the core static behaviors the
 // deployment depends on. Run: node --test scripts/server-smoke.test.mjs
 import { strict as assert } from 'node:assert'
-import { mkdtemp, mkdir, writeFile } from 'node:fs/promises'
+import { spawn } from 'node:child_process'
+import { mkdir, mkdtemp, writeFile } from 'node:fs/promises'
+import { createServer as netServer } from 'node:net'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
-
-import { spawn } from 'node:child_process'
-import { createServer as netServer } from 'node:net'
 
 /** Grab a free TCP port (bind :0, read, close). */
 async function freePort() {

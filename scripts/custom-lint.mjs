@@ -20,8 +20,10 @@ const MAX_LINES = 500
 // Exemptions removed 2026-10-18 (UX wave): RulesPage + RuleParts (C-B1
 // dead-code removal) and DiagnosticsPage (C-E1 anchor/pprof restructure,
 // 542 -> 476 lines) all returned under the 500-line limit.
-const SIZE_EXEMPTIONS = [
-]
+// 2026-10-21 (quality-audit batch D2 close-out): the list is now EMPTY —
+// all six registered God files split by concern; new files over 500
+// lines must split or register a reasoned, size-pinned exemption here.
+const SIZE_EXEMPTIONS = []
 const exemptSet = new Set(SIZE_EXEMPTIONS.map((e) => e.file))
 
 // --- 递归收集源文件 ---
