@@ -1,4 +1,4 @@
-import { memo, useState } from 'react'
+import { memo } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   Area,
@@ -9,22 +9,18 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { useCoreCWebSocket, type WSStatus } from '@/api/hooks'
 import { ChartStatusOverlay } from '@/components/charts/ChartStatusOverlay'
+import { useLiveChartStream } from '@/hooks/useLiveChartStream'
 import type { TrafficFrame } from '@/types/models'
 
 /**
  * Traffic rate chart.
  *
- * CoreC's `/traffic` WebSocket pushes CUMULATIVE monotonic counters
- * (`stats.TotalRead/TotalPublish/TotalDropped`), NOT per-second rates.
- * Labelling the raw cumulative values as "Read / s" (the original bug)
- * produced a misleading ever-rising line. We convert cumulative counters
- * to per-interval rates by diffing against the previous frame.
- *
- * The stream interval is 1s, so delta == reads/second. Counter resets
- * (server restart → counters drop back to 0) are handled: when current
- * < previous we treat the whole current value as the delta.
+ * Backend roadmap #32: the /traffic stream pushes server-side diffed
+ * rates (`read_rate/publish_rate/dropped_rate`), so the chart appends
+ * frames directly — no client baseline dance, no negative spike on
+ * restart-to-zero, and the first frame already carries the engine's
+ * 60s windowed rate instead of dead air.
  */
 // memo'd so a parent re-render (e.g. DashboardPage polling useStats) doesn't
 // re-render this chart unless its (empty) props change. The chart drives its
@@ -32,48 +28,19 @@ import type { TrafficFrame } from '@/types/models'
 // parent re-render.
 export const TrafficChart = memo(function TrafficChart() {
   const { t } = useTranslation()
-  const [data, setData] = useState<
-    { time: string; read: number; publish: number; dropped: number }[]
-  >([])
 
-  // B20: chart-local mirror of the socket status (the global wsStatusStore
-  // receives the same transitions via the sink useCoreCWebSocket chains
-  // after our callback — B01 wiring is untouched). downOnce mirrors the
-  // store's semantics: once the socket involuntarily left 'open', the
-  // chart is frozen — data may render, but it is stale.
-  const [status, setStatus] = useState<WSStatus>('connecting')
-  const [downOnce, setDownOnce] = useState(false)
-
-  useCoreCWebSocket<TrafficFrame>(
-    // Backend roadmap #32: the stream pushes server-side diffed rates,
-    // so the chart appends frames directly — no client baseline dance,
-    // no negative spike on restart-to-zero, and the first frame already
-    // carries the engine's 60s windowed rate instead of dead air.
-    '/traffic',
-    { interval: '1s' },
-    (frame) => {
-      if (frame.read_rate === undefined) return
-      const timeStr = new Date().toLocaleTimeString()
-      setData((old) => {
-        const next = [
-          ...old,
-          {
-            time: timeStr,
-            read: frame.read_rate ?? 0,
-            publish: frame.publish_rate ?? 0,
-            dropped: frame.dropped_rate ?? 0,
-          },
-        ]
-        if (next.length > 25) next.shift() // keep last 25 points
-        return next
-      })
-    },
-    (s) => {
-      setStatus(s)
-      setDownOnce((prev) => (s === 'open' ? false : s === 'connecting' ? prev : true))
-    },
-  )
-  const disconnected = downOnce && status !== 'open'
+  // Shared live-stream scaffolding (D2): status mirror + rolling window +
+  // B20 disconnect-once semantics live in the hook; this chart keeps only
+  // the rate-frame → point mapping.
+  const { data, disconnected } = useLiveChartStream<
+    TrafficFrame,
+    { time: string; read: number; publish: number; dropped: number }
+  >('/traffic', (frame, timeStr) => ({
+    time: timeStr,
+    read: frame.read_rate ?? 0,
+    publish: frame.publish_rate ?? 0,
+    dropped: frame.dropped_rate ?? 0,
+  }))
 
   return (
     <div className="relative w-full h-56 pt-2 [&_*]:outline-none">

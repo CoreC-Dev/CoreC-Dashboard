@@ -262,7 +262,7 @@ export const TemplatePicker: React.FC<{
             }}
             role="button"
             tabIndex={-1}
-            aria-label="Close template picker"
+            aria-label={t('aria.closeTemplatePicker')}
           />
           <div className="absolute right-0 top-full mt-1 z-50 w-80 max-h-96 overflow-y-auto rounded-lg border border-border bg-popover shadow-lg">
             <div className="p-2 space-y-1">

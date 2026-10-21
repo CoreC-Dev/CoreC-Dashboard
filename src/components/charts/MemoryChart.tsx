@@ -1,4 +1,4 @@
-import { memo, useState } from 'react'
+import { memo } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   CartesianGrid,
@@ -9,8 +9,8 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { useCoreCWebSocket, type WSStatus } from '@/api/hooks'
 import { ChartStatusOverlay } from '@/components/charts/ChartStatusOverlay'
+import { useLiveChartStream } from '@/hooks/useLiveChartStream'
 import type { MemoryFrame } from '@/types/models'
 
 // memo'd so a parent re-render (e.g. DashboardPage polling useStats) doesn't
@@ -19,34 +19,19 @@ import type { MemoryFrame } from '@/types/models'
 // parent re-render.
 export const MemoryChart = memo(function MemoryChart() {
   const { t } = useTranslation()
-  const [data, setData] = useState<
-    { time: string; allocMb: number; sysMb: number; goroutines: number }[]
-  >([])
 
-  // B20: chart-local status mirror — see TrafficChart for the rationale;
-  // the B01 wsStatusStore wiring inside useCoreCWebSocket is untouched.
-  const [status, setStatus] = useState<WSStatus>('connecting')
-  const [downOnce, setDownOnce] = useState(false)
-
-  useCoreCWebSocket<MemoryFrame>(
-    '/memory',
-    { interval: '1s' },
-    (frame) => {
-      const timeStr = new Date().toLocaleTimeString()
-      setData((prev) => {
-        const allocMb = Number((frame.alloc / (1024 * 1024)).toFixed(2))
-        const sysMb = Number((frame.sys / (1024 * 1024)).toFixed(2))
-        const next = [...prev, { time: timeStr, allocMb, sysMb, goroutines: frame.goroutines }]
-        if (next.length > 25) next.shift()
-        return next
-      })
-    },
-    (s) => {
-      setStatus(s)
-      setDownOnce((prev) => (s === 'open' ? false : s === 'connecting' ? prev : true))
-    },
-  )
-  const disconnected = downOnce && status !== 'open'
+  // Shared live-stream scaffolding (D2): status mirror + rolling window +
+  // B20 disconnect-once semantics live in the hook; this chart keeps only
+  // the memory-frame → point mapping.
+  const { data, disconnected } = useLiveChartStream<
+    MemoryFrame,
+    { time: string; allocMb: number; sysMb: number; goroutines: number }
+  >('/memory', (frame, timeStr) => ({
+    time: timeStr,
+    allocMb: Number((frame.alloc / (1024 * 1024)).toFixed(2)),
+    sysMb: Number((frame.sys / (1024 * 1024)).toFixed(2)),
+    goroutines: frame.goroutines,
+  }))
 
   return (
     <div className="relative w-full h-56 pt-2 [&_*]:outline-none">

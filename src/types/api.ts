@@ -112,8 +112,6 @@ export const writeHistoryResponseSchema = z.object({
   count: z.number(),
 })
 
-export type WriteAuditSource = z.infer<typeof writeAuditSourceSchema>
-export type WriteAuditEntry = z.infer<typeof writeAuditEntrySchema>
 export type WriteHistoryResponse = z.infer<typeof writeHistoryResponseSchema>
 
 // ─── Config change audit (GET /configs/audit) ────────────────────────
@@ -135,7 +133,6 @@ export const configAuditResponseSchema = z.object({
   count: z.number(),
 })
 
-export type ConfigAuditEntry = z.infer<typeof configAuditEntrySchema>
 export type ConfigAuditResponse = z.infer<typeof configAuditResponseSchema>
 
 // ─── First-class alerts (GET /alerts, POST /alerts/ack) ──────────────
@@ -191,7 +188,6 @@ export type VersionResponse = z.infer<typeof versionResponseSchema>
 export const healthzLiveResponseSchema = z.object({
   status: z.literal('alive'),
 })
-export type HealthzLiveResponse = z.infer<typeof healthzLiveResponseSchema>
 
 /** GET /healthz/ready (ready) → 200 {"status":"ready"} — minimal for high-frequency probes. */
 export const healthzReadyResponseSchema = z.object({
@@ -218,7 +214,6 @@ export const healthzNotReadyResponseSchema = z.object({
     transports: z.array(healthComponentSchema),
   }),
 })
-export type HealthzNotReadyResponse = z.infer<typeof healthzNotReadyResponseSchema>
 
 /**
  * Normalized readiness result: `{ ready: true }` for the 200 body, or the
@@ -417,7 +412,6 @@ export type ConfigBackupCreateResult =
 export const createdBackupSchema = z.object({
   name: z.string(),
 })
-export type CreatedBackup = z.infer<typeof createdBackupSchema>
 
 // ─── Realtime WS push frames (/traffic, /memory) ─────────────────────────
 //

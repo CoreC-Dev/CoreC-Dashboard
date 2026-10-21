@@ -124,11 +124,6 @@ export interface EditField {
   placeholder?: string
 }
 
-export interface EditConfigStatus {
-  type: 'success' | 'error'
-  text: string
-}
-
 /** Display labels for EntityEditConfigCard (i18n strings). */
 export interface EntityEditConfigLabels {
   title: string

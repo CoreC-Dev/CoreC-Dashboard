@@ -29,6 +29,7 @@ import {
   LOG_FORMATS,
   LOG_LEVELS,
   NODE_ROLES,
+  NOTIFY_CHANNELS,
   ON_BAD_QUALITY_POLICIES,
   ON_MISSING_POLICIES,
   PARITY_VALUES,
@@ -248,7 +249,7 @@ const transportConfigSchema = z
         })
       } else {
         const ch = String(channel)
-        const validChannels = ['slack', 'teams', 'email', 'webhook']
+        const validChannels: readonly string[] = NOTIFY_CHANNELS
         if (!validChannels.includes(ch)) {
           ctx.addIssue({
             code: 'custom',
