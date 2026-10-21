@@ -6,6 +6,7 @@ import { getAlerts } from '@/api/endpoints'
 import { CoreCWebSocket, makeStreamId, useDeadLetters, useWsStatusStore } from '@/api/hooks'
 import { playAlertBeep, playWarningBeep } from '@/lib/alertAudio'
 import { useAlertStore } from '@/stores/alertStore'
+import { logEventSchema } from '@/types/api'
 import type { AlertEvent, LogEvent } from '@/types/models'
 
 /**
@@ -110,11 +111,17 @@ export const AlertStreamProvider: React.FC = () => {
       if (rafId === null) rafId = requestAnimationFrame(flush)
     }
 
-    ws = new CoreCWebSocket<LogEvent>(
+    ws = new CoreCWebSocket<unknown>(
       '/logs',
       {},
-      (evt) => {
+      (frame) => {
         statusStore.touchStream(streamId)
+        // Boundary validation (audit F1): the backend marshals the level
+        // as a string ("WARN"); logEventSchema normalizes to the numeric
+        // contract and malformed frames are dropped, never misclassified.
+        const parsed = logEventSchema.safeParse(frame)
+        if (!parsed.success) return
+        const evt: LogEvent = parsed.data
         // level >= 4 are warnings and errors
         if (evt.level >= 4) {
           pending.push(evt)

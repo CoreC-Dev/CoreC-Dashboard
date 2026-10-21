@@ -107,7 +107,10 @@ export interface EngineStats {
 }
 
 export interface LogEvent {
-  level: number // -4=debug, 0=info, 4=warn, 8=error
+  // Numeric contract: -8=debug, 0=info, 4=warn, 8=error (slog values).
+  // The backend marshals levels as STRINGS ("WARN"); normalize at the
+  // WS boundary via logEventSchema (types/api.ts) — audit F1.
+  level: number
   type: string
   payload: string
   timestamp: string

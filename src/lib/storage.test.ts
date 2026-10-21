@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { safePersist, safePersistSession, safeRead, safeReadSession } from '@/lib/storage'
+import { safePersist, safeRead } from '@/lib/storage'
 
 beforeEach(() => {
   localStorage.clear()
@@ -33,24 +33,5 @@ describe('lib/storage — safePersist (A-11)', () => {
       throw new DOMException('Storage disabled', 'InvalidStateError')
     })
     expect(safeRead('k')).toBeNull()
-  })
-})
-
-describe('lib/storage — sessionStorage helpers', () => {
-  it('safePersistSession writes and reports failures the same way', () => {
-    expect(safePersistSession('sk', 'sv')).toBe(true)
-    expect(safeReadSession('sk')).toBe('sv')
-
-    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
-      throw new DOMException('The quota has been exceeded', 'QuotaExceededError')
-    })
-    expect(safePersistSession('sk2', 'sv2')).toBe(false)
-  })
-
-  it('safeReadSession returns null on read failure', () => {
-    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
-      throw new DOMException('Storage disabled', 'InvalidStateError')
-    })
-    expect(safeReadSession('sk')).toBeNull()
   })
 })

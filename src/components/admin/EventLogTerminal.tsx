@@ -8,6 +8,7 @@ import { Pause, Play, Terminal as TerminalIcon, Trash2 } from 'lucide-react'
 import { CoreCWebSocket } from '@/api/hooks'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle } from '@/components/ui/card'
+import { logEventSchema } from '@/types/api'
 import type { LogEvent } from '@/types/models'
 
 /**
@@ -109,13 +110,18 @@ export const EventLogTerminal: React.FC<{
     const ws = new CoreCWebSocket(
       '/logs',
       {},
-      (evt: LogEvent) => {
+      (frame: unknown) => {
+        // Boundary validation (audit F1): normalize the backend's string
+        // level ("WARN" etc.) to the numeric contract; drop malformed.
+        const parsed = logEventSchema.safeParse(frame)
+        if (!parsed.success) return
+        const evt: LogEvent = parsed.data
         if (pausedRef.current) return
         const time = evt.timestamp ? new Date(evt.timestamp).toLocaleTimeString() : ''
         let color = '\x1b[37m' // default white
         let levelTag = '[INFO]'
 
-        if (evt.level <= -4) {
+        if (evt.level <= -8) {
           color = '\x1b[90m' // gray
           levelTag = '[DEBUG]'
         } else if (evt.level === 0) {

@@ -8,7 +8,7 @@ import { formatNumber } from '@/lib/utils'
 import {
   type MemoryFrameMessage,
   memoryFrameSchema,
-  type TrafficFrameMessage,
+  type TrafficTotalsFrame,
   trafficFrameSchema,
 } from '@/types/api'
 
@@ -68,13 +68,14 @@ const StatTile: React.FC<{ label: string; value: string; accent?: string }> = ({
 )
 
 /**
- * Live /traffic column — cumulative counters diffed into per-second rates.
+ * Live /traffic column — per-second rates straight off the wire.
  *
- * CoreC pushes stats.TotalRead/TotalPublish/TotalDropped (monotonic
- * counters); the first frame establishes the baseline, and every following
- * frame renders the delta against the previous one (1s push ⇒ delta == /s).
- * A counter reset (server restart → values drop to 0) is treated as the
- * whole current value being the delta — same policy as TrafficChart.
+ * The backend's default mode pushes server-side diffed rate frames
+ * (read_rate/publish_rate/dropped_rate; backend roadmap #32) — the first
+ * frame already carries the engine's 60s windowed rate, so this renders
+ * immediately with no client-side baseline. Legacy totals frames
+ * (?mode=totals, cumulative counters) still render via client diff —
+ * both shapes validate against the discriminated union schema.
  */
 const TrafficLiveColumn: React.FC = () => {
   const { t } = useTranslation()
@@ -82,7 +83,7 @@ const TrafficLiveColumn: React.FC = () => {
     null,
   )
   const [status, setStatus] = useState<WSStatus>('connecting')
-  const prevRef = useRef<TrafficFrameMessage | null>(null)
+  const prevTotalsRef = useRef<TrafficTotalsFrame | null>(null)
 
   useCoreCWebSocket<unknown>(
     '/traffic',
@@ -92,8 +93,19 @@ const TrafficLiveColumn: React.FC = () => {
       // rendered — the panel keeps the last good rates instead.
       const parsed = trafficFrameSchema.safeParse(frame)
       if (!parsed.success) return
-      const prev = prevRef.current
-      prevRef.current = parsed.data
+      if ('read_rate' in parsed.data) {
+        // Rate frame (default mode): render directly.
+        prevTotalsRef.current = null
+        setRates({
+          read: parsed.data.read_rate,
+          publish: parsed.data.publish_rate,
+          dropped: parsed.data.dropped_rate,
+        })
+        return
+      }
+      // Totals frame (legacy mode): diff against the previous frame.
+      const prev = prevTotalsRef.current
+      prevTotalsRef.current = parsed.data
       if (!prev) return // first frame: baseline only, no rate yet
       const delta = (cur: number, old: number) => (cur >= old ? cur - old : cur)
       setRates({

@@ -428,14 +428,6 @@ export type CreatedBackup = z.infer<typeof createdBackupSchema>
 // instead of rendering garbage. The shapes mirror the existing
 // models.TrafficFrame / models.MemoryFrame.
 
-/** /traffic frame — CUMULATIVE monotonic counters, not per-second rates. */
-export const trafficFrameSchema = z.object({
-  read: z.number(),
-  publish: z.number(),
-  dropped: z.number(),
-})
-export type TrafficFrameMessage = z.infer<typeof trafficFrameSchema>
-
 /**
  * /memory frame — zero-STW runtime/metrics analogs of runtime.ReadMemStats:
  * heap objects bytes (≈HeapAlloc), total allocs, total memory class (≈Sys),
@@ -449,3 +441,55 @@ export const memoryFrameSchema = z.object({
   goroutines: z.number(),
 })
 export type MemoryFrameMessage = z.infer<typeof memoryFrameSchema>
+
+// ─── /logs frame ────────────────────────────────────────────────────────
+// Backend audit F1 (2026-10-21): the backend marshals slog.Level as a
+// STRING ("WARN", "DEBUG", "ERROR+2" for custom severities — verified by
+// compiling json.Marshal against the Go source), while LogEvent.level is
+// the numeric contract (-8/0/4/8). Numeric input passes through so
+// legacy mocks keep their meaning; unparseable levels fail the parse so
+// the frame is dropped at the boundary instead of misclassified.
+const LOG_LEVEL_BASES = {
+  DEBUG: -8,
+  INFO: 0,
+  WARN: 4,
+  ERROR: 8,
+} as const
+
+/** Normalize a backend level value (string | legacy number) → number; NaN if unparseable. */
+export function parseLogLevel(level: unknown): number {
+  if (typeof level === 'number') return level
+  if (typeof level !== 'string') return Number.NaN
+  const match = /^(DEBUG|INFO|WARN|ERROR)([+-]\d+)?$/.exec(level.toUpperCase())
+  if (!match) return Number.NaN
+  const base = LOG_LEVEL_BASES[match[1] as keyof typeof LOG_LEVEL_BASES]
+  return match[2] === undefined ? base : base + Number.parseInt(match[2], 10)
+}
+
+export const logEventSchema = z.object({
+  level: z.preprocess(parseLogLevel, z.number()),
+  type: z.string(),
+  payload: z.string(),
+  timestamp: z.string(),
+})
+export type LogEventFrame = z.infer<typeof logEventSchema>
+
+// ─── /traffic frames (backend roadmap #32) ─────────────────────────────
+// Default mode pushes server-side diffed RATES; ?mode=totals keeps the
+// legacy cumulative counters. The previous cumulative-only schema
+// silently dropped every default-mode frame (audit F2) — the two modes
+// are now a discriminated union so either contract validates and the
+// panel picks fields by shape.
+export const trafficRateFrameSchema = z.object({
+  read_rate: z.number(),
+  publish_rate: z.number(),
+  dropped_rate: z.number(),
+})
+export const trafficTotalsFrameSchema = z.object({
+  read: z.number(),
+  publish: z.number(),
+  dropped: z.number(),
+})
+export const trafficFrameSchema = z.union([trafficRateFrameSchema, trafficTotalsFrameSchema])
+export type TrafficRateFrame = z.infer<typeof trafficRateFrameSchema>
+export type TrafficTotalsFrame = z.infer<typeof trafficTotalsFrameSchema>

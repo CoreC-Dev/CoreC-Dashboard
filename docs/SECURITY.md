@@ -6,7 +6,7 @@
 - **路径穿越防护**：`server.mjs` `safeStaticPath` 坚实（URI 解码 + null 字节剥离 + 路径分隔符边界检查）。
 - **无 SSRF**：CoreC 代理目标固定（`process.argv[4] || 'http://127.0.0.1:9090'`），不转发攻击者可控 host。
 - **无 XSS sink**：无 `dangerouslySetInnerHTML`/`innerHTML`/`eval`/`new Function`。
-- **密钥存储隔离**：API 密钥存 sessionStorage（非 localStorage）；元数据存 localStorage。服务端 `GET /configs/raw` 返回密钥脱敏为 `***`。
+- **密钥存储隔离（2026-10-21 审计修正）**：API 密钥与实例元数据**均存 localStorage**（`instanceStore.ts` 的持久化路径；运维在添加实例时显式选择此便利——见 ADR-003 的导出脱敏同源决策）。曾声称 sessionStorage 与"raw 配置脱敏"与代码不符：`lib/storage.ts` 的 sessionStorage 助手为死代码已删除；服务端 `GET /configs/raw` 实际返回**明文**配置（CoreC 端 `executor.go` 注释明示 no redaction），其暴露面仅由 API 认证门禁（Bearer secret）约束——详见 CoreC `docs/api/overview.md` 与本仓 `docs/FRONTEND.md` 的一致标注。
 
 ## 已确认决策（2026-10-02）
 | 问题 | 决策 | ADR |
