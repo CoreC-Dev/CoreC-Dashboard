@@ -4,15 +4,15 @@
 // 已知超标文件作为显式豁免（含 TD ID + 阶段 4 批次）；新超标即失败。
 // 用法：node scripts/custom-lint.mjs   退出码 0=通过 1=失败
 
-import { readFileSync, readdirSync, statSync } from 'node:fs';
-import { resolve, dirname, relative } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { readdirSync, readFileSync } from 'node:fs'
+import { dirname, relative, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const root = resolve(__dirname, '..');
-const src = resolve(root, 'src');
+const __dirname = dirname(fileURLToPath(import.meta.url))
+const root = resolve(__dirname, '..')
+const src = resolve(root, 'src')
 
-const MAX_LINES = 500;
+const MAX_LINES = 500
 
 // 已登记豁免：当前超标文件（阶段 4 拆分后从本表删除以收紧门禁）
 // Exemptions removed 2026-10-18 (UX wave): RulesPage + RuleParts (C-B1
@@ -25,84 +25,88 @@ const SIZE_EXEMPTIONS = [
   { file: 'lib/configSchema.ts', td: 'TD-CPLX-004', batch: 'A' },
   { file: 'features/admin/DriversPage.tsx', td: 'TD-DUP-005', batch: 'E' },
   { file: 'features/admin/DriverWizard.tsx', td: 'TD-CPLX-009', batch: 'H' },
-];
-const exemptSet = new Set(SIZE_EXEMPTIONS.map((e) => e.file));
+]
+const exemptSet = new Set(SIZE_EXEMPTIONS.map((e) => e.file))
 
 // --- 递归收集源文件 ---
 function walk(dir, acc = []) {
   for (const e of readdirSync(dir, { withFileTypes: true })) {
-    if (e.isDirectory()) walk(resolve(dir, e.name), acc);
+    if (e.isDirectory()) walk(resolve(dir, e.name), acc)
     else if (/\.(ts|tsx)$/.test(e.name) && !/\.(test|spec)\.(ts|tsx)$/.test(e.name)) {
-      acc.push(resolve(dir, e.name));
+      acc.push(resolve(dir, e.name))
     }
   }
-  return acc;
+  return acc
 }
 // 含测试文件的全量收集（用于导入风格检查）
 function walkAll(dir, acc = []) {
   for (const e of readdirSync(dir, { withFileTypes: true })) {
-    if (e.isDirectory()) walkAll(resolve(dir, e.name), acc);
-    else if (/\.(ts|tsx)$/.test(e.name)) acc.push(resolve(dir, e.name));
+    if (e.isDirectory()) walkAll(resolve(dir, e.name), acc)
+    else if (/\.(ts|tsx)$/.test(e.name)) acc.push(resolve(dir, e.name))
   }
-  return acc;
+  return acc
 }
-const files = walk(src);
-const allFiles = walkAll(src);
+const files = walk(src)
+const allFiles = walkAll(src)
 
-let errors = [];
-const usedExemptions = new Set();
+const errors = []
+const usedExemptions = new Set()
 
 for (const f of files) {
-  const rel = relative(src, f).replace(/\\/g, '/');
-  if (rel.startsWith('test/')) continue;
-  const text = readFileSync(f, 'utf8');
-  const lines = text.split('\n').length;
+  const rel = relative(src, f).replace(/\\/g, '/')
+  if (rel.startsWith('test/')) continue
+  const text = readFileSync(f, 'utf8')
+  const lines = text.split('\n').length
 
   // 1. 文件大小
   if (lines > MAX_LINES) {
     if (exemptSet.has(rel)) {
-      usedExemptions.add(rel);
+      usedExemptions.add(rel)
     } else {
-      errors.push(`${rel} ${lines} 行 > ${MAX_LINES}（God 文件；拆分为更小模块或在 SIZE_EXEMPTIONS 登记）`);
+      errors.push(
+        `${rel} ${lines} 行 > ${MAX_LINES}（God 文件；拆分为更小模块或在 SIZE_EXEMPTIONS 登记）`,
+      )
     }
   }
 
   // 2. 生产代码无 console.log（console.warn/error 允许）
   if (!/\.(test|spec)\./.test(rel)) {
-    const logMatches = text.match(/console\.log\s*\(/g);
+    const logMatches = text.match(/console\.log\s*\(/g)
     if (logMatches) {
-      errors.push(`${rel} 含 ${logMatches.length} 处 console.log（生产代码禁用；用 console.warn/error 或移除）`);
+      errors.push(
+        `${rel} 含 ${logMatches.length} 处 console.log（生产代码禁用；用 console.warn/error 或移除）`,
+      )
     }
   }
 }
 
 // 3. 统一 @/ 别名导入（TD-ARCH-010）：禁止相对导入（from './' / from '../'）
-const RELATIVE_IMPORT_RE = /\bfrom\s+['"](\.\.?\/[^'"]+)['"]/g;
+const RELATIVE_IMPORT_RE = /\bfrom\s+['"](\.\.?\/[^'"]+)['"]/g
 for (const f of allFiles) {
-  const rel = relative(src, f).replace(/\\/g, '/');
-  if (rel.startsWith('test/')) continue;
-  const text = readFileSync(f, 'utf8');
-  RELATIVE_IMPORT_RE.lastIndex = 0;
-  const matches = text.match(RELATIVE_IMPORT_RE);
+  const rel = relative(src, f).replace(/\\/g, '/')
+  if (rel.startsWith('test/')) continue
+  const text = readFileSync(f, 'utf8')
+  RELATIVE_IMPORT_RE.lastIndex = 0
+  const matches = text.match(RELATIVE_IMPORT_RE)
   if (matches) {
-    errors.push(`${rel} 含 ${matches.length} 处相对导入（TD-ARCH-010：统一用 @/ 别名）`);
+    errors.push(`${rel} 含 ${matches.length} 处相对导入（TD-ARCH-010：统一用 @/ 别名）`)
   }
 }
 
 // --- 报告 ---
-const unusedExemptions = SIZE_EXEMPTIONS.filter((e) => !usedExemptions.has(e.file));
+const unusedExemptions = SIZE_EXEMPTIONS.filter((e) => !usedExemptions.has(e.file))
 
 if (errors.length === 0) {
-  console.log(`✅ custom-lint 通过：无超标文件、无 console.log。`);
+  console.log(`✅ custom-lint 通过：无超标文件、无 console.log。`)
   if (usedExemptions.size > 0) {
-    console.log(`   已登记大小豁免（阶段 4 拆分后移除）：${usedExemptions.size} 个文件`);
+    console.log(`   已登记大小豁免（阶段 4 拆分后移除）：${usedExemptions.size} 个文件`)
   }
   if (unusedExemptions.length > 0) {
-    console.log(`   ℹ️  豁免已修复可移除：${unusedExemptions.map((e) => e.file).join(', ')}`);
+    console.log(`   ℹ️  豁免已修复可移除：${unusedExemptions.map((e) => e.file).join(', ')}`)
   }
-  process.exit(0);
+  process.exit(0)
 } else {
-  console.error(`❌ custom-lint 失败（${errors.length} 项）：`);
-  for (const e of errors) console.error('  - ' + e);
-  process.exit(1);
+  console.error(`❌ custom-lint 失败（${errors.length} 项）：`)
+  for (const e of errors) console.error(`  - ${e}`)
+  process.exit(1)
 }

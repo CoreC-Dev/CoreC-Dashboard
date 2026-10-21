@@ -1,6 +1,6 @@
-import { request as httpRequest } from 'node:http'
-import { readFile, stat } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
+import { readFile, stat } from 'node:fs/promises'
+import { request as httpRequest } from 'node:http'
 import path from 'node:path'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'

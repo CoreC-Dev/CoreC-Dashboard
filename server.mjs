@@ -59,14 +59,14 @@ function safeStaticPath(urlPath) {
   } catch {
     return null
   }
-  const clean = resolve(DIST, '.' + (decoded === '/' ? '' : decoded)).replace(/\0/g, '')
+  const clean = resolve(DIST, `.${decoded === '/' ? '' : decoded}`).replace(/\0/g, '')
   if (clean !== DIST && !clean.startsWith(DIST + sep)) return null
   return clean
 }
 
 /** Strip /corec-api prefix from the URL, keeping the query string. */
 function stripProxyPrefix(url) {
-  if (url.startsWith(PROXY_PREFIX + '/')) return url.slice(PROXY_PREFIX.length) // keeps leading /
+  if (url.startsWith(`${PROXY_PREFIX}/`)) return url.slice(PROXY_PREFIX.length) // keeps leading /
   return '/' // bare /corec-api or /corec-api with no slash
 }
 
@@ -131,7 +131,7 @@ function proxyToCoreC(req, res) {
  */
 function proxyUpgradeToCoreC(req, socket, head) {
   // Only proxy /corec-api/* upgrades; destroy everything else.
-  if (req.url !== PROXY_PREFIX && !req.url.startsWith(PROXY_PREFIX + '/')) {
+  if (req.url !== PROXY_PREFIX && !req.url.startsWith(`${PROXY_PREFIX}/`)) {
     socket.destroy()
     return
   }
@@ -245,7 +245,7 @@ function parseTarget(raw) {
 
 /** Strip the /corec-proxy prefix, keeping the path + query string. */
 function stripDynamicProxyPrefix(url) {
-  if (url.startsWith(DYNAMIC_PROXY_PREFIX + '/')) return url.slice(DYNAMIC_PROXY_PREFIX.length)
+  if (url.startsWith(`${DYNAMIC_PROXY_PREFIX}/`)) return url.slice(DYNAMIC_PROXY_PREFIX.length)
   return '/'
 }
 
@@ -441,11 +441,11 @@ async function serveStatic(req, res) {
 
 const server = createServer((req, res) => {
   // Route: /corec-api/* → fixed CoreC reverse proxy (single-backend deploy).
-  if (req.url === PROXY_PREFIX || req.url.startsWith(PROXY_PREFIX + '/')) {
+  if (req.url === PROXY_PREFIX || req.url.startsWith(`${PROXY_PREFIX}/`)) {
     return proxyToCoreC(req, res)
   }
   // Route: /corec-proxy/* → dynamic per-instance proxy (multi-instance deploy).
-  if (req.url === DYNAMIC_PROXY_PREFIX || req.url.startsWith(DYNAMIC_PROXY_PREFIX + '/')) {
+  if (req.url === DYNAMIC_PROXY_PREFIX || req.url.startsWith(`${DYNAMIC_PROXY_PREFIX}/`)) {
     return proxyDynamic(req, res)
   }
   return serveStatic(req, res)
@@ -453,10 +453,10 @@ const server = createServer((req, res) => {
 
 // Forward WebSocket upgrades: fixed proxy for /corec-api/*, dynamic for /corec-ws.
 server.on('upgrade', (req, socket, head) => {
-  if (req.url === PROXY_PREFIX || req.url.startsWith(PROXY_PREFIX + '/')) {
+  if (req.url === PROXY_PREFIX || req.url.startsWith(`${PROXY_PREFIX}/`)) {
     return proxyUpgradeToCoreC(req, socket, head)
   }
-  if (req.url === DYNAMIC_WS_PREFIX || req.url.startsWith(DYNAMIC_WS_PREFIX + '?')) {
+  if (req.url === DYNAMIC_WS_PREFIX || req.url.startsWith(`${DYNAMIC_WS_PREFIX}?`)) {
     return proxyDynamicUpgrade(req, socket, head)
   }
   socket.destroy()

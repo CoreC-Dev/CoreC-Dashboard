@@ -6,10 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "lint": "biome check src",
+    "lint": "biome check src scripts server.mjs vite.config.ts",
     "lint:fix": "biome check src --write --unsafe",
     "format": "biome format src --write",
-    "test": "vitest run",
+    "test": "vitest run && npm run test:server",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
     "typecheck": "tsc -b",
@@ -19,7 +19,8 @@
     "any:ratchet": "node scripts/any-ratchet.mjs",
     "lint:all": "biome check src && npm run docs:lint && npm run structure:lint && npm run custom:lint && npm run any:ratchet",
     "preview": "vite preview",
-    "prepare": "husky"
+    "prepare": "husky",
+    "test:server": "node --test scripts/server-smoke.test.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",
