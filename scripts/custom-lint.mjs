@@ -2,6 +2,8 @@
 // custom-lint.mjs —— 自定义品味 linter（阶段 3，§4.2 不变量 T1–T10）
 // 检查：文件大小上限（防 God 组件/文件）、生产代码无 console.log、统一 @/ 别名导入（TD-ARCH-010）。
 // 已知超标文件作为显式豁免（含 TD ID + 阶段 4 批次）；新超标即失败。
+// 2026-10-21（质量审计批次 D2 收口）：豁免表清空——6 个 God 文件全部
+// 按关注点拆分达标；新文件超 500 行需拆分或在此登记（含理由与尺寸钉版）。
 // 用法：node scripts/custom-lint.mjs   退出码 0=通过 1=失败
 
 import { readdirSync, readFileSync } from 'node:fs'
@@ -19,8 +21,6 @@ const MAX_LINES = 500
 // dead-code removal) and DiagnosticsPage (C-E1 anchor/pprof restructure,
 // 542 -> 476 lines) all returned under the 500-line limit.
 const SIZE_EXEMPTIONS = [
-  { file: 'features/admin/DriversPage.tsx', td: 'TD-DUP-005', batch: 'E' },
-  { file: 'features/admin/DriverWizard.tsx', td: 'TD-CPLX-009', batch: 'H' },
 ]
 const exemptSet = new Set(SIZE_EXEMPTIONS.map((e) => e.file))
 

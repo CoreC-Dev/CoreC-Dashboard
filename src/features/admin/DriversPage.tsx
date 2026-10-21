@@ -1,29 +1,24 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { AlertCircle, Cpu, ExternalLink, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react'
+import { AlertCircle, Cpu, ExternalLink, Plus, RefreshCw } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
-import { useConfigRaw, useDrivers, useDriverTags } from '@/api/hooks'
+import { useConfigRaw, useDrivers } from '@/api/hooks'
 import { DeleteEntityConfirm } from '@/components/admin/DeleteEntityConfirm'
 import { ConnectionSummary } from '@/components/admin/DetailPageParts'
 import { SeedBlockedBanner } from '@/components/admin/SeedBlockedBanner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 import { LoadingState } from '@/components/ui/loading-state'
 import { ConfigApplyConfirmationDialog } from '@/components/wizard/ConfigApplyConfirmationDialog'
 import { EntitySearchBar, filterEntities } from '@/components/wizard/EntitySearchBar'
 import { UnsavedChangesBanner } from '@/components/wizard/UnsavedChangesBanner'
 import { ValidationBanner } from '@/components/wizard/ValidationBanner'
 import { DriverWizard } from '@/features/admin/DriverWizard'
+import { ConfigDriverCard } from '@/features/admin/driversPage/ConfigDriverCard'
+import { DriverDetailDialog } from '@/features/admin/driversPage/DriverDetailDialog'
 import { useApplyConfig } from '@/hooks/useApplyConfig'
 import { useAutoLoadConfig } from '@/hooks/useAutoLoadConfig'
 import {
@@ -35,7 +30,7 @@ import { useEntityListPage } from '@/hooks/useEntityListPage'
 import { useParsedConfig } from '@/hooks/useParsedConfig'
 import { jsonDeepEqual } from '@/lib/configHelpers'
 import { getDriverConnectionSummary } from '@/lib/connectionInfo'
-import { ConnStateLabel, QualityLabel } from '@/lib/constants'
+import { ConnStateLabel } from '@/lib/constants'
 import { rulesDependingOnDriver, unionRulesForDependencyScan } from '@/lib/ruleDependencies'
 import { formatNumber, isZeroTime } from '@/lib/utils'
 import { useConfigStore } from '@/stores/configStore'
@@ -241,85 +236,16 @@ export const DriversPage: React.FC = () => {
           )}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 card-stagger">
             {filteredConfigDrivers.map((drv) => (
-              <Card
+              <ConfigDriverCard
                 key={drv.name}
-                id={`cfg-driver-${drv.name}`}
-                className="border-border bg-card card-enter scroll-mt-24"
-              >
-                <CardHeader className="p-4 pb-2">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center space-x-2.5">
-                      <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
-                        <Cpu className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-sm font-semibold">{drv.name}</CardTitle>
-                        <CardDescription className="text-xs font-mono">{drv.type}</CardDescription>
-                        <ConnectionSummary
-                          summary={workingDriverConnSummaries.get(drv.name) ?? ''}
-                        />
-                        <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-                          {runtimeDriverNames.has(drv.name) ? (
-                            <button
-                              type="button"
-                              onClick={() => jumpToCard(`runtime-driver-${drv.name}`)}
-                              title={t('drivers.jumpToRuntime')}
-                              aria-label={`${t('drivers.jumpToRuntime')} — ${drv.name}`}
-                              className="inline-flex items-center gap-1 rounded-full border border-status-running/30 bg-status-running/10 px-2 py-0.5 text-xs text-status-running hover:bg-status-running/20 transition-colors"
-                            >
-                              <span className="h-1.5 w-1.5 rounded-full bg-status-running" />
-                              {t('drivers.zoneLive')}
-                            </button>
-                          ) : (
-                            <span className="inline-flex items-center rounded-full border border-border bg-muted/40 px-2 py-0.5 text-xs text-muted-foreground">
-                              {t('drivers.zoneConfigOnly')}
-                            </span>
-                          )}
-                          {hasPendingDriverChanges(drv.name) && (
-                            <span className="inline-flex items-center rounded-full border border-status-warning/30 bg-status-warning/10 px-2 py-0.5 text-xs text-status-warning dark:text-status-warning">
-                              {t('drivers.zonePendingChanges')}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <button
-                        type="button"
-                        onClick={() => handleEdit(drv.name)}
-                        className="p-2 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground"
-                        title={t('common.edit')}
-                        aria-label={t('common.edit')}
-                      >
-                        <Pencil className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(drv.name)}
-                        className="p-2 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
-                        title={t('common.delete')}
-                        aria-label={t('common.delete')}
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-4 pt-2 space-y-2">
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div className="flex items-center justify-between p-1.5 rounded bg-muted/30">
-                      <span className="text-muted-foreground">{t('drivers.tags')}</span>
-                      <span className="font-mono font-bold">{drv.tags?.length ?? 0}</span>
-                    </div>
-                    {drv['tags-file'] && (
-                      <div className="flex items-center justify-between p-1.5 rounded bg-muted/30">
-                        <span className="text-muted-foreground">{t('driverWizard.tagsFile')}</span>
-                        <span className="font-mono truncate max-w-[100px]">{drv['tags-file']}</span>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+                drv={drv}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                summaryOf={(name) => workingDriverConnSummaries.get(name) ?? ''}
+                isRunning={(name) => runtimeDriverNames.has(name)}
+                onJumpToRuntime={jumpToCard}
+                hasPendingChanges={hasPendingDriverChanges}
+              />
             ))}
           </div>
         </div>
@@ -546,92 +472,5 @@ export const DriversPage: React.FC = () => {
       {/* Apply Config Confirmation */}
       <ConfigApplyConfirmationDialog {...applyDialogProps} />
     </div>
-  )
-}
-
-const DriverDetailDialog: React.FC<{
-  driver: DriverStatus
-  onClose: () => void
-}> = ({ driver, onClose }) => {
-  const { t } = useTranslation()
-  const { data: tagsData, isLoading } = useDriverTags(driver.name)
-  const tags = tagsData?.tags ? Object.values(tagsData.tags) : []
-  // Cap rendered tags to prevent DOM overload (TD-PERF-001, aligns with DriverDetailPage).
-  const MAX_TAGS = 200
-  const visibleTags = tags.slice(0, MAX_TAGS)
-
-  return (
-    <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
-        <DialogHeader>
-          <div className="flex items-center justify-between pr-6">
-            <div>
-              <DialogTitle className="text-base font-bold flex items-center space-x-2">
-                <span>{driver.name}</span>
-                <Badge variant="outline" className="font-mono text-xs">
-                  {driver.type}
-                </Badge>
-              </DialogTitle>
-              <DialogDescription className="text-xs">{t('drivers.detailTitle')}</DialogDescription>
-            </div>
-          </div>
-        </DialogHeader>
-
-        <div className="flex-1 overflow-y-auto pt-2">
-          {isLoading ? (
-            <div className="py-12 text-center text-xs text-muted-foreground">
-              {t('drivers.loadingTags')}
-            </div>
-          ) : tags.length === 0 ? (
-            <div className="py-12 text-center text-xs text-muted-foreground">
-              {t('drivers.noTags', { driver: driver.name })}
-            </div>
-          ) : (
-            <div className="border border-border rounded-lg overflow-x-auto">
-              <table className="w-full text-xs text-left">
-                <thead className="bg-muted/60 border-b border-border text-xs uppercase font-semibold text-muted-foreground">
-                  <tr>
-                    <th className="px-3 py-2">{t('drivers.colTag')}</th>
-                    <th className="px-3 py-2">{t('drivers.colGroup')}</th>
-                    <th className="px-3 py-2">{t('drivers.colValue')}</th>
-                    <th className="px-3 py-2">{t('drivers.colType')}</th>
-                    <th className="px-3 py-2">{t('drivers.colQuality')}</th>
-                    <th className="px-3 py-2">{t('drivers.colLastPolled')}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/60">
-                  {visibleTags.map((tag) => {
-                    const q = QualityLabel[tag.quality] || QualityLabel[0]
-                    return (
-                      <tr key={tag.tag} className="hover:bg-muted/30">
-                        <td className="px-3 py-2 font-mono font-semibold">{tag.tag}</td>
-                        <td className="px-3 py-2 text-muted-foreground">{tag.group || '-'}</td>
-                        <td className="px-3 py-2 font-mono font-bold text-foreground">
-                          {String(tag.value)}
-                        </td>
-                        <td className="px-3 py-2 font-mono text-xs">{tag.type}</td>
-                        <td className="px-3 py-2">
-                          <Badge variant="outline" className={`text-xs py-0 h-4 ${q.color}`}>
-                            {t(q.key)}
-                          </Badge>
-                        </td>
-                        <td className="px-3 py-2 text-muted-foreground font-mono text-xs">
-                          {tag.timestamp ? new Date(tag.timestamp).toLocaleTimeString() : '-'}
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-          {tags.length > MAX_TAGS && (
-            <p className="text-xs text-muted-foreground text-center py-2">
-              {t('common.showing', { shown: MAX_TAGS, total: tags.length })}
-            </p>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
   )
 }
