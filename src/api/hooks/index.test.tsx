@@ -71,10 +71,18 @@ import type {
 // deterministic.
 let queryClient: QueryClient
 
+// Module-level test provider (biome 2.6 noComponentHookFactories: a
+// component defined inside a function remounts its subtree on every
+// parent render — in tests that would silently reset hook state between
+// assertions). The client arrives via prop so each test keeps its own.
+function QueryWrapper({ client, children }: { client: QueryClient; children: ReactNode }) {
+  return <QueryClientProvider client={client}>{children}</QueryClientProvider>
+}
+
 function createWrapper() {
-  return function Wrapper({ children }: { children: ReactNode }) {
-    return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-  }
+  return ({ children }: { children: ReactNode }) => (
+    <QueryWrapper client={queryClient}>{children}</QueryWrapper>
+  )
 }
 
 beforeEach(() => {

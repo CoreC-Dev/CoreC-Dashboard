@@ -146,6 +146,21 @@ afterEach(() => {
   vi.useRealTimers()
 })
 
+// Module-level: a component defined inside the test function would
+// remount (destroying hook state) on every render — biome 2.6's
+// noComponentHookFactories.
+function FailingQueryChild() {
+  useQuery({
+    queryKey: ['will-401'],
+    queryFn: () =>
+      new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new ApiError(401, 'API request failed: 401 Unauthorized')), 30)
+      }),
+    retry: false,
+  })
+  return <div data-testid="failing-child" />
+}
+
 describe('ConnectionProvider (TD-TEST-005)', () => {
   it('successful probe requests /stats with the Bearer token and sets connected', async () => {
     setInstances([instance])
@@ -301,17 +316,6 @@ describe('ConnectionProvider — global 401 interception (D-01)', () => {
    * revoked server-side while the operator is working). Rejecting in a
    * timeout keeps the initial probe's success commit from racing the 401.
    */
-  function FailingQueryChild() {
-    useQuery({
-      queryKey: ['will-401'],
-      queryFn: () =>
-        new Promise<never>((_, reject) => {
-          setTimeout(() => reject(new ApiError(401, 'API request failed: 401 Unauthorized')), 30)
-        }),
-      retry: false,
-    })
-    return <div data-testid="failing-child" />
-  }
 
   it('a 401 from any query flips the provider into the auth-expired overlay', async () => {
     setInstances([instance])

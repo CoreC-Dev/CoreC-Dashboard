@@ -65,16 +65,25 @@ afterEach(() => {
   fetchMock.mockReset()
 })
 
+// Module-level test provider (biome 2.6 noComponentHookFactories: a
+// component defined inside a function remounts its subtree on every
+// parent render — in tests that would silently reset hook state).
+function TestProviders({ client, children }: { client: QueryClient; children: React.ReactNode }) {
+  return <QueryClientProvider client={client}>{children}</QueryClientProvider>
+}
+
 function createWrapper() {
   const qc = new QueryClient({
     defaultOptions: {
       queries: { retry: false, refetchInterval: false, staleTime: Infinity },
     },
   })
-  const Wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-    <QueryClientProvider client={qc}>{children}</QueryClientProvider>
+  // Anonymous bound arrow (biome 2.6 noComponentHookFactories): the
+  // named component lives at module level; this arrow only injects the
+  // per-test client.
+  return ({ children }: { children: React.ReactNode }) => (
+    <TestProviders client={qc}>{children}</TestProviders>
   )
-  return Wrapper
 }
 
 function rawResponse(yaml: string) {

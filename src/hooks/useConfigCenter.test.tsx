@@ -144,6 +144,17 @@ function putPayloads(): string[] {
   return calls.length > 0 ? calls : all.map((c) => String((c[1] as RequestInit)?.body ?? ''))
 }
 
+// Module-level test provider (biome 2.6 noComponentHookFactories: a
+// component defined inside a function remounts its subtree on every
+// parent render — in tests that would silently reset hook state).
+function TestProviders({ client, children }: { client: QueryClient; children: React.ReactNode }) {
+  return (
+    <QueryClientProvider client={client}>
+      <MemoryRouter>{children}</MemoryRouter>
+    </QueryClientProvider>
+  )
+}
+
 function createWrapper() {
   const qc = new QueryClient({
     defaultOptions: {
@@ -151,12 +162,12 @@ function createWrapper() {
       mutations: { retry: false },
     },
   })
-  const Wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-    <QueryClientProvider client={qc}>
-      <MemoryRouter>{children}</MemoryRouter>
-    </QueryClientProvider>
+  // Anonymous bound arrow (biome 2.6 noComponentHookFactories): the
+  // named component lives at module level; this arrow only injects the
+  // per-test client.
+  return ({ children }: { children: React.ReactNode }) => (
+    <TestProviders client={qc}>{children}</TestProviders>
   )
-  return Wrapper
 }
 
 /** Mount the hook and wait for the auto-load of the server YAML. */
