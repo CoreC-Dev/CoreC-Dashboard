@@ -8,8 +8,6 @@
 |---|---|---|
 | `../AGENTS.md` | 入口地图（≤100 行） | ✅ |
 | `../ARCHITECTURE.md` | 领域与分层地图 + 依赖方向 | ✅ |
-| `QUALITY_SCORE.md` | 按域/层质量打分 + 差距 | ✅ |
-| `exec-plans/tech-debt-tracker.md` | 技术债台账 | ✅ |
 | `CI.md` | 框架判定 + CI 现状 + 落地决定 | ✅ |
 
 ## 设计文档
@@ -18,8 +16,6 @@
 | `design-docs/index.md` | 设计文档索引 | ✅ |
 | `design-docs/core-beliefs.md` | 第一性原则（争议裁决依据） | ✅ |
 | `design-docs/architecture-decisions.md` | 架构决策记录（ADR：框架判定 + D1–D7） | ✅ |
-| `design-docs/doc-gardening.md` | 文档防腐规则与园丁任务 | ✅ |
-| `design-docs/gate-exemptions.md` | 门禁豁免/ratchet 机制 + npm audit 结果 | ✅ |
 | `design-docs/motion-catalog.md` | 前端动效目录（已有/待实施清单 + 实现约定） | ✅ |
 
 ## 规范文档
@@ -27,16 +23,11 @@
 |---|---|---|
 | `FRONTEND.md` | 前端约定：分层、状态、查询、表单、i18n | ✅ |
 | `SECURITY.md` | 安全态势 + 已确认决策 | ✅ |
-| `SECURITY-POSTURE.md` | 安全态势补充（质量审计后） | ✅ |
 | `RELIABILITY.md` | 性能与可靠性态势 | ✅ |
 | `DESIGN.md` | 设计理据（为什么这样选） | ✅ |
 | `engineering.md` | 工程化说明：开发/构建/测试/调试/部署/排障 | ✅ |
 
 ## 执行计划
-- `exec-plans/completed/derived-tags.md` — 派生标签前端（已完成）
-- `exec-plans/completed/notify-transport.md` — 通知传输前端（已完成）
-- `exec-plans/completed/` — 已完成归档（已清理）
-- `exec-plans/tech-debt-tracker.md` — 技术债台账
 
 ## 裁剪说明
-按 §2.1 裁剪：本项目为纯前端 SPA，无 `generated/`（无 DB schema）、无 `product-specs/`（暂无产品规格）、无 `references/`。`PLANS.md`/`PRODUCT_SENSE.md` 未建（exec-plans 与 design-docs 已覆盖其职责）。
+按 §2.1 裁剪：本项目为纯前端 SPA，无 `generated/`（无 DB schema）、无 `product-specs/`（暂无产品规格）、无 `references/`。`PLANS.md`/`PRODUCT_SENSE.md` 未建（design-docs 已覆盖其职责）。

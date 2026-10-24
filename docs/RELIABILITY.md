@@ -1,6 +1,6 @@
 # RELIABILITY.md
 
-> 性能与可靠性态势。详细发现见 `exec-plans/tech-debt-tracker.md`（TD-PERF-001..012）。
+> 性能与可靠性态势。
 
 ## 已加固（无需动作，记为不变量）
 - **WebSocket**（`api/websocket.ts`）：指数退避 + ±20% 抖动 + 重连上限 10 + 环形缓冲限流 500 msg/s（O(1) 零分配）+ 升级拒绝检测 + `destroy()` 清空 handler。

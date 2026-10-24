@@ -1,7 +1,7 @@
 # ARCHITECTURE.md
 
 > CoreC-Dashboard 架构总览：领域地图 + 分层 + 依赖方向规则。
-> 细节见 `docs/FRONTEND.md`；技术债见 `docs/exec-plans/tech-debt-tracker.md`。
+> 细节见 `docs/FRONTEND.md`。
 
 ## 技术栈
 React 19 + Vite 8（rolldown）+ TypeScript 7 + Zustand（本地状态）+ @tanstack/react-query（服务端状态）+ @tanstack/react-virtual + Radix UI + Tailwind + react-hook-form + zod 4 + i18next。图表 recharts / lightweight-charts；编辑器 @monaco-editor/react；终端 xterm。测试 Vitest 5 + jsdom；lint Biome 2.5。

@@ -92,7 +92,6 @@
 - **理由**：driver 只能依赖 `core`/`common`（ARCHITECTURE 依赖方向），无法访问 engine 的 `LatestCache`；做成 driver 需注入 `core.LatestValuesProvider` 反向依赖，破坏分层。engine 组件天然持有 cache + dataBus，零契约改动。`LatestCache.GetAll()` 已提供跨驱动按 tag 名索引的快照，正合需求。
 - **影响**：`engine/derived.go` 新增；`core.Config` 加 `DerivedTags` 字段；Start/Stop/Reload 接线。行为变更（新增可观测数据点），单独提交（R2）。
 - **日期**：2026-10-16
-- **计划**：`exec-plans/active/derived-tags.md`
 
 ## ADR-012 通知传输路由：forward 目标而非增强 alert 动作
 - **背景**：告警需外发 Slack/Teams/email。可增强 `alert` 动作转发到 target transport，或直接用 `action: forward, target: notify-xxx`。
@@ -100,7 +99,6 @@
 - **理由**：forward 路径已存在且经规则引擎/批量/离线缓冲全链路；notify 作为 transport 自动享有 retry/offline-buffer/fallback。增强 alert 动作需改 engine 且与进程内 alertHandlers 语义重叠，复杂度上升。后续可选增强 alert 也转发（登记后续项，R4 不在本计划范围）。
 - **影响**：新增 `transport/notify` 插件；规则名经 `DataPoint.Metadata["rule"]` 注入（forward payload 新增可选字段，omitempty 不破坏现有消费者）。业务行为影响=无（纯新增插件）。
 - **日期**：2026-10-16
-- **计划**：`exec-plans/active/notify-transport.md`
 
 ## ADR-013 schema 驱动表单：推迟至后端产出机器可读 schema（2026-10-17 处置登记）
 - **背景**：审计曾建议由后端配置结构生成前端表单与校验，消除前后端字段漂移（前端 `lib/configSchema.ts` 811 行手写 zod 需与 CoreC `config/validate.go` 人工保持一致）。

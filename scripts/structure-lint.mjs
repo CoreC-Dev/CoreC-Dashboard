@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-// structure-lint.mjs —— 架构结构测试（阶段 3，§4.1 分层依赖方向）
+// structure-lint.mjs —— 架构结构测试（分层依赖方向）
 // 扫描 src/ 所有 .ts/.tsx 的 import，断言分层依赖单向，禁止跨层/跨域直连。
-// 已知技术债作为显式豁免（含 TD ID + 阶段 4 移除批次）；新违规即失败。
+// 已知技术债作为显式豁免（登记时写明理由与移除条件）；新违规即失败。
 // 用法：node scripts/structure-lint.mjs   退出码 0=通过 1=失败
 
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
@@ -91,15 +91,14 @@ const FORBIDDEN = {
     'i18n',
   ],
   lib: ['stores', 'api', 'hooks', 'contexts', 'components', 'components-ui', 'features', 'i18n'],
-  // D4 (quality audit 2026-10-21), explicit by design: 'stores' is NOT in
-  // the api ban list. AGENTS.md's directory map places react-query/WS hooks
-  // in api/hooks ("api/ — HTTP client、WebSocket、endpoints、react-query
-  // hooks"), and data-layer hooks legitimately consume the connection +
-  // WS-status stores. The api-below-stores chain rule targets the HTTP
-  // client and endpoints (which must not import stores); the hooks
-  // sub-layer is the sanctioned bridge. The type-only back-edge this
-  // arrangement used to hide (stores importing WSStatus from
-  // api/websocket) was fixed properly: WSStatus lives in types/models.ts.
+  // Explicit by design: 'stores' is NOT in the api ban list.
+  // AGENTS.md's directory map places react-query/WS hooks in api/hooks
+  // ("api/ — HTTP client、WebSocket、endpoints、react-query hooks"),
+  // and data-layer hooks legitimately consume the connection + WS-status
+  // stores. The api ban targets the HTTP client and endpoints (which
+  // must not import stores); the hooks sub-layer is the sanctioned
+  // bridge. WSStatus lives in types/models.ts, so stores never needs
+  // a type-only back-edge into api/websocket.
   api: ['contexts', 'components', 'components-ui', 'features'],
   stores: ['hooks', 'contexts', 'components', 'components-ui', 'features'],
   hooks: ['components', 'components-ui', 'features'],
@@ -120,8 +119,8 @@ function isForbidden(importerLayer, importeeLayer) {
   return banned.includes(importeeLayer)
 }
 
-// --- 已登记豁免（已知技术债，阶段 4 移除） ---
-// 每条：importer 子串 + importee 子串 + TD ID
+// --- 已登记豁免（已知技术债；登记时写明移除条件） ---
+// 每条：importer 子串 + importee 子串 + 豁免标识（td 字段）
 const EXEMPTIONS = []
 
 function isExempt(importerRel, importeeRel) {
@@ -157,11 +156,9 @@ for (const importer of files) {
 // --- 报告 ---
 const unusedExemptions = EXEMPTIONS.filter((e) => !usedExemptions.has(e.td))
 
-// --- TD-ARCH-011 / TD-DUP-001: detail pages must single-source field metadata
-//     from the registry adapter (no local *_FIELDS arrays). D2 note
-//     (2026-10-21 quality audit): the registry consumption moved into the
-//     extracted EditConfigSection modules — the requirement follows the
-//     code it governs. ---
+// --- Detail pages must single-source field metadata from the registry
+//     adapter (no local *_FIELDS arrays). The rule targets the
+//     EditConfigSection modules and follows the code it governs. ---
 const SINGLE_SOURCE_FILES = [
   'features/admin/driverDetail/EditConfigSection.tsx',
   'features/admin/transportDetail/EditConfigSection.tsx',
@@ -174,7 +171,7 @@ for (const rel of SINGLE_SOURCE_FILES) {
   if (!/from ['"]@\/lib\/registryAdapter['"]/.test(text)) {
     singleSourceViolations.push(`${rel}: must import @/lib/registryAdapter (single source)`)
   }
-  // Local field-metadata arrays are the duplication this TD removes.
+  // Local field-metadata arrays are the duplication this rule targets.
   for (const m of text.matchAll(/const\s+(\w*_FIELDS)\s*:\s*readonly\s+\w*EditField\[\]/g)) {
     singleSourceViolations.push(`${rel}: defines local field array ${m[1]} (use registry adapter)`)
   }

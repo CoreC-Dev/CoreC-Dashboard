@@ -109,7 +109,7 @@ export interface EngineStats {
 export interface LogEvent {
   // Numeric contract: -8=debug, 0=info, 4=warn, 8=error (slog values).
   // The backend marshals levels as STRINGS ("WARN"); normalize at the
-  // WS boundary via logEventSchema (types/api.ts) — audit F1.
+  // WS boundary via logEventSchema (types/api.ts).
   level: number
   type: string
   payload: string
@@ -118,8 +118,8 @@ export interface LogEvent {
 
 /**
  * A first-class rule alert from the engine's registry (backend
- * core.Alert; audit OBS-4/HUB-6 — alerts previously had to be
- * reconstructed from log lines). Identity is rule|driver|tag: the same
+ * core.Alert) — a structured object, not something to be
+ * reconstructed from log lines. Identity is rule|driver|tag: the same
  * rule firing on the same tag updates Count/LastFired instead of
  * duplicating.
  */
@@ -150,7 +150,7 @@ export interface AlertEvent {
 
 export interface TrafficFrame {
   /**
-   * Rate mode (default, backend roadmap #32): per-second rates,
+   * Rate mode (default): per-second rates,
    * server-side diffed — read_rate carries the engine's 60s windowed
    * rate on the first frame (no baseline), never a negative spike.
    */
@@ -177,7 +177,8 @@ export interface MemoryFrame {
  * A saved CoreC instance — a persistent identity for a gateway/edge node
  * the operator manages from the dashboard.
  *
- * (Moved from stores/instanceStore.ts — TD-ARCH-006: domain types belong in types/.)
+ * (Domain types live in types/ rather than stores/ so every layer
+ * can import them without touching a store.)
  */
 export interface CoreCInstance {
   /** Auto-generated unique identifier (used in routes /corec/:id/*). */

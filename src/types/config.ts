@@ -36,7 +36,7 @@ export const DATA_TYPES = [
   'bytes',
 ] as const
 export type DataType = (typeof DATA_TYPES)[number]
-/** Canonical alias — historically in lib/constants, moved to types/ to break types↔lib cycle (TD-ARCH-001). */
+/** Canonical alias — lives in types/ (not lib/) so importing it never creates a types↔lib cycle. */
 export type DataTypeString = DataType
 
 // ─── Driver / transport / rule enumerations ──────────────────────────

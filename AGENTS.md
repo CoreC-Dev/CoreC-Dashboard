@@ -9,10 +9,7 @@ CoreC-Dashboard —— 面向 IIoT CoreC 后端的 React 单页前端：多实�
 - 架构总览：见 `ARCHITECTURE.md`
 - 设计理念与操作原则：见 `docs/design-docs/core-beliefs.md`
 - 架构决策记录：见 `docs/design-docs/architecture-decisions.md`
-- 当前执行计划：见 `docs/exec-plans/`（进行中计划在 `active/` 子目录；当前无进行中计划时该目录可能不存在）
 - CI 与框架判定：见 `docs/CI.md`
-- 已知技术债：见 `docs/exec-plans/tech-debt-tracker.md`
-- 质量评分：见 `docs/QUALITY_SCORE.md`
 
 ## 硬性约束（不可违反）
 - 分层依赖单向：`types ← lib ← api ← stores ← hooks/contexts ← components ← features ← App`，禁止反向与跨层
@@ -50,10 +47,9 @@ src/
 - 可靠性态势：`docs/RELIABILITY.md`
 - 设计理据：`docs/DESIGN.md`
 - 工程化说明：`docs/engineering.md`
-- 质量评分：`docs/QUALITY_SCORE.md`
 
 ## 工作方式
-- 变更前先读相关 `docs/`，变更后同步更新文档与 `QUALITY_SCORE.md`
+- 变更前先读相关 `docs/`，变更后同步更新文档
 - 提交粒度单一职责（Conventional Commits）；改造仅落 `harnessing` 分支
-- 计划写在 `docs/exec-plans/active/`（目录不存在时新建），完成后移入 `completed/`
+- 一次性工作记录（审计、执行计划、评分快照）完成任务后即从仓库清理，仓库只保留描述现状的活文档
 - 任何交互式决策确认后必须写入仓库文档（见 `docs/design-docs/architecture-decisions.md`）

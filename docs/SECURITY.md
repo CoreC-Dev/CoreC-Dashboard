@@ -1,6 +1,6 @@
 # SECURITY.md
 
-> 安全态势与已确认决策。详细发现见 `exec-plans/tech-debt-tracker.md`（TD-SEC-001..012）；决策理据见 `design-docs/architecture-decisions.md`。
+> 安全态势与已确认决策。决策理据见 `design-docs/architecture-decisions.md`。
 
 ## 已确认安全（无需动作）
 - **路径穿越防护**：`server.mjs` `safeStaticPath` 坚实（URI 解码 + null 字节剥离 + 路径分隔符边界检查）。

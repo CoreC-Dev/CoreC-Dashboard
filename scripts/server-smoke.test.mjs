@@ -1,7 +1,5 @@
-// server.mjs smoke test (quality audit H3, 2026-10-21): the production
-// static+proxy server was the highest-risk untested artifact in either
-// repo — unlinted (now linted) and with zero tests. Spawns the real
-// server against a temp dist and asserts the core static behaviors the
+// server.mjs smoke test: spawns the real production static+proxy server
+// against a temp dist and asserts the core static behaviors the
 // deployment depends on. Run: node --test scripts/server-smoke.test.mjs
 import { strict as assert } from 'node:assert'
 import { spawn } from 'node:child_process'

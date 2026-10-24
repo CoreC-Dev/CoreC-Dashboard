@@ -29,9 +29,6 @@ npm run lint     # lint
 - 可靠性态势：[`docs/RELIABILITY.md`](docs/RELIABILITY.md)
 - 设计理据：[`docs/DESIGN.md`](docs/DESIGN.md)
 - 工程化说明：[`docs/engineering.md`](docs/engineering.md)
-- 质量评分：[`docs/QUALITY_SCORE.md`](docs/QUALITY_SCORE.md)
 - CI 决定：[`docs/CI.md`](docs/CI.md)
-- 技术债跟踪：[`docs/exec-plans/tech-debt-tracker.md`](docs/exec-plans/tech-debt-tracker.md)
 - 设计决策记录：[`docs/design-docs/architecture-decisions.md`](docs/design-docs/architecture-decisions.md)
-- 执行计划：`docs/exec-plans/`（进行中在 `active/`，历史在 `completed/`）
-- 后端仓库：[`CoreC`](https://github.com/CoreC-Dev/CoreC)（本仓所有 API 的上游；跨仓质量计划见其 `docs/exec-plans/active/codebase-quality-program.md`）
+- 后端仓库：[`CoreC`](https://github.com/CoreC-Dev/CoreC)（本仓所有 API 的上游）

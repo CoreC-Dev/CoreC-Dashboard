@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// any-ratchet.mjs —— noExplicitAny 二级守卫（阶段 3→4，TD-GATE-004）
+// any-ratchet.mjs —— noExplicitAny 二级守卫
 // biome.json 已将 noExplicitAny 提为 error（主门禁）。本脚本为冗余二级守卫，
 // 准确统计非注释代码中的 explicit any，BASELINE=0；任一新增即失败。
 // 用法：node scripts/any-ratchet.mjs   退出码 0=通过 1=失败

@@ -222,7 +222,7 @@ function proxyUpgradeToCoreC(req, socket, head) {
 }
 
 // ---------------------------------------------------------------------------
-// Dynamic per-instance proxy (TD-SEC-001/002, D3).
+// Dynamic per-instance proxy.
 //
 // The browser sends same-origin requests to /corec-proxy/* with an
 // X-CoreC-Target header containing the instance's baseUrl. The server
@@ -396,7 +396,7 @@ function proxyDynamicUpgrade(req, socket, head) {
 
 /** Serve static file or SPA fallback. */
 async function serveStatic(req, res) {
-  // 安全响应头（TD-SEC-007，阶段 3）
+  // 安全响应头
   res.setHeader('X-Content-Type-Options', 'nosniff')
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin')
   res.setHeader('X-Frame-Options', 'DENY')

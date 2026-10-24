@@ -437,7 +437,7 @@ export const memoryFrameSchema = z.object({
 export type MemoryFrameMessage = z.infer<typeof memoryFrameSchema>
 
 // ─── /logs frame ────────────────────────────────────────────────────────
-// Backend audit F1 (2026-10-21): the backend marshals slog.Level as a
+// The backend marshals slog.Level as a
 // STRING ("WARN", "DEBUG", "ERROR+2" for custom severities — verified by
 // compiling json.Marshal against the Go source), while LogEvent.level is
 // the numeric contract (-8/0/4/8). Numeric input passes through so
@@ -468,12 +468,12 @@ export const logEventSchema = z.object({
 })
 export type LogEventFrame = z.infer<typeof logEventSchema>
 
-// ─── /traffic frames (backend roadmap #32) ─────────────────────────────
+// ─── /traffic frames ───────────────────────────────────────────────────
 // Default mode pushes server-side diffed RATES; ?mode=totals keeps the
-// legacy cumulative counters. The previous cumulative-only schema
-// silently dropped every default-mode frame (audit F2) — the two modes
-// are now a discriminated union so either contract validates and the
-// panel picks fields by shape.
+// legacy cumulative counters. The two modes are a discriminated union
+// so either contract validates and the panel picks fields by shape —
+// a cumulative-only schema would silently drop every default-mode
+// rate frame.
 export const trafficRateFrameSchema = z.object({
   read_rate: z.number(),
   publish_rate: z.number(),

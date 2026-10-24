@@ -63,9 +63,7 @@ function checkLineCount(file, max) {
 checkFile('AGENTS.md')
 checkFile('ARCHITECTURE.md')
 checkFile('docs/index.md')
-checkFile('docs/QUALITY_SCORE.md')
 checkFile('docs/CI.md')
-checkFile('docs/exec-plans/tech-debt-tracker.md')
 checkFile('docs/design-docs/core-beliefs.md')
 checkFile('docs/design-docs/architecture-decisions.md')
 
@@ -86,7 +84,6 @@ checkSections('ARCHITECTURE.md', [
   '## 分层与依赖方向',
   '## 已验证的健康不变量',
 ])
-checkSections('docs/QUALITY_SCORE.md', ['## 按业务域', '## 按架构层', '## 目标与差距'])
 
 checkLineCount('AGENTS.md', 200)
 
