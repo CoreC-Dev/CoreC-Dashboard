@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// GlobalSettingsPage — import dialog outcome classification (audit D-08).
+// GlobalSettingsPage — import dialog outcome classification.
 // The store's importInstances now returns {added, skipped, invalid,
 // parseError}; the dialog must tell those four stories apart instead of
 // answering every outcome with "added 0, skipped 0 duplicates", and a clean
@@ -79,7 +79,7 @@ const VALID_INSTANCES_JSON = JSON.stringify([
   { id: 'inst_new2', name: 'New Two', baseUrl: 'http://two', secret: 's' },
 ])
 
-describe('GlobalSettingsPage import dialog (D-08)', () => {
+describe('GlobalSettingsPage import dialog', () => {
   it('reports unusable JSON as a parse failure, not "added 0, skipped 0"', () => {
     const dialog = openImportWith('this is not json')
     submitImport(dialog)
@@ -175,11 +175,11 @@ describe('GlobalSettingsPage import dialog (D-08)', () => {
   })
 })
 
-// A-14 — the settings-page import used to be a bare textarea while the
+// The settings-page import used to be a bare textarea while the
 // homepage offered drag & drop + file browse for the same operation; both
 // entry points now render the one shared dialog, so the full affordance set
 // must be reachable from here too.
-describe('GlobalSettingsPage shared import UI (A-14)', () => {
+describe('GlobalSettingsPage shared import UI', () => {
   it('offers the drag & drop + file browse + paste set on the settings page', () => {
     renderPage()
     fireEvent.click(screen.getByRole('button', { name: 'Import' }))
@@ -190,7 +190,7 @@ describe('GlobalSettingsPage shared import UI (A-14)', () => {
   })
 })
 
-describe('GlobalSettingsPage clear-all confirm (D-07)', () => {
+describe('GlobalSettingsPage clear-all confirm', () => {
   function seedInstances() {
     useInstanceStore.setState({
       instances: [
@@ -226,8 +226,8 @@ describe('GlobalSettingsPage clear-all confirm (D-07)', () => {
   })
 
   it('does not close on an outside pointer-down (a stray click cannot defuse it)', () => {
-    // D-07's named danger: the plain Dialog version could be dismissed by a
-    // stray outside click. Radix's AlertDialog prevents pointer-down-outside
+    // A plain Dialog can be dismissed by a stray outside click.
+    // Radix's AlertDialog prevents pointer-down-outside
     // dismissal — assert the dialog survives one.
     openClearAll()
     fireEvent.pointerDown(document.body)

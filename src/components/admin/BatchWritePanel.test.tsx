@@ -17,7 +17,7 @@ import * as api from '@/api/endpoints'
 // The Radix-Select-heavy tests open several portals and wait on multiple
 // act() rounds; under full-suite load on a 2-core box they exceed the 5s
 // default. 15s mirrors the InstanceDialog suite-timeout precedent
-// (commit 1da217b, coverage-run flake).
+// (coverage runs showed 5s flaking there too).
 vi.setConfig({ testTimeout: 15_000 })
 
 const DRIVERS = [

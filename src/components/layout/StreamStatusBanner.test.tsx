@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// StreamStatusBanner — the monitor pages' connection banner (audit B01).
+// StreamStatusBanner — the monitor pages' connection banner.
 // Three banner states (hidden / disconnected / rejected) plus the rate-limit
 // hint, the rejected retry button (fan-out to the store's reconnect handles),
 // and the recovery transition (banner disappears when streams re-open).

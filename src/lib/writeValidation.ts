@@ -28,7 +28,7 @@ const NUMERIC_RANGES: Record<string, [number, number]> = {
  *
  * This is shared between WriteControlPage and TagExplorerPage so every
  * write path enforces the same safety rules before issuing a physical
- * write. The translation function `t` is passed explicitly (TD-ARCH-009)
+ * write. The translation function `t` is passed explicitly
  * so this module stays pure — no i18n singleton import.
  */
 export const validateValue = (raw: string, dt: DataTypeString, t: TFunction): string | null => {

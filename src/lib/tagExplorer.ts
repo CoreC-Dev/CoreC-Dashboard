@@ -4,14 +4,14 @@ import type { DataPoint } from '@/types/models'
 export const ROW_HEIGHT = 48
 /** Max samples retained in the live trend chart sliding window. */
 export const MAX_TREND_SAMPLES = 100
-/** B23: how often the REST /tags snapshot re-fetches so the live map
- *  reconciles backend tag additions/removals (useTags itself stays
- *  unpolled — the page owns this cadence). */
+/** How often the REST /tags snapshot re-fetches so the live map
+ * reconciles backend tag additions/removals (useTags itself stays
+ * unpolled — the page owns this cadence). */
 export const TAG_SNAPSHOT_POLL_MS = 60_000
 
 /** Fixed percentage column widths — header and rows share these so columns
- *  stay aligned inside the virtualized (display:block) table. B06 added the
- *  device column (2% each from tag/driver/group/type, total still 100%) so
+ *  stay aligned inside the virtualized (display:block) table. The device
+ *  column (2% each from tag/driver/group/type, total still 100%) exists so
  *  same-name tags on different sub-devices are distinguishable at a glance. */
 export const COLS = {
   tag: '18%',
@@ -49,15 +49,15 @@ export const toSeconds = (ts: string | undefined): number => {
 }
 
 /** One sampled point on the live trend chart. A sample WITHOUT `value` is a
- *  whitespace gap marker: lightweight-charts breaks the line there instead of
- *  drawing a fabricated segment across the pause period (B08). */
+ * whitespace gap marker: lightweight-charts breaks the line there instead of
+ * drawing a fabricated segment across the pause period. */
 export interface TrendSample {
   time: number
   value?: number
 }
 
 /**
- * B08 — append a value-less gap sample one second after the last real sample.
+ * Append a value-less gap sample one second after the last real sample.
  * Inserted on trend RESUME so the paused period renders as a blank gap, not a
  * straight line pretending the data was continuous. Pure; no-op on an empty
  * buffer (nothing to break yet).
@@ -69,7 +69,7 @@ export const insertPauseGap = (samples: TrendSample[]): TrendSample[] => {
 }
 
 /**
- * B21 — merge freshly staged WS samples into the trend buffer, coalescing
+ * Merge freshly staged WS samples into the trend buffer, coalescing
  * same-second updates into ONE sample (last value wins). The old flush
  * bumped a duplicate second to last.time + 1 — a FABRICATED timestamp that
  * pushed the chart axis forward and then shipped in every exported CSV row.
@@ -88,13 +88,13 @@ export const appendTrendSamples = (prev: TrendSample[], staged: TrendSample[]): 
       // second has no gap to blank out.)
       next[next.length - 1] = { time: last.time, value: s.value }
     }
-    // s.time < last.time — out of order: dropped, never re-dated (B21).
+    // s.time < last.time — out of order: dropped, never re-dated.
   }
   return next.length > MAX_TREND_SAMPLES ? next.slice(next.length - MAX_TREND_SAMPLES) : next
 }
 
-/** B07 — quality/staleness filter for the tag explorer's problem-point hunt.
- *  Quality codes come straight from DataPoint: 0=Good, 1=Bad, 2=Uncertain. */
+/** Quality/staleness filter for the tag explorer's problem-point hunt.
+ * Quality codes come straight from DataPoint: 0=Good, 1=Bad, 2=Uncertain. */
 export type QualityFilter = 'all' | 'good' | 'bad' | 'uncertain'
 
 export const QUALITY_CODES: Record<Exclude<QualityFilter, 'all'>, number> = {
@@ -115,7 +115,7 @@ export const matchesQualityFilter = (
   return true
 }
 
-// ─── B15: honest timestamps ─────────────────────────────────────────────────
+// ─── Honest timestamps ─────────────────────────────────────────────────
 
 /** Past this age a timestamp cell dims — the audit's ">5 分钟降低透明度"
  *  horizon: an old frozen value must stop looking as fresh as a live one. */
@@ -125,14 +125,14 @@ export const RELATIVE_DIM_MS = 5 * 60_000
  *  (FRONTEND.md: formatters take t explicitly). */
 export type Translate = (key: string, opts?: { count?: number }) => string
 
-/** Display shape for a monitor timestamp (B15).
- *  - <60s old → common.justNow ("刚刚" / "just now")
- *  - 1–59min  → common.minutesAgo ("3分钟前" / "3m ago")
- *  - 1–23h    → common.hoursAgo; ≥24h → common.daysAgo
- *  - older than RELATIVE_DIM_MS (5min) the caller dims the cell, and the
- *    full locale date-time rides along for the hover tooltip — a stale
- *    "09:15:32" from yesterday no longer reads as just-refreshed.
- *  - a MISSING timestamp is the most suspect: renders '-' and dims. */
+/** Display shape for a monitor timestamp.
+ * - <60s old → common.justNow ("刚刚" / "just now")
+ * - 1–59min → common.minutesAgo ("3分钟前" / "3m ago")
+ * - 1–23h → common.hoursAgo; ≥24h → common.daysAgo
+ * - older than RELATIVE_DIM_MS (5min) the caller dims the cell, and the
+ * full locale date-time rides along for the hover tooltip — a stale
+ * "09:15:32" from yesterday no longer reads as just-refreshed.
+ * - a MISSING timestamp is the most suspect: renders '-' and dims. */
 export interface RelativeTimestamp {
   text: string
   /** Full date-time for the title tooltip. */

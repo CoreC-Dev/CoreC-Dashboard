@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// CountUpNumber (B12) — Math.round must live INSIDE the integer default
+// CountUpNumber — Math.round must live INSIDE the integer default
 // format, not before it: a custom format receives the RAW animated value so
 // fractional KPIs (sample rate, one decimal) don't get flattened to "12.0"
 // for the whole animation. Reduced-motion is forced on so the component
@@ -18,7 +18,7 @@ afterEach(() => {
   cleanup()
 })
 
-describe('CountUpNumber — raw animated value for custom formats (B12)', () => {
+describe('CountUpNumber — raw animated value for custom formats', () => {
   it('passes the raw fractional value to a custom format (12.4 stays 12.4)', () => {
     render(<CountUpNumber value={12.4} format={(n) => n.toFixed(1)} />)
     expect(screen.getByText('12.4')).toBeTruthy()

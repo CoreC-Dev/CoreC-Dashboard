@@ -285,9 +285,9 @@ interface DeadLetterTableProps {
   replayError: string | null
   onRefresh: () => void
   onClearAll: () => void
-  /** Replay request for ONE dead letter (C-C1): stages the entry in the
-   *  page's write-confirmation dialog — the full entry is passed so the
-   *  gate can also list failed_at/attempts/last error. Fires no write. */
+  /** Replay request for ONE dead letter: stages the entry in the
+   * page's write-confirmation dialog — the full entry is passed so the
+   * gate can also list failed_at/attempts/last error. Fires no write. */
   onReplay: (dl: DeadLetterEntry) => void
   isWritePending: boolean
 }
@@ -307,7 +307,7 @@ export const DeadLetterTable: React.FC<DeadLetterTableProps> = ({
 }) => {
   const { t } = useTranslation()
 
-  // C-C4: locate one driver's failures among hundreds of dead letters.
+  // Locate one driver's failures among hundreds of dead letters.
   const [dlqSearch, setDlqSearch] = useState('')
   const [dlqDriver, setDlqDriver] = useState('all')
 
@@ -320,7 +320,7 @@ export const DeadLetterTable: React.FC<DeadLetterTableProps> = ({
     [visibleDeadLetters, dlqSearch, dlqDriver],
   )
 
-  // Cap rendered dead letters to prevent DOM overload (TD-PERF-005) — the
+  // Cap rendered dead letters to prevent DOM overload — the
   // cap applies to the FILTERED set, so entries beyond the first 100 stay
   // findable through search/filter.
   const MAX_VISIBLE_DLQ = 100
@@ -340,7 +340,7 @@ export const DeadLetterTable: React.FC<DeadLetterTableProps> = ({
         <div className="flex items-center gap-2">
           {visibleDeadLetters.length > 0 && (
             <>
-              {/* C-C4: search by tag name / verbatim error text. */}
+              {/* Search by tag name / verbatim error text. */}
               <div className="relative">
                 <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground pointer-events-none" />
                 <Input
@@ -351,7 +351,7 @@ export const DeadLetterTable: React.FC<DeadLetterTableProps> = ({
                   className="h-8 w-44 pl-8 pr-2 text-xs"
                 />
               </div>
-              {/* C-C4: narrow to one driver's failures. */}
+              {/* Narrow to one driver's failures. */}
               <Select value={dlqDriver} onValueChange={setDlqDriver}>
                 <SelectTrigger className="h-8 w-36 text-xs">
                   <SelectValue />

@@ -1,17 +1,17 @@
 /**
- * Wizard dirty-draft predicates (C-A2).
+ * Wizard dirty-draft predicates.
  *
  * The generic WizardDialog guards every dismiss path (Cancel button, Esc,
  * X, overlay click) behind the shared DiscardChangesDialog when — and only
  * when — the current draft contains unsaved input. The predicates below
  * decide that for each admin wizard:
  *
- *  - EDIT mode: the draft is dirty when it diverges from the pre-filled
- *    entity it was opened with (opening a wizard and cancelling without
- *    touching anything must stay friction-free).
- *  - CREATE mode: the draft is dirty once the user has made any meaningful
- *    choice — advanced past the first step, or entered/selected anything
- *    on it.
+ * - EDIT mode: the draft is dirty when it diverges from the pre-filled
+ * entity it was opened with (opening a wizard and cancelling without
+ * touching anything must stay friction-free).
+ * - CREATE mode: the draft is dirty once the user has made any meaningful
+ * choice — advanced past the first step, or entered/selected anything
+ * on it.
  *
  * Pure functions so they are unit-testable without rendering the wizards;
  * the wizards simply forward their current state. Layering: types ← lib.

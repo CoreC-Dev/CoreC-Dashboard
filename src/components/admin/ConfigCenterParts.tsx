@@ -1,13 +1,12 @@
 /**
  * Shared toolbar + status sub-components for the Config Center page.
  *
- * Extracted from ConfigCenterPage.tsx (TD-CPLX-001) as pure/presentational
- * pieces — each receives its data and callbacks via props and owns no business
- * state. No behavior changes: identical CSS classes, i18n keys, and structure.
- * None of these import from `@/features/*` (layer rule: components ← features
- * is forbidden), so the feature-owned structured editors stay composed in the
- * page itself. Form-mode cards live in ConfigCenterForm.tsx and YAML-mode
- * cards in ConfigCenterYaml.tsx.
+ * Pure/presentational pieces — each receives its data and callbacks via
+ * props and owns no business state. None of these import from
+ * `@/features/*` (layer rule: components ← features is forbidden), so the
+ * feature-owned structured editors stay composed in the page itself.
+ * Form-mode cards live in ConfigCenterForm.tsx and YAML-mode cards in
+ * ConfigCenterYaml.tsx.
  */
 import {
   CloudDownload,
@@ -87,7 +86,7 @@ export const ComponentList: React.FC<{
 
 /**
  * Transient success/error notice. Renders nothing when there is no message.
- * D-17: delegates to the shared OperationResult strip — same visuals the
+ * Delegates to the shared OperationResult strip — same visuals the
  * detail pages show, plus a manual close. The auto-fade stays disabled
  * here (autoDismissMs={0}) because the page's useStatusMessage hook owns
  * the 4s state clearing; the strip's local hide covers the close button.

@@ -3,15 +3,15 @@ import { useEffect, useState } from 'react'
 /**
  * sessionStorage-backed set of dead-letter keys the operator has cleared.
  *
- * Extracted from WriteControlPage (TD-CPLX-007). CoreC exposes no DELETE
+ * CoreC exposes no DELETE
  * endpoint for dead letters, so "Clear All" is a client-side hide. Without
- * persistence the cleared set was lost on unmount/refresh, so cleared entries
- * reappeared. [L-5]
+ * persistence the cleared set would be lost on unmount/refresh and the
+ * cleared entries would reappear.
  */
 
 const DLQ_CLEARED_KEY = 'corec_dlq_cleared'
 // Cap the persisted cleared-key set so sessionStorage cannot grow unbounded
-// (TD-PERF-012). Set preserves insertion order, so the oldest entries are
+//. Set preserves insertion order, so the oldest entries are
 // dropped first when the cap is exceeded.
 const MAX_CLEARED_DLQ_KEYS = 200
 
@@ -26,11 +26,11 @@ export function useClearedDlqKeys() {
     return new Set()
   })
 
-  // Persist cleared keys to sessionStorage whenever they change. [L-5]
+  // Persist cleared keys to sessionStorage whenever they change.
   useEffect(() => {
     try {
       // Cap to the most recent MAX_CLEARED_DLQ_KEYS entries before persisting
-      // (TD-PERF-012).
+      //.
       const arr = [...clearedDlqKeys]
       const toStore = arr.length > MAX_CLEARED_DLQ_KEYS ? arr.slice(-MAX_CLEARED_DLQ_KEYS) : arr
       sessionStorage.setItem(DLQ_CLEARED_KEY, JSON.stringify(toStore))

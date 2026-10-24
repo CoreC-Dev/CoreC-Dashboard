@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// C-A8 regression: the runtime empty state used to send the operator to
+// Regression: the runtime empty state used to send the operator to
 // edit YAML while the page's own Create button sat unused in the corner.
 // The empty card now carries the honest copy and a working Create button.
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -49,7 +49,7 @@ afterEach(() => {
   useConfigStore.getState().reset()
 })
 
-describe('drivers empty state (C-A8)', () => {
+describe('drivers empty state', () => {
   it('shows the honest copy with a working Create button that opens the wizard', async () => {
     useConfigStore.setState({
       workingConfig: { drivers: [] },

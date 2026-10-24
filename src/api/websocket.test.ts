@@ -4,7 +4,7 @@ import { resetProxyMode, setProxyMode } from '@/api/proxyMode'
 import { CoreCWebSocket, type WSStatus } from '@/api/websocket'
 
 /**
- * TD-TEST-004 — CoreCWebSocket behavior.
+ * CoreCWebSocket behavior.
  *
  * Covers: sliding-window rate limiting (>500 msg/s drops), exponential backoff
  * with ±20% jitter, maxRetries=10 → 'rejected', upgrade-rejection detection
@@ -106,7 +106,7 @@ afterEach(() => {
   setActiveConnection(null)
 })
 
-describe('CoreCWebSocket — TD-TEST-004', () => {
+describe('CoreCWebSocket', () => {
   describe('sliding-window rate limiting', () => {
     it('delivers up to maxMsgPerSec (500) per second and drops the rest', () => {
       const onMessage = vi.fn()
@@ -285,7 +285,7 @@ describe('CoreCWebSocket — TD-TEST-004', () => {
     })
   })
 
-  describe('reconnect() — controlled manual retry after rejected (B01)', () => {
+  describe('reconnect() — controlled manual retry after rejected', () => {
     it('is a no-op when a socket is already open', () => {
       const client = new CoreCWebSocket('/test', {}, vi.fn())
       const inst = MockWebSocket.last()
@@ -375,7 +375,7 @@ describe('CoreCWebSocket — TD-TEST-004', () => {
     })
   })
 
-  describe('onDrop — rate-limit visibility (B01)', () => {
+  describe('onDrop — rate-limit visibility', () => {
     it('reports dropped frames to the onDrop callback instead of dropping silently', () => {
       const onMessage = vi.fn()
       const onDrop = vi.fn()

@@ -4,26 +4,26 @@ import { safePersist, safeRead } from '@/lib/storage'
 import type { Alert, AlertEvent, LogEvent } from '@/types/models'
 
 /**
- * alertStore — instance-level alert state (audit B02).
+ * alertStore — instance-level alert state.
  *
  * The /logs subscription moved out of AlertsPage into a global provider
  * (components/layout/AlertStreamProvider, mounted by AppShell), so alerts
  * are heard/shown on EVERY route. This store is the shared state between
  * them:
  *
- *  - `events`: the bounded warn/error feed (cap 50, same merge order and
- *    cap the page's old local buffer used) — AlertsPage renders it, so the
- *    page no longer opens its own /logs socket (subscription dedupe).
- *  - `unreadErrorCount`: error-level (level ≥ 8) events received while the
- *    AlertsPage was NOT open — the sidebar badge's count ("未读告警").
- *    Opening the page marks them seen (reset to 0).
- *  - `deadLetterCount`: DLQ size, polled by the provider via the shared
- *    ['deadLetters'] react-query — the badge shows it as a fallback count
- *    when there are no unread errors ("deadLetters>0 … 显示红色计数").
- *  - sound/notification preferences: persisted under the SAME legacy keys
- *    and '1'/'0' encoding the AlertsPage toggle always used
- *    (corec_alert_sound / corec_alert_notification) — existing users'
- *    settings carry over unchanged (compatible migration by construction).
+ * - `events`: the bounded warn/error feed (cap 50, same merge order and
+ * cap the page's old local buffer used) — AlertsPage renders it, so the
+ * page no longer opens its own /logs socket (subscription dedupe).
+ * - `unreadErrorCount`: error-level (level ≥ 8) events received while the
+ * AlertsPage was NOT open — the sidebar badge's count ("未读告警").
+ * Opening the page marks them seen (reset to 0).
+ * - `deadLetterCount`: DLQ size, polled by the provider via the shared
+ * ['deadLetters'] react-query — the badge shows it as a fallback count
+ * when there are no unread errors ("deadLetters>0 … 显示红色计数").
+ * - sound/notification preferences: persisted under the SAME legacy keys
+ * and '1'/'0' encoding the AlertsPage toggle always used
+ * (corec_alert_sound / corec_alert_notification) — existing users'
+ * settings carry over unchanged (compatible migration by construction).
  */
 
 const SOUND_KEY = 'corec_alert_sound'
@@ -40,7 +40,7 @@ interface AlertState {
   /** Warn/error events (level ≥ 4), newest first, capped at MAX_ALERT_EVENTS. */
   events: LogEvent[]
   /**
-   * Active rule alerts from the engine registry (audit OBS-4/HUB-6),
+   * Active rule alerts from the engine registry,
    * hydrated by GET /alerts and kept current by WS /alerts/stream.
    * Oldest-first, mirroring the backend's order.
    */
@@ -52,7 +52,7 @@ interface AlertState {
   /** True while AlertsPage is mounted — events arriving are "being seen". */
   viewing: boolean
   soundEnabled: boolean
-  /** Warning-level (4–7) events get their own audible layer (B19). */
+  /** Warning-level (4–7) events get their own audible layer. */
   warningSoundEnabled: boolean
   notificationsEnabled: boolean
   /** Merge a flushed batch of events (called once per rAF by the provider). */

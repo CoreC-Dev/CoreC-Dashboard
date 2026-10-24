@@ -3,17 +3,17 @@
  * to finish before rendering children. Shows a loading state while
  * connecting, or a failure screen if the connection failed.
  *
- * D-05: the failure line shows the TRANSLATED probe verdict — the context
+ * The failure line shows the TRANSLATED probe verdict — the context
  * classifies failures into kinds (unauthorized/unreachable/timeout, and the
  * missing-instance case) and resolves the language-pack keys itself; the
  * technical detail (which endpoint/address was probed) is demoted into a
  * collapsed "technical details" fold so it stays available without being
  * the headline.
  *
- * D-15: the failure screen used to be a dead end — one red line and Retry,
+ * The failure screen used to be a dead end — one red line and Retry,
  * no shell, no way back, so an operator with a bad API key was stuck unless
  * they knew to hit the browser back button. It now carries the instance
- * name, a retry, "edit this instance" (homepage edit dialog via ?edit=),
+ * name, a retry, "edit this instance" (homepage edit dialog via?edit=),
  * and "back to instances".
  */
 import type React from 'react'

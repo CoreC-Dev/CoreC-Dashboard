@@ -70,7 +70,7 @@ export const TransportsPage: React.FC = () => {
     onApplySuccess: () => queryClient.invalidateQueries({ queryKey: ['transports'] }),
   })
 
-  // D-16/X4: Create stays disabled (and the block visible) while the
+  // Create stays disabled (and the block visible) while the
   // server config has never been loaded.
   const { seedBlocked } = useAutoLoadConfig()
 
@@ -92,7 +92,7 @@ export const TransportsPage: React.FC = () => {
 
   const configTransports = workingConfig?.transports ?? []
   const filteredConfigTransports = filterEntities(configTransports, searchQuery)
-  // C-A6: one page-header search bar covers BOTH zones — runtime cards
+  // One page-header search bar covers BOTH zones — runtime cards
   // match name/type/connection summary too.
   const showSearch = configTransports.length + transports.length > 6
   const filteredRuntimeTransports = filterEntities(transports, searchQuery, (tr) =>
@@ -103,7 +103,7 @@ export const TransportsPage: React.FC = () => {
   // the operator is warned before removing a dependency. A rule depends on
   // a transport if its `target` matches (forward/alert) or its `targets`
   // array includes the transport name (mirror).
-  // C-A13: the scan covers the working ∪ saved rule sets — a rule created
+  // The scan covers the working ∪ saved rule sets — a rule created
   // seconds ago (not yet applied) is exactly the dependency the operator
   // would be surprised to break at apply time.
   const dependentRules = deleteTarget
@@ -155,7 +155,7 @@ export const TransportsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* D-16 — config seed failed/loading: explain why Create is disabled */}
+      {/* Config seed failed/loading: explain why Create is disabled */}
       <SeedBlockedBanner />
 
       {/* Unsaved changes banner */}
@@ -402,7 +402,7 @@ export const TransportsPage: React.FC = () => {
         existingTransport={editingTransport}
       />
 
-      {/* Delete Confirmation — lists dependent rules (C-A13 scan surface) */}
+      {/* Delete Confirmation — lists dependent rules (dependent-rules scan surface) */}
       <DeleteEntityConfirm
         open={!!deleteTarget}
         onOpenChange={(open) => !open && setDeleteTarget(null)}

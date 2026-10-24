@@ -81,7 +81,7 @@ const AlertDialogDescription = React.forwardRef<
 AlertDialogDescription.displayName = AlertDialogPrimitive.Description.displayName
 
 /**
- * D-18/D-19: lossy confirmations (discard changes, delete, clear…) pass
+ * Lossy confirmations (discard changes, delete, clear…) pass
  * `variant="destructive"` instead of hand-writing bg-destructive classes
  * — one spelling for the red confirm across the app, and it can never
  * silently regress to the default (primary-colored) "OK" look that made

@@ -4,11 +4,11 @@ import { safePersist, safeRead } from '@/lib/storage'
 
 import type { CoreCInstance } from '@/types/models'
 
-// Re-export for backward compat (TD-ARCH-006 — canonical location is types/models.ts).
+// Re-export for backward compat (canonical location is types/models.ts).
 export type { CoreCInstance }
 
 /**
- * Zod schema for validating imported instances (TD-SEC-011).
+ * Zod schema for validating imported instances.
  * Strips unknown keys (zod default) so cached fields like lastKnownInfo
  * are silently dropped. Requires valid baseUrl (http/https) and non-empty
  * id/name. Secret is optional (stripped exports omit it).
@@ -29,7 +29,7 @@ const importInstanceSchema = z.object({
   lastConnectedAt: z.string().optional(),
 })
 
-/** Reject objects containing prototype-polluting keys (TD-SEC-009). */
+/** Reject objects containing prototype-polluting keys. */
 const PROTO_KEYS = new Set(['__proto__', 'constructor', 'prototype'])
 function rejectProtoKeys(obj: unknown): void {
   if (typeof obj !== 'object' || obj === null) return
@@ -44,7 +44,7 @@ function rejectProtoKeys(obj: unknown): void {
 }
 
 /**
- * Probe failure kinds (A-01): an invalid API key and an unreachable server
+ * Probe failure kinds: an invalid API key and an unreachable server
  * lead the operator down completely different repair paths (fix the secret
  * vs fix the address/network), so probes must record which one happened.
  */
@@ -63,7 +63,7 @@ export const PROBE_ERROR_I18N_KEYS: Record<ProbeErrorKind, string> = {
 }
 
 /**
- * Outcome of an importInstances call (A-09): the previously single
+ * Outcome of an importInstances call: the previously single
  * "skipped" counter conflated two very different stories ("this entry is
  * a duplicate" vs "this entry is not a valid instance at all") and parse
  * failures were reported as "added 0, skipped 0" — both lies. The counts
@@ -89,7 +89,7 @@ interface InstanceState {
   /**
    * True when the last persist to localStorage FAILED (quota exceeded /
    * private mode / storage disabled) — the in-memory list will be lost on
-   * refresh. Surfaced as a visible warning instead of silent data loss (A-11).
+   * refresh. Surfaced as a visible warning instead of silent data loss.
    */
   persistFailed: boolean
 
@@ -160,7 +160,7 @@ function loadSecrets(): Record<string, string> {
 
 /**
  * Persist metadata + secrets to localStorage. Returns false when either
- * write failed (A-11) so callers can flag `persistFailed` and the UI can
+ * write failed so callers can flag `persistFailed` and the UI can
  * warn about the data being lost on refresh.
  */
 function persistInstances(instances: CoreCInstance[]): boolean {
@@ -272,7 +272,7 @@ export const useInstanceStore = create<InstanceState>((set, get) => ({
       if (!Array.isArray(raw)) throw new Error('Not an array')
       rejectProtoKeys(raw)
     } catch {
-      // The payload itself is unusable (A-09): report it as such instead
+      // The payload itself is unusable: report it as such instead
       // of "added 0, skipped 0" — which reads as a mysterious non-event.
       return { added: 0, skipped: 0, invalid: 0, parseError: true }
     }
@@ -286,8 +286,8 @@ export const useInstanceStore = create<InstanceState>((set, get) => ({
     let invalid = 0
     const next = [...existing]
     for (const item of raw) {
-      // Validate with zod — strips unknown keys, rejects invalid shapes (TD-SEC-011).
-      // A per-entry validation failure is NOT a duplicate skip (A-09).
+      // Validate with zod — strips unknown keys, rejects invalid shapes.
+      // A per-entry validation failure is NOT a duplicate skip.
       const parsed = importInstanceSchema.safeParse(item)
       if (!parsed.success) {
         invalid++

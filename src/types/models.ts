@@ -21,7 +21,7 @@ export interface WriteCommand {
   value: unknown
   type: DataTypeString | number
   /**
-   * Optional escape hatch (audit DRV-1): when true the backend writes the
+   * Optional escape hatch: when true the backend writes the
    * device-side raw representation as-is, skipping the scale/offset
    * inversion. Default false — UI flows send engineering values.
    */
@@ -71,8 +71,8 @@ export interface RuleStat {
   miss_at: string
   /**
    * Match-expression EVALUATION failures (e.g. value > 90 against a
-   * string). Non-zero means the rule never matches on those points and
-   * previously gave no signal at all (backend audit PIPE-3/RULE-2).
+   * string). Non-zero means the rule never matches on those points —
+   * without these counters the silent no-match would be invisible.
    */
   eval_errors: number
   eval_at: string

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-// DashboardPage — B-domain audit fixes (B03 dead-letter card honesty, B04
-// stale-snapshot banner, B05 online-ratio coloring). The endpoint layer is
+// DashboardPage — dead-letter card honesty, stale-snapshot banner,
+// online-ratio coloring. The endpoint layer is
 // mocked; the REAL react-query hooks run inside a real QueryClient so
 // polling/error semantics are exercised. i18n forced to English.
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -124,7 +124,7 @@ afterEach(() => {
   cleanup()
 })
 
-describe('DashboardPage — dead-letter card honesty (B03)', () => {
+describe('DashboardPage — dead-letter card honesty', () => {
   it('names the card after what it shows and lures to the alerts page with the current error-event count', async () => {
     useAlertStore.setState({
       events: [
@@ -142,7 +142,7 @@ describe('DashboardPage — dead-letter card honesty (B03)', () => {
     expect(badge.closest('a')?.getAttribute('href')).toContain('/corec/inst1/monitor/alerts')
   })
 
-  it('the row-5 header link reads "View All" and points at the alerts page (B14)', async () => {
+  it('the row-5 header link reads "View All" and points at the alerts page', async () => {
     renderPage()
 
     expect(await screen.findByText('Dead Letter Queue (failed writes)')).toBeTruthy()
@@ -178,7 +178,7 @@ describe('DashboardPage — dead-letter card honesty (B03)', () => {
   })
 })
 
-describe('DashboardPage — stale snapshot instead of page collapse (B04)', () => {
+describe('DashboardPage — stale snapshot instead of page collapse', () => {
   it('keeps the last good data and shows a retry banner when a refresh fails', async () => {
     const { qc } = renderPage()
     expect(await screen.findByText('Dead Letter Queue (failed writes)')).toBeTruthy()
@@ -238,7 +238,7 @@ describe('DashboardPage — stale snapshot instead of page collapse (B04)', () =
   })
 })
 
-describe('DashboardPage — sample-rate honesty (B12)', () => {
+describe('DashboardPage — sample-rate honesty', () => {
   it('renders the fractional points/sec verbatim instead of rounding it away', async () => {
     // jsdom's rAF timestamps come from a clock offset seconds away from
     // performance.now(), which corrupts the eased mid-animation values — so
@@ -257,7 +257,7 @@ describe('DashboardPage — sample-rate honesty (B12)', () => {
   })
 })
 
-describe('DashboardPage — status honesty (B13)', () => {
+describe('DashboardPage — status honesty', () => {
   it('renders a missing status as amber "Unknown", never a green "running" claim', async () => {
     vi.mocked(api.getStats).mockResolvedValue({ ...STATS, status: '' })
 
@@ -279,7 +279,7 @@ describe('DashboardPage — status honesty (B13)', () => {
   })
 })
 
-describe('DashboardPage — online-ratio coloring (B05)', () => {
+describe('DashboardPage — online-ratio coloring', () => {
   const toneClassOf = (el: HTMLElement) => el.className
 
   it('100% online renders green with the "100% online" label', async () => {

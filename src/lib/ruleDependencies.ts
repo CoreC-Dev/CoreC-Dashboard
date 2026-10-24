@@ -1,5 +1,5 @@
 /**
- * Rule → driver dependency scan (UX audit C-A3).
+ * Rule → driver dependency scan.
  *
  * Rules reference drivers only through their match DSL — there is no
  * structural `source` field — so "which rules lose their data source
@@ -142,7 +142,7 @@ export function rulesDependingOnDriver(input: DriverDependencyInput): RuleConfig
 /**
  * Does a match expression's driver clause single out `driverName` (==,
  * contains, =~ — the same clause semantics as the full dependency scan)?
- * Exported for the topology page's hover flow (C-E4): hovering a driver
+ * Exported for the topology page's hover flow: hovering a driver
  * highlights the runtime rules (and their target transports) whose DSL
  * consumes that driver.
  */

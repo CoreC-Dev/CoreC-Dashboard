@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
-// TD-TEST-005 — ConnectionProvider probe lifecycle: success, failure-kind
-// classification (A-01: unauthorized vs unreachable vs timeout), instance-
+// ConnectionProvider probe lifecycle: success, failure-kind
+// classification (unauthorized vs unreachable vs timeout), instance-
 // not-found, unmount cleanup (AbortError), reconnect(), global 401
-// interception with the re-enter-key overlay (D-01), and the 15s periodic
-// re-probe (A-21).
+// interception with the re-enter-key overlay, and the 15s periodic
+// re-probe.
 //
 // The probe hits the authenticated /stats endpoint through the real
 // apiRequest, so tests mock global fetch and dispatch on URL:
@@ -161,7 +161,7 @@ function FailingQueryChild() {
   return <div data-testid="failing-child" />
 }
 
-describe('ConnectionProvider (TD-TEST-005)', () => {
+describe('ConnectionProvider', () => {
   it('successful probe requests /stats with the Bearer token and sets connected', async () => {
     setInstances([instance])
     mockProbe()
@@ -176,13 +176,13 @@ describe('ConnectionProvider (TD-TEST-005)', () => {
     expect(serverInfoName()).toBe('test')
     expect(useInstanceStore.getState().probeErrors['inst-1']).toBeNull()
 
-    // A-01: the probe is authenticated — the Bearer token travels with the
+    // The probe is authenticated — the Bearer token travels with the
     // verdict request, so a wrong key can no longer pass as "connected".
     const [, init] = statsCall()
     expect(new Headers(init?.headers).get('Authorization')).toBe('Bearer secret-1')
   })
 
-  it('a 401 from /stats enters the auth-expired overlay state (D-01)', async () => {
+  it('a 401 from /stats enters the auth-expired overlay state', async () => {
     setInstances([instance])
     mockProbe({ stats: jsonRes({ error: 'unauthorized' }, 401) })
 
@@ -242,13 +242,13 @@ describe('ConnectionProvider (TD-TEST-005)', () => {
     expect(serverInfoName()).toBe('')
   })
 
-  it('missing instance reports the localized not-found error (D-05)', async () => {
+  it('missing instance reports the localized not-found error', async () => {
     setInstances([])
 
     renderProvider()
 
     await waitFor(() => {
-      // D-05: ConnectionGate renders `error` verbatim — it must be a
+      // ConnectionGate renders `error` verbatim — it must be a
       // translated string, not raw English.
       expect(errorText()).toBe(i18n.t('connection.errInstance'))
     })
@@ -309,7 +309,7 @@ describe('ConnectionProvider (TD-TEST-005)', () => {
   })
 })
 
-describe('ConnectionProvider — global 401 interception (D-01)', () => {
+describe('ConnectionProvider — global 401 interception', () => {
   /**
    * Child whose query is answered with 401 shortly AFTER the session is
    * established — mirroring the real mid-session scenario (key rotated or
@@ -411,7 +411,7 @@ describe('ConnectionProvider — global 401 interception (D-01)', () => {
   })
 })
 
-describe('ConnectionProvider — periodic re-probe (A-21)', () => {
+describe('ConnectionProvider — periodic re-probe', () => {
   it('re-probes every 15s so the indicator follows the backend state', async () => {
     vi.useFakeTimers()
     setInstances([instance])

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// TagRow — pure presentational row for the virtualized tag table. B06: the
+// TagRow — pure presentational row for the virtualized tag table. The
 // device cell must render the sub-device (or '-') so same-name tags on
 // different devices are distinguishable. i18n forced to English.
 import { cleanup, render, screen } from '@testing-library/react'
@@ -31,7 +31,7 @@ afterEach(() => {
   cleanup()
 })
 
-describe('TagRow — device column (B06)', () => {
+describe('TagRow — device column', () => {
   it('renders the sub-device in the dedicated device cell', () => {
     render(
       <table>
@@ -79,7 +79,7 @@ describe('TagRow — device column (B06)', () => {
   })
 })
 
-describe('TagRow — honest timestamps (B15)', () => {
+describe('TagRow — honest timestamps', () => {
   // Pin the clock: the point timestamp and the expected title are both
   // derived from Date.now(); without freezing it, a second boundary between
   // the two evaluations flipped the assertion ~1/1177 runs (A-domain
@@ -121,7 +121,7 @@ describe('TagRow — honest timestamps (B15)', () => {
   })
 })
 
-describe('TagRow — narrow-screen columns (B24)', () => {
+describe('TagRow — narrow-screen columns', () => {
   it('hides the group and type cells below md, matching the header', () => {
     const { container } = render(
       <table>
@@ -144,7 +144,7 @@ describe('TagRow — narrow-screen columns (B24)', () => {
   })
 })
 
-describe('TagRow — direction is information, not an alarm color (B25)', () => {
+describe('TagRow — direction is information, not an alarm color', () => {
   // jsdom ships no Web Animations API — stub el.animate so the flash
   // effect runs its real state logic without the actual tween.
   beforeEach(() => {

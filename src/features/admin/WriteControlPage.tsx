@@ -77,7 +77,7 @@ export const WriteControlPage: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [replayError, setReplayError] = useState<string | null>(null)
   const [pendingCmd, setPendingCmd] = useState<WriteCommand | null>(null)
-  // Dead-letter context when the staged command is a REPLAY request (C-C1):
+  // Dead-letter context when the staged command is a REPLAY request:
   // the confirm dialog then also lists when/why the original write failed.
   const [pendingReplay, setPendingReplay] = useState<DeadLetterEntry | null>(null)
   const [confirmOpen, setConfirmOpen] = useState(false)
@@ -177,7 +177,7 @@ export const WriteControlPage: React.FC = () => {
     }
   }
 
-  // C-C1: a dead letter's last write already FAILED — its value may be
+  // A dead letter's last write already FAILED — its value may be
   // stale. The replay button therefore only STAGES the command in the SAME
   // confirmation dialog the manual write uses (listing the command plus
   // when/why it failed); the write fires only from the explicit
@@ -311,9 +311,9 @@ export const WriteControlPage: React.FC = () => {
             </div>
           )}
 
-          {/* Dead-letter context (replay requests only, C-C1): the command
-              already failed once — show when it failed, how many retries
-              were exhausted, and the recorded error before re-sending. */}
+          {/* Dead-letter context (replay requests only): the command
+               already failed once — show when it failed, how many retries
+               were exhausted, and the recorded error before re-sending. */}
           {pendingReplay && (
             <div className="rounded-lg border border-status-error/20 bg-status-error/5 p-3 space-y-1.5 text-xs">
               <div className="text-status-error">

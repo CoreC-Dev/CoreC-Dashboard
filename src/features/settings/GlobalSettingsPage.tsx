@@ -145,16 +145,16 @@ export const GlobalSettingsPage: React.FC = () => {
         </section>
       </main>
 
-      {/* Import dialog — A-14: the settings page used to offer only a bare
-          textarea while the homepage had drag & drop + file browse for the
-          exact same operation. One shared component now serves both. */}
+      {/* Import dialog — The settings page used to offer only a bare
+           textarea while the homepage had drag & drop + file browse for the
+           exact same operation. One shared component now serves both. */}
       <InstanceImportDialog open={importOpen} onOpenChange={setImportOpen} />
 
-      {/* Clear all dialog — D-07: the most destructive action in the app used
-          a plain Dialog (a stray outside click dismisses/defuses it) and its
-          confirm button repeated the trigger's exact wording. Aligned with
-          the admin domain's AlertDialog discipline: cannot be dismissed by
-          accident, and the confirm key states the consequence. */}
+      {/* Clear all dialog — The most destructive action in the app used
+           a plain Dialog (a stray outside click dismisses/defuses it) and its
+           confirm button repeated the trigger's exact wording. Aligned with
+           the admin domain's AlertDialog discipline: cannot be dismissed by
+           accident, and the confirm key states the consequence. */}
       <AlertDialog open={clearOpen} onOpenChange={setClearOpen}>
         <AlertDialogContent className="sm:max-w-[400px]">
           <AlertDialogHeader>

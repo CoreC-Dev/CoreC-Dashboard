@@ -95,7 +95,7 @@ describe('settingsRegistry — buildDefaultSettings', () => {
   })
 })
 
-// ─── TD-TEST-016: field metadata coverage across all types ──────────
+// ─── Field metadata coverage across all types ────────────────────────
 
 describe('settingsRegistry — field metadata (all driver types)', () => {
   it('every driver type resolves a registry with at least one group', () => {
@@ -232,7 +232,7 @@ describe('settingsRegistry — buildDefaultSettings (all types)', () => {
   })
 })
 
-// ─── D-23: registry i18n key integrity ────────────────────────────────
+// ─── Registry i18n key integrity ────────────────────────────────
 // Registry fields reference i18n keys as raw strings; a key pointing at a
 // wrong/non-existent namespace renders the literal key as UI copy (the
 // driver edit form showed "settings.tagsFileHelp" because the text lives
@@ -264,7 +264,7 @@ function collectFields(source: TypeFieldRegistry | SettingsField[]): SettingsFie
   return fields
 }
 
-describe('settingsRegistry — i18n key integrity (D-23)', () => {
+describe('settingsRegistry — i18n key integrity', () => {
   const I18N_KEY_RE = /^[\w-]+\.[\w.-]+$/
   const zhKeys = new Set(flattenJsonKeys(zhCN))
   const enKeys = new Set(flattenJsonKeys(en))

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// C-A13 regression: the transport delete scan must warn about rules that
+// Regression: the transport delete scan must warn about rules that
 // reference the transport as a target — including rules that exist only in
 // the working config (created, not yet applied). The scan used to read the
 // saved config only, so a freshly-created pending rule silently became a
@@ -43,7 +43,7 @@ const WORKING: CoreCConfig = {
   transports: [MQTT_OUT],
   rules: [
     // Pending rule: created in the working config, not yet applied — the
-    // delete scan must warn about it too (working ∪ saved, C-A13).
+    // delete scan must warn about it too (working ∪ saved).
     { name: 'pending-fwd', match: 'ALL', action: 'forward', priority: 100, target: 'mqtt-out' },
   ],
 }
@@ -79,7 +79,7 @@ afterEach(() => {
   useConfigStore.getState().reset()
 })
 
-describe('TransportsPage delete confirmation — dependent rules (C-A13)', () => {
+describe('TransportsPage delete confirmation — dependent rules', () => {
   it('lists pending working-config rules that reference the transport', async () => {
     render(wrap(<TransportsPage />))
 

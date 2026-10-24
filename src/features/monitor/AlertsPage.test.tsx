@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-// AlertsPage — after B02 the page renders the GLOBAL alert feed and owns no
-// /logs subscription. These tests pin the migration invariants: the page
+// AlertsPage — the page renders the GLOBAL alert feed and owns no
+// /logs subscription. These tests pin the invariants: the page
 // mounts ZERO WebSockets (the instance-level provider owns the only one),
 // renders the shared store's events, honors filters, and writes the sound /
 // notification preference toggles through the store's legacy-persisted keys.
@@ -69,7 +69,7 @@ afterEach(() => {
   cleanup()
 })
 
-describe('AlertsPage — subscription dedupe (B02)', () => {
+describe('AlertsPage — subscription dedupe', () => {
   it('opens NO /logs socket of its own — the global provider owns the only one', () => {
     renderPage()
     expect(socketInstances).toHaveLength(0)
@@ -119,7 +119,7 @@ describe('AlertsPage — shared feed rendering', () => {
     expect(screen.getByText(/fatal write failure/)).toBeTruthy()
   })
 
-  it('renders the event age relatively and dims old feed entries (B15)', () => {
+  it('renders the event age relatively and dims old feed entries', () => {
     // Freeze the clock so the event timestamp and the expected hover title
     // derive from the same instant (second-boundary flake, A-domain report).
     vi.useFakeTimers()
@@ -144,7 +144,7 @@ describe('AlertsPage — shared feed rendering', () => {
   })
 })
 
-describe('AlertsPage — error-stream KPI honesty (B18)', () => {
+describe('AlertsPage — error-stream KPI honesty', () => {
   it('labels the big number as the bounded feed watermark, not a lifetime total', () => {
     useAlertStore.setState({
       events: [evt(8, 'first failure'), evt(4, 'second warning'), evt(8, 'third failure')],
@@ -180,7 +180,7 @@ describe('AlertsPage — preference toggles (kept here, honored globally)', () =
   })
 })
 
-describe('AlertsPage — notification permission honesty (B09)', () => {
+describe('AlertsPage — notification permission honesty', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
   })

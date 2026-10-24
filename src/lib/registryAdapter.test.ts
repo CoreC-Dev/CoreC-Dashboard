@@ -91,13 +91,13 @@ describe('registryToEditFields', () => {
     expect(keys).toContain('flush-interval')
   })
 
-  // ─── Known divergences (documented for Batch I migration) ──────────
+  // ─── Documented divergences the registry adopted (per ADR-009) ─────
 
   it('DOCUMENTED: registry has reconnect fields that detail arrays lack for some drivers', () => {
     // The registry includes reconnect-interval, reconnect-max-interval,
-    // max-reconnect-failures for every driver. The detail page arrays only
-    // include them for modbus-tcp. Full migration will ADD these fields
-    // to modbus-tls, modbus-rtu, s7, opcua edit forms (behavior change).
+    // max-reconnect-failures for every driver. The pre-registry forms
+    // showed them only for modbus-tcp — the registry exposing them
+    // everywhere is a documented behavior change (ADR-009).
     for (const type of ['modbus-tls', 'modbus-rtu', 's7', 'opcua']) {
       const registry = getDriverFieldRegistry(type)!
       const fields = registryToEditFields(registry)
@@ -106,9 +106,9 @@ describe('registryToEditFields', () => {
   })
 
   it('DOCUMENTED: OPCUA registry has 4 security-policy options (detail page has 6)', () => {
-    // Detail page exposes 6 options including Basic128Rsa15 and Basic256.
-    // Registry has 4. Migration will DROP 2 options (behavior change).
-    // Batch I must decide which set is correct.
+    // The registry's 4-option set is deliberate — Basic128Rsa15 and
+    // Basic256 were dropped when the registry became the single source
+    // (documented behavior change, ADR-009).
     const registry = getDriverFieldRegistry('opcua')!
     const fields = registryToEditFields(registry)
     const securityPolicy = fields.find((f) => f.key === 'security-policy')
@@ -116,16 +116,16 @@ describe('registryToEditFields', () => {
   })
 
   it('DOCUMENTED: modbus-tls registry port default is 802 (detail page placeholder is 502)', () => {
-    // The detail page shows port placeholder '502' (wrong for TLS).
-    // Registry has default 802 (correct). Migration will fix this
-    // placeholder (behavior change, but arguably a bug fix).
+    // 802 is the correct default port for modbus-tls (the pre-registry
+    // placeholder 502 is plain Modbus). Assert the registry's value
+    // flows through the adapter.
     const registry = getDriverFieldRegistry('modbus-tls')!
     const fields = registryToEditFields(registry)
     const port = fields.find((f) => f.key === 'port')
     expect(port?.placeholder).toBe('802')
   })
 
-  // ─── Single-source migration parity (TD-ARCH-011 / TD-DUP-001) ──────
+  // ─── Single-source parity: every registry field flows through the adapter ─
 
   it('every driver registry field is tagged with a group (settings|top)', () => {
     for (const type of ['modbus-tcp', 'modbus-rtu', 'modbus-tls', 's7', 'opcua']) {
@@ -217,9 +217,9 @@ describe('registryToEditFields', () => {
     for (const k of httpKeys) expect(httpAll.has(k)).toBe(true)
   })
 
-  // ─── Secret fields (C-A4) ────────────────────────────────────────────
+  // ─── Secret fields ────────────────────────────────────────────
 
-  it('maps registry password fields to the password kind — never plain text (C-A4)', () => {
+  it('maps registry password fields to the password kind — never plain text', () => {
     const mqtt = registryToEditFields(getTransportFieldRegistry('mqtt')!)
     expect(mqtt.find((f) => f.key === 'password')?.kind).toBe('password')
     // The username beside it stays a normal text field.

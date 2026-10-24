@@ -1,8 +1,8 @@
 /**
  * Notify Transport Settings Registry
  *
- * Extracted from settingsRegistryTransport.ts to stay under the 500-line
- * God-file limit (custom-lint.mjs MAX_LINES).
+ * Own module so settingsRegistryTransport.ts stays under the 500-line
+ * custom-lint limit (custom-lint.mjs MAX_LINES).
  */
 import type { TypeFieldRegistry } from '@/lib/settingsRegistryTypes'
 

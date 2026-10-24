@@ -84,7 +84,6 @@ export function validateRuleExpression(expr: string): ValidationResult {
   // parens, `tag == 'value in limit'` must not have `in` parsed as an
   // operator, and `tag =~ 'value in 50..'` must not false-positive on the
   // range check. Replace each single-quoted literal with a placeholder token.
-  // [H-5]
   const stripped = trimmed.replace(/'[^']*'/g, "''")
 
   // Check for balanced parentheses (on the stripped expression)
@@ -98,7 +97,7 @@ export function validateRuleExpression(expr: string): ValidationResult {
 
   // Check for valid field names (word before an operator) — run on the
   // stripped expression so field-like words inside string literals don't
-  // produce false "unknown field" warnings. [H-5]
+  // produce false "unknown field" warnings.
   // Pattern: word followed by operator
   const fieldOpPattern = /(\w+)\s*(==|!=|=~|!~|>|<|>=|<=|contains|suffix|prefix|in)\s*/g
   let match: RegExpExecArray | null
@@ -118,13 +117,13 @@ export function validateRuleExpression(expr: string): ValidationResult {
 
   // Check for double-quoted strings (CoreC DSL uses single quotes)
   // — run on `stripped` so double-quotes inside single-quoted literals (e.g.
-  // `tag == 'say "hi"'`) don't false-positive. [H-5]
+  // `tag == 'say "hi"'`) don't false-positive.
   if (/"[^"]*"/.test(stripped)) {
     warnings.push('double-quoted strings detected — CoreC DSL uses single quotes')
   }
 
   // Check for common typos in operators — run on `stripped` so the words
-  // "matchs"/"contain" inside string literals don't false-positive. [H-5]
+  // "matchs"/"contain" inside string literals don't false-positive.
   if (/\bmatchs\b/i.test(stripped)) {
     errors.push('typo: "matchs" → use "matches" (via =~ operator)')
   }
@@ -134,19 +133,19 @@ export function validateRuleExpression(expr: string): ValidationResult {
 
   // Check for incomplete range expressions (value in 50.. without upper bound)
   // — run on `stripped` so range-like text inside string literals (e.g.
-  // `tag == 'value in 50..'`) doesn't false-positive. [H-5]
+  // `tag == 'value in 50..'`) doesn't false-positive.
   if (/\bin\s+\d+\.\.\s*(?!\d)/.test(stripped)) {
     errors.push('incomplete range: "in A..B" requires both bounds (e.g. value in 50..100)')
   }
 
   // Check for dangling logical operators — run on `stripped` so operators
-  // inside single-quoted literals (e.g. `tag == ' &&)'`) don't false-positive. [H-5]
+  // inside single-quoted literals (e.g. `tag == ' &&)'`) don't false-positive.
   if (/(^|\s)(&&|\|\|)\s*($|\))/.test(stripped)) {
     errors.push('dangling logical operator (&& or ||) at end of expression')
   }
   // The START check is safe on `trimmed` — a literal can't put `&&` at
   // column 0 of the whole expression — but we run it on `stripped` too for
-  // consistency. [H-5]
+  // consistency.
   if (/^\s*(&&|\|\|)/.test(stripped)) {
     errors.push('expression starts with logical operator (&& or ||)')
   }

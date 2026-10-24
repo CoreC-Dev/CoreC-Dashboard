@@ -1,7 +1,6 @@
-// Driver quick-edit form + its private helpers, extracted from
-// DriverDetailPage (D2, quality audit 2026-10-21): field metadata comes from
-// the settings registry (single source of truth — TD-ARCH-011/TD-DUP-001)
-// via registryToEditFields. Behavior identical to the inline version.
+// Driver quick-edit form + its private helpers: field metadata comes from
+// the settings registry (single source of truth)
+// via registryToEditFields.
 import { dump } from 'js-yaml'
 import type React from 'react'
 import { useCallback, useMemo, useState } from 'react'
@@ -20,7 +19,7 @@ import type { DriverStatus } from '@/types/models'
 // Renders a collapsible form that lets operators edit a driver's southbound
 // connection parameters, preview the generated YAML and hot-reload it through
 // PUT /configs (useUpdateConfig). Field metadata is derived from the settings
-// registry (single source of truth — TD-ARCH-011/TD-DUP-001) via the
+// registry (single source of truth) via the
 // registryToEditFields adapter; no local field arrays are duplicated here.
 
 /** Resolve the edit fields for a driver type from the settings registry. */
@@ -30,7 +29,7 @@ function getDriverFields(type: string): readonly RegistryEditField[] {
 
 /** Serialize an existing config value into the string form the edit form uses.
  *  Objects are JSON-stringified (not `[object Object]`) so they round-trip
- *  correctly if a future driver field is a nested map. [C-2] */
+ *  correctly if a future driver field is a nested map. */
 function driverConfigValueToString(src: unknown): string {
   if (src === undefined || src === null) return ''
   if (typeof src === 'object') return JSON.stringify(src)
@@ -137,7 +136,7 @@ export const DriverEditConfigSection: React.FC<{ driver: DriverStatus }> = ({ dr
     failureKey: 'drivers.editConfig.reloadFailed',
   })
 
-  // C-A1: the reload button no longer PUTs directly — it opens the SAME
+  // The reload button no longer PUTs directly — it opens the SAME
   // ConfigApplyConfirmationDialog the list pages use (YAML diff + change
   // summary + engine-suspend warning). The PUT only fires from the dialog's
   // explicit confirm, and the dialog stays open showing the verbatim error

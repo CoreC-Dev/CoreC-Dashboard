@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 /**
- * useApplyConfig — D-16 guard coverage.
+ * useApplyConfig — seed-guard coverage.
  *
  * The shared form-mode apply flow (Drivers/Transports/Rules/Config pages)
  * must refuse to PUT /configs while the server config has never been
@@ -107,7 +107,7 @@ function mountApplyConfig() {
   return rendered
 }
 
-describe('useApplyConfig — D-16 guard', () => {
+describe('useApplyConfig — seed guard', () => {
   it('refuses to PUT while the server config failed to load', async () => {
     // Simulate a working config the user built without any server baseline
     // (e.g. seed failed and they clicked Create before the guard existed).

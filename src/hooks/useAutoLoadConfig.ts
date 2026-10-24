@@ -17,12 +17,12 @@ import { isSeedBlocked, useConfigStore } from '@/stores/configStore'
  * admin page is visited first.  It delegates to `configStore.seedFromServer`,
  * which is a no-op once both `workingConfig` and `savedConfig` are set.
  *
- * D-16 (P0): the hook is also isError-aware.  When the fetch fails (backend
+ * The hook is also isError-aware (P0).  When the fetch fails (backend
  * just restarted, transient 401, timeout) it records the failure in the
  * store (`seedStatus: 'failed'`), which blocks the destructive paths —
  * `resetToEmpty` refuses to start an empty config and `useApplyConfig`
- * refuses to PUT — until a retry succeeds.  The old behavior silently
- * skipped seeding, so the first "Create" wiped the control plane on Apply.
+ * refuses to PUT — until a retry succeeds.  Skipping seeding on error
+ * would let the first "Create" wipe the control plane on Apply.
  *
  * Returns the shared seed status so any admin page can render the failure
  * banner (「服务器配置加载失败，创建/应用已禁用以保护运行中的配置」)

@@ -1,6 +1,6 @@
 /**
  * SectionAnchorNav — the jump-chips row that gives a long stacked page
- * an in-page table of contents (C-E1). Buttons scroll to section
+ * an in-page table of contents. Buttons scroll to section
  * anchors via scrollIntoView — never href="#…" (the app runs on a
  * HashRouter, where a plain hash link would clobber the route).
  */

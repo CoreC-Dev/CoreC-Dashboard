@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// C-C1 regression: the Write Control page's dead-letter "Replay Command"
+// Regression: the Write Control page's dead-letter "Replay Command"
 // button must stage the entry in the SAME two-step confirmation dialog the
 // manual single write uses — listing the command plus its failure time and
 // recorded error — and fire zero writes before an explicit confirm.
@@ -84,7 +84,7 @@ afterEach(() => {
   cleanup()
 })
 
-describe('WriteControlPage dead-letter replay gate (C-C1)', () => {
+describe('WriteControlPage dead-letter replay gate', () => {
   it('stages the replay in the write-confirmation dialog; zero writes before confirm', async () => {
     vi.mocked(api.writeTag).mockResolvedValue({ success: true })
     renderPage()

@@ -56,8 +56,8 @@ function renderList(entries: DeadLetterEntry[] = ENTRIES) {
   })
   return render(
     <QueryClientProvider client={qc}>
-      {/* B11: the list renders per-entry router Links and reads the instance
-          id from the route — mount it at its real location. */}
+      {/* The list renders per-entry router Links and reads the instance
+           id from the route — mount it at its real location. */}
       <MemoryRouter initialEntries={['/corec/inst1/monitor/alerts']}>
         <Routes>
           <Route
@@ -108,7 +108,7 @@ describe('DeadLetterReplayList', () => {
     expect(screen.getByRole('button', { name: 'Replay Selected (0)' })).toBeDisabled()
   })
 
-  it('lists the sub-device on every entry so same-name tags stay distinguishable (B06)', async () => {
+  it('lists the sub-device on every entry so same-name tags stay distinguishable', async () => {
     renderList()
 
     // Entry 1 carries a device; entry 2 has none and falls back to '-'.
@@ -222,7 +222,7 @@ describe('DeadLetterReplayList', () => {
     renderList()
 
     // The row button only STAGES the replay — a confirm dialog opens
-    // (C-C1: a dead letter's last write already failed, so nothing is
+    // (a dead letter's last write already failed, so nothing is
     // re-sent until the operator has seen the command and confirmed).
     await act(async () => {
       fireEvent.click(screen.getAllByRole('button', { name: 'Replay Command' })[0])
@@ -269,7 +269,7 @@ describe('DeadLetterReplayList', () => {
   })
 })
 
-describe('DeadLetterReplayList — search & driver filter (B10)', () => {
+describe('DeadLetterReplayList — search & driver filter', () => {
   it('filterDeadLetters narrows by free text over driver/tag and by exact driver', () => {
     const all = filterDeadLetters(ENTRIES, '', 'all')
     expect(all).toHaveLength(2)
@@ -349,7 +349,7 @@ describe('DeadLetterReplayList — search & driver filter (B10)', () => {
   })
 })
 
-describe('DeadLetterReplayList — view-tag deep link (B11)', () => {
+describe('DeadLetterReplayList — view-tag deep link', () => {
   it('links each entry to the tag explorer with driver+tag prefill', async () => {
     renderList()
 

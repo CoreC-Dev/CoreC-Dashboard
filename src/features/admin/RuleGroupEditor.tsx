@@ -9,17 +9,17 @@
  * SUB-RULE references are detected by CoreC at load time.
  *
  * UI structure:
- *   - List of groups as expandable accordion items
- *   - Each group shows its rules in a compact table
- *   - Create group: inline name input
- *   - Delete group: button with confirm
- *   - Add/edit/remove rules within a group: inline forms
+ * - List of groups as expandable accordion items
+ * - Each group shows its rules in a compact table
+ * - Create group: inline name input
+ * - Delete group: button with confirm
+ * - Add/edit/remove rules within a group: inline forms
  *
  * Integration: CRUD via configStore.upsertRuleGroup/removeRuleGroup.
  * Hot-reload: rule-groups require engine restart.
  *
- * D2 (quality audit 2026-10-21): the inline editor and group card moved
- * to ./ruleGroup/ — this file is the page-level composition only.
+ * The inline editor and group card moved
+ * to./ruleGroup/ — this file is the page-level composition only.
  */
 import { AlertTriangle, FolderTree, Plus } from 'lucide-react'
 import type React from 'react'
@@ -58,7 +58,7 @@ export const RuleGroupEditor: React.FC = () => {
 
   const [newGroupName, setNewGroupName] = useState('')
   const [showCreate, setShowCreate] = useState(false)
-  // C-B5: rename → SUB-RULE reference scan → confirm dialog (with a
+  // Rename → SUB-RULE reference scan → confirm dialog (with a
   // default-on "rewrite the references too" checkbox).
   const [pendingRename, setPendingRename] = useState<{
     oldName: string
@@ -106,7 +106,7 @@ export const RuleGroupEditor: React.FC = () => {
   const handleRename = (oldName: string, newName: string) => {
     if (oldName === newName) return
     if (!isRuleGroupNameUnique(newName)) return
-    // C-B5: references break silently otherwise — list them and offer the
+    // References break silently otherwise — list them and offer the
     // rewrite before the rename lands in the working config.
     const refs = findSubRuleReferences(workingConfig, oldName)
     if (refs.length === 0) {
@@ -277,7 +277,7 @@ export const RuleGroupEditor: React.FC = () => {
           </div>
         )}
 
-        {/* C-B5: rename confirmation when SUB-RULE references would break */}
+        {/* Rename confirmation when SUB-RULE references would break */}
         <AlertDialog open={!!pendingRename} onOpenChange={(o) => !o && setPendingRename(null)}>
           <AlertDialogContent>
             <AlertDialogHeader>

@@ -202,7 +202,7 @@ describe('render smoke (#185 regression)', () => {
     expect(screen.getByText('Prometheus Runtime Metrics')).toBeTruthy()
     // The terminal card mounts against the stubbed Terminal/CoreCWebSocket.
     expect(screen.getByText('CoreC Real-time Event Stream')).toBeTruthy()
-    // C-E1: anchor chips render and pprof stays folded by default —
+    // Anchor chips render and pprof stays folded by default —
     // the deep behavior lives in DiagnosticsAnchors.test.
     expect(screen.getByTestId('section-anchor-nav')).toBeTruthy()
     expect(screen.getByText('Advanced debugging (pprof) (developers)')).toBeTruthy()
@@ -211,7 +211,7 @@ describe('render smoke (#185 regression)', () => {
     // and the per-driver read table gets its row.
     expect(await screen.findByText('42')).toBeTruthy()
     expect(await screen.findByText('plc1')).toBeTruthy()
-    // C-E3: the counter-table row drills into the driver's detail page.
+    // The counter-table row drills into the driver's detail page.
     const driverLink = await screen.findByRole('link', { name: /View driver plc1 detail/ })
     expect(driverLink.getAttribute('href')).toBe('/admin/drivers/plc1')
     // InstanceHealthBar resolved the mocked public probes.

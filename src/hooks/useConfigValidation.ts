@@ -26,7 +26,7 @@ import { useConfigStore } from '@/stores/configStore'
 export function useConfigValidation(): ConfigValidationResult & { hasConfig: boolean } {
   const workingConfig = useConfigStore((s) => s.workingConfig)
   // Debounce validation to avoid running full zod validateFullConfig on every
-  // keystroke in form mode (TD-PERF-003). Mirrors the YAML diff debounce pattern.
+  // keystroke in form mode. Mirrors the YAML diff debounce pattern.
   const debouncedConfig = useDebouncedValue(workingConfig, 200)
 
   return useMemo(() => {

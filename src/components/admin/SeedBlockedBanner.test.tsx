@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// SeedBlockedBanner — the D-16 failure/loading notice shared by the
+// SeedBlockedBanner — the failure/loading notice shared by the
 // entity list pages. State is driven by the real useAutoLoadConfig
 // effect (the banner is its only consumer here): a never-settling
 // GET /configs/raw keeps the pending copy, a rejection shows the failed
@@ -54,7 +54,7 @@ afterEach(() => {
   useConfigStore.getState().reset()
 })
 
-describe('SeedBlockedBanner (D-16 visibility)', () => {
+describe('SeedBlockedBanner (seed visibility)', () => {
   it('shows the pending copy without a Retry button while the seed is loading', async () => {
     renderBanner()
 

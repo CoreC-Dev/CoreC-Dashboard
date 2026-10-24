@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
-// ConnectionGate (audits D-05 + D-15): the probe-failure screen inside the
+// ConnectionGate: the probe-failure screen inside the
 // instance routes.
-//  - D-05: the visible verdict is the context's TRANSLATED kind (the context
+//  - the visible verdict is the context's TRANSLATED kind (the context
 //    classifies probe failures and resolves pack keys); raw technical detail
 //    (the probed endpoint) is demoted to a collapsed fold, not the headline.
-//  - D-15: the screen must not be a dead end — retry, "edit this instance"
+//  - the screen must not be a dead end — retry, "edit this instance"
 //    (homepage edit dialog via ?edit=<id>), and "back to instances" are all
 //    reachable; the headline names the instance.
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
@@ -111,7 +111,7 @@ describe('ConnectionGate loading state', () => {
   })
 })
 
-describe('ConnectionGate failure screen (D-05 + D-15)', () => {
+describe('ConnectionGate failure screen', () => {
   it('names the instance in the headline and keeps the verdict as subline', () => {
     renderGateAt('/corec/inst-1/monitor/dashboard')
 
@@ -119,7 +119,7 @@ describe('ConnectionGate failure screen (D-05 + D-15)', () => {
     expect(screen.getByText('Connection timed out')).toBeTruthy()
   })
 
-  it('folds the technical detail away from the headline (D-05)', () => {
+  it('folds the technical detail away from the headline', () => {
     renderGateAt('/corec/inst-1/monitor/dashboard')
 
     // The fold is collapsed by default: the endpoint is reachable in the DOM
@@ -140,7 +140,7 @@ describe('ConnectionGate failure screen (D-05 + D-15)', () => {
     expect(mockConnection.reconnect).toHaveBeenCalled()
   })
 
-  it('links back to the instance list (D-15 dead-end fix)', () => {
+  it('links back to the instance list (dead-end fix)', () => {
     renderGateAt('/corec/inst-1/monitor/dashboard')
     fireEvent.click(screen.getByRole('link', { name: 'Back to instances' }))
     expect(screen.getByTestId('location').textContent).toBe('/')

@@ -47,7 +47,7 @@ for (const f of walk(src)) {
 
 if (count <= BASELINE) {
   console.log(
-    `✅ any-ratchet 通过：${count} 处 any ≤ 基线 ${BASELINE}（阶段 4/5 清理后下调 BASELINE）`,
+    `✅ any-ratchet 通过：${count} 处 any ≤ 埍线 ${BASELINE}（存量清理后已下调基线）`,
   )
   process.exit(0)
 } else {

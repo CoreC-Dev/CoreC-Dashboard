@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
-// InstanceImportDialog (audit A-14) — the shared import UI for both entry
+// InstanceImportDialog — the shared import UI for both entry
 // points (homepage header + settings page). The audit's complaint: the same
 // operation offered drag & drop + file browse on the homepage but only a
 // bare textarea on the settings page. The component must carry the full
-// affordance set AND the honest outcome classification (D-08/A-09) so both
+// affordance set AND the honest outcome classification so both
 // pages behave identically.
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -47,7 +47,7 @@ afterEach(() => {
   vi.useRealTimers()
 })
 
-describe('InstanceImportDialog shared affordances (A-14)', () => {
+describe('InstanceImportDialog shared affordances', () => {
   it('offers drag & drop, file browse AND paste in one dialog', () => {
     renderDialog()
 
@@ -73,7 +73,7 @@ describe('InstanceImportDialog shared affordances (A-14)', () => {
   })
 })
 
-describe('InstanceImportDialog outcome classification (D-08/A-09)', () => {
+describe('InstanceImportDialog outcome classification', () => {
   it('reports unusable JSON as a parse failure and keeps the dialog open', () => {
     vi.useFakeTimers()
     const onOpenChange = renderDialog()

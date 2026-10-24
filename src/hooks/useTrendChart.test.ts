@@ -1,4 +1,4 @@
-// Unit tests for the pure toLineData mapping (B08) — gap samples become
+// Unit tests for the pure toLineData mapping — gap samples become
 // whitespace points (no value key) so lightweight-charts breaks the line
 // instead of drawing a fabricated segment across the pause period.
 import { describe, expect, it, vi } from 'vitest'
@@ -22,7 +22,7 @@ vi.hoisted(() => {
   })
 })
 
-describe('toLineData (B08)', () => {
+describe('toLineData', () => {
   it('maps valued samples to time+value points', () => {
     expect(toLineData([{ time: 10, value: 1.5 }])).toEqual([{ time: 10, value: 1.5 }])
   })

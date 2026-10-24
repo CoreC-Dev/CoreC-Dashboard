@@ -25,7 +25,7 @@ export const TagExplorerPage: React.FC = () => {
   const { data: initialTagsData, refetch, isFetching, isLoading, isError, error } = useTags()
   const { data: driversData } = useDrivers()
 
-  // B11: deep-link prefill — the dead-letter "View tag" link lands here with
+  // Deep-link prefill — the dead-letter "View tag" link lands here with
   // ?driver=…&tag=… so the operator checks the current live value without
   // re-typing the tag they were just staring at. Read once at mount; the link
   // always navigates cross-route, so a fresh mount is the only entry path.
@@ -34,7 +34,7 @@ export const TagExplorerPage: React.FC = () => {
     () => searchParams.get('driver') || 'all',
   )
 
-  // B23: transient "new tags discovered" notice — set by the stream's
+  // Transient "new tags discovered" notice — set by the stream's
   // snapshot reconcile, auto-dismisses after a few seconds.
   const [discoveryNotice, setDiscoveryNotice] = useState<number | null>(null)
   const handleTagsDiscovered = useCallback((count: number) => {
@@ -59,12 +59,12 @@ export const TagExplorerPage: React.FC = () => {
   } = useTagExplorerStream({
     initialTags: initialTagsData?.tags,
     selectedDriver,
-    // B23: the stream's snapshot reconcile reports discovered tags so the
+    // The stream's snapshot reconcile reports discovered tags so the
     // page can surface the transient notice below.
     onTagsDiscovered: handleTagsDiscovered,
   })
 
-  // B23: low-frequency snapshot poll — backend-added tags appear within a
+  // Low-frequency snapshot poll — backend-added tags appear within a
   // minute without the hidden "manual refresh" knowledge; removed tags
   // leave the table on the same cadence. useTags itself stays unpolled
   // (api/hooks is off-limits by design); the page owns this interval.
@@ -75,7 +75,7 @@ export const TagExplorerPage: React.FC = () => {
     return () => clearInterval(iv)
   }, [refetch])
 
-  // Search/filter/sort state. B11: the tag URL param prefills the search box.
+  // Search/filter/sort state. The tag URL param prefills the search box.
   const [searchTerm, setSearchTerm] = useState(() => searchParams.get('tag') ?? '')
   // Defer the search term so the expensive filter+sort in filteredTags runs at
   // a lower priority than the input's keystroke rendering. The <Input> below
@@ -84,7 +84,7 @@ export const TagExplorerPage: React.FC = () => {
   // rAF-flushed tag map from cascading into a 60×/sec filter+sort per keystroke.
   const deferredSearchTerm = useDeferredValue(searchTerm)
   const [selectedGroup, setSelectedGroup] = useState<string>('all')
-  // B07: quality filter + stale-only toggle — the "problem points" hunt.
+  // Quality filter + stale-only toggle — the "problem points" hunt.
   const [selectedQuality, setSelectedQuality] = useState<QualityFilter>('all')
   const [staleOnly, setStaleOnly] = useState(false)
   const [sortKey, setSortKey] = useState<'tag' | 'timestamp' | null>(null)
@@ -126,7 +126,7 @@ export const TagExplorerPage: React.FC = () => {
     const filtered = tagsList.filter((pt) => {
       if (selectedDriver !== 'all' && pt.driver !== selectedDriver) return false
       if (selectedGroup !== 'all' && pt.group !== selectedGroup) return false
-      // B07: shared quality/staleness predicate (unit-tested in lib).
+      // Shared quality/staleness predicate (unit-tested in lib).
       if (!matchesQualityFilter(pt, selectedQuality, staleOnly)) return false
       if (term) {
         const match =
@@ -161,10 +161,10 @@ export const TagExplorerPage: React.FC = () => {
   const openTrend = useCallback(
     (point: DataPoint) => {
       // Discard samples staged for the previous tag so a pending RAF does
-      // not flush them into the new tag's chart (stale-sample leak). [H-8]
+      // not flush them into the new tag's chart (stale-sample leak).
       discardPendingTrend()
       // setTrendTag updates the internal ref synchronously so the WS
-      // onmessage callback sees the new tag on the very next message. [H-8]
+      // onmessage callback sees the new tag on the very next message.
       setTrendTag(point)
       if (isNumericType(point.type)) {
         const num = Number(point.value)
@@ -176,28 +176,28 @@ export const TagExplorerPage: React.FC = () => {
     [
       discardPendingTrend,
       setTrendSamples, // setTrendTag updates the internal ref synchronously so the WS
-      // onmessage callback sees the new tag on the very next message. [H-8]
+      // onmessage callback sees the new tag on the very next message.
       setTrendTag,
     ],
   )
 
   const closeTrend = useCallback(() => {
     // Discard staged samples so a pending RAF doesn't flush them into a chart
-    // that's about to unmount / already cleared. [H-8]
+    // that's about to unmount / already cleared.
     discardPendingTrend()
     // setTrendTag clears the internal ref synchronously so the WS callback
-    // stops staging samples immediately. [H-8]
+    // stops staging samples immediately.
     setTrendTag(null)
     setTrendSamples([])
   }, [discardPendingTrend, setTrendTag, setTrendSamples])
 
   const handleRefresh = () => {
-    // B23: a plain refetch is enough — every new snapshot object
+    // A plain refetch is enough — every new snapshot object
     // reconciles the live map (the seed-once guard is gone).
     refetch()
   }
 
-  // B22: whether ANY filter is active — the table's empty state tells an
+  // Whether ANY filter is active — the table's empty state tells an
   // unfiltered zero-tag instance apart from a filter that matched nothing.
   const hasActiveFilters =
     searchTerm !== '' ||
@@ -265,7 +265,7 @@ export const TagExplorerPage: React.FC = () => {
           onRefresh={handleRefresh}
         />
 
-        {/* B23: backend-added tags surface within a snapshot cycle — the
+        {/* Backend-added tags surface within a snapshot cycle — the
          * operator no longer needs the hidden "manual refresh" knowledge. */}
         {discoveryNotice !== null && (
           <div

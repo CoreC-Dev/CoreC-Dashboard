@@ -21,8 +21,8 @@ import { ConnStateLabel } from '@/lib/constants'
 import { matchMentionsDriver } from '@/lib/ruleDependencies'
 import { formatNumber, formatUptime } from '@/lib/utils'
 
-/** C-E4: pure-CSS flow arrow between the three columns — decorative, so
- *  aria-hidden; rotated 90° in the mobile stacked layout. */
+/** Pure-CSS flow arrow between the three columns — decorative, so
+ * aria-hidden; rotated 90° in the mobile stacked layout. */
 const FlowArrow: React.FC = () => (
   <div className="flex items-center justify-center" aria-hidden="true">
     <div className="flex h-10 w-10 rotate-90 items-center justify-center rounded-full border border-primary/30 bg-primary/10 text-primary transition-transform md:rotate-0">
@@ -59,7 +59,7 @@ export const TopologyPage: React.FC = () => {
   const config = useParsedConfig(rawYaml)
 
   // Precompute connection summaries once per config/drivers/transports change
-  // instead of recomputing inside every .map() iteration (TD-PERF-007).
+  // instead of recomputing inside every.map() iteration.
   const driverConnSummaries = useMemo(() => {
     const m = new Map<string, string>()
     for (const d of drivers) m.set(d.name, getDriverConnectionSummary(config, d.name))
@@ -71,7 +71,7 @@ export const TopologyPage: React.FC = () => {
     return m
   }, [config, transports])
 
-  // C-E7: name WHAT failed — five queries hid behind one generic "错误".
+  // Name WHAT failed — five queries hid behind one generic "错误".
   const failedQueries = useMemo(() => {
     const f: string[] = []
     if (serverInfoError) f.push(t('topology.errServerInfo'))
@@ -83,7 +83,7 @@ export const TopologyPage: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- t/i18n stable per language
   }, [serverInfoError, driversError, transportsError, statsError, rulesError, t])
 
-  // C-E4: hover a driver row → highlight the runtime rules whose match DSL
+  // Hover a driver row → highlight the runtime rules whose match DSL
   // consumes it and the transports those rules target — the first time the
   // page shows WHERE a driver's data actually goes.
   const [hoveredDriver, setHoveredDriver] = useState<string | null>(null)
@@ -167,8 +167,8 @@ export const TopologyPage: React.FC = () => {
             </div>
 
             <div className="space-y-2">
-              {/* C-E5: loading is not "no drivers" — the dashed empty state
-                  renders only once the query has settled. */}
+              {/* Loading is not "no drivers" — the dashed empty state
+                   renders only once the query has settled. */}
               {driversLoading && drivers.length === 0 ? (
                 <LoadingState className="py-8" />
               ) : drivers.length === 0 ? (

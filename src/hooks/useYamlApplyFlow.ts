@@ -3,16 +3,16 @@
  * useConfigCenter (custom-lint 500-line God-file limit).
  *
  * Owns everything specific to applying the RAW YAML editor content:
- *  - the YAML-mode apply confirmation dialog state (open/error),
- *  - the C-D1 hot-reload acknowledgement guard: when the editor content
- *    does not include the form side's unapplied edits, the operator must
- *    explicitly acknowledge that those edits are NOT part of this apply,
- *  - the C-D1 mode-switch bridge: switching Form/YAML views with diverged
- *    content asks which side to keep instead of silently carrying both,
- *  - the confirmed apply itself: PUT /configs → snapshot → record the
- *    APPLIED YAML as the saved baseline (markSavedFromYaml) so divergent
- *    form edits stay pending instead of being marked saved (C-D1 P0),
- *  - the D-16 seed guard: no PUT while the server config is unknown.
+ * - the YAML-mode apply confirmation dialog state (open/error),
+ * - the hot-reload acknowledgement guard: when the editor content
+ * does not include the form side's unapplied edits, the operator must
+ * explicitly acknowledge that those edits are NOT part of this apply,
+ * - the mode-switch bridge: switching Form/YAML views with diverged
+ * content asks which side to keep instead of silently carrying both,
+ * - the confirmed apply itself: PUT /configs → snapshot → record the
+ * APPLIED YAML as the saved baseline (markSavedFromYaml) so divergent
+ * form edits stay pending instead of being marked saved — the P0 case,
+ * - the seed guard: no PUT while the server config is unknown.
  *
  * The caller (useConfigCenter) keeps owning yamlContent/mode state and
  * passes accessors in; the page consumes everything through
@@ -69,14 +69,14 @@ export function useYamlApplyFlow(options: YamlApplyFlowOptions) {
   const [bridgeTarget, setBridgeTarget] = useState<ConfigMode | null>(null)
   const [applyGuardOpen, setApplyGuardOpen] = useState(false)
 
-  // ── Form ↔ YAML divergence detection (C-D1) ──────────────────────
+  // ── Form ↔ YAML divergence detection ──────────────────────
   // The form view edits configStore.workingConfig; the YAML view edits the
   // raw `yamlContent` string — two manually bridged states. Evaluated on
   // demand (mode switch / hot reload click), never per keystroke.
   const yamlDiffersFromForm = (): boolean =>
     yamlDiffersFromConfig(yamlContent, useConfigStore.getState().workingConfig)
 
-  // C-D1 ② — ModeSwitcher entry point. Switching views with diverged content
+  // ModeSwitcher entry point. Switching views with diverged content
   // no longer silently keeps both stale states; the user picks a side.
   const requestModeSwitch = (next: ConfigMode) => {
     if (next === mode) return
@@ -116,14 +116,14 @@ export function useYamlApplyFlow(options: YamlApplyFlowOptions) {
 
   const handleHotReload = () => {
     setYamlApplyError(null)
-    // D-16 — never offer the hot-reload path while the server config is
+    // Never offer the hot-reload path while the server config is
     // unknown: the PUT would replace a config we could never show a diff
     // for (the editor would still hold DEFAULT_SAMPLE_YAML).
     if (isSeedBlocked(useConfigStore.getState())) {
       options.setStatusMsg({ type: 'error', text: t('configCenter.applyBlockedSeed') })
       return
     }
-    // C-D1 ① — when the editor content does not include the form side's
+    // When the editor content does not include the form side's
     // unapplied edits, gate the apply behind an explicit acknowledgement.
     if (yamlDiffersFromForm()) {
       setApplyGuardOpen(true)
@@ -141,7 +141,7 @@ export function useYamlApplyFlow(options: YamlApplyFlowOptions) {
 
   // Confirmed YAML-mode apply: called by the dialog's onConfirm.
   const handleYamlApplyConfirm = async () => {
-    // D-16 belt-and-braces: the entry guard above should have blocked this
+    // Belt-and-braces: the entry guard above should have blocked this
     // path already, but the confirm handler must never PUT against an
     // unknown server config either.
     if (isSeedBlocked(useConfigStore.getState())) {
@@ -176,7 +176,7 @@ export function useYamlApplyFlow(options: YamlApplyFlowOptions) {
       await updateMutation.mutateAsync({ payload: yamlContent })
       addSnapshot(yamlContent)
       setYamlApplyOpen(false)
-      // C-D1 — record what the SERVER actually accepted as the saved baseline.
+      // Record what the SERVER actually accepted as the saved baseline.
       // The old markSaved() snapped the baseline to the working config,
       // marking never-sent form edits as "saved" and dismissing the
       // unsaved-changes banner. Divergent edits stay pending (dirty).
@@ -207,7 +207,7 @@ export function useYamlApplyFlow(options: YamlApplyFlowOptions) {
     yamlApplyError,
     yamlApplyWarnings: yamlApplyWarnings ?? undefined,
     handleYamlApplyConfirm,
-    // C-D1 bridge + guard
+    // form↔YAML divergence bridge + guard
     requestModeSwitch,
     bridgeTarget,
     bridgeImport,

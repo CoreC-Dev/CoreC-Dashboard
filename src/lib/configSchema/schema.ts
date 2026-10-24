@@ -1,13 +1,10 @@
 /**
  * configSchema/schema.ts — the per-entity zod tree: tag, driver,
  * transport, rule, rule-provider, api/engine/buffer/global/node, and the
- * top-level coreCConfigSchema. Extracted from the former single-file
- * configSchema.ts (D2, quality audit 2026-10-21) — schemas byte-identical.
- *
- * (Original module doc:) CoreC Configuration Validation Schemas (zod):
- * mirrors the server-side validation in CoreC's config.validate() plus the
- * per-driver/transport Init-time required field checks, so invalid configs
- * are caught before the PUT /configs hot-reload.
+ * top-level coreCConfigSchema. Mirrors the server-side validation in
+ * CoreC's config.validate() plus the per-driver/transport Init-time
+ * required field checks, so invalid configs are caught before the
+ * PUT /configs hot-reload.
  */
 import { z } from 'zod'
 import { durationString, requiredDuration } from '@/lib/configSchema/duration'
@@ -404,7 +401,7 @@ const globalConfigSchema = z
   .object({
     'log-level': z.enum(LOG_LEVELS).optional(),
     // CoreC returns "" when log-format is unset (defaults to text at runtime).
-    // z.enum rejects "" — treat it as equivalent to "unset" (optional). [C-2 follow-up]
+    // z.enum rejects "" — treat it as equivalent to "unset" (optional).
     'log-format': z.enum(LOG_FORMATS).or(z.literal('')).optional(),
     api: apiConfigSchema.optional(),
     engine: engineConfigSchema.optional(),

@@ -1,8 +1,8 @@
-// D-24 guard: keys that only exist in a page's `defaultValue` fallback are
+// Guard: keys that only exist in a page's `defaultValue` fallback are
 // invisible to the "both packs aligned" check — zh and en can be perfectly
 // symmetric while BOTH miss the same key, leaving raw English copy on the
-// main-path pages. This pins the audit-named keys (and the pack symmetry
-// for the namespaces they live in) so a future slip fails here.
+// main-path pages. This pins the known defaultValue-only keys (and the pack
+// symmetry for the namespaces they live in) so a future slip fails here.
 import { describe, expect, it } from 'vitest'
 import en from '@/i18n/en.json'
 import zhCN from '@/i18n/zh-CN.json'
@@ -15,8 +15,8 @@ function flatKeys(obj: Record<string, unknown>, prefix = ''): string[] {
   )
 }
 
-/** The 12 keys the D-24 audit found referenced only via defaultValue. */
-const D24_KEYS = [
+/** The 12 keys referenced only via defaultValue. */
+const DEFAULT_VALUE_ONLY_KEYS = [
   'dashboard.realtimeMonitor',
   'tags.explorerDesc',
   'alerts.filterPlaceholder',
@@ -31,17 +31,17 @@ const D24_KEYS = [
   'topology.failed',
 ] as const
 
-describe('i18n packs — D-24 audit keys', () => {
+describe('i18n packs — defaultValue-only keys', () => {
   it('every audit-named key resolves in both language packs', () => {
     const zh = new Set(flatKeys(zhCN))
     const enKeys = new Set(flatKeys(en))
-    for (const key of D24_KEYS) {
+    for (const key of DEFAULT_VALUE_ONLY_KEYS) {
       expect(zh.has(key), `zh-CN.json missing "${key}"`).toBe(true)
       expect(enKeys.has(key), `en.json missing "${key}"`).toBe(true)
     }
   })
 
-  it('zh and en are key-symmetric in the D-24 namespaces', () => {
+  it('zh and en are key-symmetric in the defaultValue-only namespaces', () => {
     const namespaces = ['dashboard', 'tags', 'alerts', 'diagnostics', 'topology'] as const
     for (const ns of namespaces) {
       const section = zhCN[ns] as unknown as Record<string, unknown>

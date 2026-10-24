@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// C-B6 regression: the runtime rules table is searchable (name/match/
+// Regression: the runtime rules table is searchable (name/match/
 // target) and its priority header toggles the sort direction — finding one
 // tag's rule among hundreds used to need browser Ctrl+F.
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -62,7 +62,7 @@ afterEach(() => {
   cleanup()
 })
 
-describe('RulesPage runtime search & priority sort (C-B6)', () => {
+describe('RulesPage runtime search & priority sort', () => {
   it('search narrows the runtime table by match text and target', async () => {
     render(wrap(<RulesPage />))
 

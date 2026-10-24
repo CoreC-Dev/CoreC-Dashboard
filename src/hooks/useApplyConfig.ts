@@ -8,25 +8,25 @@ import { isSeedBlocked, useConfigStore } from '@/stores/configStore'
 /**
  * Shared apply-config dialog state for list/detail pages.
  *
- * Extracted from 4 near-identical ConfigApplyConfirmationDialog usages in
- * DriversPage, TransportsPage, RulesPage, and ConfigCenterPage (TD-DUP-003).
+ * One hook for the four near-identical ConfigApplyConfirmationDialog usages
+ * in DriversPage, TransportsPage, RulesPage, and ConfigCenterPage.
  *
  * The hook manages dialog open/error state and the onConfirm handler
  * (server-validate → PUT → markSaved → close). The caller provides
  * page-specific functions and renders `<ConfigApplyConfirmationDialog
  * {...dialogProps} />`.
  *
- * Server-side validation (honesty fix, UX audit C "未用尽 #2"): onConfirm
+ * Server-side validation (honesty fix): onConfirm
  * first dry-runs the working YAML through POST /configs/validate — the
- * ConfigApplyConfirmationDialog header has always claimed "Path A validates
- * via POST /configs/validate first (if available)". Now it actually does:
- * a { valid: false } response blocks the PUT with the server message in
- * the dialog; warnings (e.g. idle-mode hints) are appended to the dialog's
- * warning block; a 404/501 (endpoint unavailable on older backends) skips
- * the check and proceeds, exactly as "if available" promises; any other
- * transport error blocks the apply conservatively.
+ * ConfigApplyConfirmationDialog header claims "Path A validates
+ * via POST /configs/validate first (if available)", so it must actually
+ * do that: a { valid: false } response blocks the PUT with the server
+ * message in the dialog; warnings (e.g. idle-mode hints) are appended to
+ * the dialog's warning block; a 404/501 (endpoint unavailable on older
+ * backends) skips the check and proceeds, exactly as "if available"
+ * promises; any other transport error blocks the apply conservatively.
  *
- * D-16: onConfirm also refuses to PUT while the server config has never
+ * OnConfirm also refuses to PUT while the server config has never
  * been loaded (auto-seed in flight or failed and no saved baseline) —
  * applying an unknown working config then could wipe the control plane.
  * The rejection surfaces as an applyError inside the dialog.
@@ -100,7 +100,7 @@ export function useApplyConfig(options: UseApplyConfigOptions) {
     applyError: applyError ?? undefined,
     onConfirm: () => {
       if (validationErrors) return
-      // D-16: never PUT while the server config is unknown (seed in flight
+      // Never PUT while the server config is unknown (seed in flight
       // or failed, no baseline) — the apply could wipe the control plane.
       if (isSeedBlocked(useConfigStore.getState())) {
         setApplyError(t('configCenter.applyBlockedSeed'))

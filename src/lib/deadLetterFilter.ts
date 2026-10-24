@@ -1,11 +1,11 @@
 /**
- * Write-page dead-letter narrowing (UX audit C-C4).
+ * Write-page dead-letter narrowing.
  *
  * The DLQ caps its rendered rows at 100; without search/filter an entry
  * beyond the cap is unreachable. This pure predicate narrows the visible
  * set by free text (tag name / verbatim error) and by driver so the cap
- * applies to what the operator actually asked to see. (The alerts page's
- * B10 filter solves the same problem for its own list.)
+ * applies to what the operator actually asked to see. (The alerts page
+ * solves the same problem with its own filter.)
  */
 import type { DeadLetterEntry } from '@/types/models'
 

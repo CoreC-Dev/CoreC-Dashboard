@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// MemoryChart (B20) — same honesty overlay contract as TrafficChart: the
+// MemoryChart — same honesty overlay contract as TrafficChart: the
 // first frame clears "waiting", an involuntary drop pins "updates paused"
 // over the frozen data. useCoreCWebSocket is mocked for callback capture.
 import { act, cleanup, render, screen } from '@testing-library/react'
@@ -52,7 +52,7 @@ const driveStatus = (s: string) => {
   })
 }
 
-describe('MemoryChart — status honesty overlay (B20)', () => {
+describe('MemoryChart — status honesty overlay', () => {
   it('says "Waiting for live data…" before the first frame', () => {
     render(<MemoryChart />)
 

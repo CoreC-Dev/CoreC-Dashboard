@@ -683,7 +683,7 @@ describe('validateConfig: rule-groups SUB-RULE validation', () => {
     expect(res.errors.some((e) => e.message.includes('circular'))).toBe(true)
   })
 
-  // ─── M-6 regression: no duplicate cycle errors with inbound node ──
+  // ─── Regression: no duplicate cycle errors with inbound node ──
   it('reports exactly one circular error when an inbound node references a cycle', () => {
     const res = validateConfig({
       ...validConfig,

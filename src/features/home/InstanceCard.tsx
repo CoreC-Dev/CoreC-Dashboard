@@ -52,8 +52,8 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
   const reorderInstances = useInstanceStore((s) => s.reorderInstances)
   const probing = useInstanceStore((s) => s.probing[instance.id] ?? false)
   const probeError = useInstanceStore((s) => s.probeErrors[instance.id])
-  // A-18: the move menu items need this card's position in the list.
-  // Derived primitives keep the subscription narrow (TD-PERF-009): a card
+  // The move menu items need this card's position in the list.
+  // Derived primitives keep the subscription narrow: a card
   // re-renders only when its own position or the list length changes, not
   // on every probe result.
   const position = useInstanceStore((s) => s.instances.findIndex((i) => i.id === instance.id))
@@ -62,7 +62,7 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
 
   const stats = instance.lastKnownInfo?.stats
 
-  // A-07: a background re-probe of an instance that already has a verdict
+  // A background re-probe of an instance that already has a verdict
   // (connected, or failed) must not flash the card back to a yellow
   // "connecting" dot — every card used to blink yellow together every 15s,
   // and a dead instance alternated yellow/red forever. The connecting state
@@ -84,7 +84,7 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
     unknown: 'bg-status-idle',
   }[status]
 
-  // A-13: the four colors carried no text, no tooltip and no aria-label —
+  // The four colors carried no text, no tooltip and no aria-label —
   // indistinguishable for a color-blind operator and unlabelled for screen
   // readers. The dot itself gets a label in every state; error/unknown
   // additionally render the word next to it (a colored dot alone cannot
@@ -100,7 +100,7 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
 
   const handleEnter = () => navigate(`/corec/${instance.id}/monitor/dashboard`)
 
-  // A-18: reorderInstances renumbers sortOrder by the given id order; swap
+  // ReorderInstances renumbers sortOrder by the given id order; swap
   // this card with its neighbor in the current display order. Reading the
   // list from getState() inside the handler avoids subscribing this card
   // to the whole instances array.
@@ -163,10 +163,10 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                {/* A-18: the store has had reorderInstances since the first
-                    commit but no UI ever called it — with several instances
-                    the operator simply could not reorder them. The minimal
-                    remedy: move up/down items on the card's own menu. */}
+                {/* The store has had reorderInstances since the first
+                     commit but no UI ever called it — with several instances
+                     the operator simply could not reorder them. The minimal
+                     remedy: move up/down items on the card's own menu. */}
                 <DropdownMenuItem onClick={() => handleMove(-1)} disabled={position <= 0}>
                   <ArrowUp className="w-3.5 h-3.5 mr-2" />
                   {t('instances.moveUp')}
@@ -205,7 +205,7 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
             {instance.baseUrl.replace(/^https?:\/\//, '')}
           </div>
 
-          {/* Error message — translated from the recorded failure kind (A-01) */}
+          {/* Error message — translated from the recorded failure kind */}
           {probeError && (
             <div
               className="text-xs text-status-error break-words"
@@ -340,12 +340,11 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
             <Pencil className="w-3.5 h-3.5" />
           </Button>
           {status === 'error' && (
-            /* A-08: the refresh icon on a failed card used to NAVIGATE INTO
-               the instance — the exact opposite of retrying, with no label
-               to say either. It now re-probes (same immediate path as a
-               save), announces itself as "retry connection", and spins
-               while the re-probe is in flight (the card keeps its red
-               verdict per A-07 until a new one lands). */
+            /* On a failed card the refresh icon RE-PROBES (same immediate
+               path as a save) — never navigates into the instance. It
+               announces itself as "retry connection" and spins while the
+               re-probe is in flight (the card keeps its red
+               verdict until a new one lands). */
             <Button
               size="sm"
               variant="outline"
@@ -361,10 +360,10 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
         </div>
       </div>
 
-      {/* Delete confirmation — D-07: an irreversible action gets an
-          AlertDialog (no accidental dismissal on outside click), a
-          destructive-styled confirm button, and confirm copy that differs
-          from the menu item that opened it. */}
+      {/* Delete confirmation — An irreversible action gets an
+           AlertDialog (no accidental dismissal on outside click), a
+           destructive-styled confirm button, and confirm copy that differs
+           from the menu item that opened it. */}
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <AlertDialogContent className="sm:max-w-[400px]">
           <AlertDialogHeader>

@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 /**
- * useConfigCenter — C-D1 regression coverage.
+ * useConfigCenter — regression coverage.
  *
- * Scenario under test (UX audit C-D1, P0): the Config Center keeps two
+ * Scenario under test (P0): the Config Center keeps two
  * manually bridged states — the structured form side (configStore working
  * config) and the raw YAML editor string. The operator edits the form,
  * switches to YAML, edits different lines there, and hot-reloads. The old
@@ -179,7 +179,7 @@ async function mountSeeded() {
   return rendered
 }
 
-describe('useConfigCenter — C-D1 evaporation regression', () => {
+describe('useConfigCenter — evaporation regression', () => {
   it('a YAML-mode apply does not mark divergent form edits as saved', async () => {
     const { result } = await mountSeeded()
 
@@ -227,7 +227,7 @@ describe('useConfigCenter — C-D1 evaporation regression', () => {
   })
 })
 
-describe('useConfigCenter — C-D1 mode-switch bridge', () => {
+describe('useConfigCenter — mode-switch bridge', () => {
   it('switching modes with diverged content opens the bridge instead of switching', async () => {
     const { result } = await mountSeeded()
     act(() => {
@@ -296,7 +296,7 @@ describe('useConfigCenter — C-D1 mode-switch bridge', () => {
   })
 })
 
-describe('useConfigCenter — C-D1 hot-reload acknowledgement guard', () => {
+describe('useConfigCenter — hot-reload acknowledgement guard', () => {
   it('hot reload with divergent form edits asks for acknowledgement first', async () => {
     const { result } = await mountSeeded()
     act(() => {
@@ -329,7 +329,7 @@ describe('useConfigCenter — C-D1 hot-reload acknowledgement guard', () => {
   })
 })
 
-describe('useConfigCenter — D-16 seed-failure guard', () => {
+describe('useConfigCenter — seed-failure guard', () => {
   // When GET /configs/raw fails, AppShell's useAutoLoadConfig flips the
   // store to seedStatus 'failed'. The Config Center must then refuse the
   // hot-reload path — the editor still holds DEFAULT_SAMPLE_YAML and a PUT
@@ -420,7 +420,7 @@ describe('useConfigCenter — D-16 seed-failure guard', () => {
   })
 })
 
-describe('useConfigCenter — C-D7 persistent validation warnings', () => {
+describe('useConfigCenter — persistent validation warnings', () => {
   it('warnings land in the persistent result block, not the auto-dismiss strip', async () => {
     fetchMock.mockImplementation((input: RequestInfo | URL) => {
       const url = route(input)
@@ -515,7 +515,7 @@ describe('useConfigCenter — C-D7 persistent validation warnings', () => {
   })
 })
 
-describe('useConfigCenter — C-D8 log-level patch no longer clobbers the editor', () => {
+describe('useConfigCenter — log-level patch does not clobber the editor', () => {
   // Stateful mock: the overview reflects whatever level was last PATCHed,
   // like the real backend would after a successful PATCH /configs.
   function mockPatchAwareRaw(fetchRawImpl: () => Response) {
@@ -587,7 +587,7 @@ describe('useConfigCenter — C-D8 log-level patch no longer clobbers the editor
   })
 })
 
-describe('useConfigCenter — C-D4 template/file load confirmation', () => {
+describe('useConfigCenter — template/file load confirmation', () => {
   // The editor-dirty check compares the DEBOUNCED editor content; wait for
   // the debounce to flush after the auto-load before asserting the gate.
   async function settleDebounce() {
@@ -649,7 +649,7 @@ describe('useConfigCenter — C-D4 template/file load confirmation', () => {
   })
 })
 
-describe('useConfigCenter — C-D6 diff baseline is the saved server config', () => {
+describe('useConfigCenter — diff baseline is the saved server config', () => {
   it('diffBaselineYaml follows the saved baseline, not a per-session variable', async () => {
     const { result } = await mountSeeded()
     expect(result.current.diffBaselineYaml).toBeTruthy()

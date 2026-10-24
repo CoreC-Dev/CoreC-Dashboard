@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// OperationResult (audit D-17): the shared transient feedback strip — one
+// OperationResult: the shared transient feedback strip — one
 // component instead of page-local never-clearing status lines spelled
 // three different ways. Success green / error red, operation context,
 // 5s auto-fade, manual close — and a repeat of the same operation must
@@ -29,7 +29,7 @@ afterEach(() => {
 const OK = { type: 'success' as const, text: 'Config applied and hot-reloaded.' }
 const FAIL = { type: 'error' as const, text: 'engine busy' }
 
-describe('OperationResult rendering (D-17)', () => {
+describe('OperationResult rendering', () => {
   it('renders nothing without a status', () => {
     const { container } = render(<OperationResult status={null} />)
     expect(container).toBeEmptyDOMElement()
@@ -53,7 +53,7 @@ describe('OperationResult rendering (D-17)', () => {
   })
 })
 
-describe('OperationResult dismissal (D-17)', () => {
+describe('OperationResult dismissal', () => {
   it('auto-fades after 5s and notifies the parent', () => {
     const onDismiss = vi.fn()
     render(<OperationResult status={OK} onDismiss={onDismiss} />)

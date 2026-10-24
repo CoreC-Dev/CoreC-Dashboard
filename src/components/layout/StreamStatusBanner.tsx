@@ -7,9 +7,9 @@ import { deriveBanner, deriveRateLimited, useWsStatusStore } from '@/stores/wsSt
 
 /**
  * StreamStatusBanner — page-level connection banner for the monitor pages
- * (mounted by AppShell on /monitor routes; audit B01/D-02).
+ * (mounted by AppShell on /monitor routes).
  *
- * Three states, copy verbatim from the audit:
+ * Three states:
  *  - disconnected (amber): the data on screen may be stale and a reconnect
  *    is in flight — "上次更新 {{time}}" tells the operator exactly how old.
  *  - rejected (red): the stream gave up after 10 failed attempts and will

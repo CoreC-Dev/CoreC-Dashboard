@@ -199,7 +199,7 @@ describe('useHomepageProbe', () => {
     await flush()
   })
 
-  it("records 'unauthorized' when GET / is ok but /stats returns 401 (A-01)", async () => {
+  it("records 'unauthorized' when GET / is ok but /stats returns 401", async () => {
     vi.useRealTimers()
     resetStore([makeInstance()])
     mockFetch.mockImplementation((url: string) => {
@@ -345,7 +345,7 @@ describe('useHomepageProbe', () => {
   })
 })
 
-describe('probeOneInstance (A-03 — immediate probe after add/update)', () => {
+describe('probeOneInstance (immediate probe after add/update)', () => {
   /** Wire all five probe endpoints to healthy responses. */
   function mockHealthyEndpoints() {
     mockFetch.mockImplementation((url: string) => {

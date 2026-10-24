@@ -51,7 +51,7 @@ export const EntitySearchBar: React.FC<EntitySearchBarProps> = ({
 /**
  * Filters an array of entities by a search query. Matches case-insensitively
  * against the entity's `name` and `type` fields, plus the optional
- * `extra` text (e.g. a runtime card's connection summary — C-A6).
+ * `extra` text (e.g. a runtime card's connection summary).
  */
 export function filterEntities<T extends { name: string; type?: string }>(
   entities: T[],

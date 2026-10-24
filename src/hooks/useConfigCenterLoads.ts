@@ -3,11 +3,11 @@
  * useConfigCenter (custom-lint 500-line God-file limit).
  *
  * Owns the "replace both sides wholesale" entry points:
- *  - template picker open state + loading a pre-built template,
- *  - .yaml/.yml file upload into the editor and the configStore,
- *  - the C-D4 discard confirmation: a template/file load REPLACES all
- *    pending edits, so when either side is dirty the operator must confirm
- *    through the shared DiscardChangesDialog before anything is replaced.
+ * - template picker open state + loading a pre-built template,
+ * -.yaml/.yml file upload into the editor and the configStore,
+ * - the discard confirmation: a template/file load REPLACES all
+ * pending edits, so when either side is dirty the operator must confirm
+ * through the shared DiscardChangesDialog before anything is replaced.
  *
  * The caller (useConfigCenter) keeps owning the editor content and the
  * pending-edits predicate; the page consumes everything through
@@ -26,7 +26,7 @@ interface ConfigCenterLoadsOptions {
   loadFromYaml: (yaml: string) => string | null
   /** Transient status strip setter, shared with the caller. */
   setStatusMsg: (msg: StatusMessage) => void
-  /** Whether the form side or the editor holds unapplied edits (C-D4 gate). */
+  /** Whether the form side or the editor holds unapplied edits (discard gate). */
   hasPendingEdits: () => boolean
 }
 
@@ -62,7 +62,7 @@ export function useConfigCenterLoads(options: ConfigCenterLoadsOptions) {
     reader.readAsText(file)
   }
 
-  // "Upload YAML file" — C-D4: an upload REPLACES both sides wholesale, so
+  // "Upload YAML file" — An upload REPLACES both sides wholesale, so
   // when unapplied edits exist the operator must confirm the discard first
   // (DiscardChangesDialog, same gate as the banner's Discard button).
   const handleFileUpload = (e: ChangeEvent<HTMLInputElement>) => {
@@ -78,7 +78,7 @@ export function useConfigCenterLoads(options: ConfigCenterLoadsOptions) {
   }
 
   // Load a pre-built configuration template into the working config.
-  // Replaces the weak placeholder secret with a random one (TD-SEC-006, D5).
+  // Replaces the weak placeholder secret with a random one.
   const applyTemplate = (template: ConfigTemplate) => {
     const yamlWithSecret = template.yaml.replace('change-me-please', generateRandomSecret())
     applyYamlContent(yamlWithSecret)
@@ -94,7 +94,7 @@ export function useConfigCenterLoads(options: ConfigCenterLoadsOptions) {
     setTemplatePickerOpen(false)
   }
 
-  // C-D4 — same as file upload: a template replaces pending edits wholesale,
+  // Same as file upload: a template replaces pending edits wholesale,
   // so confirm the discard first when anything is unapplied.
   const handleLoadTemplate = (template: ConfigTemplate) => {
     if (hasPendingEdits()) {

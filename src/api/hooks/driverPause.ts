@@ -3,7 +3,7 @@ import * as api from '@/api/endpoints'
 import { useConnectionStore } from '@/stores/connectionStore'
 
 /**
- * Driver collection pause/resume hooks (audit RES-4, backend 2d29981).
+ * Driver collection pause/resume hooks.
  *
  * Scheduler-level switch: config and connection untouched; tasks skip
  * ticks while paused and resume at the next tick. Split out of the

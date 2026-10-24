@@ -1,4 +1,4 @@
-// C-C4: pure narrowing rules for the write page's dead-letter list.
+// Pure narrowing rules for the write page's dead-letter list.
 import { describe, expect, it } from 'vitest'
 import { filterWriteDeadLetters } from '@/lib/deadLetterFilter'
 import type { DeadLetterEntry } from '@/types/models'
@@ -16,7 +16,7 @@ const ENTRIES = [
   dl('plc1', 'level', 'unsupported patch key(s)'),
 ]
 
-describe('filterWriteDeadLetters (C-C4)', () => {
+describe('filterWriteDeadLetters', () => {
   it('empty term and "all" driver keep every entry', () => {
     expect(filterWriteDeadLetters(ENTRIES, '', 'all')).toHaveLength(3)
   })

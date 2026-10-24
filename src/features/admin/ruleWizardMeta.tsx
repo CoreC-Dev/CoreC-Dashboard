@@ -70,7 +70,7 @@ export const MATCH_TEMPLATES: { label: string; value: string }[] = [
  */
 export const PLAYGROUND_DEFAULTS = {
   driver: 'plc1',
-  /** C-B2: device/group are editable playground inputs, empty by default. */
+  /** Device/group are editable playground inputs, empty by default. */
   device: '',
   group: '',
   tag: 'temperature',

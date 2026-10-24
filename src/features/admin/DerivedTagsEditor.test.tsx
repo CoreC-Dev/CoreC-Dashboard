@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// C-B7 regression: deleting a derived tag must confirm (it used to vanish
+// Regression: deleting a derived tag must confirm (it used to vanish
 // instantly), the row edit button is a Pencil (Calculator read as
 // "compute"), and the expression field validates live — a broken expr used
 // to surface only at apply time.
@@ -42,7 +42,7 @@ afterEach(() => {
   useConfigStore.getState().reset()
 })
 
-describe('DerivedTagsEditor — delete confirm, pencil icon, live expr validation (C-B7)', () => {
+describe('DerivedTagsEditor — delete confirm, pencil icon, live expr validation', () => {
   it('row delete opens a confirm dialog; Confirm removes, Cancel keeps', async () => {
     render(
       <MemoryRouter>

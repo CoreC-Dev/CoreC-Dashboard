@@ -1,7 +1,5 @@
 /**
  * Driver Settings Registry
- *
- * (Split from settingsRegistry.ts — TD-ARCH-013.)
  */
 import {
   MODBUS_CONNECTION_FIELDS,
@@ -397,7 +395,7 @@ export const DRIVER_TOPLEVEL_FIELDS: SettingsField[] = [
     label: 'settings.tagsFile',
     type: 'text',
     default: 'tags.yaml',
-    // D-23: the help copy lives under driverWizard.* (both packs) — these
+    // The help copy lives under driverWizard.* (both packs) — these
     // two fields used to point at settings.tagsFileHelp/tagsIntervalHelp,
     // keys that never existed, so the edit form rendered the raw key string
     // ("settings.tagsFileHelp") as the help text.

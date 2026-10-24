@@ -1,8 +1,7 @@
 /**
- * RuntimeRulesTable — the live-engine rules table of RulesPage, extracted
- * when C-B6 (runtime search + priority sort) pushed the page over the
- * 500-line gate (same precedent as PprofDownloads in C-E1). Pure
- * presentation: filtering/sorting live in the page, this renders the
+ * RuntimeRulesTable — the live-engine rules table of RulesPage. Kept in
+ * its own module so RulesPage stays under the 500-line custom-lint gate.
+ * Pure presentation: filtering/sorting live in the page, this renders the
  * sorted/filtered slice it is handed.
  */
 import { ArrowDown, ArrowUp, Pencil, Play } from 'lucide-react'
@@ -16,7 +15,7 @@ import { formatNumber, isZeroTime } from '@/lib/utils'
 import type { RuleStat } from '@/types/models'
 
 export interface RuntimeRulesTableProps {
-  /** Filtered + sorted slice to render (C-B6 search & priority sort). */
+  /** Filtered + sorted slice to render (search & priority sort). */
   rules: RuleStat[]
   /** Current sort direction — the priority header is the toggle. */
   sortDesc: boolean
@@ -44,7 +43,7 @@ export const RuntimeRulesTable: React.FC<RuntimeRulesTableProps> = ({
         <thead className="bg-muted/50 border-b border-border uppercase font-semibold text-xs text-muted-foreground tracking-wider">
           <tr>
             <th className="px-4 py-3 w-16">
-              {/* C-B6: priority header toggles the sort direction. */}
+              {/* Priority header toggles the sort direction. */}
               <button
                 type="button"
                 onClick={onToggleSort}

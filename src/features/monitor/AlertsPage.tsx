@@ -32,13 +32,12 @@ import type { Alert, LogEvent } from '@/types/models'
 /**
  * Alerts — live warning/error feed + dead letter queue.
  *
- * B02: the /logs subscription NO LONGER lives here. It moved to the
- * instance-level AlertStreamProvider (mounted by AppShell), which keeps
- * sounds/notifications/badge alive on every route; this page now renders
- * the shared alertStore feed, so visiting it does not open a second
- * /logs socket (subscription dedupe). The page still owns the display
- * and the sound/notification preference toggles (they write through the
- * store so the global provider honors them).
+ * The /logs subscription lives in the instance-level AlertStreamProvider
+ * (mounted by AppShell), which keeps sounds/notifications/badge alive on
+ * every route; this page renders the shared alertStore feed, so visiting
+ * it does not open a second /logs socket (subscription dedupe). The page
+ * owns the display and the sound/notification preference toggles (they
+ * write through the store so the global provider honors them).
  */
 export const AlertsPage: React.FC = () => {
   const { t } = useTranslation()
@@ -49,7 +48,7 @@ export const AlertsPage: React.FC = () => {
   // mounted, arriving error events count as "seen" — the sidebar badge's
   // unread counter is frozen at 0 and new events don't re-arm it.
   const liveLogs = useAlertStore((s) => s.events)
-  // First-class rule alerts (audit OBS-4/HUB-6): fed by the provider's
+  // First-class rule alerts: fed by the provider's
   // /alerts/stream + GET /alerts hydration; acknowledged here by key.
   const ruleAlerts = useAlertStore((s) => s.ruleAlerts)
   const applyAlertEvent = useAlertStore((s) => s.applyAlertEvent)
@@ -82,7 +81,7 @@ export const AlertsPage: React.FC = () => {
     return () => setViewing(false)
   }, [setViewing])
 
-  // B09: the notification preference is worthless when the browser has it
+  // The notification preference is worthless when the browser has it
   // hard-denied (no prompt will ever appear), so the toggle must say so
   // instead of a comforting "on" that never delivers.
   const notifBlocked =
@@ -189,7 +188,7 @@ export const AlertsPage: React.FC = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="p-4 pt-0">
-            {/* B18: the big number is the bounded feed's watermark (cap
+            {/* The big number is the bounded feed's watermark (cap
              * MAX_ALERT_EVENTS), not a lifetime total or a rate — the
              * caption says "of the last N" so it can't read as one. */}
             <div className="text-2xl font-bold font-mono text-foreground">{liveLogs.length}</div>
@@ -203,9 +202,9 @@ export const AlertsPage: React.FC = () => {
         </Card>
       </div>
 
-      {/* Active Rule Alerts (audit OBS-4/HUB-6) — the engine registry's
-          first-class alerts, streamed live; acknowledgement sticks until
-          the alert clears. */}
+      {/* Active Rule Alerts — the engine registry's
+           first-class alerts, streamed live; acknowledgement sticks until
+           the alert clears. */}
       <Card className="border-border bg-card card-enter">
         <CardHeader className="p-4 pb-2">
           <CardTitle className="text-sm font-semibold flex items-center space-x-2">
@@ -395,7 +394,7 @@ export const AlertsPage: React.FC = () => {
           ) : (
             <div className="space-y-2 max-h-[60vh] overflow-y-auto font-mono text-xs">
               {filteredLogs.map((log: LogEvent) => {
-                // B15: relative age with the full time on hover — a
+                // Relative age with the full time on hover — a
                 // yesterday-frozen event must not read as just-emitted.
                 const ts = formatRelativeTime(log.timestamp, t)
                 return (

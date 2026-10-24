@@ -16,11 +16,11 @@ import { useInstanceStore } from '@/stores/instanceStore'
 
 /**
  * Import dialog for CoreC instance configs — drag & drop, file browse and
- * paste, one behavior for every entry point (audit A-14: the homepage offered
+ * paste, one behavior for every entry point (the homepage offered
  * drag & drop + file browse while the settings page had a bare textarea for
  * the exact same operation).
  *
- * Outcome classification (D-08/A-09): the store's importInstances returns
+ * Outcome classification: the store's importInstances returns
  * {added, skipped, invalid, parseError}; each story gets its own copy — a
  * clean import shows a brief green confirmation and auto-closes, anything
  * mixed keeps the dialog open so the breakdown stays readable.
@@ -37,7 +37,7 @@ const FEEDBACK_TONE_CLASS: Record<ImportFeedback['tone'], string> = {
   error: 'text-status-error',
 }
 
-/** How long a clean success stays visible before the dialog closes (D-08). */
+/** How long a clean success stays visible before the dialog closes. */
 const IMPORT_SUCCESS_CLOSE_MS = 1500
 
 interface InstanceImportDialogProps {

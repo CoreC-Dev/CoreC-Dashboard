@@ -42,7 +42,7 @@ import { DATA_TYPES, type DataType } from '@/types/config'
 /** Sample-point defaults — owned by the wizard (ruleWizardMeta), passed in. */
 export interface RulePlaygroundDefaults {
   driver: string
-  /** C-B2: device/group defaults — empty unless the caller provides one. */
+  /** Device/group defaults — empty unless the caller provides one. */
   device?: string
   group?: string
   tag: string
@@ -61,8 +61,8 @@ export interface RulePlaygroundProps {
 }
 
 /** Numeric input text becomes a number; anything else stays a string.
- *  Shared with the runtime rows' Test dialog (C-B3) so both surfaces
- *  build identical sample points. */
+ * Shared with the runtime rows' Test dialog so both surfaces
+ * build identical sample points. */
 export const parseSampleValue = (raw: string): number | string => {
   const trimmed = raw.trim()
   if (trimmed !== '') {
@@ -80,7 +80,7 @@ export const RulePlayground: React.FC<RulePlaygroundProps> = ({ match, defaults 
 
   const [open, setOpen] = useState(false)
   const [driver, setDriver] = useState(defaults.driver)
-  // C-B2: the DSL supports device/group fields — an expression like
+  // The DSL supports device/group fields — an expression like
   // `device == "meter-01" && value > 80` could never hit without them.
   const [device, setDevice] = useState(defaults.device ?? '')
   const [group, setGroup] = useState(defaults.group ?? '')

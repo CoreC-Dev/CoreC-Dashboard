@@ -1,5 +1,5 @@
 /**
- * Wizard gate-reason helpers (UX audit C-A5).
+ * Wizard gate-reason helpers.
  *
  * "Please fix the errors before continuing" told the operator nothing
  * about WHICH of a dozen registry fields was still empty. The step-1

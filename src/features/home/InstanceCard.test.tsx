@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// A-01 — the card must render the recorded probe-failure kind as translated
+// The card must render the recorded probe-failure kind as translated
 // copy, keeping "invalid API key" visually distinct from "cannot reach
 // server" (red dot + distinct message in both cases).
 import { cleanup, configure, fireEvent, render, screen, waitFor } from '@testing-library/react'
@@ -16,7 +16,7 @@ configure({ asyncUtilTimeout: 4000 })
 
 const t = (key: string, opts?: Record<string, unknown>) => i18n.t(key, opts)
 
-// Mock fetch — needed by the A-08 retry test (probeOneInstance hits the
+// Mock fetch — needed by the retry test (probeOneInstance hits the
 // five probe endpoints). Healthy by default.
 const mockFetch = vi.fn<(url: string, init?: RequestInit) => Promise<Response>>()
 globalThis.fetch = mockFetch as unknown as typeof globalThis.fetch
@@ -74,7 +74,7 @@ beforeEach(() => {
 
 afterEach(cleanup)
 
-describe('InstanceCard probe-error rendering (A-01)', () => {
+describe('InstanceCard probe-error rendering', () => {
   it("renders the invalid-key copy for the 'unauthorized' kind with an error dot", () => {
     useInstanceStore.setState({ probeErrors: { 'inst-1': 'unauthorized' } })
 
@@ -115,11 +115,11 @@ describe('InstanceCard probe-error rendering (A-01)', () => {
   })
 })
 
-// A-07 — the 15s background re-probe used to flip EVERY card to a yellow
+// The 15s background re-probe used to flip EVERY card to a yellow
 // "connecting" dot (dead instances alternated yellow/red forever). A probe
 // in flight must not disturb a card that already has a verdict; the yellow
 // radar state is reserved for the very first probe.
-describe('InstanceCard background re-probe stability (A-07)', () => {
+describe('InstanceCard background re-probe stability', () => {
   it('keeps the green dot while re-probing an already-connected instance', () => {
     useInstanceStore.setState({
       instances: [{ ...baseInstance, lastConnectedAt: '2026-01-01T00:00:00.000Z' }],
@@ -160,18 +160,18 @@ describe('InstanceCard background re-probe stability (A-07)', () => {
   })
 })
 
-// A-08/D-12 — the refresh icon on a failed card used to NAVIGATE INTO the
+// The refresh icon on a failed card used to NAVIGATE INTO the
 // instance (the opposite of retrying) and had no accessible label at all.
 // It must now re-probe, announce itself as "retry connection", and spin
 // while the re-probe is in flight.
-describe('InstanceCard error-state retry (A-08/D-12)', { timeout: 15_000 }, () => {
+describe('InstanceCard error-state retry', { timeout: 15_000 }, () => {
   it('retries the probe from a failed card and records the fresh verdict', async () => {
     useInstanceStore.setState({ probeErrors: { 'inst-1': 'unreachable' } })
     const { container } = renderCard(baseInstance)
     expect(container.querySelector('.bg-status-error')).not.toBeNull()
 
     const retry = screen.getByRole('button', { name: t('instances.retryConnection') })
-    // Accessible name + hover hint both present (D-12: it had neither).
+    // Accessible name + hover hint both present (it had neither).
     expect(retry).toHaveAttribute('title', t('instances.retryConnection'))
     expect(retry).not.toHaveAttribute('aria-label', 'common.refresh')
 
@@ -209,11 +209,11 @@ describe('InstanceCard error-state retry (A-08/D-12)', { timeout: 15_000 }, () =
   })
 })
 
-// A-13 — the colored status dot carried no text, tooltip or aria-label:
+// The colored status dot carried no text, tooltip or aria-label:
 // color-blind operators could not tell the states apart and screen readers
 // announced nothing. The dot must label itself in every state, and the
 // error/unknown states must also render the word as a badge next to it.
-describe('InstanceCard status dot labeling (A-13)', () => {
+describe('InstanceCard status dot labeling', () => {
   function statusDot(container: HTMLElement): HTMLElement {
     const dot = container.querySelector('span[role="img"]')
     expect(dot).not.toBeNull()
@@ -271,10 +271,10 @@ describe('InstanceCard status dot labeling (A-13)', () => {
   })
 })
 
-// A-18 — the store has had reorderInstances since the first commit but no
+// The store has had reorderInstances since the first commit but no
 // UI ever called it: an operator with several instances could not reorder
 // them at all. The card menu now offers move up/down wired to that action.
-describe('InstanceCard reorder menu (A-18)', { timeout: 15_000 }, () => {
+describe('InstanceCard reorder menu', { timeout: 15_000 }, () => {
   const secondInstance: CoreCInstance = {
     ...baseInstance,
     id: 'inst-2',
@@ -349,11 +349,11 @@ describe('InstanceCard reorder menu (A-18)', { timeout: 15_000 }, () => {
   })
 })
 
-// D-07 — deleting an instance is irreversible; it gets the same AlertDialog
+// Deleting an instance is irreversible; it gets the same AlertDialog
 // discipline as the other destructive actions: no dismissal on outside
 // click, a destructive-styled confirm, and confirm copy that differs from
 // the menu item that opened the dialog.
-describe('InstanceCard delete confirmation (D-07)', { timeout: 15_000 }, () => {
+describe('InstanceCard delete confirmation', { timeout: 15_000 }, () => {
   async function openDeleteDialog() {
     renderCard(baseInstance)
     const trigger = screen.getByRole('button', { name: t('common.moreActions') })

@@ -32,7 +32,7 @@ import { THEME_I18N_KEYS, THEME_VARIANTS, useThemeStore } from '@/stores/themeSt
 import type { CoreCInstance } from '@/types/models'
 
 /**
- * A-06: the whole UI previously had zero outbound help links — an operator
+ * The whole UI previously had zero outbound help links — an operator
  * stuck on "what do I put in this form?" had nowhere to click. Both the
  * header help button and the empty-state hint link point here.
  */
@@ -44,7 +44,7 @@ export const InstancePanel: React.FC = () => {
   const addInstance = useInstanceStore((s) => s.addInstance)
   const updateInstance = useInstanceStore((s) => s.updateInstance)
   const [searchParams, setSearchParams] = useSearchParams()
-  // A-11: surfaced as a banner when localStorage writes fail (quota /
+  // Surfaced as a banner when localStorage writes fail (quota /
   // private mode) so the data-loss risk is not discovered the hard way.
   const persistFailed = useInstanceStore((s) => s.persistFailed)
 
@@ -68,7 +68,7 @@ export const InstancePanel: React.FC = () => {
     setDialogOpen(true)
   }, [])
 
-  // D-15 wiring: ConnectionGate's failure screen links here with
+  // ConnectionGate's failure screen links here with
   // ?edit=<instanceId> ("edit this instance"). Open the edit dialog for
   // that instance, then strip the param — leaving it would re-open the
   // dialog on every later visit to the homepage.
@@ -96,7 +96,7 @@ export const InstancePanel: React.FC = () => {
     } else {
       targetId = addInstance(data)
     }
-    // A-03: probe immediately — the card must not sit on a stale grey/red
+    // Probe immediately — the card must not sit on a stale grey/red
     // state for up to 15s after the operator saved a new or fixed config.
     void probeOneInstance(targetId)
   }
@@ -110,7 +110,7 @@ export const InstancePanel: React.FC = () => {
     setLocale(nextLang)
   }
 
-  // A-22: the toggle used to display the CURRENT language ("中" while the
+  // The toggle used to display the CURRENT language ("中" while the
   // UI was already Chinese) with no title or aria-label — an operator could
   // not tell what a click would do. It now shows the language a click will
   // switch TO, and announces the same in its accessible name.
@@ -202,8 +202,8 @@ export const InstancePanel: React.FC = () => {
               <Settings className="w-4 h-4" />
             </Link>
           </Button>
-          {/* A-06: an outbound help entry — the audit found the entire UI had
-              none, leaving first-time operators with a form and no docs. */}
+          {/* An outbound help entry — the audit found the entire UI had
+               none, leaving first-time operators with a form and no docs. */}
           <Button
             variant="ghost"
             size="icon"
@@ -221,8 +221,8 @@ export const InstancePanel: React.FC = () => {
 
       {/* Content */}
       <main className="max-w-[1400px] mx-auto p-4 md:p-8">
-        {/* A-11: localStorage writes failed (quota/private mode) — without
-            this warning the list silently evaporates on the next refresh. */}
+        {/* LocalStorage writes failed (quota/private mode) — without
+             this warning the list silently evaporates on the next refresh. */}
         {persistFailed && (
           <div
             role="alert"
@@ -239,8 +239,8 @@ export const InstancePanel: React.FC = () => {
             <p className="text-sm text-muted-foreground mb-2 max-w-md">
               {t('instances.emptyDesc')}
             </p>
-            {/* A-06: the first-run question ("what even is an API key?") gets
-                an actionable link instead of a dead end. */}
+            {/* The first-run question ("what even is an API key?") gets
+                 an actionable link instead of a dead end. */}
             <a
               href={HELP_URL}
               target="_blank"
@@ -318,9 +318,9 @@ export const InstancePanel: React.FC = () => {
         onSubmit={handleSubmit}
       />
 
-      {/* Import dialog — A-14: one shared component (drag & drop + file
-          browse + paste) for the homepage AND the settings page; the two
-          entry points used to offer different UI for the same operation. */}
+      {/* Import dialog — One shared component (drag & drop + file
+           browse + paste) for the homepage AND the settings page; the two
+           entry points used to offer different UI for the same operation. */}
       <InstanceImportDialog open={importOpen} onOpenChange={setImportOpen} />
       <InstanceExportDialog open={exportOpen} onOpenChange={setExportOpen} />
     </div>

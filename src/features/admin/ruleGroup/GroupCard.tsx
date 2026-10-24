@@ -1,8 +1,7 @@
 /**
  * GroupCard — one expandable rule-group accordion item: rename/delete
  * group, compact rules table, add/edit/remove rules via the inline
- * editor. Extracted from RuleGroupEditor (D2, quality audit 2026-10-21)
- * — behavior unchanged, props identical.
+ * editor. Pure/presentational: props in, callbacks injected.
  */
 import { ChevronDown, ChevronRight, FolderTree, Pencil, Plus, Trash2 } from 'lucide-react'
 import type React from 'react'
@@ -53,7 +52,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
   const [addingRule, setAddingRule] = useState(false)
   const [editingRule, setEditingRule] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
-  // C-B4: sub-rule deletion asks too — the group delete had a confirm while
+  // Sub-rule deletion asks too — the group delete had a confirm while
   // the row delete (the easier one to mis-click) vanished instantly.
   const [deleteRuleName, setDeleteRuleName] = useState<string | null>(null)
 
@@ -261,7 +260,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* C-B4: sub-rule delete confirmation — same gate as the group delete. */}
+      {/* Sub-rule delete confirmation — same gate as the group delete. */}
       <AlertDialog open={!!deleteRuleName} onOpenChange={(o) => !o && setDeleteRuleName(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>

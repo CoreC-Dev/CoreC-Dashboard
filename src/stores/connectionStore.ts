@@ -2,7 +2,7 @@ import { create } from 'zustand'
 
 /**
  * Lightweight connection-state mirror for api/hooks to read `isConnected`
- * without importing from contexts/ (breaks the api↔contexts cycle, TD-ARCH-002).
+ * without importing from contexts/ (breaks the api↔contexts cycle).
  *
  * The ConnectionProvider owns the source of truth (local useState + probe
  * effect) and syncs `isConnected` here. Only one provider is mounted at a

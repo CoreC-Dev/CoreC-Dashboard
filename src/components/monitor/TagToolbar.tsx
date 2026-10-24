@@ -22,10 +22,10 @@ interface TagToolbarProps {
   onDriverChange: (value: string) => void
   selectedGroup: string
   onGroupChange: (value: string) => void
-  /** B07: active quality filter ('all' | 'good' | 'bad' | 'uncertain'). */
+  /** Active quality filter ('all' | 'good' | 'bad' | 'uncertain'). */
   selectedQuality: QualityFilter
   onQualityChange: (value: QualityFilter) => void
-  /** B07: "stale tags only" toggle (revives the dead tags.staleOnly key). */
+  /** "stale tags only" toggle (revives the dead tags.staleOnly key). */
   staleOnly: boolean
   onStaleOnlyChange: (value: boolean) => void
   drivers: DriverStatus[]
@@ -106,8 +106,8 @@ export function TagToolbar({
             </SelectContent>
           </Select>
 
-          {/* Quality Filter (B07) — the problem-point hunt: bad/uncertain
-           *  quality tags no longer hide among hundreds of rows. */}
+          {/* Quality Filter — the problem-point hunt: bad/uncertain
+           * quality tags no longer hide among hundreds of rows. */}
           <Select
             value={selectedQuality}
             onValueChange={(v) => onQualityChange(v as QualityFilter)}
@@ -123,7 +123,7 @@ export function TagToolbar({
             </SelectContent>
           </Select>
 
-          {/* Stale-only toggle (B07) — 复用存量键 tags.staleOnly. */}
+          {/* Stale-only toggle — 复用存量键 tags.staleOnly. */}
           <div className="flex items-center gap-1.5 shrink-0">
             <Checkbox
               id={staleId}

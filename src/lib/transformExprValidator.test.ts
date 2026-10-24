@@ -39,7 +39,7 @@ describe('validateTransformExpression', () => {
     expect(validateTransformExpression('value * 3.14159').valid).toBe(true)
   })
 
-  // ─── H-6 regression: scientific notation ──────────────────────────
+  // ─── Regression: scientific notation ──────────────────────────
   it('accepts scientific notation with lowercase e', () => {
     expect(validateTransformExpression('value * 1e3').valid).toBe(true)
   })
@@ -135,7 +135,7 @@ describe('validateTransformExpression', () => {
     expect(r.warnings.some((w) => w.includes('division by zero'))).toBe(true)
   })
 
-  // ─── L-6 regression: missing operators between operands ────────
+  // ─── Regression: missing operators between operands ────────
   it('rejects two operands with no operator (value + number)', () => {
     const r = validateTransformExpression('value 2')
     expect(r.valid).toBe(false)
@@ -166,7 +166,7 @@ describe('validateTransformExpression', () => {
     expect(validateTransformExpression('(value + 1) * 2').valid).toBe(true)
   })
 
-  // ─── L-6 re-audit: scientific notation bypass ──────────────────
+  // ─── Re-audit: scientific notation bypass ──────────────────
   it('rejects missing operator with scientific notation (value 1e3)', () => {
     const r = validateTransformExpression('value 1e3')
     expect(r.valid).toBe(false)
@@ -190,7 +190,7 @@ describe('validateTransformExpression', () => {
     expect(validateTransformExpression('1.5e3 * value').valid).toBe(true)
   })
 
-  // ─── L-6 re-audit: paren-boundary missing operator ─────────────
+  // ─── Re-audit: paren-boundary missing operator ─────────────
   it('rejects missing operator across paren boundary ((value + 1) 2)', () => {
     const r = validateTransformExpression('(value + 1) 2')
     expect(r.valid).toBe(false)

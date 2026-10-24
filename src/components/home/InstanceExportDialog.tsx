@@ -20,7 +20,7 @@ interface InstanceExportDialogProps {
 
 /**
  * Export dialog for CoreC instance configs. By default the export omits API
- * secrets (TD-SEC-003); the operator can opt in to including them with an
+ * secrets; the operator can opt in to including them with an
  * explicit warning that the file will contain plain-text credentials.
  */
 export const InstanceExportDialog: React.FC<InstanceExportDialogProps> = ({

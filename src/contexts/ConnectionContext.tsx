@@ -47,19 +47,19 @@ const queryClientCache = new Map<string, QueryClient>()
 let lastResetInstanceId: string | null = null
 
 /**
- * D-01: sink the currently-mounted provider registers so the shared
+ * Sink the currently-mounted provider registers so the shared
  * per-instance QueryClient caches can notify it when a query or mutation
  * is answered with 401. Only one provider is mounted at a time (the
  * per-instance route tree), so a module-level ref is sufficient.
  */
 let notifyAuthExpired: (() => void) | null = null
 
-/** A-21: in-instance re-probe cadence, aligned with the homepage probe. */
+/** In-instance re-probe cadence, aligned with the homepage probe. */
 const PROBE_INTERVAL_MS = 15_000
 
 /**
  * Classify a probe/transport failure into the store's probe-error kind
- * (A-01): a 401 from the authenticated endpoint means the API key is
+ *: a 401 from the authenticated endpoint means the API key is
  * wrong; an abort means the probe timed out; anything else (DNS/CORS/
  * connection refused/5xx) means the instance is unreachable.
  */
@@ -80,7 +80,7 @@ function probeErrorKindOf(err: unknown): ProbeErrorKind {
 function getQueryClient(instanceId: string): QueryClient {
   let client = queryClientCache.get(instanceId)
   if (!client) {
-    // D-01: any query or mutation answered with 401 flips the provider
+    // Any query or mutation answered with 401 flips the provider
     // into the auth-expired state — a key that stops being accepted
     // mid-session must not leave the operator on a silent zombie UI
     // where every request fails but the indicator stays green.
@@ -104,7 +104,7 @@ function getQueryClient(instanceId: string): QueryClient {
 }
 
 /**
- * Full-screen overlay for the auth-expired state (D-01). Rendered by the
+ * Full-screen overlay for the auth-expired state. Rendered by the
  * provider INSTEAD of the children, so the whole instance UI is replaced
  * by one actionable prompt: re-enter the key, or go back to the list.
  * Deliberately raw HTML — contexts sit below the components layer in the
@@ -178,11 +178,11 @@ const AuthExpiredOverlay: React.FC<{
  * 1. Looks up the instance by ID from the instance store.
  * 2. Sets the module-level active connection (so apiRequest / WebSocket work).
  * 3. Probes the connection with an authenticated GET /stats (verifies the
- *    address AND the API key) on mount and every 15s (A-21), tracking
- *    isConnected / isConnecting / error.
+ * address AND the API key) on mount and every 15s, tracking
+ * isConnected / isConnecting / error.
  * 4. Provides a per-instance QueryClient so caches are isolated per instance;
- *    its QueryCache/MutationCache report 401s back to the provider, which
- *    swaps the whole UI for a re-enter-key overlay (D-01).
+ * its QueryCache/MutationCache report 401s back to the provider, which
+ * swaps the whole UI for a re-enter-key overlay.
  * 5. Cleans up the active connection on unmount (leaving the instance route).
  */
 export const ConnectionProvider: React.FC<{
@@ -201,12 +201,12 @@ export const ConnectionProvider: React.FC<{
   const [error, setError] = useState<string | null>(null)
   const [serverInfo, setServerInfo] = useState<ConnectionContextValue['serverInfo']>(null)
   const [probeNonce, setProbeNonce] = useState(0)
-  // D-01: set when the API key is rejected (probe or any query/mutation 401);
+  // Set when the API key is rejected (probe or any query/mutation 401);
   // the provider then renders the re-enter-key overlay instead of the app.
   const [authExpired, setAuthExpired] = useState(false)
 
   // Mirror isConnected to the connection store so api/hooks can read it
-  // without importing this context (breaks api↔contexts cycle, TD-ARCH-002).
+  // without importing this context (breaks api↔contexts cycle).
   const setConnected = useConnectionStore((s) => s.setConnected)
   useEffect(() => {
     setConnected(isConnected)
@@ -258,7 +258,7 @@ export const ConnectionProvider: React.FC<{
     }
   }, [instance])
 
-  // D-01: register the 401 sink so the per-instance QueryClient caches
+  // Register the 401 sink so the per-instance QueryClient caches
   // (created at module level, shared across mounts) can flip THIS provider
   // into the auth-expired state. Only one provider is mounted at a time.
   useEffect(() => {
@@ -272,7 +272,7 @@ export const ConnectionProvider: React.FC<{
     }
   }, [instanceId, setProbeResult])
 
-  // A-21: re-probe on the same 15s cadence as the homepage probe so a
+  // Re-probe on the same 15s cadence as the homepage probe so a
   // backend that goes down — or a key that stops being accepted — flips
   // the in-instance indicator within one interval instead of keeping the
   // green dot lit forever. Each nonce bump aborts and restarts the probe
@@ -293,7 +293,7 @@ export const ConnectionProvider: React.FC<{
     if (!instance) {
       setIsConnecting(false)
       setIsConnected(false)
-      // D-05: no raw English error strings in a localized UI — ConnectionGate
+      // No raw English error strings in a localized UI — ConnectionGate
       // renders this text verbatim, so it must come from the language pack.
       setError(t('connection.errInstance'))
       return
@@ -307,7 +307,7 @@ export const ConnectionProvider: React.FC<{
     setIsConnecting(true)
     setProbing(instanceId, true)
 
-    // A-01: the probe hits GET /stats, which sits inside CoreC's Bearer
+    // The probe hits GET /stats, which sits inside CoreC's Bearer
     // auth group (hub/route/router.go) — one request proves both the
     // address (network reachable) and the API key (200 vs 401). GET /
     // (public) is fetched in parallel purely to enrich serverInfo and the
@@ -323,7 +323,7 @@ export const ConnectionProvider: React.FC<{
           setIsConnected(false)
           setIsConnecting(false)
           setError(t(PROBE_ERROR_I18N_KEYS[kind]))
-          // A rejected key gets the full-screen re-enter-key path (D-01)
+          // A rejected key gets the full-screen re-enter-key path
           // rather than a bare error line with no way to fix it.
           setAuthExpired(kind === 'unauthorized')
           setProbeResult(instanceId, false, undefined, kind)
@@ -355,7 +355,7 @@ export const ConnectionProvider: React.FC<{
   const reconnect = useCallback(() => setProbeNonce((n) => n + 1), [])
 
   /**
-   * D-01: recover from the auth-expired state. Persisting the new secret
+   * Recover from the auth-expired state. Persisting the new secret
    * updates the store instance, which re-runs the active-connection effect
    * (so apiRequest sends the new Bearer token) and re-triggers the probe;
    * the explicit nonce bump also covers re-submitting an unchanged value.

@@ -62,7 +62,7 @@ describe('parseConfigYaml', () => {
     expect(() => parseConfigYaml('node: {unclosed')).toThrow() // unclosed flow mapping
   })
 
-  it('rejects prototype-polluting keys (TD-SEC-009)', () => {
+  it('rejects prototype-polluting keys', () => {
     expect(() => parseConfigYaml('__proto__:\n  evil: true\n')).toThrow(/__proto__/)
     expect(() => parseConfigYaml('node:\n  constructor: 1\n')).toThrow(/constructor/)
     expect(() => parseConfigYaml('drivers:\n  - name: x\n    prototype: bad\n')).toThrow(

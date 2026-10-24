@@ -1,7 +1,6 @@
 /**
  * configSchema/duration.ts — Go duration-string validation (the one
- * value format CoreC and this schema tree share). Extracted from the
- * former single-file configSchema.ts (D2, quality audit 2026-10-21).
+ * value format CoreC and this schema tree share).
  */
 import { z } from 'zod'
 

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 //
-// TD-TEST-007 — InstanceDialog form validation.
+// InstanceDialog form validation.
 //
 // The zod schema (`instanceSchema`) is module-private in InstanceDialog.tsx, so
 // the schema rules (name required, baseUrl must be http/https, secret >= 8) are
@@ -49,9 +49,9 @@ async function submit() {
 
 // Suite timeout raised from the 5s default: under v8 coverage
 // instrumentation on a loaded runner this file's render+act sequences
-// exceeded 5s intermittently (stage-A audit finding #5: 1 flaky
+// exceeded 5s intermittently (1 flaky
 // timeout in 2 coverage runs, 5/5 pass in isolation).
-describe('InstanceDialog form validation (TD-TEST-007)', { timeout: 15_000 }, () => {
+describe('InstanceDialog form validation', { timeout: 15_000 }, () => {
   it('shows an error when name is empty on submit', async () => {
     renderDialog()
     await submit()
@@ -108,17 +108,17 @@ describe('InstanceDialog form validation (TD-TEST-007)', { timeout: 15_000 }, ()
     expect(onSubmit).not.toHaveBeenCalled()
   })
 
-  // A-02 — the secret field must explain where the key comes from; an
+  // The secret field must explain where the key comes from; an
   // operator seeing "API 密钥 (Bearer Token)" with zero context is the #1
   // cold-start blocker.
-  it('shows the secret-location hint under the API key field (A-02)', () => {
+  it('shows the secret-location hint under the API key field', () => {
     renderDialog()
     expect(screen.getByText(t('instances.secretHint'))).toBeInTheDocument()
   })
 
-  // A-05 — the connection-mode select must explain its three options; the
+  // The connection-mode select must explain its three options; the
   // previous copy leaked the internal "server.mjs" file name.
-  it('explains the connection modes under the select (A-05)', () => {
+  it('explains the connection modes under the select', () => {
     renderDialog()
     expect(screen.getByText(t('instances.proxyModeHint'))).toBeInTheDocument()
     // The refreshed copy must not leak the internal file name in either pack.
@@ -126,17 +126,17 @@ describe('InstanceDialog form validation (TD-TEST-007)', { timeout: 15_000 }, ()
     expect(i18n.t('instances.proxyModeProxy')).not.toContain('server.mjs')
   })
 
-  // A-10 — the dialog must disclose that the key is persisted in plain
+  // The dialog must disclose that the key is persisted in plain
   // text localStorage BEFORE the operator saves it, not after discovery.
-  it('discloses plain-text local storage under the API key field (A-10)', () => {
+  it('discloses plain-text local storage under the API key field', () => {
     renderDialog()
     expect(screen.getByText(t('instances.secretStorageNote'))).toBeInTheDocument()
   })
 
-  // A-17 — the API-key field must opt out of login heuristics: browsers and
+  // The API-key field must opt out of login heuristics: browsers and
   // password managers used to treat it as this site's login password and
   // offered save/fill prompts while the operator pasted a CoreC token.
-  it('suppresses password-manager save/fill on the API key field (A-17)', () => {
+  it('suppresses password-manager save/fill on the API key field', () => {
     renderDialog()
     const input = secretInput()
     expect(input).toHaveAttribute('autocomplete', 'off')
@@ -146,11 +146,11 @@ describe('InstanceDialog form validation (TD-TEST-007)', { timeout: 15_000 }, ()
   })
 })
 
-// D-13 — a one-shot "test connection" in the add/edit dialog: the operator
+// A one-shot "test connection" in the add/edit dialog: the operator
 // verifies address + key BEFORE saving instead of discovering a bad key
 // only after entering the instance. Exercises the same authenticated probe
 // as the homepage card (mocked here at the fetch boundary).
-describe('InstanceDialog — test connection (D-13)', { timeout: 15_000 }, () => {
+describe('InstanceDialog — test connection', { timeout: 15_000 }, () => {
   const mockFetch = vi.fn<(url: string, init?: RequestInit) => Promise<Response>>()
   globalThis.fetch = mockFetch as unknown as typeof globalThis.fetch
 
@@ -246,10 +246,10 @@ describe('InstanceDialog — test connection (D-13)', { timeout: 15_000 }, () =>
   })
 })
 
-// D-22 — the color swatches' aria-label/title were hardcoded English
+// The color swatches' aria-label/title were hardcoded English
 // ('Blue', 'Green'…) — screen readers and hover tooltips spoke English in a
 // zh UI. They must resolve through the language packs now.
-describe('InstanceDialog — localized color swatch labels (D-22)', { timeout: 15_000 }, () => {
+describe('InstanceDialog — localized color swatch labels', { timeout: 15_000 }, () => {
   it('labels every color swatch with the translated color name', () => {
     renderDialog()
 
@@ -268,10 +268,10 @@ describe('InstanceDialog — localized color swatch labels (D-22)', { timeout: 1
   })
 })
 
-// D-25 — the show/hide-secret toggle referenced common.show/common.hide,
+// The show/hide-secret toggle referenced common.show/common.hide,
 // keys that exist in neither pack; screen readers heard the literal
 // "common.show" key instead of a word.
-describe('InstanceDialog — secret visibility toggle label (D-25)', { timeout: 15_000 }, () => {
+describe('InstanceDialog — secret visibility toggle label', { timeout: 15_000 }, () => {
   it('announces show/hide with translated, existing keys', () => {
     renderDialog()
 

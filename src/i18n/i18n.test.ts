@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// D-11 — <html lang> must follow the active locale: a zh-CN default in
+// <html lang> must follow the active locale: a zh-CN default in
 // index.html never updates on language switch, so screen readers kept
 // reading English content with a Chinese voice engine (and vice versa).
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -7,7 +7,7 @@ import i18n, { setLocale } from '@/i18n'
 
 const originalLocale = i18n.language
 
-describe('i18n locale handling (D-11)', () => {
+describe('i18n locale handling', () => {
   afterEach(() => {
     setLocale(originalLocale)
     localStorage.clear()

@@ -81,7 +81,7 @@ for (const f of allFiles) {
   RELATIVE_IMPORT_RE.lastIndex = 0
   const matches = text.match(RELATIVE_IMPORT_RE)
   if (matches) {
-    errors.push(`${rel} 含 ${matches.length} 处相对导入（TD-ARCH-010：统一用 @/ 别名）`)
+    errors.push(`${rel} 含 ${matches.length} 处相对导入（统一用 @/ 别名）`)
   }
 }
 
@@ -91,7 +91,7 @@ const unusedExemptions = SIZE_EXEMPTIONS.filter((e) => !usedExemptions.has(e.fil
 if (errors.length === 0) {
   console.log(`✅ custom-lint 通过：无超标文件、无 console.log。`)
   if (usedExemptions.size > 0) {
-    console.log(`   已登记大小豁免（阶段 4 拆分后移除）：${usedExemptions.size} 个文件`)
+    console.log(`   已登记大小豁免（拆分后移除）：${usedExemptions.size} 个文件`)
   }
   if (unusedExemptions.length > 0) {
     console.log(`   ℹ️  豁免已修复可移除：${unusedExemptions.map((e) => e.file).join(', ')}`)

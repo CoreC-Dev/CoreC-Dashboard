@@ -39,7 +39,7 @@ export const getTargetDisplay = (rule: RuleStat): string => {
 
 /**
  * Form-side shape of the sample data point for the runtime row's Test
- * dialog (C-B3). Once evaluated by a rough client-side matcher; now the
+ * dialog. Once evaluated by a rough client-side matcher; now the
  * dialog POSTs to /rules/preview — the same scratch engine the wizard's
  * Playground uses — so the two "test" affordances can no longer disagree.
  */
@@ -166,7 +166,7 @@ interface RuleTestDialogProps {
 
 export const RuleTestDialog: React.FC<RuleTestDialogProps> = ({ rule, onClose }) => {
   const { t } = useTranslation()
-  // C-B3: the verdict comes from the SERVER's scratch engine
+  // The verdict comes from the SERVER's scratch engine
   // (POST /rules/preview) — the same engine the wizard's Playground
   // uses — so this dialog and the Playground can never disagree again.
   const { mutate, isPending, data, error } = useRulesPreview()

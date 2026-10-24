@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// C-A5 regression: a failing step gate must say WHICH required fields are
+// Regression: a failing step gate must say WHICH required fields are
 // still empty — "Missing required: Host" — instead of the generic
 // "Please fix the errors before continuing".
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -37,7 +37,7 @@ function renderWizard(el: React.ReactElement) {
   return render(<QueryClientProvider client={qc}>{el}</QueryClientProvider>)
 }
 
-describe('wizard gate reasons (C-A5)', () => {
+describe('wizard gate reasons', () => {
   it('DriverWizard connection step: empty name + settings list the exact missing fields', async () => {
     renderWizard(<DriverWizard open onOpenChange={vi.fn()} />)
 

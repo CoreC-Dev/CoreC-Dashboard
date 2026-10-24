@@ -36,8 +36,7 @@ import { formatNumber } from '@/lib/utils'
 
 // ─── Driver detail page ────────────────────────────────────────────────
 // The quick-edit form + its helpers live in ./driverDetail/
-// (D2, quality audit 2026-10-21 — the former 656-line page split by
-// concern; behavior identical).
+// (split by concern to keep this page under the 500-line gate).
 
 export const DriverDetailPage: React.FC = () => {
   const { t } = useTranslation()
@@ -45,7 +44,7 @@ export const DriverDetailPage: React.FC = () => {
   const adminBase = id ? `/corec/${id}/admin` : '/admin'
   const { data: driver, isLoading, error, refetch, isFetching } = useDriver(name ?? '')
   const { data: tagsData, isLoading: tagsLoading } = useDriverTags(name ?? '')
-  // Pause/resume collection (audit RES-4): scheduler-level switch, no
+  // Pause/resume collection: scheduler-level switch, no
   // config round trip. Membership drives the button's verb + badge.
   const { data: pausedData } = usePausedDrivers()
   const pauseMut = usePauseDriver(name ?? '')
@@ -61,7 +60,7 @@ export const DriverDetailPage: React.FC = () => {
     () => (rawYaml && driver ? extractDriverYaml(rawYaml, driver.name) : ''),
     [rawYaml, driver],
   )
-  // C-A11: rules whose match DSL consumes this driver's points — scanned
+  // Rules whose match DSL consumes this driver's points — scanned
   // from the saved config this page renders. The config entry (with its
   // tag list) drives the scan; the runtime stat carries no tags.
   const relatedRules = useMemo(() => {
@@ -114,7 +113,7 @@ export const DriverDetailPage: React.FC = () => {
   const st = ConnStateLabel[driver.state] ?? ConnStateLabel[0]
   // Unknown drivers return {"tags": null} (not 404); treat null/empty as "no tags".
   const tags = tagsData?.tags ? Object.values(tagsData.tags) : []
-  // C-A10: the truncated-tag note points at the real Tag Explorer (the
+  // The truncated-tag note points at the real Tag Explorer (the
   // monitor route), pre-filtered to this driver — the old copy named a page
   // that had no link or button anywhere on this page.
   const tagExplorerTo = id
@@ -298,11 +297,11 @@ export const DriverDetailPage: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* C-A11: rules consuming this driver's data — the detail page is the
-          natural "where does this driver's data go?" surface, and the only
-          structural link between a rule and a driver is its match DSL, so
-          the scan reuses the C-A3 dependency scanner over the SAVED config
-          (this page renders server state, not the working draft). */}
+      {/* Rules consuming this driver's data — the detail page is the
+           natural "where does this driver's data go?" surface, and the only
+           structural link between a rule and a driver is its match DSL, so
+           the scan reuses the dependency scanner over the SAVED config
+           (this page renders server state, not the working draft). */}
       <Card className="bg-card">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-sm font-semibold">

@@ -29,8 +29,7 @@ import { formatNumber } from '@/lib/utils'
 
 // ─── Transport detail page ────────────────────────────────────────────
 // The quick-edit form + its helpers live in ./transportDetail/
-// (D2, quality audit 2026-10-21 — the former 677-line page split by
-// concern; behavior identical).
+// (split by concern to keep this page under the 500-line gate).
 
 export const TransportDetailPage: React.FC = () => {
   const { t } = useTranslation()
@@ -129,10 +128,10 @@ export const TransportDetailPage: React.FC = () => {
         </CardHeader>
       </Card>
 
-      {/* C-A15: connectivity probe — publishes one synthetic data point
-          through the running transport (POST /transports/{name}/test);
-          the wizard cannot offer this because the instance must already
-          be registered (config saved & applied). */}
+      {/* Connectivity probe — publishes one synthetic data point
+           through the running transport (POST /transports/{name}/test);
+           the wizard cannot offer this because the instance must already
+           be registered (config saved & applied). */}
       <TransportTestSender name={transport.name} />
 
       {/* Publishing stat cards */}
@@ -163,11 +162,11 @@ export const TransportDetailPage: React.FC = () => {
         />
       </div>
 
-      {/* C-A14: dropped_commands was a bare number with no meaning — the
-          counter card above says WHAT, this note says SO WHAT: dropped is
-          unrecoverable, and the retry-exhausted commands it counts are
-          reviewable (and manually replayable) in the write-control page's
-          dead-letter queue. */}
+      {/* Dropped_commands was a bare number with no meaning — the
+           counter card above says WHAT, this note says SO WHAT: dropped is
+           unrecoverable, and the retry-exhausted commands it counts are
+           reviewable (and manually replayable) in the write-control page's
+           dead-letter queue. */}
       {transport.dropped_commands > 0 && (
         <Card className="border-status-warning/40 bg-status-warning/5">
           <CardHeader className="pb-2">

@@ -91,7 +91,7 @@ describe('proxyMode (ADR-004 addendum)', () => {
   })
 })
 
-describe('proxyMode rewrite-host sniff (audit A 待验证-1)', () => {
+describe('proxyMode rewrite-host sniff (待验证-1)', () => {
   beforeEach(() => {
     resetProxyMode()
     vi.restoreAllMocks()
@@ -104,7 +104,7 @@ describe('proxyMode rewrite-host sniff (audit A 待验证-1)', () => {
   it('detects "direct" when a SPA-fallback host answers 200 with text/html', async () => {
     // Netlify/Vercel-style rewrites answer every path with 200 + HTML;
     // without the content-type sniff this misjudges as proxy mode and
-    // every later /corec-proxy/* call silently fetches HTML (audit A 待验证-1).
+    // every later /corec-proxy/* call silently fetches HTML (待验证-1).
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue(

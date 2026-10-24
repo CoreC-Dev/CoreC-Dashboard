@@ -8,7 +8,7 @@ import {
   trafficTotalsFrameSchema,
 } from '@/types/api'
 
-// ─── Audit F1: /logs level contract ──────────────────────────────────────
+// ─── /logs level contract ──────────────────────────────────────
 // The backend marshals slog.Level as a STRING ("WARN" — verified by
 // compiling json.Marshal against the Go source); the frontend contract
 // is numeric. These tests pin the normalization so the silent breakage
@@ -60,12 +60,12 @@ describe('parseLogLevel — severity classification used by alert feed + termina
   })
 })
 
-// ─── Audit F2: /traffic frame contract ───────────────────────────────────
+// ─── /traffic frame contract ───────────────────────────────────
 // The backend's default mode pushes server-side diffed rate frames; the
 // old cumulative-only schema dropped 100% of them (panel stuck on
 // "waiting"). The union now accepts both modes.
 
-describe('trafficFrameSchema — both modes validate (audit F2)', () => {
+describe('trafficFrameSchema — both modes validate', () => {
   it('accepts the default rate frame', () => {
     const rate = { read_rate: 125, publish_rate: 124, dropped_rate: 0 }
     expect(trafficRateFrameSchema.safeParse(rate).success).toBe(true)

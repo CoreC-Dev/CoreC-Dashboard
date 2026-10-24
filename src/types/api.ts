@@ -98,8 +98,8 @@ export const writeAuditEntrySchema = z.object({
   /** Originating client address — only set for source="api" writes. */
   remote: z.string().optional(),
   /**
-   * true when the write bypassed the tag's scale/offset inversion
-   * (audit DRV-1): the recorded value IS the device-side raw
+   * true when the write bypassed the tag's scale/offset inversion:
+   * the recorded value IS the device-side raw
    * representation. Omitted (false) for engineering-value writes.
    */
   raw: z.boolean().optional(),
@@ -116,8 +116,8 @@ export type WriteHistoryResponse = z.infer<typeof writeHistoryResponseSchema>
 
 // ─── Config change audit (GET /configs/audit) ────────────────────────
 //
-// Bounded, newest-first trail of successful configuration mutations
-// (backend audit HUB-4). In-memory only: the on-disk truth is the
+// Bounded, newest-first trail of successful configuration mutations.
+// In-memory only: the on-disk truth is the
 // config file + backups.
 
 export const configAuditEntrySchema = z.object({
@@ -137,7 +137,7 @@ export type ConfigAuditResponse = z.infer<typeof configAuditResponseSchema>
 
 // ─── First-class alerts (GET /alerts, POST /alerts/ack) ──────────────
 //
-// The engine's alert registry (audit OBS-4/HUB-6): active alerts have
+// The engine's alert registry: active alerts have
 // identity (rule|driver|tag), a fire count, and an ack flag; the
 // bounded history carries fired/acked/cleared events newest-first.
 // Validated with zod at the endpoint boundary (后端响应不可信任).

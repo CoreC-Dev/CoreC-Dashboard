@@ -116,7 +116,7 @@ describe('ConfigBackupsPanel', () => {
 
     // Step 2: "Restore Now" fires the POST.
     const confirm = screen.getByRole('button', { name: 'Restore Now' })
-    // D-19: danger confirms use the destructive red — status-error is
+    // Danger confirms use the destructive red — status-error is
     // reserved for status indication, not buttons.
     expect(confirm.className).toContain('bg-destructive')
     expect(confirm.className).not.toContain('bg-status-error')

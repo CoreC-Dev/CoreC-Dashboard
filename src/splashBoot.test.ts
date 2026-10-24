@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Static splash (UX audit A-12): main.tsx awaits the proxy-mode probe (up to
+// Static splash: main.tsx awaits the proxy-mode probe (up to
 // ~3s on a cold start) before createRoot, and index.html's #root used to be
 // empty during that whole window — a dead-white screen with no hint whether
 // the app is loading or broken. The splash must:
@@ -34,7 +34,7 @@ function rootInnerHTML(): string {
   return match![1]
 }
 
-describe('static boot splash (A-12)', () => {
+describe('static boot splash', () => {
   it('shows bilingual loading copy inside #root before React mounts', () => {
     const markup = rootInnerHTML()
     expect(markup).toContain('正在加载 CoreC Dashboard…')

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// C-A7 regression: the config and runtime zones render the same driver
+// Regression: the config and runtime zones render the same driver
 // twice with no way to tell them apart. Config cards now carry
 // live/configured-only + pending-changes badges (the live badge jumps to
 // the runtime card), runtime cards carry a pending-changes badge that
@@ -103,7 +103,7 @@ afterEach(() => {
   vi.clearAllMocks()
 })
 
-describe('dual-zone badges and cross-links (C-A7)', () => {
+describe('dual-zone badges and cross-links', () => {
   it('clean state: config card says Live with no pending badge', async () => {
     render(wrap(<DriversPage />))
     // The config card renders from the store synchronously; the Live badge

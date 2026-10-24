@@ -1,6 +1,6 @@
 import type { DataTypeString } from '@/types/config'
 
-// Re-exported for backward compat; canonical definition is in @/types/config (TD-ARCH-001).
+// Re-exported for backward compat; canonical definition is in @/types/config.
 export type { DataTypeString }
 
 export const Quality = {

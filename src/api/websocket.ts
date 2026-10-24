@@ -15,7 +15,7 @@ export class CoreCWebSocket<T = unknown> {
    * Rate-limit reporter: called (at most once per second while dropping
    * continues) with the number of messages dropped by the sliding-window
    * limiter since the previous report. Consumers surface this so the
-   * >500 msg/s cap is visible instead of silent (audit B01).
+   * >500 msg/s cap is visible instead of silent.
    */
   private onDropCallback?: (dropped: number) => void
   private isDestroyed = false
@@ -90,7 +90,7 @@ export class CoreCWebSocket<T = unknown> {
       const proxyMode = resolveProxyMode(conn?.useProxy)
       let wsUrl: URL
       if (proxyMode === 'proxy') {
-        // Same-origin WS proxy (ADR-004, D3): the browser connects to
+        // Same-origin WS proxy (ADR-004): the browser connects to
         // ws://<same-origin>/corec-ws?target=<backend>&token=...;
         // server.mjs proxies the upgrade to the real backend.
         wsUrl = new URL(`/corec-ws`, window.location.origin)
@@ -103,7 +103,7 @@ export class CoreCWebSocket<T = unknown> {
       }
 
       if (secret) {
-        // SECURITY NOTE (TD-SEC-005, D6): The token travels in the WS URL query
+        // SECURITY NOTE: The token travels in the WS URL query
         // string. In proxy mode the URL is same-origin (token not in backend
         // logs). In direct mode the token is visible to the backend — this is
         // the pre-ADR-004 behavior, accepted as a tradeoff for static hosting.
@@ -219,8 +219,8 @@ export class CoreCWebSocket<T = unknown> {
   /**
    * Controlled manual reconnect — the recovery entry point after a
    * 'rejected' status (maxRetries exhausted / upgrade refused), where the
-   * socket otherwise never tries again and the UI has no in-band way back
-   * (audit B01/D-02: "rejected 后无自愈无入口").
+   * socket otherwise never tries again and the UI has no in-band way
+   * back ("rejected 后无自愈无入口").
    *
    * Backoff discipline: the retry ladder is reset (retryCount = 0), so the
    * next failure sequence starts from baseDelay exactly like a fresh

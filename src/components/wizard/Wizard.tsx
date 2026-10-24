@@ -77,7 +77,7 @@ interface WizardProps {
    */
   canFinish?: boolean
   /**
-   * Dirty-draft predicate for the cancel guard (C-A2). When provided and
+   * Dirty-draft predicate for the cancel guard. When provided and
    * true, EVERY dismiss path (Cancel button, Esc, X, overlay click) first
    * opens the shared DiscardChangesDialog instead of closing — the wizard
    * only closes after an explicit "Discard". Omit (or return false) to
@@ -158,7 +158,7 @@ const Wizard: React.FC<WizardProps> = ({
       onEscapeKeyDown={(e) => {
         // Always funnel Esc through onCancel (WizardDialog's guarded close
         // path) instead of letting Radix dismiss the dialog directly — a
-        // dirty draft must first pass the discard confirmation (C-A2).
+        // dirty draft must first pass the discard confirmation.
         // Closing is blocked entirely mid-apply (non-atomic hot-reload).
         e.preventDefault()
         if (!finishing) onCancel?.()
@@ -304,7 +304,7 @@ export const WizardDialog: React.FC<WizardDialogProps> = ({
   const [discardOpen, setDiscardOpen] = useState(false)
 
   // Single guarded close funnel for EVERY dismiss path (Cancel button, Esc,
-  // X, overlay click) — C-A2. A clean draft closes immediately; a dirty
+  // X, overlay click). A clean draft closes immediately; a dirty
   // draft first sees the shared DiscardChangesDialog, and only its explicit
   // "Discard" closes the wizard. Never closes mid-apply (finishing).
   const requestClose = useCallback(() => {

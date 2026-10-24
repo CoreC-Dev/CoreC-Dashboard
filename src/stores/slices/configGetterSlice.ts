@@ -15,7 +15,7 @@ import {
 } from '@/lib/configYaml'
 import type { ConfigStoreState } from '@/stores/configStore'
 
-/** Derived-getter keys extracted from the God Object (TD-ARCH-003). */
+/** Derived-getter keys of the config store (the type-level slice). */
 export type GetterSlice = Pick<
   ConfigStoreState,
   | 'getWorkingYaml'

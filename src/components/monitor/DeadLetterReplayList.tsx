@@ -37,11 +37,11 @@ import {
 } from '@/components/ui/select'
 import type { DeadLetterEntry } from '@/types/models'
 
-/** Cap rendered dead letters to prevent DOM overload (TD-PERF-005). */
+/** Cap rendered dead letters to prevent DOM overload. */
 const MAX_VISIBLE_DLQ = 100
 
 /**
- * B10 — narrow the dead-letter queue by free text (driver/tag) and driver.
+ * Narrow the dead-letter queue by free text (driver/tag) and driver.
  * Exported pure so the row-filtering rules are unit-testable alongside the
  * component (the driver Select itself cannot be driven open in jsdom).
  */
@@ -61,9 +61,9 @@ export const filterDeadLetters = (
   })
 }
 
-/** B11 — deep link into the tag explorer for a failed command, so the
- *  operator can check the tag's CURRENT live value before replaying an old
- *  write into the PLC (driver+tag prefill, see TagExplorerPage). */
+/** Deep link into the tag explorer for a failed command, so the
+ * operator can check the tag's CURRENT live value before replaying an old
+ * write into the PLC (driver+tag prefill, see TagExplorerPage). */
 const tagExplorerLinkOf = (id: string | undefined, cmd: DeadLetterEntry['command']): string => {
   const params = `driver=${encodeURIComponent(cmd.driver)}&tag=${encodeURIComponent(cmd.tag)}`
   return id ? `/corec/${id}/monitor/tags?${params}` : `/monitor/tags?${params}`
@@ -98,11 +98,11 @@ export const DeadLetterReplayList: React.FC<DeadLetterReplayListProps> = ({
   onRefresh,
 }) => {
   const { t } = useTranslation()
-  // B11: instance-scoped route for the per-entry "View tag" deep link.
+  // Instance-scoped route for the per-entry "View tag" deep link.
   const { id } = useParams<{ id: string }>()
   const writeMutation = useWriteTag()
 
-  // Single-entry retry state (per-row button). C-C1: the row button only
+  // Single-entry retry state (per-row button). The row button only
   // STAGES the entry here; the write fires from the per-entry confirmation
   // dialog below — the same two-step gate the batch replay already uses.
   const [retryError, setRetryError] = useState<string | null>(null)
@@ -115,7 +115,7 @@ export const DeadLetterReplayList: React.FC<DeadLetterReplayListProps> = ({
   const [running, setRunning] = useState(false)
   const [results, setResults] = useState<ReplayOutcome[]>([])
 
-  // B10: locate one driver's failures among hundreds of dead letters.
+  // Locate one driver's failures among hundreds of dead letters.
   const [dlqSearch, setDlqSearch] = useState('')
   const [dlqDriver, setDlqDriver] = useState('all')
 
@@ -309,8 +309,8 @@ export const DeadLetterReplayList: React.FC<DeadLetterReplayListProps> = ({
           </div>
         ) : (
           <div className="space-y-2">
-            {/* B10: search + driver filter — locate one driver's failures
-                among hundreds of queued dead letters. */}
+            {/* Search + driver filter — locate one driver's failures
+                 among hundreds of queued dead letters. */}
             <div className="flex flex-col sm:flex-row items-center gap-2 pb-1">
               <div className="relative flex-1 w-full">
                 <Search className="w-4 h-4 absolute left-3 top-2.5 text-muted-foreground" />
@@ -355,7 +355,7 @@ export const DeadLetterReplayList: React.FC<DeadLetterReplayListProps> = ({
                     disabled={running}
                   />
                   <span className="text-xs text-muted-foreground">
-                    {/* B10: the count states which set select-all covers. */}
+                    {/* The count states which set select-all covers. */}
                     {t('alerts.selectAllDeadLetters', { count: visibleDeadLetters.length })}
                   </span>
                 </div>
@@ -384,8 +384,8 @@ export const DeadLetterReplayList: React.FC<DeadLetterReplayListProps> = ({
                             [{entry.command.driver}] {t('common.tag')}: {entry.command.tag} ={' '}
                             {String(entry.command.value)}
                           </div>
-                          {/* B06: sub-device of the failed write — same-name tags
-                          across devices are only distinguishable by this line. */}
+                          {/* Sub-device of the failed write — same-name tags
+                               across devices are only distinguishable by this line. */}
                           <div className="text-xs text-muted-foreground font-mono break-all">
                             {t('common.device')}: {entry.command.device || '-'}
                           </div>
@@ -402,8 +402,8 @@ export const DeadLetterReplayList: React.FC<DeadLetterReplayListProps> = ({
                       </div>
 
                       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 shrink-0">
-                        {/* B11: confirm the tag's live value before re-sending
-                            an old write — one click, no copy/switch/paste. */}
+                        {/* Confirm the tag's live value before re-sending
+                             an old write — one click, no copy/switch/paste. */}
                         <Link
                           to={tagExplorerLinkOf(id, entry.command)}
                           className="flex items-center justify-center gap-1 rounded-md border border-border px-2 py-1.5 text-xs text-primary transition-colors hover:bg-muted/40 hover:underline"
@@ -431,7 +431,7 @@ export const DeadLetterReplayList: React.FC<DeadLetterReplayListProps> = ({
                 })}
                 {filteredDeadLetters.length > MAX_VISIBLE_DLQ && (
                   <p className="text-xs text-muted-foreground text-center py-2">
-                    {/* B10: the "showing X/Y" footer tracks the FILTERED set. */}
+                    {/* The "showing X/Y" footer tracks the FILTERED set. */}
                     {t('common.showing', {
                       shown: visibleDeadLetters.length,
                       total: filteredDeadLetters.length,

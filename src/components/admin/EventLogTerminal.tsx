@@ -15,7 +15,7 @@ import type { LogEvent } from '@/types/models'
  * EventLogTerminal — reusable xterm.js terminal that subscribes to the CoreC
  * /logs WebSocket bus and renders live log events in real time.
  *
- * Extracted from DiagnosticsPage so it can be embedded in other pages
+ * Embeddable beyond DiagnosticsPage
  * (e.g. ConfigCenterPage shows it above the runtime log-level patch card so
  * the operator sees the effect of switching levels immediately).
  *
@@ -111,8 +111,9 @@ export const EventLogTerminal: React.FC<{
       '/logs',
       {},
       (frame: unknown) => {
-        // Boundary validation (audit F1): normalize the backend's string
-        // level ("WARN" etc.) to the numeric contract; drop malformed.
+        // Boundary validation: the backend marshals the level as a
+        // string ("WARN" etc.); logEventSchema normalizes it to the
+        // numeric contract and drops malformed frames.
         const parsed = logEventSchema.safeParse(frame)
         if (!parsed.success) return
         const evt: LogEvent = parsed.data

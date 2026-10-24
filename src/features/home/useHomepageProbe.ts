@@ -13,7 +13,7 @@ import type { CoreCInstance } from '@/types/models'
  * + GET /tags (tag count) and stores the results in lastKnownInfo so the
  * InstanceCard can display live metrics.
  *
- * A-01: /stats lives inside CoreC's Bearer auth group (hub/route/router.go)
+ * /stats lives inside CoreC's Bearer auth group (hub/route/router.go)
  * while GET / is public — a 401 on /stats with a healthy GET / means the
  * address is right but the API key is wrong, and is recorded distinctly
  * from an unreachable server.
@@ -128,14 +128,14 @@ async function probeInstance(
   if (infoRes.status !== 'fulfilled' || !infoRes.value.ok) {
     // A rejected fetch means either the 8s timeout / unmount abort fired
     // (AbortError) or the network/DNS/CORS layer failed — keep the two
-    // distinguishable (A-01: timeout vs wrong address).
+    // distinguishable (timeout vs wrong address).
     if (infoRes.status === 'rejected' && isAbortError(infoRes.reason)) {
       throw new ProbeError('timeout')
     }
     throw new ProbeError('unreachable')
   }
 
-  // A-01: GET / is public, /stats is behind the Bearer auth group. A 401
+  // GET / is public, /stats is behind the Bearer auth group. A 401
   // here with a healthy GET / means the address is right but the API key
   // is wrong — record it as such instead of silently dropping the stats.
   if (statsRes.status === 'fulfilled' && statsRes.value.status === 401) {
@@ -299,7 +299,7 @@ export function useHomepageProbe(): void {
 }
 
 /**
- * Probe one instance immediately and record the result in the store (A-03).
+ * Probe one instance immediately and record the result in the store.
  * Called by InstancePanel right after add/update so a fresh or edited
  * instance shows its connecting → verdict transition within seconds
  * instead of waiting up to REFRESH_INTERVAL for the next cycle.
@@ -324,7 +324,7 @@ export async function probeOneInstance(id: string): Promise<void> {
 }
 
 /**
- * Outcome of a one-shot connection test (D-13). On failure, `kind` is the
+ * Outcome of a one-shot connection test. On failure, `kind` is the
  * same vocabulary the homepage cards use — render it via
  * PROBE_ERROR_I18N_KEYS so the dialog and the card never disagree about
  * why a connection failed.
@@ -338,7 +338,7 @@ export interface ConnectionTestResult {
 }
 
 /**
- * One-shot connection test for the add/edit dialog (D-13): an operator had
+ * One-shot connection test for the add/edit dialog: an operator had
  * no way to verify address + key before saving, and a wrong key was only
  * discovered after entering the instance. Runs the exact same probe as the
  * homepage (authenticated /stats included, so a bad key reports

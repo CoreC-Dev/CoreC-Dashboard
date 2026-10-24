@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { getDriverFieldRegistry, getTransportFieldRegistry } from '@/lib/settingsRegistry'
 import { missingRequiredSettingLabels } from '@/lib/wizardGate'
 
-describe('missingRequiredSettingLabels (C-A5)', () => {
+describe('missingRequiredSettingLabels', () => {
   it('lists label keys of required fields whose value is empty', () => {
     const registry = getDriverFieldRegistry('modbus-tcp')
     // host is required; port carries a registry default and is not.

@@ -23,7 +23,7 @@ import type {
   TransportConfig,
 } from '@/types/config'
 
-/** CRUD keys extracted from the God Object (TD-ARCH-003). */
+/** CRUD mutation keys of the config store (the type-level slice). */
 export type CrudSlice = Pick<
   ConfigStoreState,
   | 'upsertDriver'

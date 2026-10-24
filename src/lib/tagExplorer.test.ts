@@ -1,6 +1,6 @@
-// Pure-logic tests for the tag explorer lib (B07 quality/stale filter; the
+// Pure-logic tests for the tag explorer lib (quality/stale filter; the
 // page's filteredTags memo and these tests share the exact same predicate —
-// plus B08's pause-gap helper and B15's relative timestamps).
+// plus the pause-gap helper and relative timestamps).
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   appendTrendSamples,
@@ -18,7 +18,7 @@ const pt = (quality: number, is_stale?: boolean): Pick<DataPoint, 'quality' | 'i
   is_stale,
 })
 
-describe('matchesQualityFilter (B07)', () => {
+describe('matchesQualityFilter', () => {
   it("'all' with no stale toggle keeps every point", () => {
     expect(matchesQualityFilter(pt(0), 'all', false)).toBe(true)
     expect(matchesQualityFilter(pt(1), 'all', false)).toBe(true)
@@ -48,7 +48,7 @@ describe('matchesQualityFilter (B07)', () => {
   })
 })
 
-describe('insertPauseGap (B08)', () => {
+describe('insertPauseGap', () => {
   it('appends a value-less gap sample one second after the last real sample', () => {
     const out = insertPauseGap([
       { time: 100, value: 5 },
@@ -72,7 +72,7 @@ describe('insertPauseGap (B08)', () => {
   })
 })
 
-describe('formatRelativeTime (B15)', () => {
+describe('formatRelativeTime', () => {
   // Pin the clock — under a loaded shared CI tree the test's Date.now()
   // and the helper's Date.now() could straddle a second boundary and flip
   // the expected title/age (A-domain flake report). Frozen now ⇒ the
@@ -124,7 +124,7 @@ describe('formatRelativeTime (B15)', () => {
   })
 })
 
-describe('appendTrendSamples (B21)', () => {
+describe('appendTrendSamples', () => {
   it('coalesces same-second updates into one sample, keeping the last value', () => {
     const out = appendTrendSamples(
       [{ time: 100, value: 1 }],
@@ -163,7 +163,7 @@ describe('appendTrendSamples (B21)', () => {
     const out = appendTrendSamples(
       [
         { time: 400, value: 1 },
-        { time: 401 }, // B08 gap marker
+        { time: 401 }, // pause-gap marker
       ],
       [{ time: 401, value: 2 }],
     )

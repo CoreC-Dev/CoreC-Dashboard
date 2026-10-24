@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// C-A1 regression: the driver/transport detail pages' quick-edit reload
+// Regression: the driver/transport detail pages' quick-edit reload
 // button must open the shared ConfigApplyConfirmationDialog (the SAME gate
 // as the list pages) before any PUT /configs fires — zero requests before
 // an explicit confirm, verbatim error kept in-dialog on failure.
@@ -97,7 +97,7 @@ afterEach(() => {
   cleanup()
 })
 
-describe('detail-page quick-edit reload confirmation gate (C-A1)', () => {
+describe('detail-page quick-edit reload confirmation gate', () => {
   it('driver detail: reload button opens the shared confirm dialog; PUT only fires after confirm', async () => {
     renderAt(<DriverDetailPage />, '/admin/drivers/plc1', '/admin/drivers/:name')
 

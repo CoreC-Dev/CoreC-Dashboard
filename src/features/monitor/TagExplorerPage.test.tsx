@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
-// TagExplorerPage (B07/B11) — end-to-end page tests with the endpoint layer
+// TagExplorerPage — end-to-end page tests with the endpoint layer
 // and the WebSocket class mocked; real react-query wiring inside a real
-// QueryClient. B07: the stale-only toggle narrows the rendered set. The
+// QueryClient. The stale-only toggle narrows the rendered set. The
 // virtualized rows need layout jsdom doesn't provide, so assertions ride on
 // the reactive result count and the table's empty states. i18n in English.
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -18,7 +18,7 @@ import type { DataPoint } from '@/types/models'
 configure({ asyncUtilTimeout: 4000 })
 
 // The page's useTagExplorerStream instantiates CoreCWebSocket — record
-// constructor args so the URL-param test (B11) can assert the driver filter
+// constructor args so the URL-param test can assert the driver filter
 // reached the socket, and stub the rest so no real socket opens.
 const socketArgs: unknown[][] = []
 vi.mock('@/api/websocket', () => ({
@@ -132,7 +132,7 @@ afterEach(() => {
   cleanup()
 })
 
-describe('TagExplorerPage — problem-point filters (B07)', () => {
+describe('TagExplorerPage — problem-point filters', () => {
   it('seeds the REST snapshot and shows the total count', async () => {
     renderPage()
 
@@ -150,7 +150,7 @@ describe('TagExplorerPage — problem-point filters (B07)', () => {
     expect(screen.queryByText('Points: 3')).toBeNull()
   })
 
-  it('combining stale-only with a search term can reach the empty state, and B22 clears it in one click', async () => {
+  it('combining stale-only with a search term can reach the empty state, and the reset clears it in one click', async () => {
     renderPage()
     expect(await screen.findByText('Points: 3')).toBeTruthy()
 
@@ -160,7 +160,7 @@ describe('TagExplorerPage — problem-point filters (B07)', () => {
     await screen.findByText('Points: 1')
 
     fireEvent.click(screen.getByRole('checkbox', { name: 'Stale Tags Only' }))
-    // Filters are active and matched nothing — the B22 empty state says
+    // Filters are active and matched nothing — the empty state says
     // so (instead of blaming filters the operator never set) and offers
     // the one-click reset.
     await screen.findByText('No tags match your filters')
@@ -180,7 +180,7 @@ describe('TagExplorerPage — problem-point filters (B07)', () => {
   })
 })
 
-describe('TagExplorerPage — dead-letter deep-link prefill (B11)', () => {
+describe('TagExplorerPage — dead-letter deep-link prefill', () => {
   it('prefills the driver filter and search box from ?driver=&tag=', async () => {
     renderPage('/corec/inst1/monitor/tags?driver=plc1&tag=pump')
 
@@ -202,7 +202,7 @@ describe('TagExplorerPage — dead-letter deep-link prefill (B11)', () => {
   })
 })
 
-describe('TagExplorerPage — snapshot discovery (B23)', () => {
+describe('TagExplorerPage — snapshot discovery', () => {
   it('a refresh that finds backend-added tags surfaces the discovery notice', async () => {
     let call = 0
     vi.mocked(api.getTags).mockImplementation(async () => {

@@ -1,10 +1,9 @@
 /**
  * RegistryFieldGrid
  *
- * Shared grid + per-field input renderer for settings-registry fields.
- * Extracted from DriverWizard/TransportWizard (the TransportWizard copy
- * was a strict superset — it adds the transports-select branch gated on
- * `transportNames`).
+ * Shared grid + per-field input renderer for settings-registry fields,
+ * used by both DriverWizard and TransportWizard (the transport variant
+ * adds the transports-select branch gated on `transportNames`).
  *
  * The wizard manages state with useState (not useForm) because the dynamic
  * per-type field set makes a static zod schema impractical. This grid
@@ -26,7 +25,7 @@ import { TopicTemplatePreview } from '@/components/wizard/TopicTemplatePreview'
 import type { SettingsField } from '@/lib/settingsRegistry'
 
 /**
- * D-23 guard: registry fields reference i18n keys by raw string, and a key
+ * Guard: registry fields reference i18n keys by raw string, and a key
  * pointing at the wrong (or a non-existent) namespace renders the literal
  * key as the help text — e.g. "settings.tagsFileHelp" shown to operators
  * because the copy actually lives at driverWizard.tagsFileHelp. Registry

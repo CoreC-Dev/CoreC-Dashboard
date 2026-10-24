@@ -1,8 +1,6 @@
 /**
  * InlineRuleEditor — the in-card form for one sub-rule inside a rule
- * group. Extracted from RuleGroupEditor (D2, quality audit 2026-10-21:
- * the 890-line worst size-exemption offender) — behavior unchanged,
- * props identical.
+ * group. Pure form logic: state and callbacks arrive via props.
  *
  * Structured editor for the `rule-groups` section of CoreCConfig:
  * rule groups are named collections of sub-rules referenced from

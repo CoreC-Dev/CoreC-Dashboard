@@ -18,7 +18,7 @@ interface SidebarNavProps {
 }
 
 /**
- * Unread-alert count pill for the "告警事件" nav item (audit B02).
+ * Unread-alert count pill for the "告警事件" nav item.
  *
  * Data source is the instance-level alert provider's store: unread error
  * events win; with none unread, a non-empty dead-letter queue is the
@@ -57,14 +57,14 @@ const AlertsNavBadge: React.FC = () => {
  * list, instance switcher, language toggle, theme selector). Shared by the
  * mobile sheet and the desktop aside.
  *
- * D-06: the old bottom-area "Disconnect" button was removed — it only
+ * The old bottom-area "Disconnect" button was removed — it only
  * called navigate('/'), byte-identical to "Back to instances" above it,
  * while its label promised a distinct action. Leaving the instance route
  * tree already tears the connection down for real: ConnectionProvider's
  * unmount cleanups clear the active connection, evict the per-instance
  * QueryClient and stop the probe, and every WebSocket unmounts with it.
  * One honest button remains, labeled like every other escape in the app
- * ("Back to instances" — the same copy as ConnectionGate D-15).
+ * ("Back to instances" — the same copy as ConnectionGate's failure screen).
  */
 export const SidebarNav: React.FC<SidebarNavProps> = ({ collapsed, setCollapsed, isMobile }) => {
   const { t, i18n: i18nInst } = useTranslation()
@@ -139,7 +139,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ collapsed, setCollapsed,
     )
   }
 
-  // D-21: sub-group label inside a section — one size smaller than the
+  // Sub-group label inside a section — one size smaller than the
   // section label so the hierarchy reads at a glance. In the collapsed
   // rail the text would not fit, so a hairline divider keeps the halves
   // separable instead of a wall of bare icons.
@@ -205,8 +205,8 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ collapsed, setCollapsed,
             {/* Admin group label */}
             {renderGroupLabel(t('nav.admin'))}
 
-            {/* Admin sub-groups (D-21): configuration management vs
-                operations & diagnostics, each with its own small label. */}
+            {/* Admin sub-groups: configuration management vs
+                 operations & diagnostics, each with its own small label. */}
             {adminGroups.map((group) => (
               <Fragment key={group.labelKey}>
                 {renderSubgroupLabel(t(group.labelKey))}

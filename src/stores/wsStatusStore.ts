@@ -3,7 +3,7 @@ import type { WSStatus } from '@/types/models'
 
 /**
  * wsStatusStore — aggregation of the live CoreC WebSocket streams' connection
- * states for the CURRENT instance (audit B01/D-02).
+ * states for the CURRENT instance.
  *
  * Every mounted stream (useCoreCWebSocket consumers are wired automatically;
  * manual CoreCWebSocket consumers — /tags/stream and the global /logs alert

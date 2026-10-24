@@ -16,7 +16,7 @@ import type { TrafficFrame } from '@/types/models'
 /**
  * Traffic rate chart.
  *
- * Backend roadmap #32: the /traffic stream pushes server-side diffed
+ * The /traffic stream pushes server-side diffed
  * rates (`read_rate/publish_rate/dropped_rate`), so the chart appends
  * frames directly — no client baseline dance, no negative spike on
  * restart-to-zero, and the first frame already carries the engine's
@@ -29,9 +29,9 @@ import type { TrafficFrame } from '@/types/models'
 export const TrafficChart = memo(function TrafficChart() {
   const { t } = useTranslation()
 
-  // Shared live-stream scaffolding (D2): status mirror + rolling window +
-  // B20 disconnect-once semantics live in the hook; this chart keeps only
-  // the rate-frame → point mapping.
+  // Shared live-stream scaffolding: status mirror + rolling window +
+  // disconnect-once (chart-freeze) semantics live in the hook; this chart
+  // keeps only the rate-frame → point mapping.
   const { data, disconnected } = useLiveChartStream<
     TrafficFrame,
     { time: string; read: number; publish: number; dropped: number }
@@ -94,7 +94,7 @@ export const TrafficChart = memo(function TrafficChart() {
           />
         </AreaChart>
       </ResponsiveContainer>
-      {/* B20: "waiting for data" on first load, "updates paused" after a
+      {/* "waiting for data" on first load, "updates paused" after a
        * drop — instead of silent empty axes / a silent freeze. */}
       <ChartStatusOverlay disconnected={disconnected} empty={data.length === 0} />
     </div>

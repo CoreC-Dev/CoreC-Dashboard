@@ -38,14 +38,14 @@ import { useConfigCenter } from '@/hooks/useConfigCenter'
 /**
  * Config Center — the operator's single screen for editing the CoreC gateway
  * configuration. Two editing modes share one working config:
- *  - Form view: structured editors (Global/Node/RuleProvider/RuleGroup) backed
- *    by the configStore, plus a runtime log-level patcher and live overview.
- *  - YAML view: a Monaco editor over the raw config with dry-run validation,
- *    hot reload, and a diff preview against the last submission.
+ * - Form view: structured editors (Global/Node/RuleProvider/RuleGroup) backed
+ * by the configStore, plus a runtime log-level patcher and live overview.
+ * - YAML view: a Monaco editor over the raw config with dry-run validation,
+ * hot reload, and a diff preview against the last submission.
  *
  * This file is a thin composition root: all stateful logic lives in
  * `useConfigCenter` and the presentational pieces in `ConfigCenterParts`
- * (TD-CPLX-001 refactor — no behavior changes).
+ * (001 refactor — no behavior changes).
  */
 export const ConfigCenterPage: React.FC = () => {
   const { t } = useTranslation()
@@ -121,7 +121,7 @@ export const ConfigCenterPage: React.FC = () => {
 
         <div className="flex items-center space-x-2 flex-wrap">
           {/* Mode Switcher — routed through requestModeSwitch so a divergent
-              form/YAML state triggers the keep-one-side bridge (C-D1). */}
+               form/YAML state triggers the keep-one-side bridge. */}
           <ModeSwitcher mode={mode} onSetMode={requestModeSwitch} />
 
           {/* YAML ↔ Form bridge buttons */}
@@ -157,10 +157,10 @@ export const ConfigCenterPage: React.FC = () => {
 
       <StatusMessageView statusMsg={statusMsg} />
 
-      {/* D-16 — the server config failed to load: creating or applying now
-          could wipe a running config we have never seen. The store blocks
-          the destructive paths; this banner tells the operator why and
-          offers a retry. */}
+      {/* The server config failed to load: creating or applying now
+           could wipe a running config we have never seen. The store blocks
+           the destructive paths; this banner tells the operator why and
+           offers a retry. */}
       {seedLoadFailed && (
         <div
           role="alert"
@@ -182,9 +182,9 @@ export const ConfigCenterPage: React.FC = () => {
         </div>
       )}
 
-      {/* C-D7 — persistent dry-run validation result. Only a clean success
-          goes through the auto-dismissing status strip; warnings and server
-          rejections must stay readable here. */}
+      {/* Persistent dry-run validation result. Only a clean success
+           goes through the auto-dismissing status strip; warnings and server
+           rejections must stay readable here. */}
       {dryRunResult && (
         <div className="space-y-2">
           {dryRunResult.outcome === 'valid-with-warnings' && (
@@ -224,8 +224,8 @@ export const ConfigCenterPage: React.FC = () => {
       )}
 
       {/* Dirty + validation banners — hoisted out of the mode branches
-          (C-D2) so pending FORM edits stay visible while the operator
-          works in YAML view. */}
+           so pending FORM edits stay visible while the operator
+           works in YAML view. */}
       <UnsavedChangesBanner
         dirty={configDirty}
         unsavedChangesLabel={
@@ -284,7 +284,7 @@ export const ConfigCenterPage: React.FC = () => {
         </div>
       ) : (
         <div className="space-y-4">
-          {/* Changes Preview — diff against the saved server config (C-D6) */}
+          {/* Changes Preview — diff against the saved server config */}
           <DiffPreview
             lastSubmittedYaml={diffBaselineYaml}
             diffOpen={diffOpen}
@@ -321,17 +321,17 @@ export const ConfigCenterPage: React.FC = () => {
         applyError={yamlApplyError ?? undefined}
       />
 
-      {/* C-D4 — loading a template or file replaces both sides wholesale;
-          when unapplied edits exist the operator confirms the discard first
-          (same DiscardChangesDialog as the banner's Discard button). */}
+      {/* Loading a template or file replaces both sides wholesale;
+           when unapplied edits exist the operator confirms the discard first
+           (same DiscardChangesDialog as the banner's Discard button). */}
       <DiscardChangesDialog
         open={loadConfirmOpen}
         onOpenChange={(v) => !v && cancelPendingLoad()}
         onConfirm={confirmPendingLoad}
       />
 
-      {/* C-D1 ① — hot-reload acknowledgement when the editor content does
-          not include the form side's unapplied edits. */}
+      {/* Hot-reload acknowledgement when the editor content does
+           not include the form side's unapplied edits. */}
       <AlertDialog open={applyGuardOpen} onOpenChange={(v) => !v && applyGuardCancel()}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -352,8 +352,8 @@ export const ConfigCenterPage: React.FC = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* C-D1 ② — mode-switch bridge: the form side and the YAML editor
-          diverged; the operator picks which side to keep before switching. */}
+      {/* Mode-switch bridge: the form side and the YAML editor
+           diverged; the operator picks which side to keep before switching. */}
       <AlertDialog open={bridgeTarget !== null} onOpenChange={(v) => !v && bridgeCancel()}>
         <AlertDialogContent>
           <AlertDialogHeader>

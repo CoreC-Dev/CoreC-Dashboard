@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// C-B3 regression: the runtime row's Test dialog evaluates through
+// Regression: the runtime row's Test dialog evaluates through
 // POST /rules/preview (the same scratch engine as the wizard's
 // Playground) instead of the deleted client-side rough matcher — the
 // two "test" affordances can no longer disagree, compile errors arrive
@@ -65,7 +65,7 @@ afterEach(() => {
   cleanup()
 })
 
-describe('RuleTestDialog — server scratch engine (C-B3)', () => {
+describe('RuleTestDialog — server scratch engine', () => {
   it('sends the sample point to POST /rules/preview and renders a hit', async () => {
     vi.mocked(api.postRulesPreview).mockResolvedValue(evaluated(true))
     renderDialog()

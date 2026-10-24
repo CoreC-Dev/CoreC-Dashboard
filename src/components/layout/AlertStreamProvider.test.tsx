@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 // AlertStreamProvider — the instance-level /logs + /alerts/stream
-// subscriptions (audit B02; alerts stream added with OBS-4/HUB-6).
+// subscriptions.
 // The WebSocket class is mocked with a controllable stub; the REAL provider
 // is under test: one /logs socket + one /alerts/stream socket on mount,
 // events → alertStore (bounded feed + rule alerts + unread badge count),
@@ -20,7 +20,7 @@ import type { AlertEvent, LogEvent } from '@/types/models'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 /** Both streams flow through the same mock: /logs LogEvents and
- * /alerts/stream AlertEvents (OBS-4) — typed unknown at the recorder. */
+ * /alerts/stream AlertEvents — typed unknown at the recorder. */
 type WsMessageHandler = (data: unknown) => void
 type WsStatusHandler = (status: string) => void
 type WsDropHandler = (dropped: number) => void
@@ -131,7 +131,7 @@ describe('AlertStreamProvider — mount/unmount lifecycle', () => {
     expect(entry?.status).toBe('rejected')
   })
 
-  it('applies /alerts/stream lifecycle events to the rule-alert store (OBS-4)', () => {
+  it('applies /alerts/stream lifecycle events to the rule-alert store', () => {
     renderProvider()
     const alertsSocket = sockets.find((s) => s.path === '/alerts/stream')
     if (!alertsSocket) {
@@ -241,7 +241,7 @@ describe('AlertStreamProvider — event flow into alertStore', () => {
       expect(constructed).toHaveLength(1)
       expect(constructed[0]).toEqual({
         title: 'CoreC Alert',
-        // B17: the body carries the actual event payload so the operator
+        // The body carries the actual event payload so the operator
         // can triage from the toast without switching pages.
         body: 'ERROR: boom',
       })

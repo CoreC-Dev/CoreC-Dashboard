@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// A-19 — DialogContent had no max-height or overflow constraint: on
+// DialogContent had no max-height or overflow constraint: on
 // short/landscape viewports a tall dialog (the seven-field instance form)
 // extended past the viewport and the footer buttons were unreachable — the
 // dialog could not be scrolled because nothing scrolled. The content element
@@ -23,7 +23,7 @@ function renderContent(): HTMLElement {
   return screen.getByRole('dialog')
 }
 
-describe('DialogContent viewport clamp (A-19)', () => {
+describe('DialogContent viewport clamp', () => {
   it('clamps its height to the viewport and scrolls overflow', () => {
     const content = renderContent()
     expect(content.className).toContain('max-h-[calc(100vh-2rem)]')

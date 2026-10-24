@@ -2,12 +2,12 @@
  * TransportWizard
  *
  * Multi-step wizard for creating or editing a transport configuration.
- * Steps (C-A12: the header used to claim a 5-step flow with an Advanced
+ * Steps (the header used to claim a 5-step flow with an Advanced
  * step that the wizard never had — the steps array below is the truth):
- *   Step 1 — Transport Type: choose protocol (mqtt, http, or notify)
- *   Step 2 — Connection: transport name + broker URL / HTTP endpoint settings
- *   Step 3 — Publishing: batch-size, flush-interval, retry-count, buffer-size, fallback
- *   Step 4 — Preview & Save: YAML preview → configStore.upsertTransport
+ * Step 1 — Transport Type: choose protocol (mqtt, http, or notify)
+ * Step 2 — Connection: transport name + broker URL / HTTP endpoint settings
+ * Step 3 — Publishing: batch-size, flush-interval, retry-count, buffer-size, fallback
+ * Step 4 — Preview & Save: YAML preview → configStore.upsertTransport
  *
  * Edit mode: when `existingTransport` is provided, the form is pre-filled
  * and the type step is locked.
@@ -188,7 +188,7 @@ export const TransportWizard: React.FC<TransportWizardProps> = ({
   // ─── Step validation gates ───────────────────────────────────────
   const step0Valid = selectedType !== null
 
-  // C-A5: a concrete reason instead of the generic "fix the errors
+  // A concrete reason instead of the generic "fix the errors
   // first" — the hint names the exact missing fields.
   const formatMissing = (fields: string[]): string =>
     new Intl.ListFormat(i18nInst.resolvedLanguage ?? 'en', { type: 'conjunction' }).format(fields)
@@ -327,10 +327,10 @@ export const TransportWizard: React.FC<TransportWizardProps> = ({
             </div>
           )}
 
-          {/* C-A15: unlike the driver wizard there is no connection test
-              here — POST /transports/{name}/test needs the instance to be
-              REGISTERED, which only happens after save & apply. Say where
-              the probe lives instead of leaving the gap unexplained. */}
+          {/* Unlike the driver wizard there is no connection test
+               here — POST /transports/{name}/test needs the instance to be
+               REGISTERED, which only happens after save & apply. Say where
+               the probe lives instead of leaving the gap unexplained. */}
           <p className="text-xs text-muted-foreground">{t('transportWizard.testAfterSave')}</p>
         </div>
       ),
@@ -379,7 +379,7 @@ export const TransportWizard: React.FC<TransportWizardProps> = ({
       onFinish={handleFinish}
       canFinish={!hasContextErrors}
       onCancel={() => onOpenChange(false)}
-      // C-A2: a draft with unsaved input confirms before the wizard closes.
+      // A draft with unsaved input confirms before the wizard closes.
       isDirty={() =>
         isTransportDraftDirty({
           currentStep,

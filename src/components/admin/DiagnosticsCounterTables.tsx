@@ -1,12 +1,12 @@
 /**
  * DiagnosticsCounterTables — the per-driver read counts and per-transport
- * publish counts scraped from /metrics (UX audit C-E3).
+ * publish counts scraped from /metrics.
  *
  * These counters overlap what the driver/transport pages show from the
- * runtime APIs, so each row now links straight to that entity's detail
+ * runtime APIs, so each row links straight to that entity's detail
  * page: the diagnostics table is the cross-entity comparison surface, the
- * detail page is the drill-down. Extracted from DiagnosticsPage when the
- * page was within a few lines of the 500 gate (PprofDownloads precedent).
+ * detail page is the drill-down. Own module so DiagnosticsPage stays
+ * under the 500-line custom-lint gate.
  */
 import { ArrowRight } from 'lucide-react'
 import type React from 'react'
@@ -77,7 +77,7 @@ export const DiagnosticsCounterTables: React.FC<{
                       className="hover:bg-muted/30 transition-colors"
                     >
                       <td className="px-4 py-2 font-semibold text-foreground">
-                        {/* C-E3: the row drills into the driver's detail page. */}
+                        {/* The row drills into the driver's detail page. */}
                         <EntityLink
                           to={`${adminBase}/drivers/${encodeURIComponent(m.labels.driver ?? '')}`}
                           label={t('diagnostics.viewDriverDetail', {

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// navItems (audit D-21): the admin section used to be a flat 7-item pile —
+// navItems: the admin section used to be a flat 7-item pile —
 // "edit the config" (drivers/transports/rules/config) and "watch it run"
 // (write/topology/diagnostics) mixed together, and in the collapsed rail
 // they were seven bare icons with nothing to anchor a visual search. The
@@ -79,7 +79,7 @@ beforeAll(async () => {
 
 const paths = (items: RailItem[]) => items.map((i) => i.path)
 
-describe('buildAdminGroups (D-21)', () => {
+describe('buildAdminGroups', () => {
   it('splits the admin section into configuration and operations halves', () => {
     const groups = buildAdminGroups('/corec/inst-1')
 
@@ -120,7 +120,7 @@ describe('buildAdminGroups (D-21)', () => {
   })
 })
 
-describe('SidebarNav admin sub-group rendering (D-21)', () => {
+describe('SidebarNav admin sub-group rendering', () => {
   it('labels the two admin halves when expanded', () => {
     render(
       <MemoryRouter initialEntries={['/corec/inst-1/monitor/dashboard']}>

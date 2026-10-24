@@ -22,7 +22,7 @@ const scan = (match: string, driver = PLC1, all = ALL, groups?: Record<string, R
     groups,
   })
 
-describe('rulesDependingOnDriver (C-A3)', () => {
+describe('rulesDependingOnDriver', () => {
   it('flags exact driver equality clauses', () => {
     expect(scan('driver == "plc1"')).toHaveLength(1)
     expect(scan('value > 80 && driver == "plc1"')).toHaveLength(1)

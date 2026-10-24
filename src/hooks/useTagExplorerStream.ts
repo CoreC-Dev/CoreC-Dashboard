@@ -13,13 +13,13 @@ import type { DataPoint } from '@/types/models'
 
 interface UseTagExplorerStreamOptions {
   /** REST snapshot of all tags (re-fetched by the page every
-   *  TAG_SNAPSHOT_POLL_MS; each NEW object reconciles the live map, B23). */
+   * TAG_SNAPSHOT_POLL_MS; each NEW object reconciles the live map). */
   initialTags: Record<string, DataPoint> | undefined
   /** Active driver filter ('all' = every driver); drives the WS params. */
   selectedDriver: string
-  /** B23: called with the number of tags a snapshot reconcile DISCOVERED
-   *  (filled keys the live map lacked) — the initial seed does not fire
-   *  it. Wire it to a transient "new tags" notice. */
+  /** Called with the number of tags a snapshot reconcile DISCOVERED
+   * (filled keys the live map lacked) — the initial seed does not fire
+   * it. Wire it to a transient "new tags" notice. */
   onTagsDiscovered?: (count: number) => void
 }
 
@@ -73,7 +73,7 @@ export function useTagExplorerStream({
   // The trend tag and a ref mirror. The WS onmessage callback (bound once per
   // driver change) reads the ref to stage live samples without a stale closure.
   // setTrendTag updates the ref synchronously to avoid the one-tick lag a
-  // passive effect would introduce (H-8 residual race).
+  // passive effect would introduce (residual race).
   const [trendTag, setTrendTagState] = useState<DataPoint | null>(null)
   const trendTagRef = useRef<DataPoint | null>(null)
   const setTrendTag = useCallback((tag: DataPoint | null) => {
@@ -84,7 +84,7 @@ export function useTagExplorerStream({
   // Pause/resume the trend chart. When paused, the WS callback skips staging
   // new trend samples so the operator can inspect a frozen snapshot.
   // On RESUME after a real pause, a value-less GAP sample is appended one
-  // second after the last real sample (B08): lightweight-charts breaks the
+  // second after the last real sample: lightweight-charts breaks the
   // line there, so the paused period renders blank instead of a straight
   // line fabricating the missing data.
   const [trendPaused, setTrendPaused] = useState(false)
@@ -102,7 +102,7 @@ export function useTagExplorerStream({
     })
   }, [trendPaused])
 
-  // B23 — snapshot reconcile. Every NEW REST snapshot object (each fetch
+  // Snapshot reconcile. Every NEW REST snapshot object (each fetch
   // re-ran: manual refresh, config-reload invalidation, reconnect, or the
   // page's 60s poll) diffs the live map:
   //  - fills keys the live map lacks (new backend tags appear without the
@@ -159,14 +159,13 @@ export function useTagExplorerStream({
   // tag/flash updates. Previously setTrendSamples ran synchronously per WS
   // message, bypassing the batching and causing a separate render per message
   // — the lightweight-charts series.update() then spiked under burst traffic.
-  // [H-8]
   const pendingTrendRef = useRef<TrendSample[]>([])
   const flushRef = useRef<number | null>(null)
   // Discard staged trend samples so they cannot leak into a different trend
   // session (openTrend/closeTrend/re-sub). We do NOT cancel the shared RAF
   // here because it also flushes pending tag/flash updates — those remain
   // valid. Clearing the trend buffer is enough: the RAF fires, finds an empty
-  // trend buffer, and skips the trend flush. [H-8]
+  // trend buffer, and skips the trend flush.
   const discardPendingTrend = useCallback(() => {
     pendingTrendRef.current = []
   }, [])
@@ -196,7 +195,7 @@ export function useTagExplorerStream({
       if (pendingTrendRef.current.length > 0) {
         const staged = pendingTrendRef.current
         pendingTrendRef.current = []
-        // B21: same-second updates coalesce into the existing sample (last
+        // Same-second updates coalesce into the existing sample (last
         // value wins) — no more fabricated last.time + 1 timestamps drifting
         // the chart axis and the exported CSV.
         setTrendSamples((prev) => appendTrendSamples(prev, staged))
@@ -209,8 +208,8 @@ export function useTagExplorerStream({
   // don't collide. Also bump the row's flash tick and buffer trend samples for
   // the tag currently shown in the drawer (if numeric).
   //
-  // The socket reports its connection status into the global wsStatusStore
-  // (audit B01): a silent freeze after a disconnect/reject is the P0 the
+  // The socket reports its connection status into the global wsStatusStore:
+  // a silent freeze after a disconnect/reject is the P0 the
   // store + page banner exist to surface. Message activity pings the store's
   // "last update" timestamp (throttled ≥1s inside the store — this callback
   // runs up to ~500×/s), and limiter drops feed the rate-limit hint.
@@ -237,7 +236,7 @@ export function useTagExplorerStream({
           const num = Number(point.value)
           if (Number.isNaN(num)) return
           // Stage the trend sample for the next animation frame instead of
-          // calling setTrendSamples per message (bypasses batching). [H-8]
+          // calling setTrendSamples per message (bypasses batching).
           pendingTrendRef.current.push({ time: toSeconds(point.timestamp), value: num })
           scheduleFlush()
         }
@@ -254,7 +253,7 @@ export function useTagExplorerStream({
         flushRef.current = null
       }
       // Discard trend samples staged for the previous stream so they cannot
-      // leak into the new driver's trend session. [H-8]
+      // leak into the new driver's trend session.
       discardPendingTrend()
     }
   }, [selectedDriver, scheduleFlush, discardPendingTrend])

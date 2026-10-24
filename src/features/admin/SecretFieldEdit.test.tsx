@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// C-A4 regression: the detail-page quick-edit form must never echo a
+// Regression: the detail-page quick-edit form must never echo a
 // stored secret. Password-kind fields render as masked inputs with a
 // show/hide toggle and a "Saved — leave blank to keep" placeholder, and
 // a blank password is OMITTED from the generated YAML so the apply merge
@@ -76,7 +76,7 @@ afterEach(() => {
   vi.clearAllMocks()
 })
 
-describe('secret fields in the quick-edit form (C-A4)', () => {
+describe('secret fields in the quick-edit form', () => {
   it('renders password fields masked, without echoing the stored secret, with a reveal toggle', async () => {
     renderPage()
 

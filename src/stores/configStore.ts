@@ -7,10 +7,10 @@
  *
  * This store is decision-independent — it works identically under both
  * backend paths:
- *   - Path A (GET /configs/raw): the server's raw YAML is fed straight to
- *     loadFromYaml(); user edits locally; saveConfig() PUTs the YAML back.
- *   - Path B (pure frontend): loadFromYaml() parses an uploaded YAML or
- *     the user starts from scratch; edits locally; saveConfig() PUTs.
+ * - Path A (GET /configs/raw): the server's raw YAML is fed straight to
+ * loadFromYaml(); user edits locally; saveConfig() PUTs the YAML back.
+ * - Path B (pure frontend): loadFromYaml() parses an uploaded YAML or
+ * the user starts from scratch; edits locally; saveConfig() PUTs.
  *
  * Dirty tracking: `savedConfig` is the last successfully applied snapshot.
  * `workingConfig` is what the user is editing. `dirty` = they differ.
@@ -20,7 +20,7 @@
  * the engine), the UI must never auto-save. All saves are explicit user
  * actions with a confirmation dialog showing the YAML diff.
  *
- * (TD-ARCH-003: split into configCrudSlice + configGetterSlice + pure helpers
+ * (split into configCrudSlice + configGetterSlice + pure helpers
  * in lib/configHelpers.ts. This file retains the state shell, loading, section
  * updates, and save/revert.)
  */
@@ -51,11 +51,11 @@ function readPath(root: unknown, path: string): unknown {
 /**
  * True when "Create" (resetToEmpty) or "Apply" would risk wiping a server
  * config we have never seen: the auto-seed fetch has not succeeded AND no
- * saved baseline exists (UX audit D-16 — AppShell's own comment warns that
+ * saved baseline exists (AppShell's own comment warns that
  * applying without seeding "silently shuts down the control plane").
  *
  * Consumers can use it as a stable boolean Zustand selector:
- *   const blocked = useConfigStore((s) => isSeedBlocked(s))
+ * const blocked = useConfigStore((s) => isSeedBlocked(s))
  */
 export function isSeedBlocked(s: Pick<ConfigStoreState, 'savedConfig' | 'seedStatus'>): boolean {
   return !s.savedConfig && (s.seedStatus === 'loading' || s.seedStatus === 'failed')
@@ -70,10 +70,10 @@ export interface ConfigStoreState {
   dirty: boolean
   /** Error message from the last failed operation (parse error, etc.). */
   error: string | null
-  /** Status of the auto-seed from GET /configs/raw (UX audit D-16). The
-   *  store owns it so every "Create"/"Apply" entry — on any admin page —
-   *  can consult one shared truth about whether the server config was
-   *  ever loaded. 'idle' = auto-load not started (pure path-B / tests). */
+  /** Status of the auto-seed from GET /configs/raw. The
+   * store owns it so every "Create"/"Apply" entry — on any admin page —
+   * can consult one shared truth about whether the server config was
+   * ever loaded. 'idle' = auto-load not started (pure path-B / tests). */
   seedStatus: 'idle' | 'loading' | 'ready' | 'failed'
   /** Why the auto-seed failed (fetch error or parse error). Diagnostic raw
    *  string; user-facing copy is i18n'd at the display sites. */
@@ -93,14 +93,14 @@ export interface ConfigStoreState {
    *  silently dropped on the next Apply. No-op if both are already set. */
   seedFromServer: (yaml: string) => string | null
   /** Start a new empty config, preserving the global section (api.listen/secret)
-   *  from savedConfig when available so infrastructure settings are not lost.
-   *  Returns false (no state change) when the server config has not been
-   *  loaded and no baseline exists — starting from scratch then would let
-   *  the next Apply PUT a config that wipes the running control plane
-   *  (D-16). Callers that open editors on "Create" should treat false as
-   *  "do not proceed". */
+   * from savedConfig when available so infrastructure settings are not lost.
+   * Returns false (no state change) when the server config has not been
+   * loaded and no baseline exists — starting from scratch then would let
+   * the next Apply PUT a config that wipes the running control plane
+   *. Callers that open editors on "Create" should treat false as
+   * "do not proceed". */
   resetToEmpty: () => boolean
-  /** Record that the GET /configs/raw auto-seed fetch is in flight (D-16). */
+  /** Record that the GET /configs/raw auto-seed fetch is in flight. */
   markSeedLoading: () => void
   /** Record that the auto-seed succeeded — Create/Apply are safe. */
   markSeedReady: () => void
@@ -130,10 +130,9 @@ export interface ConfigStoreState {
   /** Update a single field inside the node section. */
   updateNodeField: (path: string, value: unknown) => void
   /** Record a zero-downtime global patch (e.g. PATCH /configs log-level):
-   *  the live SERVER config changed, so the saved baseline adopts the new
-   *  value. The working copy mirrors it ONLY when the user has no unapplied
-   *  edit at that path — a pending edit always wins and stays dirty (C-D8:
-   *  the old flow clobbered the whole working config from the server). */
+   * the live SERVER config changed, so the saved baseline adopts the new
+   * value. The working copy mirrors it ONLY when the user has no unapplied
+   * edit at that path — a pending edit always wins and stays dirty (* the old flow clobbered the whole working config from the server). */
   applyGlobalPatch: (path: string, value: unknown) => void
 
   // ─── Save / revert ────────────────────────────────────────────────
@@ -143,12 +142,12 @@ export interface ConfigStoreState {
    *  applies). For YAML-mode applies see markSavedFromYaml. */
   markSaved: () => void
   /** Record a successful PUT /configs whose payload was the given YAML —
-   *  which may differ from the working config (YAML-mode hot reload).
-   *  The saved baseline becomes the parsed applied YAML (server truth).
-   *  The working config is adopted wholesale only when it has no divergent
-   *  edits; otherwise unapplied form edits stay pending and dirty remains
-   *  true, so the unsaved-changes banner keeps telling the truth (C-D1).
-   *  Returns the parse error message on failure (state unchanged), or null. */
+   * which may differ from the working config (YAML-mode hot reload).
+   * The saved baseline becomes the parsed applied YAML (server truth).
+   * The working config is adopted wholesale only when it has no divergent
+   * edits; otherwise unapplied form edits stay pending and dirty remains
+   * true, so the unsaved-changes banner keeps telling the truth.
+   * Returns the parse error message on failure (state unchanged), or null. */
   markSavedFromYaml: (yaml: string) => string | null
   /** Discard working changes, revert to the last saved config. */
   revert: () => void
@@ -238,7 +237,7 @@ export const useConfigStore = create<ConfigStoreState>((set, get) => {
     resetToEmpty: () => {
       const { savedConfig, seedStatus, seedError } = get()
       if (isSeedBlocked({ savedConfig, seedStatus })) {
-        // D-16: the server config was never loaded (fetch in flight or
+        // The server config was never loaded (fetch in flight or
         // failed) and there is no baseline. Starting an empty working
         // config here would let the next Apply PUT a near-empty document
         // and silently shut down the running control plane. Block instead.
@@ -326,7 +325,7 @@ export const useConfigStore = create<ConfigStoreState>((set, get) => {
       set({ savedConfig: workingConfig ? structuredClone(workingConfig) : null, dirty: false })
     },
 
-    // C-D1: a YAML-mode hot reload PUTs the editor text, which can differ
+    // A YAML-mode hot reload PUTs the editor text, which can differ
     // from the configStore working config (the form side). The old code
     // called markSaved(), which snapped the baseline to the working config —
     // marking form edits that were never sent as "saved" and dismissing the

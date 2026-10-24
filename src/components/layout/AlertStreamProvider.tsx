@@ -24,7 +24,7 @@ function showNotification(title: string, body: string): void {
 }
 
 /**
- * AlertStreamProvider — instance-level /logs subscription (audit B02).
+ * AlertStreamProvider — instance-level /logs subscription.
  *
  * Mounted once by AppShell (inside ConnectionProvider/ConnectionGate, so it
  * only runs against a connected instance), it keeps the warn/error stream
@@ -64,7 +64,7 @@ export const AlertStreamProvider: React.FC = () => {
   // the provider stays mounted when only the :id param changes in place
   // (AppShell is not keyed per instance), so stale counts from the previous
   // instance must not leak into the new one.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: id is the intentional stable dep — resubscribe only when the active instance changes, not on route/location transitions (the whole point of B02: the stream survives navigation).
+  // biome-ignore lint/correctness/useExhaustiveDependencies: id is the intentional stable dep — resubscribe only when the active instance changes, not on route/location transitions (the whole point: the stream survives navigation).
   useEffect(() => {
     useAlertStore.getState().resetTransient()
 
@@ -93,7 +93,7 @@ export const AlertStreamProvider: React.FC = () => {
         if (evt.level >= 8) {
           if (soundEnabled) playAlertBeep()
           if (notificationsEnabled) {
-            // B17: the notification body carries the actual event so the
+            // The notification body carries the actual event so the
             // operator can triage from the toast without switching pages.
             showNotification(
               tRef.current('alerts.notificationTitle'),
@@ -101,7 +101,7 @@ export const AlertStreamProvider: React.FC = () => {
             )
           }
         } else if (evt.level >= 4 && warningSoundEnabled) {
-          // B19: warning-level events get their own softer three-beep layer
+          // Warning-level events get their own softer three-beep layer
           // so severity is audible without enabling the harsh error beep.
           playWarningBeep()
         }
@@ -116,7 +116,7 @@ export const AlertStreamProvider: React.FC = () => {
       {},
       (frame) => {
         statusStore.touchStream(streamId)
-        // Boundary validation (audit F1): the backend marshals the level
+        // Boundary validation: the backend marshals the level
         // as a string ("WARN"); logEventSchema normalizes to the numeric
         // contract and malformed frames are dropped, never misclassified.
         const parsed = logEventSchema.safeParse(frame)
@@ -140,8 +140,8 @@ export const AlertStreamProvider: React.FC = () => {
     }
   }, [id])
 
-  // The /alerts/stream subscription + GET /alerts hydration (audit
-  // OBS-4/HUB-6): rule alerts are first-class now — the store keeps the
+  // The /alerts/stream subscription + GET /alerts hydration: rule alerts
+  // are first-class — the store keeps the
   // active set, the page renders it with ack actions, and a "fired"
   // event gets the same audible/visual treatment as an error log line.
   // Same instance-keyed lifecycle as the /logs socket above.

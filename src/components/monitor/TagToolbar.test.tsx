@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// TagToolbar (B07) — the quality Select and the stale-only toggle must be
+// TagToolbar — the quality Select and the stale-only toggle must be
 // present and wired. Radix Select content cannot be opened in jsdom, so the
 // quality options are asserted via the trigger's label and the end-to-end
 // filtering behavior is covered by TagExplorerPage.test; the stale-only
@@ -46,7 +46,7 @@ afterEach(() => {
   cleanup()
 })
 
-describe('TagToolbar — problem-point filters (B07)', () => {
+describe('TagToolbar — problem-point filters', () => {
   it('renders the quality select with an accessible Quality label', () => {
     renderToolbar()
 

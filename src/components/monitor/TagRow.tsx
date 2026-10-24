@@ -30,14 +30,14 @@ export const TagRow = memo(function TagRow({
   const { t } = useTranslation()
   const overlayRef = useRef<HTMLDivElement>(null)
   // Last numeric value seen at a flash — drives the ▲/▼ direction arrow
-  // next to the value (B25: direction is information, not a color).
+  // next to the value (direction is information, not a color).
   // Updated inside the flashTick effect so it stays in sync with the WAAPI
   // replay. Ref (not state) to avoid extra re-renders.
   const lastValueRef = useRef<number | null>(null)
   const [flashDir, setFlashDir] = useState<'up' | 'down' | 'none'>('none')
 
   // Replay a 1s tint flash whenever this row receives a fresh WS update.
-  // B25: the tint is NEUTRAL primary for BOTH directions — a falling tank
+  // The tint is NEUTRAL primary for BOTH directions — a falling tank
   // level flashing red read as an alarm in an industrial UI, and red must
   // stay reserved for bad quality/errors. The value's direction is shown
   // by the in-row ▲/▼ arrow instead. WAAPI animates only opacity — the
@@ -104,7 +104,7 @@ export const TagRow = memo(function TagRow({
       >
         {point.driver}
       </td>
-      {/* B06: the composite key already contained device — surface it so two
+      {/* The composite key already contained device — surface it so two
        * same-name tags on different sub-devices are no longer indistinguishable. */}
       <td
         className="px-4 py-2.5 shrink-0 min-w-0 truncate font-mono text-muted-foreground"
@@ -112,7 +112,7 @@ export const TagRow = memo(function TagRow({
       >
         {point.device || '-'}
       </td>
-      {/* B24: group/type hide below md (matching the header cells) so the
+      {/* Group/type hide below md (matching the header cells) so the
        * row keeps 测点/数值/质量/时间 visible on a phone. */}
       <td
         className="px-4 py-2.5 shrink-0 min-w-0 truncate text-muted-foreground hidden md:block"
@@ -128,7 +128,7 @@ export const TagRow = memo(function TagRow({
               : t('tags.falseValue')
             : String(point.value)}
         </span>
-        {/* B25: direction as a small neutral arrow beside the value — the
+        {/* Direction as a small neutral arrow beside the value — the
          * last flash's direction persists until the next update. */}
         {flashDir !== 'none' && (
           <span aria-hidden className="ml-1 align-middle font-mono text-[10px] text-primary">
@@ -146,7 +146,7 @@ export const TagRow = memo(function TagRow({
           {t(q.key)}
         </Badge>
       </td>
-      {/* B15: honest timestamps — fresh updates read "just now", anything
+      {/* Honest timestamps — fresh updates read "just now", anything
        * ≥1min old becomes an explicit relative age, and past the 5-minute
        * horizon the cell dims so yesterday's frozen value can't pass for a
        * live one. Hover carries the full date-time. */}

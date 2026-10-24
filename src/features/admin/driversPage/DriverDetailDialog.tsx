@@ -1,6 +1,6 @@
 // Driver detail dialog (runtime zone): a quick glance card for one
 // connected driver — last-read stats, staleness, jump-to-detail.
-// Extracted from DriversPage (D2, quality audit 2026-10-21).
+// Pure/presentational: data arrives via hooks, callbacks via props.
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
 import { useDriverTags } from '@/api/hooks'
@@ -22,7 +22,7 @@ export const DriverDetailDialog: React.FC<{
   const { t } = useTranslation()
   const { data: tagsData, isLoading } = useDriverTags(driver.name)
   const tags = tagsData?.tags ? Object.values(tagsData.tags) : []
-  // Cap rendered tags to prevent DOM overload (TD-PERF-001, aligns with DriverDetailPage).
+  // Cap rendered tags to prevent DOM overload (001, aligns with DriverDetailPage).
   const MAX_TAGS = 200
   const visibleTags = tags.slice(0, MAX_TAGS)
 

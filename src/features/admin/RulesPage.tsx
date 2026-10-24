@@ -70,7 +70,7 @@ export const RulesPage: React.FC = () => {
     onApplySuccess: () => queryClient.invalidateQueries({ queryKey: ['rules'] }),
   })
 
-  // D-16/X4: Create stays disabled (and the block visible) while the
+  // Create stays disabled (and the block visible) while the
   // server config has never been loaded.
   const { seedBlocked } = useAutoLoadConfig()
 
@@ -94,7 +94,7 @@ export const RulesPage: React.FC = () => {
   const configRules = workingConfig?.rules ?? []
   const filteredConfigRules = filterEntities(configRules, searchQuery)
 
-  // C-B6: the runtime table gets the same search affordance as the config
+  // The runtime table gets the same search affordance as the config
   // section (name/match/target) plus a clickable priority sort — hundreds of
   // live rules otherwise need Ctrl+F to find one tag's rule.
   const [runtimeSearch, setRuntimeSearch] = useState('')
@@ -111,17 +111,17 @@ export const RulesPage: React.FC = () => {
   // Track the specific rules being toggled so only those rows' switches are
   // disabled while mutations are in flight (not every switch on the page).
   // Uses a Set so multiple rules can toggle concurrently without one's
-  // Per-row toggle in-flight tracking + error surface. [M-5]
+  // Per-row toggle in-flight tracking + error surface.
   const { togglingNames, toggleError, handleToggle, clearToggleError } = useRuleToggle()
   const [testRule, setTestRule] = useState<RuleStat | null>(null)
 
-  // C-B3: the dialog owns its sample-point state and talks to the
+  // The dialog owns its sample-point state and talks to the
   // server's scratch engine itself — RulesPage only tracks which rule
   // is under test.
   const openTest = (rule: RuleStat) => setTestRule(rule)
   const closeTest = () => setTestRule(null)
 
-  // C-B1: the runtime row's Edit opens the SAME RuleWizard the config
+  // The runtime row's Edit opens the SAME RuleWizard the config
   // section uses, so a rule has ONE editor with ONE (delayed-apply)
   // semantics — the wizard writes into the working config and the change
   // only reaches the engine through the shared apply-confirmation dialog.
@@ -215,7 +215,7 @@ export const RulesPage: React.FC = () => {
         </div>
       </div>
 
-      {/* D-16 — config seed failed/loading: explain why Create is disabled */}
+      {/* Config seed failed/loading: explain why Create is disabled */}
       <SeedBlockedBanner />
 
       {/* Unsaved changes banner */}
@@ -375,7 +375,7 @@ export const RulesPage: React.FC = () => {
       <RuleTestDialog rule={testRule} onClose={closeTest} key={testRule?.name ?? 'none'} />
 
       {/* Rule create/edit wizard — the SINGLE rule editor for both the
-          config section and the runtime section (C-B1). */}
+           config section and the runtime section. */}
       <RuleWizard open={wizardOpen} onOpenChange={setWizardOpen} existingRule={editingRule} />
 
       {/* Delete confirmation */}

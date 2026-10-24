@@ -424,7 +424,7 @@ export const ConfigBackupsPanel: React.FC = () => {
                 void handleRestoreConfirm()
               }}
               disabled={restoreMutation.isPending}
-              // D-19: the danger confirm joins the destructive variant —
+              // The danger confirm joins the destructive variant —
               // status-error red is reserved for status indication.
               className="danger-pulse"
             >

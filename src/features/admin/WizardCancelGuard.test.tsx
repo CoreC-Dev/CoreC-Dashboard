@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// C-A2 regression: the admin wizards (driver / transport / rule) must guard
+// Regression: the admin wizards (driver / transport / rule) must guard
 // every dismiss path (Cancel button, X, Esc) behind the shared
 // DiscardChangesDialog when the draft has unsaved input — and close
 // immediately (no nag) when nothing was touched.
@@ -69,7 +69,7 @@ afterEach(() => {
   useConfigStore.getState().reset()
 })
 
-describe('wizard cancel guard (C-A2)', () => {
+describe('wizard cancel guard', () => {
   it('DriverWizard create: untouched draft cancels immediately — no dialog', async () => {
     const onOpenChange = vi.fn()
     renderWizard(<DriverWizard open onOpenChange={onOpenChange} />)

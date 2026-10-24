@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// useTagExplorerStream (B08/B21) — on trend RESUME after a pause, a
+// useTagExplorerStream — on trend RESUME after a pause, a
 // value-less gap sample must be appended after the last real sample so the
 // chart breaks the line across the paused period; on the live path,
 // same-second WS updates must coalesce into one sample instead of being
@@ -44,7 +44,7 @@ function renderStream() {
   return renderHook(() => useTagExplorerStream({ initialTags: undefined, selectedDriver: 'all' }))
 }
 
-describe('useTagExplorerStream — pause gap on resume (B08)', () => {
+describe('useTagExplorerStream — pause gap on resume', () => {
   it('stages a value-less gap sample one second after the last real sample on resume', () => {
     const { result } = renderStream()
 
@@ -109,7 +109,7 @@ describe('useTagExplorerStream — pause gap on resume (B08)', () => {
   })
 })
 
-describe('useTagExplorerStream — same-second coalescing (B21)', () => {
+describe('useTagExplorerStream — same-second coalescing', () => {
   it('merges same-second WS samples into one point instead of re-dating them +1s', async () => {
     const { result } = renderStream()
 
@@ -139,7 +139,7 @@ describe('useTagExplorerStream — same-second coalescing (B21)', () => {
   })
 })
 
-describe('useTagExplorerStream — snapshot reconcile (B23)', () => {
+describe('useTagExplorerStream — snapshot reconcile', () => {
   const pt = (tag: string, value: number): DataPoint => ({
     driver: 'plc1',
     device: '',

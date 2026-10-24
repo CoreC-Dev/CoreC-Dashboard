@@ -5,12 +5,11 @@
  * `{ key, labelKey, kind, options?, placeholder? }` shape consumed by
  * EntityEditConfigCard in detail pages.
  *
- * **Status (TD-ARCH-011 / TD-DUP-001):** Infrastructure laid in Batch D;
- *  full migration done in the Batch-D close-out. Detail pages now derive their
- *  edit fields from the registry via this adapter and the local `*_FIELDS`
- *  arrays have been deleted. The adapter carries `group` (settings vs
- *  top-level) and `boolean` so detail pages can build YAML correctly and
- *  convert boolean selects on save.
+ * **Single source of truth:** detail pages derive their edit fields
+ *  from the registry via this adapter — never from local `*_FIELDS`
+ *  arrays. The adapter carries `group` (settings vs top-level) and
+ *  `boolean` so detail pages can build YAML correctly and convert
+ *  boolean selects on save.
  *
  *  Resolved divergences (registry adopted as single source per ADR-009;
  *  each is a documented behavior change):
@@ -47,7 +46,7 @@ export interface RegistryEditField {
  *  true/false select (EntityEditConfigCard has no checkbox); the caller can
  *  detect this via the `boolean` flag and convert on save. `password` keeps
  *  its own kind so the detail-page form renders a masked input with a
- *  show/hide toggle and never echoes the stored secret (C-A4). */
+ *  show/hide toggle and never echoes the stored secret. */
 function mapFieldType(type: SettingsField['type']): RegistryEditField['kind'] {
   switch (type) {
     case 'text':

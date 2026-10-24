@@ -209,9 +209,9 @@ describe('RulePlayground', { timeout: 15_000 }, () => {
     expect(call[1]?.value).toBe('hot')
   })
 
-  // C-B2: the DSL supports device/group — an expression like
+  // The DSL supports device/group — an expression like
   // `device == "meter-01"` must be trial-runnable.
-  it('sends the typed device/group with the sample point (C-B2)', async () => {
+  it('sends the typed device/group with the sample point', async () => {
     vi.mocked(api.postRulesPreview).mockResolvedValue(evaluated(true))
     renderWithClient(<RulePlayground match='device == "meter-01"' defaults={DEFAULTS} />)
     await openPlayground()

@@ -68,7 +68,7 @@ export interface InstanceDialogProps {
   }) => void
 }
 
-// D-22: color names render as aria-label/title, so they must resolve
+// Color names render as aria-label/title, so they must resolve
 // through i18n — hardcoded 'Blue'/'Green' read English in a zh UI.
 const INSTANCE_COLORS = [
   { value: '', labelKey: 'instances.colorDefault' },
@@ -109,7 +109,7 @@ export const InstanceDialog: React.FC<InstanceDialogProps> = ({
     },
   })
 
-  // D-13: verdict of the one-shot "test connection" probe. Never blocks the
+  // Verdict of the one-shot "test connection" probe. Never blocks the
   // save — it is a preview of what the homepage card will show.
   const [testResult, setTestResult] = useState<{
     status: 'idle' | 'testing' | 'ok' | 'fail'
@@ -225,7 +225,7 @@ export const InstanceDialog: React.FC<InstanceDialogProps> = ({
                         placeholder="********"
                         className="pr-10"
                         {...field}
-                        // A-17: opt the API-key field out of browser/manager
+                        // Opt the API-key field out of browser/manager
                         // login heuristics — without these, password managers
                         // offer to save/fill the CoreC key as if it were this
                         // site's login password. The explicit name overrides
@@ -247,11 +247,11 @@ export const InstanceDialog: React.FC<InstanceDialogProps> = ({
                       </button>
                     </div>
                   </FormControl>
-                  {/* A-02: where the key comes from — the #1 cold-start blocker. */}
+                  {/* Where the key comes from — the #1 cold-start blocker. */}
                   <FormDescription>{t('instances.secretHint')}</FormDescription>
-                  {/* A-10: honest disclosure that the key lands in localStorage
-                      in plain text — the operator deserves to know before
-                      saving a production key on a shared machine. */}
+                  {/* Honest disclosure that the key lands in localStorage
+                       in plain text — the operator deserves to know before
+                       saving a production key on a shared machine. */}
                   <FormDescription>{t('instances.secretStorageNote')}</FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -276,8 +276,8 @@ export const InstanceDialog: React.FC<InstanceDialogProps> = ({
                       <SelectItem value="direct">{t('instances.proxyModeDirect')}</SelectItem>
                     </SelectContent>
                   </Select>
-                  {/* A-05: the three modes were bare labels before — the hint
-                      explains what each one does and when to pick it. */}
+                  {/* The three modes were bare labels before — the hint
+                       explains what each one does and when to pick it. */}
                   <FormDescription>{t('instances.proxyModeHint')}</FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -350,8 +350,8 @@ export const InstanceDialog: React.FC<InstanceDialogProps> = ({
               )}
             />
 
-            {/* D-13: one-shot test verdict — visible right above the actions
-                so the operator can fix the fields and re-test before saving. */}
+            {/* One-shot test verdict — visible right above the actions
+                 so the operator can fix the fields and re-test before saving. */}
             {testResult.status === 'testing' && (
               <p className="text-sm text-muted-foreground flex items-center gap-1.5">
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -370,9 +370,9 @@ export const InstanceDialog: React.FC<InstanceDialogProps> = ({
             )}
 
             <DialogFooter>
-              {/* D-13: verify address + key BEFORE saving; runs the same
-                  authenticated probe as the homepage card, so a bad key
-                  reports the exact 401 copy the card would show. */}
+              {/* Verify address + key BEFORE saving; runs the same
+                   authenticated probe as the homepage card, so a bad key
+                   reports the exact 401 copy the card would show. */}
               <Button
                 type="button"
                 variant="outline"

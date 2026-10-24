@@ -145,7 +145,7 @@ export const DriverWizard: React.FC<DriverWizardProps> = ({
 
   const step0Valid = selectedType !== null
 
-  // C-A5: a concrete reason instead of the generic "fix the errors
+  // A concrete reason instead of the generic "fix the errors
   // first" — the hint names the exact missing fields ("Missing
   // required: Host, Port"), locale-aware via Intl.ListFormat.
   const formatMissing = (fields: string[]): string =>
@@ -360,7 +360,7 @@ export const DriverWizard: React.FC<DriverWizardProps> = ({
       onFinish={handleFinish}
       canFinish={!hasContextErrors}
       onCancel={() => onOpenChange(false)}
-      // C-A2: a draft with unsaved input confirms before the wizard closes.
+      // A draft with unsaved input confirms before the wizard closes.
       isDirty={() =>
         isDriverDraftDirty({
           currentStep,

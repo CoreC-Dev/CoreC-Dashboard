@@ -1,4 +1,4 @@
-// Pure-function tests for the wizard dirty-draft predicates (C-A2).
+// Pure-function tests for the wizard dirty-draft predicates.
 // The contract: EDIT mode is dirty only when the draft diverges from the
 // pre-filled entity; CREATE mode is dirty once the user advanced or chose
 // anything — and a freshly opened, untouched wizard is NEVER dirty (no

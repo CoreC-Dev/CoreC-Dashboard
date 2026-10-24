@@ -1,5 +1,5 @@
 /**
- * OperationResult — the shared transient feedback strip (audit D-17).
+ * OperationResult — the shared transient feedback strip.
  *
  * The "apply config & hot-reload" outcome used to be a page-local,
  * never-clearing text line, spelled three different ways on three pages.
@@ -30,7 +30,7 @@ interface OperationResultProps {
   /** Current operation outcome; null renders nothing. */
   status: OperationResultStatus | null
   /**
-   * Operation context (D-17): a short label naming the operation — e.g.
+   * Operation context: a short label naming the operation — e.g.
    * the card/section title — so the strip is self-describing when several
    * operations can land on one page.
    */

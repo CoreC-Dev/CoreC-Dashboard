@@ -22,9 +22,9 @@ interface TagTableProps {
   error: unknown
   isFetching: boolean
   onRetry: () => void
-  /** B22: any filter active (search/driver/group/quality/stale-only)? */
+  /** Any filter active (search/driver/group/quality/stale-only)? */
   hasActiveFilters: boolean
-  /** B22: reset every filter — wired to the "no match" empty state. */
+  /** Reset every filter — wired to the "no match" empty state. */
   onClearFilters: () => void
 }
 
@@ -86,7 +86,7 @@ export function TagTable({
         </div>
       ) : (
         <div ref={setScrollEl} className="overflow-auto max-h-[70vh]">
-          {/* B24: below md the type/group columns hide (see the th's below),
+          {/* Below md the type/group columns hide (see the th's below),
            * so the 860px floor would only force a pointless horizontal
            * scroll — the table fits the viewport instead. */}
           <table className="w-full min-w-0 md:min-w-[860px] text-xs text-left">
@@ -116,12 +116,12 @@ export function TagTable({
                 <th className="px-4 py-2.5 shrink-0 overflow-hidden" style={{ width: COLS.driver }}>
                   {t('tags.colDriver')}
                 </th>
-                {/* B06: device column — the row key already carries device; now
-                    the operator can SEE which sub-device a same-name tag is on. */}
+                {/* Device column — the row key already carries device; now
+                     the operator can SEE which sub-device a same-name tag is on. */}
                 <th className="px-4 py-2.5 shrink-0 overflow-hidden" style={{ width: COLS.device }}>
                   {t('common.device')}
                 </th>
-                {/* B24: group/type are the least critical columns — they
+                {/* Group/type are the least critical columns — they
                  * hide below md so the 9-column 860px floor doesn't push
                  * timestamp/quality off a phone screen during a shift
                  * emergency. */}
@@ -182,7 +182,7 @@ export function TagTable({
               {filteredTags.length === 0 ? (
                 <tr className="block">
                   <td className="block py-10 text-center text-muted-foreground">
-                    {/* B22: two honest empty states — a bare instance with
+                    {/* Two honest empty states — a bare instance with
                      * no tags must not claim "nothing matched your filter"
                      * (the operator never set one); a real filter miss
                      * offers the one-click way out. */}

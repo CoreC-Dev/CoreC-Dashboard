@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 /**
- * Render behavior tests for ConfigApplyConfirmationDialog (TD-TEST-015).
+ * Render behavior tests for ConfigApplyConfirmationDialog.
  *
  * The sibling `.test.ts` file covers the pure helpers (computeConfigDiff /
  * computeLineDiff). These tests render the actual component with
@@ -8,7 +8,7 @@
  * badges and the Apply button's enabled/disabled state.
  *
  * NOTE on the Apply button: the component sets
- *   disabled={applying || hasValidationErrors}
+ * disabled={applying || hasValidationErrors}
  * It does NOT gate on `totalChanges`, so the Apply button stays enabled even
  * when there are zero changes. These tests document that actual behavior
  * (source is intentionally not modified).

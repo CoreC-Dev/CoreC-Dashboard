@@ -20,9 +20,9 @@ import type { MemoryFrame } from '@/types/models'
 export const MemoryChart = memo(function MemoryChart() {
   const { t } = useTranslation()
 
-  // Shared live-stream scaffolding (D2): status mirror + rolling window +
-  // B20 disconnect-once semantics live in the hook; this chart keeps only
-  // the memory-frame → point mapping.
+  // Shared live-stream scaffolding: status mirror + rolling window +
+  // disconnect-once (chart-freeze) semantics live in the hook; this chart
+  // keeps only the memory-frame → point mapping.
   const { data, disconnected } = useLiveChartStream<
     MemoryFrame,
     { time: string; allocMb: number; sysMb: number; goroutines: number }
@@ -74,7 +74,7 @@ export const MemoryChart = memo(function MemoryChart() {
           />
         </LineChart>
       </ResponsiveContainer>
-      {/* B20: empty axes say "waiting", a silent freeze says "paused". */}
+      {/* Empty axes say "waiting", a silent freeze says "paused". */}
       <ChartStatusOverlay disconnected={disconnected} empty={data.length === 0} />
     </div>
   )

@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
-// C-C4 component coverage: the write page's dead-letter card exposes the
+// Component coverage: the write page's dead-letter card exposes the
 // search box, narrows rows as the operator types, and shows the explicit
 // no-match state instead of a blank card. (The pure rules live in
 // lib/deadLetterFilter.test; the driver Select cannot be driven open in
-// jsdom — same limitation the B10 alerts filter documented.)
+// jsdom — the alerts-filter tests hit the same limitation.)
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { act } from 'react'
 import { MemoryRouter } from 'react-router-dom'
@@ -52,7 +52,7 @@ afterEach(() => {
   cleanup()
 })
 
-describe('DeadLetterTable search (C-C4)', () => {
+describe('DeadLetterTable search', () => {
   it('shows the search box with entries present and narrows by tag text', async () => {
     renderTable()
 

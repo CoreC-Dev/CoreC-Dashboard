@@ -14,9 +14,9 @@ import { deriveAggregate, useWsStatusStore, type WsAggregate } from '@/stores/ws
 
 /**
  * Visual mapping for the "实时流" indicator — bound to the AGGREGATED state of
- * the live WebSocket streams (wsStatusStore), not the one-shot HTTP probe the
- * indicator used to reflect (audit B01: the badge stayed green while every
- * stream was frozen). 'idle' (no stream mounted yet) reads as "connecting".
+ * the live WebSocket streams (wsStatusStore), not the one-shot HTTP probe:
+ * a probe-driven badge would stay green while every stream was frozen.
+ * 'idle' (no stream mounted yet) reads as "connecting".
  */
 const streamBadgeTone = (
   aggregate: WsAggregate,
@@ -97,21 +97,21 @@ export const AppShell: React.FC = () => {
       <main className="flex-1 overflow-y-auto flex flex-col">
         <div className="w-full p-2 md:py-4 md:px-0 flex-1 flex flex-col">
           {/* Page-level stream banner — surfaces disconnected / gave-up /
-              rate-limited states with a retry entry point for rejected
-              streams (audit B01/D-02). Mounted on EVERY instance route
-              (D-04): on admin pages the AppShell-level /logs alert stream
-              is live, and write-control/config pages are exactly where a
-              silent dead socket hurts most. Renders nothing when healthy. */}
+               rate-limited states with a retry entry point for rejected
+               streams. Mounted on EVERY instance route: on admin pages the
+               AppShell-level /logs alert stream is live, and
+               write-control/config pages are exactly where a silent dead
+               socket hurts most. Renders nothing when healthy. */}
           <StreamStatusBanner />
           <div
             className="bg-card rounded-2xl px-5 py-5 md:px-8 md:py-8 flex-1 border border-border/40 relative"
             style={{ boxShadow: 'var(--shadow-card)' }}
           >
             {/* Real-time stream indicator — floating top-right inside the
-                card on every instance route (desktop only; mobile uses the
-                topbar dot). D-04: was monitor-only, leaving the seven admin
-                pages with no connection status at all; the InstanceSelector
-                dot covers the HTTP probe, this covers the live streams. */}
+                 card on every instance route (desktop only; mobile uses the
+                 topbar dot). Admin pages need it as much as the monitor
+                 pages: the InstanceSelector dot covers the HTTP probe,
+                 this covers the live streams. */}
             <div className="hidden md:block absolute top-7 right-8 z-10">
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50 border border-border/60">
                 <span
@@ -135,10 +135,10 @@ export const AppShell: React.FC = () => {
 
   return (
     <div className="h-screen w-full bg-background text-foreground overflow-hidden relative">
-      {/* Instance-level alert subscription (audit B02): keeps the /logs
-          warn/error stream, sound, browser notifications, and the sidebar
-          badge alive on EVERY route of the instance — not just the alerts
-          page. Behavior-only provider; renders nothing. */}
+      {/* Instance-level alert subscription: keeps the /logs
+           warn/error stream, sound, browser notifications, and the sidebar
+           badge alive on EVERY route of the instance — not just the alerts
+           page. Behavior-only provider; renders nothing. */}
       <AlertStreamProvider />
       {/* Subtle decorative gradient orb */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden="true">

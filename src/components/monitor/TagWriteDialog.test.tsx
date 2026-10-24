@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// TagWriteDialog — B06: a write targets a physical PLC register, so the
+// TagWriteDialog — A write targets a physical PLC register, so the
 // confirmation card must state WHICH sub-device receives the command before
 // the operator confirms. i18n in English.
 import { cleanup, render, screen } from '@testing-library/react'
@@ -47,7 +47,7 @@ function renderDialog(selected: DataPoint | null) {
   )
 }
 
-describe('TagWriteDialog — device visibility (B06)', () => {
+describe('TagWriteDialog — device visibility', () => {
   it('shows the target sub-device next to driver and tag', () => {
     renderDialog(point())
 

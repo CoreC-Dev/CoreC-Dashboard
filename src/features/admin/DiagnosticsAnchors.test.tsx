@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// C-E1 behavior: the diagnostics page's six stacked sections get an
+// Behavior: the diagnostics page's six stacked sections get an
 // in-page table of contents (jump chips), and the pprof developer tools
 // fold into a collapsed "Advanced debugging" section so the operator's
 // page ends at the write history.
@@ -70,7 +70,7 @@ afterEach(() => {
   cleanup()
 })
 
-describe('diagnostics page IA (C-E1)', () => {
+describe('diagnostics page IA', () => {
   it('renders one jump chip per section, in reading order', async () => {
     renderPage()
 
@@ -128,7 +128,7 @@ describe('diagnostics page IA (C-E1)', () => {
     expect(screen.getByText('/debug/pprof/mutex')).toBeTruthy()
   })
 
-  it('a ?section= deep link lands on that section (C-C5 write-history hop)', async () => {
+  it('a ?section= deep link lands on that section (write-history hop)', async () => {
     const qc = new QueryClient({
       defaultOptions: { queries: { retry: false, refetchInterval: false, staleTime: Infinity } },
     })

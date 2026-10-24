@@ -14,7 +14,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import type { DeadLetterEntry, WriteCommand } from '@/types/models'
 
 /**
- * Shared pure helpers for the dead-letter replay UI (B06/B10). Exported so
+ * Shared pure helpers for the dead-letter replay UI. Exported so
  * the list and the dialogs share ONE labeling rule — a command listed in a
  * confirm dialog must render exactly like the same command in the results.
  */
@@ -24,8 +24,8 @@ export const dlqKeyOf = (dl: DeadLetterEntry): string =>
   `${dl.command.driver}-${dl.command.tag}-${dl.failed_at}-${dl.attempts}`
 
 /** Composite command prefix `[driver/device]` — same-name tags on different
- *  sub-devices must stay distinguishable everywhere a command is listed (B06).
- *  Single-device drivers render the unchanged `[driver]`. */
+ * sub-devices must stay distinguishable everywhere a command is listed.
+ * Single-device drivers render the unchanged `[driver]`. */
 export const commandPrefixOf = (cmd: WriteCommand): string =>
   `[${cmd.driver}${cmd.device ? `/${cmd.device}` : ''}]`
 
@@ -62,7 +62,7 @@ interface DeadLetterReplayDialogsProps {
   selectedEntries: DeadLetterEntry[]
   running: boolean
   onConfirmBatch: () => void
-  /** Single replay confirmation — the same two-step gate per entry (C-C1). */
+  /** Single replay confirmation — the same two-step gate per entry. */
   pendingReplay: DeadLetterEntry | null
   writePending: boolean
   onConfirmSingle: () => void
@@ -146,9 +146,9 @@ export const DeadLetterReplayDialogs: React.FC<DeadLetterReplayDialogsProps> = (
       </Dialog>
 
       {/* Single replay confirmation — ONE dialog per entry, the same
-          two-step gate as the batch (C-C1). A dead letter's last write
-          already FAILED, so nothing is re-sent until the operator has seen
-          the exact command, its failure time/error, and confirmed. */}
+           two-step gate as the batch. A dead letter's last write
+           already FAILED, so nothing is re-sent until the operator has seen
+           the exact command, its failure time/error, and confirmed. */}
       <Dialog
         open={pendingReplay !== null}
         onOpenChange={(v) => !writePending && !v && onCancelSingle()}

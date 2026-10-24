@@ -8,7 +8,7 @@ type InstanceStats = NonNullable<NonNullable<CoreCInstance['lastKnownInfo']>['st
 
 /**
  * The inputs → rules → outputs flow rendered from the last known stats.
- * Extracted from InstanceCard (500-line God-file gate): pure presentation,
+ * Own module so InstanceCard stays under the 500-line gate: pure presentation,
  * memoized on the stats snapshot so probe updates that don't change this
  * card's stats don't recompute the derived arrays. Renders nothing when
  * the stats carry no topology.

@@ -1,7 +1,6 @@
 // Config-zone driver card: a configured-but-not-necessarily-connected
 // driver entry (from the saved config) — type badge, tags-file link,
-// edit/delete actions. Extracted from DriversPage's config section
-// (D2, quality audit 2026-10-21); behavior identical, callbacks injected.
+// edit/delete actions. Pure/presentational: callbacks injected.
 import { Cpu, Pencil, Trash2 } from 'lucide-react'
 import type React from 'react'
 import { useTranslation } from 'react-i18next'

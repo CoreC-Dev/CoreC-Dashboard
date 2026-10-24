@@ -46,7 +46,7 @@ export async function detectProxyMode(): Promise<'proxy' | 'direct'> {
 // text/html, which would otherwise be misjudged as proxy mode — and every
 // subsequent /corec-proxy/* call would silently fetch HTML instead of
 // JSON. The real proxy (server.mjs) answers JSON or a bare status.
-// (Audit A 待验证-1: verified GitHub Pages serves genuine 404s — no false
+// (待验证-1: verified GitHub Pages serves genuine 404s — no false
 // positives there; the content-type sniff closes the rewrite-host gap.)
 function isDirectSignal(res: Response): boolean {
   if (res.status === 404) return true

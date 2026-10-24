@@ -17,16 +17,16 @@ import { LoadingState } from '@/components/ui/loading-state'
  * like the dead-letter/AlertsPage failure rows (bg-status-error/5) so the
  * two write-diagnostics surfaces read consistently.
  *
- * Rows are capped client-side at MAX_VISIBLE_ROWS (TD-PERF-005 — bounded
- * DOM for unvirtualized lists).
+ * Rows are capped client-side at MAX_VISIBLE_ROWS — bounded
+ * DOM for unvirtualized lists.
  */
 const MAX_VISIBLE_ROWS = 100
 
 export const WriteHistoryTable: React.FC = () => {
   const { t } = useTranslation()
-  // Server-side truncation (backend roadmap #35): the table previously
-  // pulled the full 1000-entry compliance history every 15s and sliced to
-  // 100 client-side — the audit trail now arrives already capped.
+  // Server-side truncation: pass limit=MAX_VISIBLE_ROWS so the compliance
+  // history arrives already capped — pulling the full 1000-entry history
+  // every 15s just to slice it client-side wastes the refetch.
   const { data, isLoading, isError, error, isFetching, refetch } = useWriteHistory({
     limit: MAX_VISIBLE_ROWS,
   })

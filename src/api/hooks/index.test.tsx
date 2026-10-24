@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// TD-TEST-009 — react-query hook layer: connection gating (useConnectedQuery)
+// react-query hook layer: connection gating (useConnectedQuery)
 // and mutation cache invalidation. The endpoint functions are mocked so we
 // control what data they return; a real QueryClient + QueryClientProvider
 // wrapper drives the hooks via @testing-library/react's renderHook.
@@ -103,7 +103,7 @@ afterEach(() => {
   queryClient.clear()
 })
 
-describe('useConnectedQuery — connection gating (TD-TEST-009)', () => {
+describe('useConnectedQuery — connection gating', () => {
   it('skips the query (never calls the endpoint) when isConnected is false', async () => {
     vi.mocked(api.getServerInfo).mockResolvedValue({
       name: 'corec',
@@ -191,7 +191,7 @@ describe('useConnectedQuery — connection gating (TD-TEST-009)', () => {
   })
 })
 
-describe('mutation cache invalidation (TD-TEST-009)', () => {
+describe('mutation cache invalidation', () => {
   it('useWriteTag invalidates tags, deadLetters, writeHistory, and the written driver tags+status', async () => {
     vi.mocked(api.writeTag).mockResolvedValue({ success: true })
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries')

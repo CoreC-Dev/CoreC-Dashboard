@@ -1,10 +1,8 @@
 /**
  * YAML-mode sub-components for the Config Center page.
  *
- * Extracted from ConfigCenterPage.tsx (TD-CPLX-001). Pure/presentational —
- * props in, no business state. No behavior changes: identical CSS classes,
- * i18n keys, and structure. Companion to ConfigCenterParts.tsx (toolbar) and
- * ConfigCenterForm.tsx (form-mode cards).
+ * Pure/presentational — props in, no business state. Companion to
+ * ConfigCenterParts.tsx (toolbar) and ConfigCenterForm.tsx (form-mode cards).
  */
 import Editor from '@monaco-editor/react'
 import {

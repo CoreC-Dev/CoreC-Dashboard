@@ -135,7 +135,7 @@ export function useConfigRaw() {
 export function useDeadLetters() {
   // Poll every 15s (was 4s). Dead letters are a low-urgency diagnostic queue —
   // 4s was excessively aggressive (~15 req/min) for data that changes slowly.
-  // [behavior change: refetchInterval 4000→15000, registered in plan doc §六-B4]
+  // [behavior change: refetchInterval 4000→15000 — deliberate cadence slowdown]
   return useConnectedQuery({
     queryKey: ['deadLetters'],
     queryFn: api.getDeadLetters,
@@ -180,7 +180,7 @@ export function usePatchConfig() {
     onSuccess: () => {
       // PATCH mutates the active config (log-level is a global field), so the
       // raw config view goes stale too — invalidate both caches for parity
-      // with useUpdateConfig. [M-1]
+      // with useUpdateConfig.
       queryClient.invalidateQueries({ queryKey: ['configs'] })
       queryClient.invalidateQueries({ queryKey: ['configsRaw'] })
     },
@@ -252,8 +252,7 @@ export function useMetrics(refetchInterval: number | false = 12_000) {
  */
 /**
  * Send one test point through a transport (POST /transports/{name}/test).
- * Component-local mutations were an interim measure while the api layer
- * was under parallel ownership; this is the proper home (C-A15 handoff).
+ * Lives in the api hooks layer so every surface shares one mutation.
  */
 export function useTransportTest() {
   return useMutation({
@@ -268,7 +267,7 @@ export function useWriteHistory(params?: {
   limit?: number
 }) {
   // The query key includes the filter params so a param change refetches
-  // rather than serving a stale cached page (backend roadmap #35).
+  // rather than serving a stale cached page.
   return useConnectedQuery({
     queryKey: ['writeHistory', params?.driver, params?.tag, params?.since, params?.limit],
     queryFn: () => api.getWriteHistoryFiltered(params ?? {}),
@@ -424,12 +423,12 @@ export function useRestoreConfigBackup() {
   })
 }
 
-// Re-export ApiError so features don't reach into the raw HTTP client (TD-ARCH-008).
+// Re-export ApiError so features don't reach into the raw HTTP client.
 // api/client is an internal transport detail; consumers should catch ApiError via this surface.
 export { ApiError } from '@/api/client'
 // Re-export CoreCWebSocket + WSStatus for consumers that need direct lifecycle control
 // (complex useEffect with intertwined local state). Simple consumers should use
-// useCoreCWebSocket below instead (TD-ARCH-007).
+// useCoreCWebSocket below instead.
 // Re-export the WS status store surface so manual CoreCWebSocket consumers
 // (useTagExplorerStream, the global alert provider) wire into the same
 // aggregation the auto-wired hooks use, without reaching into @/stores twice.
@@ -440,9 +439,7 @@ export { CoreCWebSocket, makeStreamId, useWsStatusStore, type WSStatus }
  * Creates the socket on mount (or when path/params change), destroys on cleanup.
  * Callbacks are stored in refs so they can change without triggering reconnects.
  *
- * (TD-ARCH-007 — consumers no longer import @/api/websocket directly.)
- *
- * The socket is ALSO wired into the global WS status store (audit B01/D-02):
+ * The socket is ALSO wired into the global WS status store:
  * every status change feeds the AppShell badge + monitor banner, message
  * activity pings the "last update" timestamp (throttled ≥1s in the store),
  * and limiter drops feed the rate-limit hint. Consumer-provided onStatus is

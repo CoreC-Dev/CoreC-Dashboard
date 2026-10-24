@@ -17,7 +17,7 @@ export type RailItem = {
   labelKey: string
   icon: React.ComponentType<{ className?: string }>
   /**
-   * Optional live badge marker (audit B02): 'alerts' renders an unread-alert
+   * Optional live badge marker: 'alerts' renders an unread-alert
    * count pill fed by the instance-level alert provider's store. Keeping
    * this a semantic key (not a value) lets navItems stay pure data — the
    * renderer (SidebarNav) resolves the data source.
@@ -25,7 +25,7 @@ export type RailItem = {
   badge?: 'alerts'
 }
 
-/** A labeled sub-group of rail items (audit D-21 splits the admin section). */
+/** A labeled sub-group of rail items (21 splits the admin section). */
 export type NavGroup = {
   labelKey: string
   items: RailItem[]
@@ -41,7 +41,7 @@ export function buildMonitorItems(base: string): RailItem[] {
 }
 
 /**
- * Admin-section nav items as two labeled sub-groups (audit D-21): the flat
+ * Admin-section nav items as two labeled sub-groups: the flat
  * 7-item pile mixed "edit the config" with "watch it run", and in the
  * collapsed rail they were seven bare icons with nothing to anchor a visual
  * search. Configuration management (drivers/transports/rules/config) and

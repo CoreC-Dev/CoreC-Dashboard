@@ -32,8 +32,8 @@ function fmt(v: number): string {
 }
 
 /** Export trend samples as a CSV file download.
- *  B21: the header carries the aggregation note — same-second WS updates
- *  are coalesced to their last value, and the analyst must know. */
+ * The header carries the aggregation note — same-second WS updates
+ * are coalesced to their last value, and the analyst must know. */
 function exportCsv(tag: string, samples: TrendSample[], mergedNote: string) {
   const header = `# ${mergedNote}\ntimestamp,datetime,value\n`
   const rows = samples
@@ -77,7 +77,7 @@ export function TagTrendPanel({
     })
 
   // Real (valued) samples — gap markers carry no value and must not reach the
-  // stats bar, the sample count, or the CSV export (B08).
+  // stats bar, the sample count, or the CSV export.
   const valuedSamples = useMemo(
     () => trendSamples.filter((s) => s.value !== undefined),
     [trendSamples],
@@ -189,7 +189,7 @@ export function TagTrendPanel({
                 {t('tags.liveTrend', { count: valuedSamples.length, max: MAX_TREND_SAMPLES })}
               </span>
               {trendPaused && (
-                // B08: expectation management — the pause leaves a BLANK gap
+                // Expectation management — the pause leaves a BLANK gap
                 // on resume, never a fabricated connecting line.
                 <span className="text-status-warning font-semibold">{t('tags.pausedGapNote')}</span>
               )}

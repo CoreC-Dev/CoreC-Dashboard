@@ -74,7 +74,7 @@ export function formatCompact(num: number): string {
 
 /**
  * Generate a cryptographically secure random secret (32 hex chars = 128 bits).
- * Used to replace weak placeholder secrets in config templates (TD-SEC-006, D5).
+ * Used to replace weak placeholder secrets in config templates.
  */
 export function generateRandomSecret(): string {
   const bytes = new Uint8Array(16)

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-// TagTable — B06: the header must expose the new device column between
-// driver and group, using the shared COLS widths. B22: the empty state
+// TagTable — The header must expose the new device column between
+// driver and group, using the shared COLS widths. The empty state
 // distinguishes "no tags on this instance yet" (guidance) from "filters
 // matched nothing" (one-click clear). Rows themselves are covered by
 // TagRow.test; the virtualizer stays unexercised here (jsdom has no
@@ -44,7 +44,7 @@ function renderTable(over: Partial<Parameters<typeof TagTable>[0]> = {}) {
   )
 }
 
-describe('TagTable — device column header (B06)', () => {
+describe('TagTable — device column header', () => {
   it('renders a Device column between Driver and Group', () => {
     const { container } = renderTable()
 
@@ -77,7 +77,7 @@ describe('TagTable — device column header (B06)', () => {
     expect(widths.reduce((a, b) => a + b, 0)).toBe(100)
   })
 
-  it('hides the group and type columns below md and lifts the 860px floor (B24)', () => {
+  it('hides the group and type columns below md and lifts the 860px floor', () => {
     const { container } = renderTable()
     const table = container.querySelector('table')
     expect(table?.className).toContain('min-w-0')
@@ -130,7 +130,7 @@ describe('TagTable — device column header (B06)', () => {
   })
 })
 
-describe('TagTable — two honest empty states (B22)', () => {
+describe('TagTable — two honest empty states', () => {
   it('an unfiltered zero-tag instance shows setup guidance, not a filter complaint', () => {
     renderTable({ hasActiveFilters: false })
 

@@ -3,17 +3,17 @@ import { useCallback, useState } from 'react'
 import { useCoreCWebSocket, type WSStatus } from '@/api/hooks'
 
 /**
- * Shared live-chart stream scaffolding (quality audit D2, batch F): the
+ * Shared live-chart stream scaffolding: the
  * status-mirror state, the append-to-rolling-window data flow, and the
- * B20 disconnect-once semantics were duplicated byte-for-byte between
- * TrafficChart and MemoryChart. One hook now owns the pattern; each chart
+ * disconnect-once (chart-freeze) semantics are the same pattern in
+ * TrafficChart and MemoryChart. One hook owns the pattern; each chart
  * keeps only its domain logic (which frames fields map to which lines).
  *
- * B20 rationale (kept): the chart-local status mirror exists so the chart
- * freezes honestly when its socket drops — data may render, but it is
+ * Rationale for the chart-local status mirror: the chart freezes
+ * honestly when its socket drops — data may render, but it is
  * stale. downOnce mirrors wsStatusStore's semantics: once the socket
  * involuntarily left 'open', the chart is paused until it reopens.
- * The B01 store wiring inside useCoreCWebSocket is untouched.
+ * The store wiring itself lives inside useCoreCWebSocket.
  */
 export function useLiveChartStream<TFrame, TPoint>(
   path: string,

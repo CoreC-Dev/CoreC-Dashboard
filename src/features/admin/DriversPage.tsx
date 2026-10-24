@@ -64,7 +64,7 @@ export const DriversPage: React.FC = () => {
 
   const [searchQuery, setSearchQuery] = useState('')
 
-  // D-16/X4: while the server config has never been loaded (auto-seed in
+  // While the server config has never been loaded (auto-seed in
   // flight or failed, no baseline), Create must stay disabled — and the
   // block must be VISIBLE, not a silently dead button.
   const { seedBlocked } = useAutoLoadConfig()
@@ -102,7 +102,7 @@ export const DriversPage: React.FC = () => {
   const filteredConfigDrivers = filterEntities(configDrivers, searchQuery)
 
   // Precompute connection summaries once per config change instead of
-  // recomputing inside every .map() iteration (TD-PERF-008).
+  // recomputing inside every.map() iteration.
   const workingDriverConnSummaries = useMemo(() => {
     const m = new Map<string, string>()
     for (const drv of workingConfig?.drivers ?? []) {
@@ -116,7 +116,7 @@ export const DriversPage: React.FC = () => {
     return m
   }, [parsedConfig, drivers])
 
-  // C-A6: one page-header search bar covers BOTH zones — the runtime cards
+  // One page-header search bar covers BOTH zones — the runtime cards
   // filter by name/type/connection summary too, so an 80-driver site can
   // find plc-line3 without scrolling.
   const showSearch = configDrivers.length + drivers.length > 6
@@ -126,7 +126,7 @@ export const DriversPage: React.FC = () => {
     (d) => parsedDriverConnSummaries.get(d.name) ?? '',
   )
 
-  // C-A3: when deleting a driver, list the rules that lose their data
+  // When deleting a driver, list the rules that lose their data
   // source — the match DSL is the only structural link between a rule
   // and a driver. Scans the working ∪ saved rule sets so pending
   // (unapplied) rules warn too, mirroring the TransportsPage template.
@@ -140,7 +140,7 @@ export const DriversPage: React.FC = () => {
     return rulesDependingOnDriver({ driver, ...sources })
   }, [deleteTarget, workingConfig, savedConfig])
 
-  // C-A7: the same driver appears in both zones with no way to tell
+  // The same driver appears in both zones with no way to tell
   // which card is "running" and which is "my unapplied edit". Badges:
   // working driver differs from the saved one (or is missing there) →
   // "pending changes"; runtime list contains the name → "live", else
@@ -202,7 +202,7 @@ export const DriversPage: React.FC = () => {
         </div>
       </div>
 
-      {/* D-16 — config seed failed/loading: explain why Create is disabled */}
+      {/* Config seed failed/loading: explain why Create is disabled */}
       <SeedBlockedBanner />
 
       {/* Config editing banner — shows when there are unsaved config changes */}
@@ -285,7 +285,7 @@ export const DriversPage: React.FC = () => {
               </Button>
             </Card>
           ) : drivers.length === 0 ? (
-            // C-A8: the empty state points at the page's own Create
+            // The empty state points at the page's own Create
             // action instead of telling the operator to go edit YAML.
             <Card className="col-span-full p-8 text-center space-y-3 border-dashed">
               <p className="text-xs text-muted-foreground">{t('drivers.empty')}</p>
@@ -438,7 +438,7 @@ export const DriversPage: React.FC = () => {
       {/* Create/Edit Driver Wizard */}
       <DriverWizard open={wizardOpen} onOpenChange={setWizardOpen} existingDriver={editingDriver} />
 
-      {/* Delete Confirmation — lists rules that lose their data source (C-A3) */}
+      {/* Delete Confirmation — lists rules that lose their data source */}
       <DeleteEntityConfirm
         open={!!deleteTarget}
         onOpenChange={(open) => !open && setDeleteTarget(null)}

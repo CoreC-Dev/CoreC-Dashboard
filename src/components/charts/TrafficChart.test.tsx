@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// TrafficChart (B20) — the chart must say whether it is waiting for its
+// TrafficChart — the chart must say whether it is waiting for its
 // first frame or frozen after a disconnect, instead of silent empty axes /
 // a silent freeze. useCoreCWebSocket is mocked so tests can drive the
 // onMessage/onStatus callbacks the real socket would invoke. i18n English.
@@ -40,7 +40,7 @@ afterEach(() => {
 })
 
 const frame = (over: Partial<TrafficFrame> = {}): TrafficFrame => ({
-  // Rate frames (backend roadmap #32): the chart appends each frame
+  // Rate frames: the chart appends each frame
   // directly — no baseline dance.
   read_rate: 10,
   publish_rate: 5,
@@ -54,7 +54,7 @@ const driveStatus = (s: string) => {
   })
 }
 
-describe('TrafficChart — status honesty overlay (B20)', () => {
+describe('TrafficChart — status honesty overlay', () => {
   it('says "Waiting for live data…" while not a single frame has arrived', () => {
     render(<TrafficChart />)
 

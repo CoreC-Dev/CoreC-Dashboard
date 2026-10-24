@@ -39,7 +39,7 @@ npm run build
 node server.mjs <port> <dist-dir> <corec-url>
 # 默认：node server.mjs 8080 dist http://127.0.0.1:9090
 ```
-`server.mjs`：静态托管 `dist/` + 反向代理 `/corec-api` → CoreC 后端。阶段 4 改为按实例同源代理（ADR-004）+ 安全响应头（TD-SEC-007）。
+`server.mjs`：静态托管 `dist/` + 反向代理 `/corec-api` → CoreC 后端。按实例同源代理（ADR-004）+ 安全响应头。
 
 ## 部署
 GitHub Actions `deploy.yml`：push `main` → lint/build/test → 发布 GitHub Pages 自定义域。阶段 3 新增 `ci.yml`（PR + 全分支门禁），deploy 改 needs:ci（TD-GATE-001）。

@@ -180,7 +180,7 @@ for (const rel of SINGLE_SOURCE_FILES) {
 if (violations.length === 0 && singleSourceViolations.length === 0) {
   console.log(`✅ structure-lint 通过：分层依赖方向合规。`)
   if (usedExemptions.size > 0) {
-    console.log(`   已登记豁免（阶段 4 移除）：${[...usedExemptions].sort().join(', ')}`)
+    console.log(`   已登记豁免（修复后移除）：${[...usedExemptions].sort().join(', ')}`)
   }
   if (unusedExemptions.length > 0) {
     console.log(
@@ -197,7 +197,7 @@ if (violations.length === 0 && singleSourceViolations.length === 0) {
   }
   if (violations.length > 30) console.error(`  ... 还有 ${violations.length - 30} 处`)
   for (const v of singleSourceViolations) {
-    console.error(`  - [TD-ARCH-011/DUP-001] ${v}`)
+    console.error(`  - ${v}`)
   }
   console.error(
     `\n修复指引：将共享逻辑下沉到更底层（lib/api/hooks/stores/components），或在 EXEMPTIONS 登记已知技术债（含 TD ID + 批次）。`,

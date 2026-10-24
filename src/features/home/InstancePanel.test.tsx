@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// A-03 — saving an instance must trigger an immediate probe: the operator
+// Saving an instance must trigger an immediate probe: the operator
 // sees the connecting → verdict transition within seconds instead of a
 // grey dot for up to 15s. Exercises the full panel → dialog → store →
 // probe chain with real fetch mocked at the transport boundary.
@@ -118,9 +118,9 @@ beforeEach(() => {
   mockHealthyEndpoints()
 })
 
-// Restore real timers after every test: the A-09 import tests run under
+// Restore real timers after every test: the import tests run under
 // fake timers, and a leaked fake clock freezes waitFor's polling for every
-// subsequent test in the file (observed with the D-15 deep-link suite).
+// subsequent test in the file (observed with the deep-link suite).
 afterEach(() => {
   cleanup()
   vi.useRealTimers()
@@ -128,7 +128,7 @@ afterEach(() => {
 
 // Suite timeout raised from the 5s default (same rationale as
 // InstanceDialog.test.tsx: heavy full-panel renders on a loaded runner).
-describe('InstancePanel — immediate probe after save (A-03)', { timeout: 15_000 }, () => {
+describe('InstancePanel — immediate probe after save', { timeout: 15_000 }, () => {
   it('probes a newly added instance right away instead of waiting 15s', async () => {
     // Empty state — one add button, and the mount probe has nothing to do.
     render(
@@ -189,7 +189,7 @@ describe('InstancePanel — immediate probe after save (A-03)', { timeout: 15_00
   })
 })
 
-describe('InstancePanel — import result clarity (A-09)', () => {
+describe('InstancePanel — import result clarity', () => {
   /** Open the import dialog from the empty state and return its scope. */
   async function openImportDialog() {
     await act(async () => {
@@ -323,14 +323,14 @@ describe('InstancePanel — import result clarity (A-09)', () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(1_600)
     })
-    // A-14: partial results keep the dialog open (unified with the settings
-    // page's D-08 semantics) — the breakdown stays readable until dismissed.
+    // Partial results keep the dialog open (unified with the settings
+    // page's semantics) — the breakdown stays readable until dismissed.
     expect(screen.getByRole('dialog')).toBeInTheDocument()
     expect(useInstanceStore.getState().instances).toHaveLength(2)
   })
 })
 
-describe('InstancePanel — storage failure banner (A-11)', () => {
+describe('InstancePanel — storage failure banner', () => {
   it('warns visibly when the last persist to localStorage failed', () => {
     resetStore([makeInstance()])
     useInstanceStore.setState({ persistFailed: true })
@@ -359,7 +359,7 @@ describe('InstancePanel — storage failure banner (A-11)', () => {
   })
 })
 
-describe('InstancePanel — help links (A-06)', () => {
+describe('InstancePanel — help links', () => {
   const HELP_URL = 'https://github.com/CoreC-Dev/CoreC-Dashboard'
 
   it('exposes an outbound help button in the header', () => {
@@ -389,10 +389,10 @@ describe('InstancePanel — help links (A-06)', () => {
   })
 })
 
-// D-15 wiring — ConnectionGate's failure screen sends the operator back
+// Deep-link wiring — ConnectionGate's failure screen sends the operator back
 // with /?edit=<instanceId> so they land in the edit dialog for exactly the
 // broken instance instead of having to find it in the list.
-describe('InstancePanel — ?edit deep link (D-15)', { timeout: 15_000 }, () => {
+describe('InstancePanel — ?edit deep link', { timeout: 15_000 }, () => {
   it('opens the edit dialog for the referenced instance', async () => {
     resetStore([makeInstance()])
 
@@ -453,10 +453,10 @@ describe('InstancePanel — ?edit deep link (D-15)', { timeout: 15_000 }, () => 
   })
 })
 
-// A-22 — the header language toggle displayed the CURRENT language ("中"
+// The header language toggle displayed the CURRENT language ("中"
 // on a Chinese UI) with no title/aria-label: nobody could tell what a click
 // would do. It must offer the language it will switch TO, labeled properly.
-describe('InstancePanel — language toggle (A-22)', () => {
+describe('InstancePanel — language toggle', () => {
   afterEach(async () => {
     // Leave the suite in the language the other describes assert against.
     await act(async () => {

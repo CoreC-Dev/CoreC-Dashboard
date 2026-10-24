@@ -18,7 +18,7 @@ export function parsePrometheusMetrics(raw: string): MetricEntry[] {
     // closing brace. A naive [^}]* would truncate at the first '}' inside a
     // label value (e.g. my_metric{label="val_}"} 1). We scan for the real
     // closing brace by respecting quoted strings: a '}' inside quotes does
-    // not terminate the label block. [M-4]
+    // not terminate the label block.
     const nameMatch = trimmed.match(/^([a-zA-Z_:][a-zA-Z0-9_:]*)/)
     if (!nameMatch) continue
     const name = nameMatch[1]

@@ -6,7 +6,7 @@ import type { CoreCConfig } from '@/types/config'
  *          → obj.api = { ...obj.api, listen: '0.0.0.0:9090' }
  * When value is undefined, the key is deleted from its parent.
  *
- * (Extracted from configStore.ts — TD-ARCH-003: pure helper belongs in lib/.)
+ * (Pure path-manipulation helper — such logic belongs in lib/, not inside a store.)
  */
 export function setNestedPath(root: Record<string, unknown>, path: string, value: unknown): void {
   const parts = path.split('.')
@@ -59,7 +59,7 @@ export function configEqual(a: CoreCConfig | null, b: CoreCConfig | null): boole
  * Order-independent deep equality for any plain JSON value — the
  * exported building block behind configEqual, reusable for per-entity
  * comparisons (e.g. "does this one driver differ between the working and
- * the saved config?", C-A7 pending-change badges).
+ * the saved config?"). One consumer: per-entity pending-change badges.
  */
 export function jsonDeepEqual(a: unknown, b: unknown): boolean {
   return deepEqual(a, b)

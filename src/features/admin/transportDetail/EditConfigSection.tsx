@@ -1,11 +1,9 @@
-// Transport quick-edit form + its private helpers, extracted from
-// TransportDetailPage (D2, quality audit 2026-10-21): field metadata comes
-// from the settings registry (single source of truth — TD-ARCH-011/
-// TD-DUP-001) via registryToEditFields; the curated key sets select which
+// Transport quick-edit form + its private helpers: field metadata comes
+// from the settings registry (single source of truth) via
+// registryToEditFields; the curated key sets select which
 // fields appear in the quick-edit form (advanced/dynamic fields — TLS certs,
 // command forwarding, fallback dynamic-select, connect-retry tuning — are
-// edited via the wizard, not this form). Behavior identical to the inline
-// version.
+// edited via the wizard, not this form).
 import { dump } from 'js-yaml'
 import type React from 'react'
 import { useCallback, useMemo, useState } from 'react'
@@ -24,7 +22,7 @@ import type { TransportStatus } from '@/types/models'
 // Renders a collapsible form that lets operators edit a transport's northbound
 // publishing parameters, preview the generated YAML and hot-reload it through
 // PUT /configs (useUpdateConfig). Field METADATA is derived from the settings
-// registry (single source of truth — TD-ARCH-011/TD-DUP-001) via the
+// registry (single source of truth) via the
 // registryToEditFields adapter. The set of fields shown is a curated
 // presentation choice (quick-edit form): advanced/dynamic fields (TLS certs,
 // command forwarding, fallback dynamic-select, connect-retry tuning) are edited
@@ -91,7 +89,7 @@ const NOTIFY_EDIT_KEYS = new Set([
 
 // `headers` is a map field not yet modeled by the registry (SettingsField has no
 // map/object type); retained as an explicit supplement until the registry gains
-// one. [TD-ARCH-011 follow-up — tracked in tech-debt-tracker]
+// one. TODO: move into the registry once it supports map/object fields.
 const HEADERS_SUPPLEMENT: RegistryEditField = {
   key: 'headers',
   labelKey: 'transports.editConfig.headers',
@@ -135,7 +133,7 @@ function parseHeaders(raw: string): Record<string, string> {
 }
 
 /** Serialize an existing config value into the string form the edit form uses.
- *  Handles objects (e.g. headers) and numbers. [C-2] */
+ *  Handles objects (e.g. headers) and numbers. */
 function configValueToString(f: RegistryEditField, src: unknown): string {
   if (src === undefined || src === null) return ''
   if (f.key === 'headers' && typeof src === 'object' && !Array.isArray(src)) {
@@ -231,7 +229,7 @@ export const TransportEditConfigSection: React.FC<{ transport: TransportStatus }
         settings: {},
       }
       // Deep-merge settings onto the saved transport: fields the quick-edit
-      // form leaves blank (masked secrets above all, C-A4) are omitted
+      // form leaves blank (masked secrets above all) are omitted
       // from `entry` and must keep the stored value — a shallow
       // `{...base, ...entry}` would wipe them.
       const updatedTransport = {
@@ -257,7 +255,7 @@ export const TransportEditConfigSection: React.FC<{ transport: TransportStatus }
     failureKey: 'transports.editConfig.reloadFailed',
   })
 
-  // C-A1: the reload button no longer PUTs directly — it opens the SAME
+  // The reload button no longer PUTs directly — it opens the SAME
   // ConfigApplyConfirmationDialog the list pages use (YAML diff + change
   // summary + engine-suspend warning). The PUT only fires from the dialog's
   // explicit confirm, and the dialog stays open showing the verbatim error

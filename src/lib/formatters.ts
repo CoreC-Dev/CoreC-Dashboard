@@ -6,7 +6,7 @@ import type { TFunction } from 'i18next'
  * timestamp. Mirrors the helper used by InstanceCard so rule stat cells and
  * instance cards share one presentation style.
  *
- * Pure: takes `t` explicitly instead of importing the i18n singleton (TD-ARCH-009).
+ * Pure: takes `t` explicitly instead of importing the i18n singleton.
  */
 export function formatRelativeTime(ts: string | null | undefined, t: TFunction): string {
   if (!ts) return ''

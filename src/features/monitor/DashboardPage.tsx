@@ -33,11 +33,11 @@ import { formatNumber, formatUptime } from '@/lib/utils'
  * Row 2: Real-time charts (traffic + memory, side by side)
  * Row 3: Driver matrix (compact cards)
  * Row 4: Transport matrix (compact cards)
- * Row 5: Dead letters (failed writes) + current error-event count (B03)
+ * Row 5: Dead letters (failed writes) + current error-event count
  *
  * No customizable layout — fixed design for out-of-the-box best experience.
  *
- * Degradation contract (B04): a failed stats poll keeps the last good
+ * Degradation contract: a failed stats poll keeps the last good
  * snapshot rendered with a stale-data banner + manual retry; only a
  * first-load failure with NO data falls back to the full-page error.
  */
@@ -49,7 +49,7 @@ export const DashboardPage: React.FC = () => {
     isLoading: statsLoading,
     isError: statsError,
     // Timestamp of the last SUCCESSFUL stats fetch — the "snapshot from
-    // {{time}}" the stale-data banner shows (B04).
+    // {{time}}" the stale-data banner shows.
     dataUpdatedAt: statsUpdatedAt,
     isFetching: statsFetching,
     refetch: refetchStats,
@@ -68,7 +68,7 @@ export const DashboardPage: React.FC = () => {
     [transports],
   )
 
-  // B05 — online-ratio coloring: 100% green, 1–99% amber, 0% red. The old
+  // Online-ratio coloring: 100% green, 1–99% amber, 0% red. The old
   // hardcoded `text-status-running` kept "0% online" green, so a full
   // driver/transport outage was invisible during a night-shift page scan.
   // With no drivers/transports configured the honest color is muted "N/A",
@@ -109,7 +109,7 @@ export const DashboardPage: React.FC = () => {
           : t('dashboard.notAvailable', { defaultValue: 'N/A' })
 
   // Engine status dot — reflect the actual stats.status instead of a hardcoded
-  // green. B13: an ABSENT status is not "running" — rendering "don't know"
+  // green. An ABSENT status is not "running" — rendering "don't know"
   // as a green dot was the audit's complaint. Only an actual running/ok
   // goes green; error-like states are red; anything else — including an
   // empty/missing status — is amber "Unknown" (common.unknown).
@@ -136,7 +136,7 @@ export const DashboardPage: React.FC = () => {
   }
 
   // Error fallback — only when the FIRST load fails and there is no data to
-  // show at all (B04). A failed background poll no longer collapses the whole
+  // show at all. A failed background poll no longer collapses the whole
   // page: the last good snapshot stays rendered and the banner below tells
   // the operator exactly how old it is, with a manual retry that doesn't wait
   // for the 5s poll to recover on its own.
@@ -162,9 +162,9 @@ export const DashboardPage: React.FC = () => {
         </p>
       </div>
 
-      {/* Stale-snapshot banner (B04) — a failed refresh keeps the rendered
-       *  data and says so, instead of collapsing the page into one red line.
-       *  Auto-dismisses when the next poll succeeds. */}
+      {/* Stale-snapshot banner — a failed refresh keeps the rendered
+       * data and says so, instead of collapsing the page into one red line.
+       * Auto-dismisses when the next poll succeeds. */}
       {statsStale && (
         <div
           role="status"
@@ -205,7 +205,7 @@ export const DashboardPage: React.FC = () => {
           <div className="flex items-center space-x-2">
             <span className={`w-2.5 h-2.5 rounded-full ${statusDotClass}`} />
             <span className="text-base font-bold capitalize">
-              {/* B13: a missing status reads "Unknown" — never a green
+              {/* A missing status reads "Unknown" — never a green
                * "running" claim the server never made. */}
               {stats?.status || t('common.unknown')}
             </span>
@@ -263,7 +263,7 @@ export const DashboardPage: React.FC = () => {
             <Database className="w-3.5 h-3.5 text-status-warning" />
           </div>
           <div className="text-lg font-bold font-mono tnum truncate">
-            {/* B12: integer counters keep rounding INSIDE their format — the
+            {/* Integer counters keep rounding INSIDE their format — the
              * raw animated value is fractional mid-flight, and formatNumber
              * itself does not round. */}
             <CountUpNumber
@@ -283,7 +283,7 @@ export const DashboardPage: React.FC = () => {
             <TrendingDown className="w-3.5 h-3.5 text-status-error" />
           </div>
           <div className="text-lg font-bold font-mono tnum truncate text-status-error">
-            {/* B12: integer counter — round inside the format (see Total Read). */}
+            {/* Integer counter — round inside the format (see Total Read). */}
             <CountUpNumber
               value={stats?.total_dropped ?? 0}
               duration={800}
@@ -404,7 +404,7 @@ export const DashboardPage: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Row 5 — Dead letters (failed writes) + current error-event lure (B03) */}
+      {/* Row 5 — Dead letters (failed writes) + current error-event lure */}
       <DashboardDeadLetterCard deadLetters={deadLetters} alertsLink={alertsLink} />
     </div>
   )

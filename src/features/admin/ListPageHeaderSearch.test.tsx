@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// C-A6 regression: the page-header search covers BOTH zones — runtime
+// Regression: the page-header search covers BOTH zones — runtime
 // cards filter by name/type/connection summary, and the bar itself only
 // appears once the combined entity count passes the threshold.
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -98,7 +98,7 @@ afterEach(() => {
   useConfigStore.getState().reset()
 })
 
-describe('page-header search covers both zones (C-A6)', () => {
+describe('page-header search covers both zones', () => {
   it('DriversPage: filters runtime cards by name and shows the no-results state', async () => {
     render(wrap(<DriversPage />))
 

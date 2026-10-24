@@ -4,7 +4,7 @@ import type { Alert, LogEvent } from '@/types/models'
 
 /**
  * alertStore — the state behind the instance-level alert subscription
- * (audit B02): the bounded warn/error feed the AlertsPage renders, the
+ *: the bounded warn/error feed the AlertsPage renders, the
  * unread error count that drives the sidebar badge, the DLQ fallback
  * count, and the sound/notification preferences (which must keep using the
  * legacy localStorage keys so existing users' settings survive).
@@ -97,7 +97,7 @@ describe('deadLetterCount — badge fallback', () => {
   })
 })
 
-describe('preferences — legacy storage compatibility (B02)', () => {
+describe('preferences — legacy storage compatibility', () => {
   it('toggling sound persists the same corec_alert_sound key and 1/0 encoding', () => {
     localStorage.setItem('corec_alert_sound', '0')
     useAlertStore.setState({ soundEnabled: false })
@@ -169,7 +169,7 @@ describe('resetTransient — instance-switch hygiene', () => {
   })
 })
 
-// --- First-class rule alerts (audit OBS-4/HUB-6) ---
+// --- First-class rule alerts ---
 
 const mkAlert = (key: string, first: string, over: Partial<Alert> = {}): Alert => ({
   key,

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// C-A3 regression: deleting a driver must warn about the rules that lose
+// Regression: deleting a driver must warn about the rules that lose
 // their data source — including rules that exist only in the working
 // config (not yet applied) — mirroring the TransportsPage template.
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -83,7 +83,7 @@ afterEach(() => {
   useConfigStore.getState().reset()
 })
 
-describe('DriversPage delete confirmation — dependent rules (C-A3)', () => {
+describe('DriversPage delete confirmation — dependent rules', () => {
   it('lists rules that lose their data source, including pending ones', async () => {
     render(wrap(<DriversPage />))
 

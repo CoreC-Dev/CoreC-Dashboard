@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 /**
- * useAutoLoadConfig — D-16 coverage.
+ * useAutoLoadConfig — seed-guard coverage.
  *
  * The AppShell-level hook must be isError-aware: when GET /configs/raw
  * fails (backend just restarted, transient 401, timeout) the store flips
@@ -102,7 +102,7 @@ function mockRaw(impl: (input: RequestInfo | URL) => Promise<Response>) {
   })
 }
 
-describe('useAutoLoadConfig — D-16 seed failure guard', () => {
+describe('useAutoLoadConfig — seed failure guard', () => {
   it('marks the seed ready and seeds the store on a successful fetch', async () => {
     mockRaw(() => Promise.resolve(rawResponse(SERVER_YAML)))
     const { result } = renderHook(() => useAutoLoadConfig(), { wrapper: createWrapper() })

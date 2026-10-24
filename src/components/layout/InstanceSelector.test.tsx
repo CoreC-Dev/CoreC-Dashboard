@@ -111,7 +111,7 @@ describe('InstanceSelector (#185 regression)', () => {
   })
 })
 
-describe('switchInstanceTarget (D-20 route preservation)', () => {
+describe('switchInstanceTarget (route preservation)', () => {
   it('keeps the monitor sub-page when switching instances', () => {
     expect(switchInstanceTarget('/corec/inst-a/monitor/alerts', 'inst-b')).toBe(
       '/corec/inst-b/monitor/alerts',
@@ -142,7 +142,7 @@ describe('switchInstanceTarget (D-20 route preservation)', () => {
   })
 })
 
-describe('InstanceSelector dropdown dots (D-20 live status)', () => {
+describe('InstanceSelector dropdown dots (live status)', () => {
   /** Open the Radix Select via keyboard and return the listbox. */
   function openDropdown() {
     const { container } = render(

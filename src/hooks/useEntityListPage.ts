@@ -3,8 +3,8 @@ import { useState } from 'react'
 /**
  * Shared list-page CRUD state for entity admin pages.
  *
- * Extracted from 3 near-identical handleCreate/Edit/Delete/confirmDelete
- * patterns in DriversPage, TransportsPage, and RulesPage (TD-DUP-005).
+ * One implementation of the handleCreate/Edit/Delete/confirmDelete
+ * patterns shared by DriversPage, TransportsPage, and RulesPage.
  *
  * The hook manages wizard-open, editing-entity, and delete-target state.
  * The caller provides entity-specific find/remove/resetToEmpty functions.
@@ -15,7 +15,7 @@ interface UseEntityListPageOptions<T> {
   /** Remove an entity by name from the config store. */
   remove: (name: string) => void
   /** Reset the working config to an empty document. Returns false when the
-   *  server config has not been loaded yet (D-16 guard in configStore) —
+   *  server config has not been loaded yet (seed guard in configStore) —
    *  Create must then not proceed. */
   resetToEmpty: () => boolean
   /** Whether a working config currently exists. */
@@ -29,7 +29,7 @@ export function useEntityListPage<T>(options: UseEntityListPageOptions<T>) {
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
 
   const handleCreate = () => {
-    // D-16: when the server config was never loaded, resetToEmpty refuses
+    // When the server config was never loaded, resetToEmpty refuses
     // (it would let the next Apply wipe the running control plane). Do not
     // open the wizard onto a null working config either — upserts there
     // would silently fail on Finish.
@@ -61,8 +61,8 @@ export function useEntityListPage<T>(options: UseEntityListPageOptions<T>) {
     setWizardOpen,
     editing,
     /** Directly stage the entity the wizard will edit. Used by RulesPage's
-     *  runtime rows (C-B1), whose prefill may come from the SAVED config or
-     *  the runtime stat rather than the working config. */
+     * runtime rows, whose prefill may come from the SAVED config or
+     * the runtime stat rather than the working config. */
     setEditing,
     deleteTarget,
     setDeleteTarget,

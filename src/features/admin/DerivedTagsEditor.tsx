@@ -57,7 +57,7 @@ export const DerivedTagsEditor: React.FC = () => {
 
   const [editing, setEditing] = useState<DerivedTagConfig | null>(null)
   const [isNew, setIsNew] = useState(false)
-  // C-B7: deleting a derived tag asked nothing — it just vanished.
+  // Deleting a derived tag asked nothing — it just vanished.
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
 
   const tags = workingConfig?.['derived-tags'] ?? []
@@ -185,8 +185,8 @@ export const DerivedTagsEditor: React.FC = () => {
                   </div>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
-                  {/* C-B7: Pencil for edit — the Calculator read as
-                      "compute", not "edit", unlike every other editor. */}
+                  {/* Pencil for edit — the Calculator read as
+                       "compute", not "edit", unlike every other editor. */}
                   <button
                     type="button"
                     onClick={() => startEdit(tg.name)}
@@ -266,8 +266,8 @@ export const DerivedTagsEditor: React.FC = () => {
                   className="h-8 text-xs font-mono"
                 />
                 <p className="text-xs text-muted-foreground">{t('derivedTag.exprHelp')}</p>
-                {/* C-B7: live expression validation — a broken expr used to
-                    surface only at apply time (transform validator reused). */}
+                {/* Live expression validation — a broken expr used to
+                     surface only at apply time (transform validator reused). */}
                 <ExprValidationMessages
                   result={validateTransformExpression(editing.expr)}
                   variant="prefix"
@@ -364,7 +364,7 @@ export const DerivedTagsEditor: React.FC = () => {
           </div>
         )}
 
-        {/* C-B7: delete confirmation — same gate as every other entity. */}
+        {/* Delete confirmation — same gate as every other entity. */}
         <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
           <AlertDialogContent>
             <AlertDialogHeader>

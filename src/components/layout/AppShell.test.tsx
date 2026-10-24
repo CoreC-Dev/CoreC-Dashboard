@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// AppShell — live-stream indicator coverage (audit D-04): the "实时流" badge
+// AppShell — live-stream indicator coverage: the "实时流" badge
 // and the disconnect banner used to render on /monitor only, leaving the
 // seven admin pages (config center, write control — the pages most harmed
 // by a silently dead socket) with no stream status at all. Both must be
@@ -97,7 +97,7 @@ function renderShellAt(path: string) {
   )
 }
 
-describe('AppShell stream indicator coverage (D-04)', () => {
+describe('AppShell stream indicator coverage', () => {
   it('shows the live-stream badge on an admin route', () => {
     const sink = useWsStatusStore.getState().registerStream('admin-stream')
     act(() => sink('open'))

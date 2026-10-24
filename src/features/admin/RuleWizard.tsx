@@ -59,7 +59,7 @@ import type { RuleAction, RuleConfig } from '@/types/config'
 
 // ─── Component ───────────────────────────────────────────────────────
 
-// C-B8: the target step's no-transports dead end — links out instead
+// The target step's no-transports dead end — links out instead
 // of forcing a cancel that eats the already-typed match expression.
 const NoTransportsNotice: React.FC<{ to: string }> = ({ to }) => {
   const { t } = useTranslation()
@@ -92,7 +92,7 @@ export const RuleWizard: React.FC<RuleWizardProps> = ({
   const workingConfig = useConfigStore((s) => s.workingConfig)
   const transportNames = useTransportNames()
   const isEdit = !!existingRule
-  // C-B8: route base for the no-transports exit link.
+  // Route base for the no-transports exit link.
   const { id } = useParams<{ id: string }>()
   const adminBase = id ? `/corec/${id}/admin` : '/admin'
 
@@ -470,7 +470,7 @@ export const RuleWizard: React.FC<RuleWizardProps> = ({
       onFinish={handleFinish}
       canFinish={!hasContextErrors}
       onCancel={() => onOpenChange(false)}
-      // C-A2: a draft with unsaved input confirms before the wizard closes.
+      // A draft with unsaved input confirms before the wizard closes.
       isDirty={() =>
         isRuleDraftDirty({
           currentStep,

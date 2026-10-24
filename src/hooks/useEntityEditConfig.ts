@@ -9,14 +9,14 @@ import type { CoreCConfig } from '@/types/config'
 /**
  * Shared edit-config state management for entity detail pages.
  *
- * Extracted from DriverEditConfigSection and TransportEditConfigSection
- * (TD-DUP-002) — both had identical useState/useEffect/useMemo/handleReload
- * logic with only the entity lookup and YAML builders differing.
+ * Used by both the driver and transport edit sections — the
+ * useState/useEffect/useMemo/handleReload logic is identical; only the
+ * entity lookup and YAML builders differ between the two.
  *
  * The caller provides entity-specific logic via options; the hook manages
  * open/values/statusMsg state, pre-fill, preview/apply YAML, and reload.
  *
- * C-A4: fields tagged kind 'password' are never pre-filled with the
+ * Fields tagged kind 'password' are never pre-filled with the
  * stored secret. A saved value is recorded in `secretSavedKeys` and the
  * form value stays '' — the card shows a "saved — leave blank to keep"
  * placeholder, and the blank field is simply omitted from the generated
@@ -54,7 +54,7 @@ export interface EntityEditConfigState {
   setField: (key: string, v: string) => void
   /**
    * Password-kind fields that have a stored (server-side) value. The form
-   * value is masked to '' for these (C-A4); the card uses the set to show
+   * value is masked to '' for these; the card uses the set to show
    * the "saved — leave blank to keep" placeholder instead of echoing the
    * secret.
    */
@@ -64,7 +64,7 @@ export interface EntityEditConfigState {
   statusMsg: { type: 'success' | 'error'; text: string } | null
   /**
    * Hot-reload the apply YAML via PUT /configs. Resolves to whether the
-   * reload succeeded so the caller's confirmation dialog (C-A1: detail
+   * reload succeeded so the caller's confirmation dialog (detail
    * pages wrap this behind ConfigApplyConfirmationDialog) can stay open
    * on failure.
    */
@@ -96,7 +96,7 @@ export function useEntityEditConfig<TField extends { key: string; kind?: string 
   // Last failed reload's message, kept separately so the confirmation dialog
   // can render it in place (applyError slot) while statusMsg feeds the card.
   const [reloadError, setReloadError] = useState<string | null>(null)
-  // Password-kind keys that carry a stored value (C-A4 masking).
+  // Password-kind keys that carry a stored value (stored-secret masking).
   const [secretSavedKeys, setSecretSavedKeys] = useState<ReadonlySet<string>>(() => new Set())
 
   // Pre-fill form from the existing server config.
@@ -106,7 +106,7 @@ export function useEntityEditConfig<TField extends { key: string; kind?: string 
       const cfg = parseConfigYaml(rawYaml)
       const filled = prefillValues(cfg)
       if (filled) {
-        // C-A4: mask stored secrets — a non-empty password field value is
+        // Mask stored secrets — a non-empty password field value is
         // recorded as "saved" and replaced with '' so the secret never
         // reaches the form state (nor the preview/apply YAML).
         const saved = new Set<string>()

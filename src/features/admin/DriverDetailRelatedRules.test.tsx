@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
-// C-A11 regression: the driver detail page lists the rules that consume
+// Regression: the driver detail page lists the rules that consume
 // the driver's data (match-DSL scan over the saved config) with a link per
 // rule — the "which rules break if I touch this driver?" question used to
-// require opening every rule on the rules page. Also pins the C-A10
-// truncation note as a real deep link into the pre-filtered Tag Explorer.
+// require opening every rule on the rules page. Also pins the
+// truncated-tag-count note as a real deep link into the pre-filtered Tag Explorer.
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
@@ -15,7 +15,7 @@ import { useConnectionStore } from '@/stores/connectionStore'
 vi.setConfig({ testTimeout: 15_000 })
 
 // 201 registered tags — enough to trip the 200-row render cap so the
-// truncation note (and its C-A10 link) is on screen. Built inside the
+// truncation note (and its Tag Explorer link) is on screen. Built inside the
 // vi.mock factory (vi.mock hoists above top-level consts).
 vi.mock('@/api/endpoints', () => {
   const manyTags = Object.fromEntries(
@@ -101,7 +101,7 @@ afterEach(() => {
   cleanup()
 })
 
-describe('driver detail page — related rules & tag-explorer deep link (C-A11/C-A10)', () => {
+describe('driver detail page — related rules & tag-explorer deep link', () => {
   it('lists rules consuming the driver, each linking to the rules page', async () => {
     renderAt(<DriverDetailPage />, '/corec/i1/admin/drivers/plc1', '/corec/:id/admin/drivers/:name')
 

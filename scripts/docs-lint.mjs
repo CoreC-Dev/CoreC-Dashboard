@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// docs-lint.mjs — 文档防腐 linter（阶段 2 建立，阶段 3 接入 CI）
+// docs-lint.mjs — 文档防腐 linter（CI 接入）
 // 校验：docs/index.md 链接可解析 + AGENTS.md 必填节 + 行数上限 + 索引完备性
 // 用法：node scripts/docs-lint.mjs   退出码 0=通过 1=失败
 

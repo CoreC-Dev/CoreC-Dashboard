@@ -24,7 +24,7 @@ import type {
 
 /**
  * Reject objects containing prototype-polluting keys (__proto__, constructor,
- * prototype) at any nesting depth (TD-SEC-009). js-yaml's safe schema
+ * prototype) at any nesting depth. js-yaml's safe schema
  * prevents code execution but does not strip these keys from mappings.
  */
 const PROTO_KEYS = new Set(['__proto__', 'constructor', 'prototype'])
@@ -73,7 +73,7 @@ export function dumpConfigYaml(config: CoreCConfig): string {
 /**
  * Whether a raw YAML document differs (semantically, not textually) from a
  * config object. Used by the Config Center to detect divergence between the
- * Monaco editor content and the configStore working copy (UX audit C-D1):
+ * Monaco editor content and the configStore working copy:
  * the two are manually bridged states, and hot-reloading the YAML while the
  * form side holds unsent edits must be gated, not silently merged.
  *

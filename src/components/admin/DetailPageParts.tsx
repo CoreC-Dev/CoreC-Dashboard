@@ -34,8 +34,7 @@ export const formatTimestamp = (ts: string, fallback = '—'): string => {
 }
 
 /** Inline connection-summary line for entity list cards. Renders null when
- *  the summary is absent. Extracted from 4× repeated IIFE in DriversPage /
- *  TransportsPage (TD-DUP-006). */
+ *  the summary is absent. Shared by DriversPage / TransportsPage. */
 export const ConnectionSummary: React.FC<{ summary: string | null }> = ({ summary }) => {
   if (!summary) return null
   return <div className="text-xs text-muted-foreground/80 font-mono mt-0.5 truncate">{summary}</div>
@@ -135,7 +134,7 @@ export interface EntityEditConfigLabels {
   reloadButtonLabel: string
   /**
    * Placeholder shown for a password field that has a STORED value while
-   * the form value is masked to '' (C-A4) — e.g. "Saved — leave blank
+   * the form value is masked to '' — e.g. "Saved — leave blank
    * to keep". Shown instead of the field's generic placeholder.
    */
   savedSecretPlaceholder: string
@@ -163,7 +162,7 @@ export const EntityEditConfigCard: React.FC<EntityEditConfigCardProps> = ({
   labelFor,
   labels,
 }) => {
-  // Per-field reveal state for password inputs (C-A4). Off by default —
+  // Per-field reveal state for password inputs. Off by default —
   // a stored secret is never echoed, and a freshly typed one is masked
   // until the operator explicitly reveals it.
   const [revealed, setRevealed] = useState<ReadonlySet<string>>(() => new Set())
@@ -297,9 +296,9 @@ export const EntityEditConfigCard: React.FC<EntityEditConfigCardProps> = ({
                 </pre>
               </div>
 
-              {/* D-17: the shared transient feedback strip — context label
-                  (the card/section title) + 5s auto-fade + manual close,
-                  replacing the page-local never-clearing status line. */}
+              {/* The shared transient feedback strip — context label
+                   (the card/section title) + 5s auto-fade + manual close,
+                   replacing the page-local never-clearing status line. */}
               <OperationResult status={edit.statusMsg} context={labels.title} />
 
               <div className="flex justify-end">

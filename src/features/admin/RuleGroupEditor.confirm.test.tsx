@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
-// C-B4 regression: deleting a sub-rule inside a rule group must pass the
+// Regression: deleting a sub-rule inside a rule group must pass the
 // same confirmation gate the group delete already had — the row delete used
 // to vanish the sub-rule instantly.
-// C-B5 regression: renaming a group must surface the SUB-RULE references
+// Regression: renaming a group must surface the SUB-RULE references
 // that would break and offer to rewrite them (default on) — the rename used
 // to leave dead references everywhere silently.
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
@@ -50,7 +50,7 @@ async function expandedRowDeleteButtons() {
   return screen.getAllByRole('button', { name: 'Delete' })
 }
 
-describe('RuleGroupEditor — sub-rule delete confirmation (C-B4)', () => {
+describe('RuleGroupEditor — sub-rule delete confirmation', () => {
   it('row delete opens a confirm dialog; nothing is removed before Confirm', async () => {
     render(
       <MemoryRouter>
@@ -100,7 +100,7 @@ describe('RuleGroupEditor — sub-rule delete confirmation (C-B4)', () => {
   })
 })
 
-// ─── C-B5: rename vs SUB-RULE references ──────────────────────────────
+// ─── Rename vs SUB-RULE references ──────────────────────────────
 
 /** Working config where group-a is referenced from a top-level rule and
  *  from another group's sub-rule. */
@@ -132,7 +132,7 @@ async function renameGroup(from: string, to: string, cardIndex = 0) {
   })
 }
 
-describe('RuleGroupEditor — rename scans SUB-RULE references (C-B5)', () => {
+describe('RuleGroupEditor — rename scans SUB-RULE references', () => {
   beforeEach(() => {
     useConfigStore.setState({
       workingConfig: REFS_WORKING,

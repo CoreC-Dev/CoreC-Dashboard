@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-// X4 leftover wiring point: the entity list pages must make the D-16
-// seed block VISIBLE — Create disabled plus the shared SeedBlockedBanner
+// Wiring point: the entity list pages must make the seed
+// block VISIBLE — Create disabled plus the shared SeedBlockedBanner
 // while GET /configs/raw has not produced a baseline — and must lift the
 // block (and open the wizard) once the seed succeeds.
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -77,7 +77,7 @@ afterEach(() => {
   useConfigStore.getState().reset()
 })
 
-describe('list pages: seed-guarded Create with a visible block (X4 wiring)', () => {
+describe('list pages: seed-guarded Create with a visible block', () => {
   it('DriversPage: Create disabled + banner while blocked; Retry + success lifts it and opens the wizard', async () => {
     const { getConfigsRaw } = await import('@/api/endpoints')
     vi.mocked(getConfigsRaw).mockRejectedValueOnce(new Error('backend restarting'))

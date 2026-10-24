@@ -5,9 +5,9 @@ import { useToggleRule } from '@/api/hooks'
 /**
  * Per-row rule toggle state with in-flight tracking.
  *
- * Extracted from RulesPage (TD-CPLX-003). Tracks which rules have a pending
+ * Tracks which rules have a pending
  * toggle mutation so the switch is disabled during the request, and surfaces
- * toggle errors. [M-5]
+ * toggle errors.
  *
  * Rules are addressed by name (stable across config reloads) rather than
  * index, which can shift when the rule list changes.

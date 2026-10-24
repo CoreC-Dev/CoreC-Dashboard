@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// DiscardChangesDialog (audit D-18): discarding unsaved edits is a lossy
+// DiscardChangesDialog: discarding unsaved edits is a lossy
 // action, but the confirm used to render as the default primary (lime)
 // button — visually identical to a plain "OK", so habit-clicking the
 // right button dropped the draft. The confirm must be destructive-styled,
@@ -20,7 +20,7 @@ afterEach(() => {
   vi.clearAllMocks()
 })
 
-describe('DiscardChangesDialog destructive confirm (D-18)', () => {
+describe('DiscardChangesDialog destructive confirm', () => {
   it('renders the confirm with the destructive variant, not the primary look', () => {
     render(<DiscardChangesDialog open onOpenChange={() => {}} onConfirm={() => {}} />)
 

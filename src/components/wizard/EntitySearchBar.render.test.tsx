@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 /**
- * Render behavior tests for EntitySearchBar (TD-TEST-015).
+ * Render behavior tests for EntitySearchBar.
  *
  * The sibling `.test.ts` file covers the pure `filterEntities` helper. These
  * tests render the actual EntitySearchBar wired to a minimal parent list and

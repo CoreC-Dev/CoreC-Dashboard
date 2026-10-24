@@ -1,14 +1,14 @@
 /**
- * SeedBlockedBanner — the D-16 companion for the entity list pages.
+ * SeedBlockedBanner — the companion for the entity list pages.
  *
  * When the auto-seed of GET /configs/raw has not succeeded (in flight or
  * failed) and there is no saved baseline, configStore refuses the
- * destructive paths (`resetToEmpty`, apply). Before this banner, the
- * Drivers/Transports/Rules pages hid that entirely: their Create button
- * silently did nothing (X4 leftover wiring point). Now the pages disable
- * Create while blocked and mount this banner so the failure is VISIBLE:
- * while loading it explains the wait; after a failure it shows the
- * verbatim error and offers the same Retry the Config Center banner has.
+ * destructive paths (`resetToEmpty`, apply). The list pages must not hide
+ * that: a Create button that silently does nothing is worse than a
+ * disabled one. So the pages disable Create while blocked and mount this
+ * banner — while loading it explains the wait; after a failure it shows
+ * the verbatim error and offers the same Retry the Config Center banner
+ * has.
  */
 import { AlertTriangle, Loader2 } from 'lucide-react'
 import type React from 'react'

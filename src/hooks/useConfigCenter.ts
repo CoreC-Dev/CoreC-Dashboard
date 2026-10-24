@@ -1,11 +1,9 @@
 /**
- * State + handlers for the Config Center page.
- *
- * Extracted from ConfigCenterPage.tsx (TD-CPLX-001) so the page becomes a thin
- * composition root. Owns the YAML editor content, form↔YAML bridge, file
- * upload/download, template loading, log-level patching, hot reload, server
- * load, dry-run validation, change history, and the debounced diff preview.
- * No behavior changes — pure relocation of the page's stateful logic.
+ * State + handlers for the Config Center page — the page itself stays a
+ * thin composition root. Owns the YAML editor content, form↔YAML bridge,
+ * file upload/download, template loading, log-level patching, hot reload,
+ * server load, dry-run validation, change history, and the debounced diff
+ * preview.
  */
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -30,9 +28,9 @@ const STATUS_AUTO_DISMISS_MS = 4500
 
 export type ConfigMode = 'form' | 'yaml'
 
-/** Persistent dry-run validation result (C-D7). Rendered in a dedicated
- *  non-dismissing block by the page; only a clean success uses the
- *  auto-dismissing status strip. */
+/** Persistent dry-run validation result. Rendered in a dedicated
+ * non-dismissing block by the page; only a clean success uses the
+ * auto-dismissing status strip. */
 export type DryRunResult =
   | { outcome: 'valid-with-warnings'; warnings: string[] }
   | { outcome: 'invalid'; error: string }
@@ -65,7 +63,7 @@ export function useConfigCenter() {
   const seedFromServer = useConfigStore((s) => s.seedFromServer)
   const revertConfig = useConfigStore((s) => s.revert)
   const configWorkingExists = useConfigStore((s) => !!s.workingConfig)
-  // D-16 — auto-seed status for the failure banner and the Create/Apply
+  // Auto-seed status for the failure banner and the Create/Apply
   // guards. Driven by useAutoLoadConfig (mounted in AppShell).
   const hasSavedBaseline = useConfigStore((s) => !!s.savedConfig)
   const seedStatus = useConfigStore((s) => s.seedStatus)
@@ -103,7 +101,7 @@ export function useConfigCenter() {
   // first successful fetch, so operators see the actual running config
   // instead of DEFAULT_SAMPLE_YAML without a manual "Load from Server" click.
   const [autoLoaded, setAutoLoaded] = useState(false)
-  // C-D7 — persistent dry-run validation result. Unlike statusMsg it does NOT
+  // Persistent dry-run validation result. Unlike statusMsg it does NOT
   // auto-dismiss: server-side warnings/errors must stay readable instead of
   // vanishing with the 4.5s status strip.
   const [dryRunResult, setDryRunResult] = useState<DryRunResult | null>(null)
@@ -115,8 +113,8 @@ export function useConfigCenter() {
     setDryRunResult(null)
   }, [])
 
-  // YAML-mode apply flow: apply dialog + C-D1 divergence bridge/guard +
-  // D-16 seed guard. Extracted to useYamlApplyFlow (God-file limit); the
+  // YAML-mode apply flow: apply dialog + form↔YAML divergence bridge/guard +
+  // seed guard. Lives in useYamlApplyFlow (file-size limit); the
   // page consumes it through this hook's return value unchanged.
   const {
     updateMutation,
@@ -148,7 +146,7 @@ export function useConfigCenter() {
     },
   })
 
-  // ── Unsaved-changes guard (C-D3) ───────────────────────────────────
+  // ── Unsaved-changes guard ───────────────────────────────────
   // The editor counts as dirty when it differs from the SERVER config
   // (semantically — parse both sides). Together with the form side's dirty
   // flag this drives the beforeunload guard; in-app route blocking would
@@ -166,7 +164,7 @@ export function useConfigCenter() {
     }
   }, [debouncedYaml, serverRawYaml])
   const hasPendingEdits = () => configDirty || editorDirty
-  // Template/file loading with the C-D4 discard confirmation; extracted to
+  // Template/file loading with the discard confirmation; extracted to
   // useConfigCenterLoads (God-file limit).
   const {
     templatePickerOpen,
@@ -280,7 +278,7 @@ export function useConfigCenter() {
     try {
       // The server only supports `log-level` for PATCH /configs.
       await patchMutation.mutateAsync({ 'log-level': lvl })
-      // C-D8 — record the patch in the store baseline (saved + mirrored
+      // Record the patch in the store baseline (saved + mirrored
       // working value) but leave the editor content untouched: the old flow
       // overwrote yamlContent with the refetched server config, silently
       // destroying unsaved editor edits. If the editor content is now
@@ -329,7 +327,7 @@ export function useConfigCenter() {
   // Path A — "Validate": dry-run the current editor config on the server via
   // POST /configs/validate (parse + config validation, NO apply). Surfaces
   // whether the config would be accepted before the operator commits a PUT.
-  // C-D7 — results with warnings/errors go to the persistent dryRunResult
+  // Results with warnings/errors go to the persistent dryRunResult
   // block instead of the 4.5s status strip; ONLY a clean success auto-dismisses.
   const handleDryRunValidate = async () => {
     setStatusMsg(null)
@@ -362,13 +360,13 @@ export function useConfigCenter() {
   // Revert the configStore working config to the last saved state.
   const revertWorkingConfig = () => revertConfig()
 
-  // D-16 — retry the failed server-config seed (banner "Retry" button).
+  // Retry the failed server-config seed (banner "Retry" button).
   const retrySeed = () => {
     void rawConfigQuery.refetch()
   }
 
   // Line-by-line diff between the editor content and the SAVED SERVER CONFIG
-  // (C-D6 — the old per-session "last submitted" baseline was null on first
+  // (the old per-session "last submitted" baseline was null on first
   // visit, hiding the preview, and produced phantom diffs after "Load from
   // Server"). Hidden until a baseline exists. Uses the debounced value so the
   // O(m×n) LCS isn't recomputed on every keystroke; hasDiffChanges is folded
@@ -407,7 +405,7 @@ export function useConfigCenter() {
     openApplyDialog,
     revertWorkingConfig,
     getSavedYaml,
-    // D-16 seed-failure banner state
+    // seed-failure banner state
     seedLoadFailed,
     seedStatus,
     retrySeed,
@@ -425,9 +423,9 @@ export function useConfigCenter() {
     // diff
     diffLines,
     hasDiffChanges,
-    // C-D7 persistent dry-run validation result (null = none)
+    // persistent dry-run validation result (null = none)
     dryRunResult,
-    // C-D4 template/file loads (useConfigCenterLoads)
+    // template/file loads (useConfigCenterLoads)
     templatePickerOpen,
     setTemplatePickerOpen,
     loadConfirmOpen,
@@ -444,7 +442,7 @@ export function useConfigCenter() {
     handleLoadFromServer,
     handleDryRunValidate,
     handleRestore,
-    // C-D1 form↔YAML divergence bridge + hot-reload guard
+    // form↔YAML divergence bridge + hot-reload guard
     requestModeSwitch,
     bridgeTarget,
     bridgeImport,

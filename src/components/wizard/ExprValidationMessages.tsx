@@ -2,10 +2,10 @@
  * ExprValidationMessages
  *
  * Shared renderer for expression-validation result messages (errors +
- * warnings). Extracted from the 4 duplicated inline blocks in RuleWizard
- * and RuleGroupEditor.
+ * warnings) — one component instead of 4 duplicated inline blocks in
+ * RuleWizard and RuleGroupEditor.
  *
- * Two visual variants — the originals differed only in icon vs. text prefix
+ * Two visual variants — the two call sites differ only in icon vs. text prefix
  * and text size:
  *   - 'icon'   (RuleWizard): AlertCircle icon, text-xs, flex row.
  *   - 'prefix' (RuleGroupEditor): ⚠ text prefix, text-xs.

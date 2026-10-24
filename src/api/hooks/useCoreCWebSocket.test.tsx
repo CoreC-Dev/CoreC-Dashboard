@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// useCoreCWebSocket — WS lifecycle + global status-store wiring (audit B01).
+// useCoreCWebSocket — WS lifecycle + global status-store wiring.
 // The WebSocket class is mocked with a controllable stub (same pattern as
 // RealtimeStreamsPanel.test.tsx); the REAL hook wiring is under test:
 // create on mount / destroy on unmount, ref-stable consumer callbacks, and
@@ -111,7 +111,7 @@ describe('useCoreCWebSocket — lifecycle', () => {
   })
 })
 
-describe('useCoreCWebSocket — wsStatusStore wiring (B01)', () => {
+describe('useCoreCWebSocket — wsStatusStore wiring', () => {
   it('registers the stream as connecting on mount and derives the aggregate from socket status', () => {
     expect(deriveAggregate(store().streams)).toBe('idle')
 

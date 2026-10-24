@@ -30,7 +30,7 @@ interface UseTrendChartResult {
 /**
  * Map buffered samples to lightweight-charts line data. A sample without a
  * value is a whitespace point — the line BREAKS there instead of drawing a
- * fabricated segment across the pause gap (B08). Pure; unit-tested.
+ * fabricated segment across the pause gap. Pure; unit-tested.
  */
 export const toLineData = (samples: TrendSample[]) =>
   samples.map((s) =>
@@ -116,7 +116,7 @@ export function useTrendChart({
   }, [trendTag, resolvedTheme])
 
   // Push buffered samples into the chart series whenever they change.
-  // Whitespace samples (no value) break the line across pause gaps (B08).
+  // Whitespace samples (no value) break the line across pause gaps.
   useEffect(() => {
     if (!seriesRef.current) return
     seriesRef.current.setData(toLineData(trendSamples))

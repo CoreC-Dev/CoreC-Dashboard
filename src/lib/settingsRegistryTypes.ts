@@ -1,7 +1,5 @@
 /**
  * Settings Field Metadata — Shared Types & Fragments
- *
- * (Split from settingsRegistry.ts — TD-ARCH-013.)
  */
 
 // ─── Field descriptor types ──────────────────────────────────────────

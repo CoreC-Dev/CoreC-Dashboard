@@ -71,7 +71,7 @@ const StatTile: React.FC<{ label: string; value: string; accent?: string }> = ({
  * Live /traffic column — per-second rates straight off the wire.
  *
  * The backend's default mode pushes server-side diffed rate frames
- * (read_rate/publish_rate/dropped_rate; backend roadmap #32) — the first
+ * (read_rate/publish_rate/dropped_rate) — the first
  * frame already carries the engine's 60s windowed rate, so this renders
  * immediately with no client-side baseline. Legacy totals frames
  * (?mode=totals, cumulative counters) still render via client diff —

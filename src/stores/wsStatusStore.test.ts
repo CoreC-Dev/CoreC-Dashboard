@@ -10,7 +10,7 @@ import {
 
 /**
  * wsStatusStore — the aggregation behind the AppShell "实时流" badge and the
- * monitor pages' connection banner (audit B01/D-02). These tests pin the
+ * monitor pages' connection banner. These tests pin the
  * state machine: registration, status transitions (including the
  * first-connect vs reconnect distinction via downOnce), the throttled
  * activity ping, drop reports, rejected-retry fan-out, and the snapshot

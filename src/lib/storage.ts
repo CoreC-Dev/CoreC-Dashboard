@@ -1,7 +1,7 @@
 /**
  * Best-effort localStorage write — never throws on quota/privacy errors.
  * Returns false when the write failed so callers can surface the data-loss
- * risk instead of silently swallowing it (A-11).
+ * risk instead of silently swallowing it.
  */
 export const safePersist = (key: string, value: string): boolean => {
   try {

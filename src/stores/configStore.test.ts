@@ -130,7 +130,7 @@ drivers:
     expect(s.dirty).toBe(true)
   })
 
-  it('resetToEmpty is blocked while the server config is still loading (D-16)', () => {
+  it('resetToEmpty is blocked while the server config is still loading', () => {
     useConfigStore.getState().markSeedLoading()
     const ok = useConfigStore.getState().resetToEmpty()
     expect(ok).toBe(false)
@@ -142,7 +142,7 @@ drivers:
     expect(s.error).toBeTruthy()
   })
 
-  it('resetToEmpty is blocked after the server config failed to load (D-16)', () => {
+  it('resetToEmpty is blocked after the server config failed to load', () => {
     useConfigStore.getState().markSeedFailed('backend restarting')
     const ok = useConfigStore.getState().resetToEmpty()
     expect(ok).toBe(false)
@@ -582,7 +582,7 @@ describe('configStore — field-level updates', () => {
   })
 })
 
-describe('configStore — markSavedFromYaml (C-D1 evaporation regression)', () => {
+describe('configStore — markSavedFromYaml (evaporation regression)', () => {
   // The audit's evaporation scenario: the operator edits the FORM (engine
   // workers), switches to YAML, edits the YAML differently (log level), and
   // hot-reloads. The applied YAML must become the saved baseline, while the
@@ -705,7 +705,7 @@ describe('configStore — YAML output', () => {
   })
 })
 
-describe('configStore — applyGlobalPatch (C-D8)', () => {
+describe('configStore — applyGlobalPatch', () => {
   const seedYaml = `
 global:
   log-level: info

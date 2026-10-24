@@ -14,7 +14,7 @@ interface InstanceSelectorProps {
   eff: boolean
 }
 
-/** Live per-instance verdict for the dropdown dots (audit D-20). */
+/** Live per-instance verdict for the dropdown dots. */
 type InstanceDotStatus = 'connected' | 'error' | 'connecting' | 'unknown'
 
 const DOT_CLASS: Record<InstanceDotStatus, string> = {
@@ -25,7 +25,7 @@ const DOT_CLASS: Record<InstanceDotStatus, string> = {
 }
 
 /**
- * D-20: where an instance switch lands. The old onValueChange always jumped
+ * Where an instance switch lands. The old onValueChange always jumped
  * to the section root ("monitor/dashboard" / "admin/drivers"), throwing the
  * operator back to the overview from wherever they actually were — switching
  * from the alerts page or the config center lost the page context. The
@@ -44,10 +44,10 @@ export function switchInstanceTarget(pathname: string, targetId: string): string
 
 /**
  * Instance switcher dropdown. Navigates to the selected instance while
- * preserving the current page (audit D-20 — see switchInstanceTarget).
+ * preserving the current page (see switchInstanceTarget).
  * Renders nothing when there is no active instance.
  *
- * The dropdown dots mirror the homepage card's live verdict (D-20): the old
+ * The dropdown dots mirror the homepage card's live verdict: the old
  * dot went green from lastConnectedAt alone ("was ever connected"), so an
  * instance the 15s homepage probe had just reported dead still showed green
  * in the sidebar. The dot now reads the same live signals the card does —
@@ -69,7 +69,7 @@ export const InstanceSelector: React.FC<InstanceSelectorProps> = ({ eff }) => {
   // array of brand-new objects → React saw a changed snapshot every render →
   // "Maximum update depth exceeded" (#185) on every instance-scoped route
   // (SidebarNav → InstanceSelector). Returning the stable s.instances ref from
-  // the selector and projecting in useMemo breaks the loop. (TD-PERF-009: this
+  // the selector and projecting in useMemo breaks the loop. (this
   // re-renders on any instances/probing/probeErrors change rather than only
   // the projected fields; on instance routes the store changes at most once
   // per probe tick, so the cost is nil.)
@@ -81,7 +81,7 @@ export const InstanceSelector: React.FC<InstanceSelectorProps> = ({ eff }) => {
       allInstances.map((i) => ({
         id: i.id,
         name: i.name,
-        // Same precedence the homepage card uses (A-07): the connecting dot
+        // Same precedence the homepage card uses: the connecting dot
         // is reserved for the very first probe; a known verdict wins.
         status: (probing[i.id] && !i.lastConnectedAt && !probeErrors[i.id]
           ? 'connecting'

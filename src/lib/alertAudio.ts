@@ -6,7 +6,7 @@
  * to unlock the context; later WebSocket-driven beeps reuse the same
  * context. The context is module-level (not a ref inside a component) so it
  * survives navigation — the beep now belongs to the instance-level alert
- * provider (audit B02), not to whichever page happens to be mounted.
+ * provider, not to whichever page happens to be mounted.
  *
  * Extracted verbatim from AlertsPage's playBeep (sine, 800 Hz, gain 0.2,
  * 0.2 s) — no behavior change. Fails silently when AudioContext is
@@ -52,7 +52,7 @@ export function playAlertBeep(): void {
 /**
  * Warning-level alert: three short beeps (~0.8 s total) at a lower
  * pitch than the error beep so operators can tell severity by ear
- * (audit B19). No-op without an AudioContext.
+ *. No-op without an AudioContext.
  */
 export function playWarningBeep(): void {
   playTone(620, 0, 0.15)

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// SidebarNav — the "告警事件" nav badge (audit B02): a red unread count fed
+// SidebarNav — the "告警事件" nav badge: a red unread count fed
 // by the instance-level alert provider's store. Unread error events take
 // precedence; a non-empty dead-letter queue is the fallback signal. The
 // audit's aria copy — "{{count}} unread alerts" — must reach screen readers

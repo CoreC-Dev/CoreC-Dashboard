@@ -10,7 +10,7 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-describe('lib/storage — safePersist (A-11)', () => {
+describe('lib/storage — safePersist', () => {
   it('writes the value and returns true on success', () => {
     expect(safePersist('k', 'v')).toBe(true)
     expect(localStorage.getItem('k')).toBe('v')

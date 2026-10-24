@@ -28,7 +28,7 @@ const CONFIG: CoreCConfig = {
   },
 }
 
-describe('matchReferencesSubRule (C-B5)', () => {
+describe('matchReferencesSubRule', () => {
   it('matches exact and compound references', () => {
     expect(matchReferencesSubRule('SUB-RULE:group-a', 'group-a')).toBe(true)
     expect(matchReferencesSubRule('SUB-RULE:group-a && value > 80', 'group-a')).toBe(true)
@@ -42,7 +42,7 @@ describe('matchReferencesSubRule (C-B5)', () => {
   })
 })
 
-describe('findSubRuleReferences (C-B5)', () => {
+describe('findSubRuleReferences', () => {
   it('lists top-level and cross-group references, skipping the group itself', () => {
     const refs = findSubRuleReferences(CONFIG, 'group-a')
     expect(refs.map((r) => r.ruleName).sort()).toEqual(['nested', 'top-compound', 'top-exact'])
@@ -57,7 +57,7 @@ describe('findSubRuleReferences (C-B5)', () => {
   })
 })
 
-describe('rewrite helpers (C-B5)', () => {
+describe('rewrite helpers', () => {
   it('rewrites only the named group, prefix-safely', () => {
     expect(rewriteSubRuleRefs('SUB-RULE:group-a && value > 80', 'group-a', 'group-z')).toBe(
       'SUB-RULE:group-z && value > 80',

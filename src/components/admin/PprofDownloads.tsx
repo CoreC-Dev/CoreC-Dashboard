@@ -1,17 +1,16 @@
 /**
  * PprofDownloads — the "Advanced debugging" tail section of the
- * diagnostics page (C-E1).
+ * diagnostics page.
  *
  * pprof profiles (heap/goroutine/CPU/block/mutex/trace) are CoreC
- * developer tools, not operator surfaces; the page previously dumped
- * them into the operator's scrolling path. The section now ships
+ * developer tools, not operator surfaces — the section ships
  * COLLAPSED by default so the operator's page ends at the write
  * history, and developers expand it when a Go-side investigation
  * actually needs a profile.
  *
  * Downloads fetch through the same-origin proxy with the Bearer header
  * (pprof mounts inside CoreC's authed route group) and carry a 30s
- * abort — see TD-SEC-001/002 and TD-PERF-002 in the original page.
+ * abort so a blocking profile cannot hang the download forever.
  */
 import { AlertCircle, ChevronDown, Download, RefreshCw } from 'lucide-react'
 import type React from 'react'
@@ -45,13 +44,14 @@ export const PprofDownloads: React.FC = () => {
     const baseUrl = conn?.baseUrl ?? ''
     const secret = conn?.secret ?? ''
     const cleanBase = baseUrl.trim().replace(/\/+$/, '')
-    // Route through same-origin proxy (TD-SEC-001/002, D3).
+    // Route through the same-origin proxy — the browser must not connect
+    // to the backend directly (CSP connect-src 'self').
     const url = `/corec-proxy/debug/pprof/${profile}`
     setPprofLoading(profile)
     setPprofError(null)
     try {
       // Add 30s timeout — pprof profiles can block server-side for seconds
-      // but should not hang forever (TD-PERF-002).
+      // but should not hang forever.
       const ctrl = new AbortController()
       const timeoutId = setTimeout(() => ctrl.abort(), 30_000)
       const res = await fetch(url, {

@@ -11,16 +11,17 @@ interface CountUpNumberProps {
  * Displays a number that animates from its previous value to the new target
  * using an ease-out cubic curve. Respects prefers-reduced-motion.
  *
- * Animation logic inlined (TD-ARCH-005) — components/ui must not import
- * from hooks/. The former useCountUp hook had no other consumers.
+ * Animation logic inlined — components/ui must not import from hooks/
+ * (layer rule), and this animation has no other consumers to share a
+ * hook with.
  */
 export const CountUpNumber = memo(function CountUpNumber({
   value,
   duration = 800,
-  // B12: rounding lives INSIDE the integer default, not before format — a
-  // custom format (e.g. the sample-rate card's one-decimal toFixed) now
-  // receives the raw animated value, so 12.4 pts/s no longer renders as
-  // "12.0" for the whole animation. Integer counters that want rounding
+  // Rounding lives INSIDE the integer default, not before format — a
+  // custom format (e.g. the sample-rate card's one-decimal toFixed)
+  // receives the raw animated value, so 12.4 pts/s renders correctly
+  // for the whole animation. Integer counters that want rounding
   // pass it in their own format (DashboardPage wraps formatNumber).
   format = (n) => Math.round(n).toLocaleString(),
   className,

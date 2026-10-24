@@ -24,7 +24,7 @@ import { formatNumber } from '@/lib/utils'
 
 const METRICS_AUTO_REFRESH_MS = 12_000
 
-// C-E1: in-page table of contents — one chip per section, in reading
+// In-page table of contents — one chip per section, in reading
 // order. The labels mirror the section cards below.
 const ANCHOR_SECTIONS: readonly AnchorSection[] = [
   { id: 'diagnostics-health', labelKey: 'diagnostics.navHealth' },
@@ -126,7 +126,7 @@ const HistTile: React.FC<{
 export const DiagnosticsPage: React.FC = () => {
   const { t } = useTranslation()
 
-  // C-C5: deep links like /diagnostics?section=writes land on the write
+  // Deep links like /diagnostics?section=writes land on the write
   // history (HashRouter routes eat #anchors, so the jump is a query
   // param + scrollIntoView — the same mechanism the in-page chips use).
   const [searchParams] = useSearchParams()
@@ -205,9 +205,9 @@ export const DiagnosticsPage: React.FC = () => {
         <p className="text-sm text-muted-foreground mt-1">{t('diagnostics.subtitle')}</p>
       </div>
 
-      {/* C-E1: jump chips — the page's own table of contents, so the
-          operator reaches "health" or "write history" without scrolling
-          past everything else. */}
+      {/* Jump chips — the page's own table of contents, so the
+           operator reaches "health" or "write history" without scrolling
+           past everything else. */}
       <SectionAnchorNav sections={ANCHOR_SECTIONS} />
 
       {/* Instance version + liveness/readiness probes (public endpoints) */}
@@ -376,7 +376,7 @@ export const DiagnosticsPage: React.FC = () => {
         </Card>
 
         {/* Per-driver/per-transport counters — extracted; rows link to the
-            entity detail pages (C-E3) */}
+             entity detail pages */}
         <DiagnosticsCounterTables
           driverReads={driverReads}
           transportPublishes={transportPublishes}
@@ -388,7 +388,7 @@ export const DiagnosticsPage: React.FC = () => {
         <WriteHistoryTable />
       </section>
 
-      {/* Advanced debugging (pprof) — collapsed by default (C-E1) */}
+      {/* Advanced debugging (pprof) — collapsed by default */}
       <PprofDownloads />
     </div>
   )

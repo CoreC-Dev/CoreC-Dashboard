@@ -8,7 +8,7 @@ const savedLocale =
   (typeof localStorage !== 'undefined' && localStorage.getItem(STORAGE_KEY)) || 'zh-CN'
 
 /**
- * D-11: keep <html lang> in sync with the active locale so screen readers
+ * Keep <html lang> in sync with the active locale so screen readers
  * pick the right voice engine (index.html ships a static zh-CN default and
  * does not follow language switches on its own).
  */

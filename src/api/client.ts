@@ -73,7 +73,7 @@ export async function apiRequest<T = unknown>(
   const proxyMode = resolveProxyMode(conn.useProxy)
   let url: string
   if (proxyMode === 'proxy') {
-    // Same-origin proxy (ADR-004, D3): the browser sends /corec-proxy<path>
+    // Same-origin proxy (ADR-004): the browser sends /corec-proxy<path>
     // with X-CoreC-Target header; server.mjs forwards to the real backend.
     // Keeps CSP connect-src 'self' and prevents credential leakage.
     url = `/corec-proxy${cleanPath}`

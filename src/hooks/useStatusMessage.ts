@@ -1,9 +1,9 @@
 /**
  * Status message management hook with auto-dismiss.
  *
- * Extracted from ConfigCenterPage.tsx to reduce the god component's state
- * surface. Manages a transient success/error notice that auto-clears after
+ * Manages a transient success/error notice that auto-clears after
  * a configurable timeout, with proper timer cleanup on unmount.
+ * Shared by pages so each page's own state surface stays small.
  */
 import { useEffect, useRef, useState } from 'react'
 

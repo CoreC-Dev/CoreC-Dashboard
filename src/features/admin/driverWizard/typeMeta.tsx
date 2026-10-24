@@ -1,6 +1,6 @@
 // Driver type metadata for the wizard's type picker (icon, label,
-// description per protocol). Extracted from DriverWizard (D2, quality
-// audit 2026-10-21) — data identical.
+// description per protocol). Kept in its own module so the wizard
+// stays a thin shell over it.
 
 import { FileText, Settings2, Zap } from 'lucide-react'
 import type React from 'react'

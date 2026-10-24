@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// C-B1 regression: the runtime rules table's Edit button must open the SAME
+// Regression: the runtime rules table's Edit button must open the SAME
 // RuleWizard the config section uses (delayed apply via the working
 // config) — NOT a second editor that hot-reloads the engine directly.
 // Zero PUT /configs until the operator explicitly applies.
@@ -118,7 +118,7 @@ afterEach(() => {
   useConfigStore.getState().reset()
 })
 
-describe('RulesPage runtime-row edit unification (C-B1)', () => {
+describe('RulesPage runtime-row edit unification', () => {
   it('runtime row Edit opens the shared RuleWizard — not a direct hot-reload editor', async () => {
     renderPage()
 

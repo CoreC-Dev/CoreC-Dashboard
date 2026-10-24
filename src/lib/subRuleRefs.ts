@@ -1,5 +1,5 @@
 /**
- * SUB-RULE reference scanning & rewriting (UX audit C-B5).
+ * SUB-RULE reference scanning & rewriting.
  *
  * Renaming a rule group silently invalidates every `SUB-RULE:old-name`
  * match out there — top-level rules AND other groups' sub-rules — until
@@ -7,8 +7,8 @@
  * the rename and rewrite them when the operator opts in.
  *
  * Reference shapes recognized (mirroring the editor's quick-fill chips):
- *   match: "SUB-RULE:group-a"
- *   match: 'SUB-RULE:group-a && value > 80'
+ * match: "SUB-RULE:group-a"
+ * match: 'SUB-RULE:group-a && value > 80'
  * A prefix-safe boundary (`(?![\w-])`) keeps renaming "group-a" from
  * touching "group-ab" or "group-a-2".
  */

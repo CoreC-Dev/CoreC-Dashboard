@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Theme bootstrap (audit D-10): index.html carries an inline, synchronous
+// Theme bootstrap: index.html carries an inline, synchronous
 // script that applies the saved theme before the first paint so dark users
 // never flash a light frame. Two things must hold:
 //  1. Behavior — the script resolves localStorage.corec_theme exactly like
@@ -11,7 +11,7 @@
 //
 // Node builtins are not typeable here: the web tsconfig has
 // "types": ["vite/client"], so `node:fs` imports fail tsc, while a plain
-// relative import ('../index.html?raw') trips the custom-lint TD-ARCH-010
+// relative import ('../index.html?raw') trips the custom-lint
 // no-relative-imports rule. import.meta.glob threads the needle: the glob
 // path is a string argument (not an import statement) and vite/client types
 // the call itself. The sha256 uses WebCrypto (globalThis.crypto), which the
@@ -78,7 +78,7 @@ async function sha256Base64(text: string): Promise<string> {
   return btoa(String.fromCharCode(...new Uint8Array(digest)))
 }
 
-describe('theme bootstrap (D-10)', () => {
+describe('theme bootstrap', () => {
   it('index.html has the bootstrap before the app module script', () => {
     const bootPos = html.indexOf('<script>')
     const modulePos = html.indexOf('<script type="module"')

@@ -15,16 +15,15 @@ interface DashboardDeadLetterCardProps {
 }
 
 /**
- * Dashboard row 5 — the dead-letter card (audit B03).
+ * Dashboard row 5 — the dead-letter card.
  *
- * The card used to be named "近期告警事件" but only ever rendered dead
- * letters, and its empty state declared "系统健康" from DLQ emptiness alone
- * while real error events went unheard on this page. Now:
- *  - the title says what the card shows (failed writes),
- *  - the empty state is neutral ("暂无写入失败记录"),
- *  - the header surfaces the CURRENT error-level event count from the global
- *    alert feed (alertStore.events, fed by the AppShell-level /logs provider
- *    from B02) as a red lure toward the real alerts page.
+ * Honesty requirements for this card:
+ * - the title says what the card shows (failed writes),
+ * - the empty state is neutral ("暂无写入失败记录") — an empty DLQ alone
+ *   must not declare the system healthy while real error events exist,
+ * - the header surfaces the CURRENT error-level event count from the global
+ *   alert feed (alertStore.events, fed by the AppShell-level /logs
+ *   provider) as a red lure toward the real alerts page.
  */
 export const DashboardDeadLetterCard: React.FC<DashboardDeadLetterCardProps> = ({
   deadLetters,
@@ -32,7 +31,7 @@ export const DashboardDeadLetterCard: React.FC<DashboardDeadLetterCardProps> = (
 }) => {
   const { t } = useTranslation()
   // Error-level (level ≥ 8) events currently held by the shared live feed
-  // — the same store the sidebar unread badge draws from (B02/B03).
+  // — the same store the sidebar unread badge draws from.
   const errorEventCount = useAlertStore((s) => s.events.filter((e) => e.level >= 8).length)
 
   return (
@@ -50,7 +49,7 @@ export const DashboardDeadLetterCard: React.FC<DashboardDeadLetterCardProps> = (
             </Link>
           )}
         </CardTitle>
-        {/* B14: the row-5 header link says what it does — "View All" dead
+        {/* The row-5 header link says what it does — "View All" dead
          * letters/failed writes on the alerts page — instead of borrowing
          * dashboard.manage ("Manage"), which reads as a third config
          * "Manage" link and misleads about the destination. */}

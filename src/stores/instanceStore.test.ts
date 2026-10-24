@@ -185,7 +185,7 @@ describe('instanceStore — importInstances', () => {
     expect(result).toEqual({ added: 0, skipped: 1, invalid: 0, parseError: false })
   })
 
-  it('counts malformed entries (invalid baseUrl) as invalid, not skipped (A-09)', () => {
+  it('counts malformed entries (invalid baseUrl) as invalid, not skipped', () => {
     const result = useInstanceStore
       .getState()
       .importInstances(JSON.stringify([validImportItem({ baseUrl: 'not-a-url' })]), 'merge')
@@ -206,7 +206,7 @@ describe('instanceStore — importInstances', () => {
     expect(result).toEqual({ added: 0, skipped: 0, invalid: 1, parseError: false })
   })
 
-  it('non-array JSON is reported as a parse error (A-09)', () => {
+  it('non-array JSON is reported as a parse error', () => {
     expect(useInstanceStore.getState().importInstances('{"foo":"bar"}')).toEqual({
       added: 0,
       skipped: 0,
@@ -259,7 +259,7 @@ describe('instanceStore — importInstances', () => {
     expect(result).toEqual({ added: 2, skipped: 0, invalid: 0, parseError: false })
   })
 
-  it('counts added, duplicate-skipped and invalid items separately in a mixed batch (A-09)', () => {
+  it('counts added, duplicate-skipped and invalid items separately in a mixed batch', () => {
     useInstanceStore.getState().addInstance(newInstanceData({ name: 'dup' }))
     const existingId = useInstanceStore.getState().instances[0].id
     const result = useInstanceStore.getState().importInstances(
@@ -391,7 +391,7 @@ describe('instanceStore — loadInstances resilience', () => {
   })
 })
 
-describe('instanceStore — persist failure surfacing (A-11)', () => {
+describe('instanceStore — persist failure surfacing', () => {
   /** Make every localStorage write throw, like a full quota / private mode. */
   function breakLocalStorage() {
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {

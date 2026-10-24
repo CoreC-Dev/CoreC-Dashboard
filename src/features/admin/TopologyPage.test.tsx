@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-// Topology-page behavior tests (C-E4 flow/hover, C-E5 loading states,
-// C-E6 row links, C-E7 per-query errors).
+// Topology-page behavior tests (flow/hover, loading states,
+// row links, per-query errors).
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { act } from 'react'
@@ -87,8 +87,8 @@ afterEach(() => {
   cleanup()
 })
 
-describe('TopologyPage — data flow (C-E4)', () => {
-  it('plain-language title/subtitle replace the hexagon jargon (C-G4)', async () => {
+describe('TopologyPage — data flow', () => {
+  it('plain-language title/subtitle replace the hexagon jargon', async () => {
     renderPage()
     expect(await screen.findByText('Data Flow Topology')).toBeTruthy()
     expect(
@@ -132,7 +132,7 @@ describe('TopologyPage — data flow (C-E4)', () => {
   })
 })
 
-describe('TopologyPage — every row navigates (C-E6)', () => {
+describe('TopologyPage — every row navigates', () => {
   it('driver rows link to the driver detail page', async () => {
     renderPage()
     const row = await screen.findByTestId('topo-driver-plc1')
@@ -152,7 +152,7 @@ describe('TopologyPage — every row navigates (C-E6)', () => {
   })
 })
 
-describe('TopologyPage — loading is not "empty" (C-E5)', () => {
+describe('TopologyPage — loading is not "empty"', () => {
   it('a pending drivers query shows a loading state, never the no-drivers alarm', async () => {
     const { getDrivers } = await import('@/api/endpoints')
     vi.mocked(getDrivers).mockReturnValueOnce(new Promise(() => {}) as never)
@@ -178,7 +178,7 @@ describe('TopologyPage — loading is not "empty" (C-E5)', () => {
   })
 })
 
-describe('TopologyPage — the error banner names what failed (C-E7)', () => {
+describe('TopologyPage — the error banner names what failed', () => {
   it('lists the failed queries instead of a generic error', async () => {
     const { getRules, getStats } = await import('@/api/endpoints')
     vi.mocked(getRules).mockReturnValueOnce(Promise.reject(new Error('boom')) as never)

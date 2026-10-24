@@ -195,7 +195,7 @@ export const getDriverTags = (name: string) =>
 export const getTransports = () => apiRequest<TransportsListResponse>('/transports')
 export const getTransport = (name: string) =>
   apiRequest<TransportStatus>(`/transports/${encodeURIComponent(name)}`)
-// Driver collection pause/resume (audit RES-4): scheduler-level switch,
+// Driver collection pause/resume: scheduler-level switch,
 // config and connection untouched; tasks resume at the next tick.
 export const pauseDriver = (name: string) =>
   apiRequest<void>(`/drivers/${encodeURIComponent(name)}/pause`, { method: 'POST' })
@@ -212,7 +212,7 @@ export const testTransport = (name: string) =>
 
 // Realtime Tags & Control
 export const getTags = () => apiRequest<GlobalTagsResponse>('/tags')
-/** Server-side filtered /tags (roadmap #35): driver snapshot / name prefix / substring. */
+/** Server-side filtered /tags: driver snapshot / name prefix / substring. */
 export const getTagsFiltered = (params: { driver?: string; prefix?: string; tag?: string }) => {
   const q = new URLSearchParams()
   if (params.driver) q.set('driver', params.driver)
@@ -227,7 +227,7 @@ export const writeTag = (cmd: WriteCommand) =>
     body: JSON.stringify(cmd),
   })
 
-/** Batch write (backend roadmap #37): sequential, per-command results. */
+/** Batch write: sequential, per-command results. */
 export interface BatchWriteResponse {
   results: WriteResponse[]
   succeeded: number
@@ -240,7 +240,7 @@ export const writeTagBatch = (cmds: WriteCommand[]) =>
     body: JSON.stringify({ writes: cmds }),
   })
 /**
- * Dead-letter queue view. `?source=` selects the queue (backend roadmap #5):
+ * Dead-letter queue view. `?source=` selects the queue:
  * - 'engine' (default): the write pipeline's retry-exhausted commands
  * - 'ingress': commands rejected at the transport command channel — entries
  *   carry the extra `transport` field naming the rejecting transport
@@ -249,9 +249,9 @@ export const writeTagBatch = (cmds: WriteCommand[]) =>
 export const getDeadLetters = (source?: 'engine' | 'ingress') =>
   apiRequest<DeadLetterResponse>(`/write/failed${source ? `?source=${source}` : ''}`)
 
-// First-class alerts (audit OBS-4/HUB-6): the engine's alert registry.
+// First-class alerts: the engine's alert registry.
 // Zod-validated at the boundary (AGENTS.md: 后端响应不可信任).
-/** Config change audit trail (audit HUB-4): newest-first successful mutations. */
+/** Config change audit trail: newest-first successful mutations. */
 export const getConfigAudit = async (): Promise<ConfigAuditResponse> =>
   configAuditResponseSchema.parse(await apiRequest<unknown>('/configs/audit'))
 
@@ -267,7 +267,7 @@ export const ackAlert = (key: string) =>
 
 // Rules Engine
 export const getRules = () => apiRequest<RulesListResponse>('/rules')
-// Resource-level DELETE (audit HUB-3): single-resource removal; the
+// Resource-level DELETE: single-resource removal; the
 // backend splices internally and runs the full PUT /configs safety chain.
 export const deleteDriver = (name: string) =>
   apiRequest<void>(`/drivers/${encodeURIComponent(name)}`, { method: 'DELETE' })
@@ -302,18 +302,18 @@ export const getWriteHistory = async (): Promise<WriteHistoryResponse> =>
   writeHistoryResponseSchema.parse(await apiRequest<unknown>('/write/history'))
 
 /**
- * Staged API surface (2026-10-21 quality audit D1 disposition) — typed
- * wrappers with zero UI callers YET, kept deliberately because they mirror
+ * Staged API surface (typed wrappers for backend routes whose UI hasn't
+ * been built yet; check the backend repo before removing) — these mirror
  * real backend routes built for this frontend. Adoption status:
  * - getWriteHistoryFiltered: WIRED (WriteHistoryTable, server-side limit)
  * - getTagsFiltered: not adopted — TagExplorer's live WS stream pushes the
  *   full tag set, so server-side initial filtering would desync the view
  * - deleteDriver/Transport/Rule, getConfigAudit, writeTagBatch: awaiting
  *   their UI (delete-confirm flows, config-center audit view, batch-write
- *   panel migration) — tracked in CoreC docs/exec-plans/active/
- * Do not "clean these up" without checking that plan first.
+ *   panel)
+ * Do not "clean these up" without checking the backend repo first.
  */
-/** Server-side filtered write history (roadmap #35): compliance retrieval in one call. */
+/** Server-side filtered write history: compliance retrieval in one call. */
 export const getWriteHistoryFiltered = async (params: {
   driver?: string
   tag?: string

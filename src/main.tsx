@@ -6,7 +6,7 @@ import './index.css'
 import './i18n'
 import App from '@/App'
 
-// Monaco core is self-hosted from /monaco/min/vs (TD-PERF-010, D7).
+// Monaco core is self-hosted from /monaco/min/vs.
 // In dev, vite.config.ts monacoSelfHostPlugin serves from node_modules/monaco-editor.
 // In production, the plugin copies the assets to dist/monaco/min/vs at build time.
 // This removes the CDN dependency (air-gapped/offline compatible) and allows

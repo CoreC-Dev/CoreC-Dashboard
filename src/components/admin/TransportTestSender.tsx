@@ -1,6 +1,6 @@
 /**
  * TransportTestSender — the "send test point" affordance on the
- * transport detail page (POST /transports/{name}/test, contract §3.13).
+ * transport detail page (POST /transports/{name}/test).
  *
  * The backend publishes a synthetic data point through the named
  * transport's Publish path — designed for notify transports (Slack /
@@ -8,12 +8,8 @@
  * Dashboard without waiting for a real alert. Both outcomes are 200
  * {ok, message}; ok:false carries the Publish error verbatim.
  *
- * The mutation is intentionally component-local rather than in
- * api/hooks: the endpoint wrapper (api/endpoints `testTransport`) is the
- * shared seam and already exists, but api/** is owned by a parallel
- * workstream this wave — hoist this into a useTransportTest hook in
- * api/hooks when that boundary frees up. No cache invalidation: a test
- * point mutates nothing.
+ * The mutation lives in api/hooks (useTransportTest); this component
+ * just wires it up. No cache invalidation: a test point mutates nothing.
  */
 
 import { AlertCircle, CheckCircle2, Loader2, SendHorizonal } from 'lucide-react'

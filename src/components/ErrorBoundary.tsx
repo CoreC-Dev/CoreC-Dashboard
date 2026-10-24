@@ -39,7 +39,7 @@ export class ErrorBoundary extends Component<Props, State> {
     if (import.meta.env.DEV) {
       console.error('[ErrorBoundary] Uncaught error:', error, info.componentStack)
     } else {
-      // 生产脱敏（TD-SEC-012）：不输出完整 error 对象（ApiError.body 可能含敏感响应）与 componentStack
+      // 生产脱敏：不输出完整 error 对象（ApiError.body 可能含敏感响应）与 componentStack
       const status = 'status' in error ? (error as { status: number }).status : ''
       console.error(
         '[ErrorBoundary] Uncaught error:',

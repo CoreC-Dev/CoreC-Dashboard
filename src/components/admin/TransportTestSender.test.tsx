@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// C-A15: the backend exposes POST /transports/{name}/test (publish one
+// The backend exposes POST /transports/{name}/test (publish one
 // synthetic data point through the live transport) and the endpoints
 // layer has testTransport — but no UI ever called it. The transport
 // detail page now offers "Send test point"; the wizard explains the
@@ -51,7 +51,7 @@ afterEach(() => {
   useConfigStore.getState().reset()
 })
 
-describe('TransportTestSender (C-A15)', () => {
+describe('TransportTestSender', () => {
   it('sends exactly one POST per click and shows the server message on ok', async () => {
     vi.mocked(api.testTransport).mockResolvedValue({ ok: true, message: 'test notification sent' })
     renderSender()

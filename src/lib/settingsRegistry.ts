@@ -2,7 +2,6 @@
  * Settings Field Metadata Registry — Barrel & Helpers
  *
  * Re-exports types, driver/transport registries, and lookup helpers.
- * (Split from single 878-line file — TD-ARCH-013.)
  */
 
 // Registries

@@ -1,6 +1,5 @@
 // Tag list editor (inline adapter for the wizard): wraps TagListField's
-// logic with plain state instead of useForm form. Extracted from
-// DriverWizard (D2, quality audit 2026-10-21) — behavior identical.
+// logic with plain state instead of a useForm form.
 
 import { ChevronDown, Plus, Trash2 } from 'lucide-react'
 import type React from 'react'

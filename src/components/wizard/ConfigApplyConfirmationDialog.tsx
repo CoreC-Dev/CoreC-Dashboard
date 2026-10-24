@@ -46,7 +46,7 @@ import { computeLcsDiff } from '@/lib/yamlDiff'
  *  rebuilding a driver as `{ name, type, settings }` vs. server YAML parsed
  *  as `{ type, settings, name }`) would compare as different and produce
  *  false "modified"/"restart needed" flags. This helper sorts object keys
- *  recursively so the comparison reflects logical content, not key order. [L-4] */
+ *  recursively so the comparison reflects logical content, not key order. */
 function stableStringify(v: unknown): string {
   if (v === undefined) return 'undefined'
   if (v && typeof v === 'object' && !Array.isArray(v)) {

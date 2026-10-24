@@ -2,9 +2,7 @@
  * configSchema/validators.ts — cross-entity validation rules that zod
  * schemas alone can't express (mirrors CoreC config.validate's
  * cross-cutting rules): name uniqueness, target references, data-source
- * presence, transport fallbacks, SUB-RULE cycles. Extracted from the
- * former single-file configSchema.ts (D2, quality audit 2026-10-21) —
- * logic byte-identical.
+ * presence, transport fallbacks, SUB-RULE cycles.
  */
 import { DRIVER_TYPES, TRANSPORT_TYPES } from '@/types/config'
 
@@ -248,7 +246,7 @@ export function checkSubRuleCycles(
 
     // Always unwind inStack — even when a cycle was found in a child — so
     // stale entries don't trigger false cycle reports for later top-level
-    // iterations that reference this node. [M-6]
+    // iterations that reference this node.
     inStack.delete(name)
     return foundCycle
   }

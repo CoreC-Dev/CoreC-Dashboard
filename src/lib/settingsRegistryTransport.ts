@@ -1,7 +1,5 @@
 /**
  * Transport Settings Registry
- *
- * (Split from settingsRegistry.ts — TD-ARCH-013.)
  */
 
 import { NOTIFY_SETTINGS_REGISTRY } from '@/lib/settingsRegistryNotify'

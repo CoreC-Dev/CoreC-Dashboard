@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// TagTrendPanel (B08 + 待验证-1 + B21) — the pause indicator carries the
+// TagTrendPanel (待验证-1) — the pause indicator carries the
 // expectation-management copy, gap samples (whitespace markers) stay out of
 // the stats bar / count / CSV export, the Back-to-live button jumps the
 // (mocked) chart to the live edge, and the exported CSV leads with the
@@ -63,7 +63,7 @@ afterEach(() => {
   scrollToLive.mockClear()
 })
 
-describe('TagTrendPanel — pause gap expectation (B08)', () => {
+describe('TagTrendPanel — pause gap expectation', () => {
   it('shows the pause note that the paused period stays blank on resume', () => {
     renderPanel({ trendPaused: true })
 
@@ -78,7 +78,7 @@ describe('TagTrendPanel — pause gap expectation (B08)', () => {
   })
 })
 
-describe('TagTrendPanel — gap samples excluded from stats and count (B08)', () => {
+describe('TagTrendPanel — gap samples excluded from stats and count', () => {
   it('counts and aggregates only valued samples; current is the last real value', () => {
     renderPanel({
       trendSamples: [
@@ -137,7 +137,7 @@ describe('TagTrendPanel — back to live (待验证-1)', () => {
   })
 })
 
-describe('TagTrendPanel — CSV aggregation disclosure (B21)', () => {
+describe('TagTrendPanel — CSV aggregation disclosure', () => {
   it('prepends the same-second merge note to the exported CSV', async () => {
     renderPanel({ trendSamples: [{ time: 10, value: 1.5 }] })
 

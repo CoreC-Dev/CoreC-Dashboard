@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
-// SidebarNav — bottom function area (audit D-06): the old "Disconnect"
+// SidebarNav — bottom function area: the old "Disconnect"
 // button only called navigate('/'), byte-identical to the back button above
 // it, while its label promised a distinct action — a lying, duplicated
 // escape. It was merged away: one button remains, labeled with the same
-// "Back to instances" copy every other escape in the app uses (D-15).
+// "Back to instances" copy every other escape in the app uses.
 import { cleanup, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -88,11 +88,11 @@ function renderNav(collapsed: boolean) {
   )
 }
 
-describe('SidebarNav bottom area (D-06)', () => {
+describe('SidebarNav bottom area', () => {
   it('offers exactly one escape to the instance list, no duplicate "Disconnect"', () => {
     renderNav(false)
 
-    // One honest button — same copy as ConnectionGate's dead-end fix (D-15).
+    // One honest button — same copy as ConnectionGate's dead-end fix.
     expect(screen.getAllByRole('button', { name: 'Back to instances' })).toHaveLength(1)
     // The lying duplicate is gone.
     expect(screen.queryByRole('button', { name: 'Disconnect' })).toBeNull()

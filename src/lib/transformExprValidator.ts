@@ -92,11 +92,11 @@ export function validateTransformExpression(expr: string): ValidationResult {
   // digits/operators, a pure-literal expression should reduce to a number.
   // This replaces an earlier `new Function(...)` eval which — although gated
   // by an alphabetic-char pre-check — could be bypassed via JSFuck-style
-  // symbol combinations (self-XSS anti-pattern). [L-6]
+  // symbol combinations (self-XSS anti-pattern).
   const testExprRaw = trimmed.replace(/\bvalue\b/g, '1')
   // Strip float-with-exponent literals (e.g. 1e3, 1.5e-10) to '1' BEFORE the
   // letter check, so scientific notation does not trip the /[a-zA-Z]/ guard
-  // and silently disable the detector. [H-6/L-6 interaction]
+  // and silently disable the detector.
   const testExpr = testExprRaw.replace(/(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?/g, '1')
   if (!/[a-zA-Z]/.test(testExpr)) {
     // Detect two adjacent operands with no operator between them. After
