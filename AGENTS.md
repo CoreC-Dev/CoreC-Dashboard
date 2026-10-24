@@ -17,7 +17,7 @@ CoreC-Dashboard —— 面向 IIoT CoreC 后端的 React 单页前端：多实�
 - `features/*` 之间禁止直接互引（跨域仅经 `api/hooks`、`stores`、`components`、`lib` 共享）
 - 边界处必须解析数据形状（zod / 显式校验），禁止信任外部输入（导入 JSON、后端响应、用户粘贴 YAML）
 - 重构不改变业务行为；行为变更必须显式登记并单独提交
-- 违反以上约束会被自定义 linter / 结构测试拦截（阶段 3 落地）
+- 违反以上约束会被自定义 linter（`scripts/custom-lint.mjs` 等）与结构测试（`scripts/structure-lint.mjs`）拦截
 
 ## 目录地图
 ```
@@ -37,7 +37,7 @@ src/
 - 安装：`npm install`
 - 开发：`npm run dev`
 - 构建：`npm run build`
-- 测试：`npm test`（覆盖率：`npm run test:coverage`，阶段 3 接入）
+- 测试：`npm test`（vitest run + server.mjs 冒烟）；覆盖率：`npm run test:coverage`（CI 门禁）
 - lint：`npm run lint`
 - 生产预览：`node server.mjs <port> <dist> <corec-url>`
 
@@ -50,6 +50,6 @@ src/
 
 ## 工作方式
 - 变更前先读相关 `docs/`，变更后同步更新文档
-- 提交粒度单一职责（Conventional Commits）；改造仅落 `harnessing` 分支
+- 提交粒度单一职责（Conventional Commits）；提交直接落 `main`，由 CI 全门禁约束（原 `harnessing` 分支策略已废止，见 ADR-009）
 - 一次性工作记录（审计、执行计划、评分快照）完成任务后即从仓库清理，仓库只保留描述现状的活文档
 - 任何交互式决策确认后必须写入仓库文档（见 `docs/design-docs/architecture-decisions.md`）
