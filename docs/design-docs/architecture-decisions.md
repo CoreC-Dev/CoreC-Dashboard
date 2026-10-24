@@ -24,6 +24,7 @@
 - **日期**：2026-10-02
 
 ## ADR-004 后端连接与 CSP：保留任意后端 + 同源代理 + CSP 收紧（D3）
+- **状态**：CSP 部分已由 ADR-004a 修订——`index.html` 实际下发 `connect-src * ws: wss:`（静态托管直连回退需要）；同源代理与按实例路由维持。
 - **背景**：CSP `connect-src *` 且 Bearer 直发用户输入的任意后端，存在凭证外泄风险。仪表盘是多实例监控工具，用户自加 CoreC 后端。
 - **决策**：保留连接任意后端能力；`server.mjs` 按实例代理，浏览器只发同源请求；CSP `connect-src` 改 `'self' ws: wss:`。
 - **理由**：修外泄风险且不破坏多实例 UX；同源代理把凭证留在服务端转发，不暴露给浏览器 CSP 放宽。
@@ -47,6 +48,7 @@
 - **日期**：2026-10-02
 
 ## ADR-006 模板默认密钥：加载时生成随机值（D5）
+- **状态**：与代码现状不符——模板现携带显式占位符 `REPLACE_ME_WITH_A_STRONG_SECRET`（`lib/configTemplates.ts` 全部 6 处模板），而 `hooks/useConfigCenterLoads.ts:83` 的 `template.yaml.replace('change-me-please', generateRandomSecret())` 因占位符改名不再命中，模板加载并不注入随机 secret。占位符为显式提示串（非伪密钥），操作者需手动填写。
 - **背景**：配置模板内置弱默认密钥 `change-me-please`（满足 8 字符校验故不被拦）。
 - **决策**：每次加载模板时生成随机 secret，消除已知弱值。
 - **影响**：批次 I；行为变更（模板默认值变随机）。
@@ -66,10 +68,11 @@
 - **影响**：批次 J；行为变更（编辑器资源来源改本地）；增包体积。
 - **日期**：2026-10-02
 
-## ADR-009 改造分支策略
+## ADR-009 改造分支策略（已废止）
 - **决策**：所有 harness 改造提交仅落 `harnessing` 分支，不提交 `main`（§7.1）。
 - **理由**：隔离改造风险；main 保持可发布。
 - **日期**：2026-10-02
+- **现状**：已废止。`harnessing` 分支在 `adaa0e8`（harnessing/arch-perf-slim → main）合并后不再存在；改造提交（文档/重构/测试）此后直接落 `main`，质量由 `ci.yml` 全门禁（lint / typecheck / docs-lint / 结构测试 / build / test / coverage）约束。
 
 ## ADR-010 字段元数据单一真相源：采纳 settingsRegistry（TD-ARCH-011 / TD-DUP-001）
 - **决策**：以 `settingsRegistry` 为字段元数据唯一源；DriverDetailPage / TransportDetailPage 经 `registryToEditFields` 适配器派生编辑字段，删除本地 `*_FIELDS` 数组。两源在 5 类分歧上以 registry 为准落地。

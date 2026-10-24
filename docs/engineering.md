@@ -3,7 +3,7 @@
 > 工程化说明：开发/构建/测试/调试/部署/排障。
 
 ## 环境要求
-- Node.js（见 `package.json` engines；建议 ≥ 20）
+- Node.js ≥ 24（`package.json` engines；`.nvmrc` 钉 24，CI 经 `node-version-file` 使用）
 - npm（权威包管理器，ADR-002）
 
 ## 开发
@@ -11,27 +11,28 @@
 npm install
 npm run dev      # Vite dev server（HMR）
 ```
-路径别名 `@` → `src/`（`vite.config.ts` + `tsconfig.json`）。i18n 资源在 `src/i18n/`。
+路径别名 `@` → `src/`（`vite.config.ts` resolve.alias + `tsconfig.app.json` paths）。i18n 资源在 `src/i18n/`。
 
 ## 构建
 ```bash
-npm run build    # Vite 生产构建 → dist/
+npm run build    # tsc -b && vite build → dist/
 ```
 `vite.config.ts` 已配 manualChunks（recharts/d3、react、query、radix、lightweight-charts、xterm、js-yaml、zod、i18n、rhf、monaco 分包）+ 全路由懒加载。
 
 ## 测试
 ```bash
-npm test                  # vitest run
-npm run test:coverage     # 覆盖率（阶段 3 接入门禁）
+npm test                  # vitest run + server 冒烟（node --test scripts/server-smoke.test.mjs）
+npm run test:coverage     # 覆盖率门禁（v8 provider，ratchet 只升不降）
 ```
-- 配置：阶段 3 建 `vitest.config.ts`（jsdom + setup + v8 coverage）（TD-TEST-001）。
-- 现状：36 测试文件，强区 `lib/` + `configStore`；TD-TEST-001..016 均已完成。
+- 配置：`vitest.config.ts`（jsdom + `src/test/setup.ts` + v8 coverage；全局阈值 lines 41 / statements 40 / branches 30 / functions 31）。
+- 现状：112 个测试文件（`src/**` 111 + `scripts/server-smoke.test.mjs`）。
 
 ## Lint / 格式化
 ```bash
-npm run lint      # Biome
+npm run lint      # biome check src scripts server.mjs vite.config.ts
+npm run lint:all  # biome + docs/structure/custom/any 四项自定义检查
 ```
-`biome.json`：`noExplicitAny` 已设为 error（TD-GATE-004 已完成）。
+`biome.json`：`noExplicitAny` 为 error；存量 any 基线由 `npm run any:ratchet` 维护（只降不升）。
 
 ## 生产运行
 ```bash
@@ -39,16 +40,18 @@ npm run build
 node server.mjs <port> <dist-dir> <corec-url>
 # 默认：node server.mjs 8080 dist http://127.0.0.1:9090
 ```
-`server.mjs`：静态托管 `dist/` + 反向代理 `/corec-api` → CoreC 后端。按实例同源代理（ADR-004）+ 安全响应头。
+`server.mjs`：静态托管 `dist/`（含 SPA fallback 与路径穿越防护）+ 双路反代——`/corec-api/*` → 固定 CoreC 目标、`/corec-proxy/*`（`X-CoreC-Target` 头）与 `/corec-ws` → 按实例动态代理（ADR-004/004a）；转发 WebSocket upgrade；安全响应头。
 
 ## 部署
-GitHub Actions `deploy.yml`：push `main` → lint/build/test → 发布 GitHub Pages 自定义域。阶段 3 新增 `ci.yml`（PR + 全分支门禁），deploy 改 needs:ci（TD-GATE-001）。
+两种形态（`deploy.yml` 头注即此架构）：
+- **GitHub Pages 静态 SPA**（`deploy.yml`：push `main` → 复用 `ci.yml` 全门禁 → build → deploy-pages；自定义域走 HTTP + `public/CNAME`）：无 server.mjs，启动探测 `/corec-proxy/` 404 → **直连模式**，浏览器直接 fetch 远程 CoreC（CSP `connect-src *`）。
+- **server.mjs 自托管**：同源代理形态，浏览器只访问单端口（见上节"生产运行"）。
 
 ## 调试
 - 连接问题：看 `ConnectionContext` 探测日志（浏览器 console）+ CoreC 后端可达性。
 - WS 不连：`api/websocket.ts` 退避/重连上限 10；检查 token + CoreC WS 端点 + 防火墙。
 - 配置不生效：`configStore` working/saved/dirty 状态 + `configSchema.validateConfig` 错误路径。
-- 生产空白页：检查 Monaco 资源加载（CDN/自托管，ADR-008）+ CSP 控制台违规。
+- 生产空白页：检查 Monaco 自托管资源（`dist/monaco/min/vs` 是否随构建产出，ADR-008）+ CSP 控制台违规。
 
 ## 排障清单
 | 症状 | 先查 |

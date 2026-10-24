@@ -18,7 +18,7 @@
 | 实时行刷新高亮 | `TagRow` | WAAPI opacity 闪烁（`flashTick`） |
 | 刷新图标旋转 | `TagToolbar`/`TagTable` | `animate-spin`（fetching 时） |
 
-## 本次新增（✅ 已实现）
+## 第二批新增（✅ 已实现）
 
 | # | 动效 | 落地 | 技术 |
 |---|---|---|---|
@@ -83,7 +83,7 @@
 24. **光标视差倾斜** — `InstanceCard` 悬浮：随光标的轻微 3D tilt。
 25. ~~Switch 拨杆回弹~~ ✅
 26. ~~折叠区内容淡入~~ ✅
-27. **复制对勾弹出** — 复制按钮：成功时对勾 scale-pop。（当前无复制按钮，待引入后实施）
+27. **复制对勾弹出** — 复制按钮：成功时对勾 scale-pop。（`RuleProviderEditor` 已有复制按钮（`navigator.clipboard.writeText`），成功动效待实施）
 28. ~~主题图标形变~~ ✅
 
 ## 实现约定

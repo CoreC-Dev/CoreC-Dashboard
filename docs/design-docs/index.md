@@ -5,7 +5,7 @@
 | 文档 | 职责 |
 |---|---|
 | `core-beliefs.md` | 第一性原则与操作原则——争议时回到这里裁决 |
-| `architecture-decisions.md` | 架构决策记录（ADR）：框架判定、7 项人工决策 D1–D7、关键取舍 |
+| `architecture-decisions.md` | 架构决策记录（ADR-001…014）：框架判定、人工决策、关键取舍 |
 | `motion-catalog.md` | 前端动效目录：已有基线、待实施清单、实现约定 |
 
 ## 写作约定
