@@ -48,6 +48,33 @@
   --font-mono: var(--font-mono);
 }
 
+/*
+ * iOS-style continuous corners for card surfaces ("squircle").
+ *
+ * `corner-shape: squircle` (= superellipse(2), css-borders-4) redraws the
+ * corner with continuously-varying curvature instead of a circular arc, so
+ * the straight edge flows into the corner tangentially — the soft
+ * transition iOS uses. border-radius keeps sizing the corner; only its
+ * curvature changes, so layout, hit-testing and the radius scale are
+ * untouched. Borders, outlines, box-shadows and background/overflow
+ * clipping all follow the new curve automatically.
+ *
+ * Progressive enhancement by construction: Chromium/Edge 139+ render the
+ * squircle; engines without corner-shape (current Firefox/Safari) ignore
+ * the declaration and keep the circular corners — the existing look IS
+ * the fallback, no @supports branch needed. Where border-radius resolves
+ * to 0 the property is a no-op, so attaching it next to any rounded-* is
+ * safe.
+ *
+ * An SVG clip-path squircle was rejected here: clip-path cuts the layered
+ * --shadow-card shadows off and borders stop following the outline,
+ * breaking the card design language. Apply as `squircle` next to the
+ * rounded-* class on card-level surfaces (see docs/DESIGN.md).
+ */
+@utility squircle {
+  corner-shape: squircle;
+}
+
 @layer base {
   /* ---------- Light theme (default) ---------- */
   :root {

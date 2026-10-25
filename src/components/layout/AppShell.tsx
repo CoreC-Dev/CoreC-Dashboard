@@ -104,7 +104,7 @@ export const AppShell: React.FC = () => {
                socket hurts most. Renders nothing when healthy. */}
           <StreamStatusBanner />
           <div
-            className="bg-card rounded-2xl px-5 py-5 md:px-8 md:py-8 flex-1 border border-border/40 relative"
+            className="bg-card rounded-2xl squircle px-5 py-5 md:px-8 md:py-8 flex-1 border border-border/40 relative"
             style={{ boxShadow: 'var(--shadow-card)' }}
           >
             {/* Real-time stream indicator — floating top-right inside the

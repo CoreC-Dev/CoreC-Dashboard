@@ -224,7 +224,7 @@ export const TopologyPage: React.FC = () => {
           <FlowArrow />
 
           {/* CoreC Engine Node */}
-          <div className="shrink-0 flex flex-col items-center justify-center p-6 rounded-2xl bg-primary/5 border-2 border-primary/30 shadow-xl glow-primary text-center max-w-xs w-full">
+          <div className="shrink-0 flex flex-col items-center justify-center p-6 rounded-2xl squircle bg-primary/5 border-2 border-primary/30 shadow-xl glow-primary text-center max-w-xs w-full">
             <div className="w-12 h-12 rounded-lg bg-primary text-primary-foreground flex items-center justify-center mb-3 shadow-lg">
               <Radio className="w-6 h-6 animate-pulse" />
             </div>

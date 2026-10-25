@@ -22,3 +22,6 @@ CoreC WS 协议需限流（PLC 高频推送）、退避重连、升级拒绝检�
 
 ## 为什么行为变更单独提交
 重构与行为变更混提则无法单独回滚、无法在 review 时聚焦语义变化、无法对拍守恒（core-beliefs #12，契约 C4）。台账中"变更行为"项必须显式标注并独立提交。
+
+## 为什么卡片圆角用 corner-shape: squircle（渐进增强）
+iOS 的"连续圆角"不是更大的圆弧，而是曲率连续过渡的超椭圆（`squircle` = `superellipse(2)`）。CSS `corner-shape`（css-borders-4）只重绘圆角的弯曲方式、不改 `border-radius` 的尺寸语义，边框/阴影/overflow 裁剪自动跟随新曲线，布局与点击命中零影响——因此它是 Tailwind v4 设计系统下的最小实现：`index.css` 一个 `@utility squircle`，卡面在 `rounded-*` 旁追加该类（`ui/card` 原语覆盖全部 `<Card>` 用点，另有总览 KPI 磁贴、实例卡、侧栏/主内容容器、设置分节、弹窗等自带 `bg-card` 的卡面）。两个备选被否决：SVG clip-path 会把 `--shadow-card` 分层阴影切掉、边框不再跟随轮廓；单纯调大 `border-radius` 改变的只是圆弧半径，直边与圆弧的切点过渡依旧生硬，达不到目的。支持面：Chromium/Edge 139+ 渲染 squircle；Firefox/Safari 尚在 preview——不支持的引擎忽略该声明，自然回落到现行圆形圆角，现有观感即兜底，无需 `@supports` 分支；`border-radius` 为 0 处（如 Sheet）属性本就无效果，挂类安全。

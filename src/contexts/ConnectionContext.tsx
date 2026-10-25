@@ -123,7 +123,7 @@ const AuthExpiredOverlay: React.FC<{
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 p-4">
-      <div className="w-full max-w-md rounded-lg border border-border bg-card p-6 space-y-4 shadow-lg">
+      <div className="w-full max-w-md rounded-lg squircle border border-border bg-card p-6 space-y-4 shadow-lg">
         <div className="space-y-1.5">
           <h2 className="text-lg font-semibold text-status-error">
             {t('connection.authExpiredTitle')}

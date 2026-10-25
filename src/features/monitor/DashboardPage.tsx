@@ -197,7 +197,7 @@ export const DashboardPage: React.FC = () => {
       {/* Row 1 — KPI indicators */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 card-stagger">
         {/* Engine Status */}
-        <div className="min-w-0 overflow-hidden rounded-lg border border-border bg-card p-3 card-hover card-enter">
+        <div className="min-w-0 overflow-hidden rounded-lg squircle border border-border bg-card p-3 card-hover card-enter">
           <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
             <span>{t('dashboard.engineStatus')}</span>
             <Activity className="w-3.5 h-3.5 text-primary" />
@@ -216,7 +216,7 @@ export const DashboardPage: React.FC = () => {
           </div>
         </div>
         {/* Sample Rate */}
-        <div className="min-w-0 overflow-hidden rounded-lg border border-border bg-card p-3 card-hover card-enter">
+        <div className="min-w-0 overflow-hidden rounded-lg squircle border border-border bg-card p-3 card-hover card-enter">
           <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
             <span>{t('dashboard.sampleRate')}</span>
             <TrendingUp className="w-3.5 h-3.5 text-status-running" />
@@ -233,7 +233,7 @@ export const DashboardPage: React.FC = () => {
           </div>
         </div>
         {/* Drivers */}
-        <div className="min-w-0 overflow-hidden rounded-lg border border-border bg-card p-3 card-hover card-enter">
+        <div className="min-w-0 overflow-hidden rounded-lg squircle border border-border bg-card p-3 card-hover card-enter">
           <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
             <span>{t('dashboard.drivers')}</span>
             <Cpu className="w-3.5 h-3.5 text-status-queued" />
@@ -245,7 +245,7 @@ export const DashboardPage: React.FC = () => {
           <div className={`text-xs mt-0.5 ${driverToneClass}`}>{driverStatusLabel}</div>
         </div>
         {/* Transports */}
-        <div className="min-w-0 overflow-hidden rounded-lg border border-border bg-card p-3 card-hover card-enter">
+        <div className="min-w-0 overflow-hidden rounded-lg squircle border border-border bg-card p-3 card-hover card-enter">
           <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
             <span>{t('dashboard.sinks')}</span>
             <Send className="w-3.5 h-3.5 text-primary" />
@@ -257,7 +257,7 @@ export const DashboardPage: React.FC = () => {
           <div className={`text-xs mt-0.5 ${transportToneClass}`}>{transportStatusLabel}</div>
         </div>
         {/* Total Read */}
-        <div className="min-w-0 overflow-hidden rounded-lg border border-border bg-card p-3 card-hover card-enter">
+        <div className="min-w-0 overflow-hidden rounded-lg squircle border border-border bg-card p-3 card-hover card-enter">
           <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
             <span>{t('dashboard.totalRead')}</span>
             <Database className="w-3.5 h-3.5 text-status-warning" />
@@ -277,7 +277,7 @@ export const DashboardPage: React.FC = () => {
           </div>
         </div>
         {/* Dropped */}
-        <div className="min-w-0 overflow-hidden rounded-lg border border-border bg-card p-3 card-hover card-enter">
+        <div className="min-w-0 overflow-hidden rounded-lg squircle border border-border bg-card p-3 card-hover card-enter">
           <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
             <span>{t('dashboard.dropped')}</span>
             <TrendingDown className="w-3.5 h-3.5 text-status-error" />
@@ -340,7 +340,7 @@ export const DashboardPage: React.FC = () => {
                 return (
                   <div
                     key={drv.name}
-                    className="min-w-0 overflow-hidden p-2.5 rounded-lg border border-border bg-card text-sm"
+                    className="min-w-0 overflow-hidden p-2.5 rounded-lg squircle border border-border bg-card text-sm"
                   >
                     <div className="flex items-center space-x-2 mb-1.5">
                       <span className={`w-2 h-2 rounded-full ${st.dotColor}`} />
@@ -385,7 +385,7 @@ export const DashboardPage: React.FC = () => {
                 return (
                   <div
                     key={tr.name}
-                    className="min-w-0 overflow-hidden p-2.5 rounded-lg border border-border bg-card text-sm"
+                    className="min-w-0 overflow-hidden p-2.5 rounded-lg squircle border border-border bg-card text-sm"
                   >
                     <div className="flex items-center space-x-2 mb-1.5">
                       <span className={`w-2 h-2 rounded-full ${st.dotColor}`} />
