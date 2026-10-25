@@ -631,6 +631,22 @@ describe('useConfigCenter — template/file load confirmation', () => {
     expect(result.current.yamlContent).not.toBe(SERVER_YAML)
   })
 
+  // Regression: the placeholder rename (change-me-please →
+  // REPLACE_ME_WITH_A_STRONG_SECRET) silently broke the secret
+  // regeneration — the loaded template kept the placeholder verbatim.
+  it('loading a template regenerates the placeholder secret', async () => {
+    const { result } = await mountSeeded()
+    await settleDebounce()
+    const template = CONFIG_TEMPLATES[0]!
+    act(() => {
+      result.current.handleLoadTemplate(template)
+    })
+    expect(result.current.yamlContent).not.toContain('REPLACE_ME_WITH_A_STRONG_SECRET')
+    // The regenerated secret is a 32-hex-char random value in the api
+    // secret field, not the placeholder and not empty.
+    expect(result.current.yamlContent).toMatch(/secret: "[0-9a-f]{32}"/)
+  })
+
   it('cancel leaves pending edits and the editor untouched', async () => {
     const { result } = await mountSeeded()
     await settleDebounce()

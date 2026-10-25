@@ -14,7 +14,7 @@
 | 实例导出泄密（P0） | 默认脱敏 + 含密钥 opt-in 警告 | ADR-003 |
 | CSP connect-src * + Bearer 任意后端 | 保留任意后端 + 同源代理；CSP 经 ADR-004a 修订为 `connect-src * ws: wss:`（静态托管直连回退） | ADR-004/004a |
 | 公网无鉴权 | **维持现状（已豁免，接受风险）** | ADR-005 |
-| 模板默认密钥 | 模板携带显式占位符 `REPLACE_ME_WITH_A_STRONG_SECRET`（随机替换逻辑未生效，见 ADR-006 状态注） | ADR-006 |
+| 模板默认密钥 | 模板携带显式占位符 `REPLACE_ME_WITH_A_STRONG_SECRET`，加载模板时自动替换为随机密钥（见 ADR-006） | ADR-006 |
 | WS token 走 URL 查询串 | 维持 + 确保 CoreC 不记 query | ADR-007 |
 
 ## 安全门禁现状

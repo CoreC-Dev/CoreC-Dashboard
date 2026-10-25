@@ -48,8 +48,8 @@
 - **日期**：2026-10-02
 
 ## ADR-006 模板默认密钥：加载时生成随机值（D5）
-- **状态**：与代码现状不符——模板现携带显式占位符 `REPLACE_ME_WITH_A_STRONG_SECRET`（`lib/configTemplates.ts` 全部 6 处模板），而 `hooks/useConfigCenterLoads.ts:83` 的 `template.yaml.replace('change-me-please', generateRandomSecret())` 因占位符改名不再命中，模板加载并不注入随机 secret。占位符为显式提示串（非伪密钥），操作者需手动填写。
-- **背景**：配置模板内置弱默认密钥 `change-me-please`（满足 8 字符校验故不被拦）。
+- **状态**：已恢复生效——模板携带显式占位符 `REPLACE_ME_WITH_A_STRONG_SECRET`（`lib/configTemplates.ts` 全部 6 处模板），`hooks/useConfigCenterLoads.ts` 加载模板时按带引号的占位符锚点替换为 `crypto.getRandomValues` 生成的 32 位十六进制随机值（回归测试断言占位符不出现在加载结果中）。占位符改名曾使替换静默失效，属缺陷而非方案变更。
+- **背景**：配置模板曾内置弱默认密钥 `change-me-please`（满足 8 字符校验故不被拦）。
 - **决策**：每次加载模板时生成随机 secret，消除已知弱值。
 - **影响**：批次 I；行为变更（模板默认值变随机）。
 - **日期**：2026-10-02

@@ -78,9 +78,15 @@ export function useConfigCenterLoads(options: ConfigCenterLoadsOptions) {
   }
 
   // Load a pre-built configuration template into the working config.
-  // Replaces the weak placeholder secret with a random one.
+  // Replaces the weak placeholder secret with a random one. The placeholder
+  // is anchored with its surrounding YAML quotes so a comment mentioning it
+  // can never swallow the replacement; every template ships api.secret as
+  // secret: "REPLACE_ME_WITH_A_STRONG_SECRET".
   const applyTemplate = (template: ConfigTemplate) => {
-    const yamlWithSecret = template.yaml.replace('change-me-please', generateRandomSecret())
+    const yamlWithSecret = template.yaml.replace(
+      '"REPLACE_ME_WITH_A_STRONG_SECRET"',
+      `"${generateRandomSecret()}"`,
+    )
     applyYamlContent(yamlWithSecret)
     const err = loadFromYaml(yamlWithSecret)
     if (err) {
