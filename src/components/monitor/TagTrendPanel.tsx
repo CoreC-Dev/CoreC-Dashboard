@@ -106,8 +106,8 @@ export function TagTrendPanel({
   return (
     <Card
       className="w-full md:w-[520px] lg:w-[600px] shrink-0 flex flex-col self-stretch overflow-hidden border-border bg-card
-      fixed inset-x-0 bottom-0 z-50 max-h-[70vh] rounded-t-xl shadow-2xl
-      md:static md:max-h-none md:rounded-xl md:shadow-none"
+      fixed inset-x-0 bottom-0 z-50 max-h-[70vh] rounded-none rounded-t-3xl shadow-2xl
+      md:static md:max-h-none md:rounded-3xl md:shadow-none"
       onKeyDown={(e) => {
         if (e.key === 'Escape') onClose()
       }}

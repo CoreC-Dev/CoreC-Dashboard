@@ -43,6 +43,15 @@
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;
+  /* Card-level radius — Apple scale (~22% of a KPI tile's short side,
+   * matching iOS icon proportions). Pinned explicitly at the rounded-3xl
+   * step of Tailwind's DEFAULT scale on purpose: a custom token (e.g.
+   * --radius-card) would fall outside tailwind-merge's conflict groups,
+   * so a caller's rounded-sm override could no longer win the merge.
+   * Everything non-card keeps sm/md/lg: nav rows, chips, inputs must
+   * not balloon. Pairs with the `squircle` utility below (size +
+   * curvature stay separate knobs). */
+  --radius-3xl: 24px;
 
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
@@ -69,7 +78,8 @@
  * An SVG clip-path squircle was rejected here: clip-path cuts the layered
  * --shadow-card shadows off and borders stop following the outline,
  * breaking the card design language. Apply as `squircle` next to the
- * rounded-* class on card-level surfaces (see docs/DESIGN.md).
+ * card's radius class (`rounded-3xl` on card-level surfaces — see
+ * docs/DESIGN.md).
  */
 @utility squircle {
   corner-shape: squircle;

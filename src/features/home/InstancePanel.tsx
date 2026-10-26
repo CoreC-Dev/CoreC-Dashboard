@@ -298,7 +298,7 @@ export const InstancePanel: React.FC = () => {
               <button
                 type="button"
                 onClick={handleAdd}
-                className="rounded-lg squircle border-2 border-dashed border-border hover:border-primary/50 hover:bg-muted/40 transition-all flex flex-col items-center justify-center min-h-[180px] gap-2 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                className="rounded-3xl squircle border-2 border-dashed border-border hover:border-primary/50 hover:bg-muted/40 transition-all flex flex-col items-center justify-center min-h-[180px] gap-2 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
                 <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center transition-colors group-hover:bg-primary/10">
                   <Plus className="w-5 h-5" />

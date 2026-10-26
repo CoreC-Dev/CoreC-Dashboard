@@ -64,7 +64,7 @@ export const GlobalSettingsPage: React.FC = () => {
 
       <main className="max-w-2xl mx-auto p-4 md:p-8 space-y-5">
         {/* Appearance */}
-        <section className="rounded-lg squircle border border-border bg-card p-6 space-y-4">
+        <section className="rounded-3xl squircle border border-border bg-card p-6 space-y-4">
           <div className="flex items-center gap-2">
             <Palette className="w-4 h-4 text-muted-foreground" />
             <h2 className="font-semibold">{t('settings.preferences')}</h2>
@@ -109,7 +109,7 @@ export const GlobalSettingsPage: React.FC = () => {
         </section>
 
         {/* Data Management */}
-        <section className="rounded-lg squircle border border-border bg-card p-6 space-y-4">
+        <section className="rounded-3xl squircle border border-border bg-card p-6 space-y-4">
           <div className="flex items-center gap-2">
             <Globe className="w-4 h-4 text-muted-foreground" />
             <h2 className="font-semibold">{t('instances.dataManagement')}</h2>
