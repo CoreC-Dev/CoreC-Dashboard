@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { Link, matchPath, NavLink, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { InstanceSelector } from '@/components/layout/InstanceSelector'
 import { buildAdminGroups, buildMonitorItems, type RailItem } from '@/components/layout/navItems'
+import { StreamStatusBadge } from '@/components/layout/StreamStatusBadge'
 import { ThemeSelector } from '@/components/layout/ThemeSelector'
 import { useNavIndicator } from '@/components/layout/useNavIndicator'
 import { setLocale } from '@/i18n'
@@ -178,6 +179,11 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ collapsed, setCollapsed,
           />
         </Link>
       </div>
+
+      {/* Live-stream status directly under the brand mark — connection
+          state belongs to the app chrome, not to a page. Collapsed rail:
+          dot only (label in title/aria); expanded: pill with dot + text. */}
+      <StreamStatusBadge collapsed={eff} />
 
       {/* ===== Centered navigation area — white bubble card ===== */}
       <div

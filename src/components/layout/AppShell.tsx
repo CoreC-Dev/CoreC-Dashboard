@@ -4,51 +4,14 @@ import { useTranslation } from 'react-i18next'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import { AlertStreamProvider } from '@/components/layout/AlertStreamProvider'
 import { SidebarNav } from '@/components/layout/SidebarNav'
+import { streamBadgeTone } from '@/components/layout/StreamStatusBadge'
 import { StreamStatusBanner } from '@/components/layout/StreamStatusBanner'
 import { TopProgressBar } from '@/components/layout/TopProgressBar'
 import { useSidebarState } from '@/components/layout/useSidebarState'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { useAutoLoadConfig } from '@/hooks/useAutoLoadConfig'
 import { cn } from '@/lib/cn'
-import { deriveAggregate, useWsStatusStore, type WsAggregate } from '@/stores/wsStatusStore'
-
-/**
- * Visual mapping for the "实时流" indicator — bound to the AGGREGATED state of
- * the live WebSocket streams (wsStatusStore), not the one-shot HTTP probe:
- * a probe-driven badge would stay green while every stream was frozen.
- * 'idle' (no stream mounted yet) reads as "connecting".
- */
-const streamBadgeTone = (
-  aggregate: WsAggregate,
-): { dot: string; text: string; labelKey: string } => {
-  switch (aggregate) {
-    case 'open':
-      return {
-        dot: 'bg-status-running glow-running',
-        text: 'text-status-running',
-        labelKey: 'monitor.realtimeStreamConnected',
-      }
-    case 'down':
-      return {
-        dot: 'bg-status-error glow-error',
-        text: 'text-status-error',
-        labelKey: 'monitor.realtimeStreamDisconnected',
-      }
-    case 'rejected':
-      return {
-        dot: 'bg-status-error glow-error',
-        text: 'text-status-error',
-        labelKey: 'monitor.realtimeStreamRejected',
-      }
-    default:
-      // 'connecting' | 'idle'
-      return {
-        dot: 'bg-status-warning',
-        text: 'text-status-warning',
-        labelKey: 'monitor.realtimeStreamConnecting',
-      }
-  }
-}
+import { deriveAggregate, useWsStatusStore } from '@/stores/wsStatusStore'
 
 export const AppShell: React.FC = () => {
   const { t } = useTranslation()
@@ -95,9 +58,9 @@ export const AppShell: React.FC = () => {
 
       {/* Content — floating white rounded card. The card itself FITS THE
            WINDOW and never scrolls; page content scrolls in its own pane
-           inside it (the keyed page-enter wrapper below). The stream badge
-           is positioned on the card, not the pane, so it stays put while
-           content moves under it. */}
+           inside it (the keyed page-enter wrapper below). The live-stream
+           status lives in the sidebar under the brand mark (app chrome),
+           so it never rides along with page content. */}
       <main className="flex-1 min-h-0 flex flex-col">
         <div className="w-full p-2 md:py-4 md:px-0 flex-1 flex flex-col min-h-0">
           {/* Page-level stream banner — surfaces disconnected / gave-up /
@@ -108,26 +71,9 @@ export const AppShell: React.FC = () => {
                socket hurts most. Renders nothing when healthy. */}
           <StreamStatusBanner />
           <div
-            className="bg-card rounded-3xl squircle px-5 py-5 md:px-8 md:py-8 flex-1 min-h-0 flex flex-col overflow-hidden border border-border/40 relative"
+            className="bg-card rounded-3xl squircle px-5 py-5 md:px-8 md:py-8 flex-1 min-h-0 flex flex-col overflow-hidden border border-border/40"
             style={{ boxShadow: 'var(--shadow-card)' }}
           >
-            {/* Real-time stream indicator — floating top-right inside the
-                 card on every instance route (desktop only; mobile uses the
-                 topbar dot). Admin pages need it as much as the monitor
-                 pages: the InstanceSelector dot covers the HTTP probe,
-                 this covers the live streams. */}
-            <div className="hidden md:block absolute top-7 right-8 z-10">
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50 border border-border/60">
-                <span
-                  className={cn(
-                    'w-2.5 h-2.5 rounded-full shrink-0 transition-colors duration-300',
-                    tone.dot,
-                  )}
-                />
-                <span className={cn('text-sm font-semibold', tone.text)}>{t(tone.labelKey)}</span>
-              </div>
-            </div>
-
             {/* Scroll pane — content cards live and scroll INSIDE the
                  fixed card. scrollbar-gutter:stable keeps the pane width
                  steady when content grows past the fold. */}

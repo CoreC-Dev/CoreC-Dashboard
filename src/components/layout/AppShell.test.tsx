@@ -98,12 +98,15 @@ function renderShellAt(path: string) {
 }
 
 describe('AppShell stream indicator coverage', () => {
+  // The badge lives in the sidebar under the brand mark. In the collapsed
+  // rail it is dot-only — the label travels in aria-label — so these
+  // assertions use the accessible name, which both shapes carry.
   it('shows the live-stream badge on an admin route', () => {
     const sink = useWsStatusStore.getState().registerStream('admin-stream')
     act(() => sink('open'))
     renderShellAt('/corec/inst-1/admin/config')
 
-    expect(screen.getByText(/Stream Connected/)).toBeTruthy()
+    expect(screen.getByLabelText(/Stream Connected/)).toBeTruthy()
   })
 
   it('keeps showing the badge on monitor routes (regression)', () => {
@@ -111,7 +114,7 @@ describe('AppShell stream indicator coverage', () => {
     act(() => sink('open'))
     renderShellAt('/corec/inst-1/monitor/dashboard')
 
-    expect(screen.getByText(/Stream Connected/)).toBeTruthy()
+    expect(screen.getByLabelText(/Stream Connected/)).toBeTruthy()
   })
 
   it('shows the disconnect banner on an admin route when the stream drops', () => {
@@ -120,7 +123,7 @@ describe('AppShell stream indicator coverage', () => {
     act(() => sink('closed'))
     renderShellAt('/corec/inst-1/admin/write')
 
-    expect(screen.getByText(/Stream Disconnected/)).toBeTruthy()
+    expect(screen.getByLabelText(/Stream Disconnected/)).toBeTruthy()
     expect(screen.getByText(/Live stream disconnected — data may be stale/)).toBeTruthy()
   })
 
@@ -168,20 +171,25 @@ describe('AppShell window-fit card layout contract', () => {
     expect(pane.className).toContain('[scrollbar-gutter:stable]')
   })
 
-  it('the stream badge sits on the card, outside the scrolling pane', () => {
-    // The badge is anchored to the fixed card — content scrolls under it,
-    // it never rides along with the pane.
+  it('the stream badge lives in the sidebar below the brand mark, never in the scroll pane', () => {
+    // Connection state is app chrome: the badge sits under the sidebar
+    // logo — constant on every route — and must never ride inside the
+    // scrolling content pane.
     renderShellAt('/corec/inst-1/monitor/dashboard')
 
-    const card = document.querySelector('main .bg-card') as HTMLElement
-    const pane = card.querySelector('.page-enter') as HTMLElement
-    const badge = card.querySelector('.absolute.top-7') as HTMLElement | null
+    const aside = document.querySelector('aside') as HTMLElement
+    const pane = document.querySelector('main .bg-card .page-enter') as HTMLElement
+    const logo = aside.querySelector('a[aria-label*="CoreC"]') as HTMLAnchorElement | null
+    const badge = aside.querySelector('[role="status"]') as HTMLElement | null
+
+    expect(logo).toBeTruthy()
     expect(badge).toBeTruthy()
-    // Badge precedes the pane as a sibling region within the card.
-    const position = pane.compareDocumentPosition(badge as HTMLElement)
+    // Badge follows the brand mark in the sidebar's document order…
+    const position = (badge as HTMLElement).compareDocumentPosition(logo as Node)
     expect(position & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy()
-    expect(
-      pane.compareDocumentPosition(badge as HTMLElement) & Node.DOCUMENT_POSITION_CONTAINED_BY,
-    ).toBeFalsy()
+    // …lives inside the sidebar…
+    expect(aside.contains(badge as Node)).toBeTruthy()
+    // …and never inside the content scroll pane.
+    expect(pane.contains(badge as Node)).toBeFalsy()
   })
 })
