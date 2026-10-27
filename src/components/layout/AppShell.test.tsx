@@ -152,16 +152,16 @@ describe('AppShell window-fit card layout contract', () => {
   it('the scroll lives on the inner pane, not on main or the card', () => {
     renderShellAt('/corec/inst-1/monitor/dashboard')
 
-    const main = document.querySelector('main')
+    const main = document.querySelector('main') as HTMLElement
     expect(main.className).not.toContain('overflow-y-auto')
     expect(main.className).toContain('min-h-0')
 
-    const card = main.querySelector('.bg-card')
+    const card = main.querySelector('.bg-card') as HTMLElement
     // The card clips and stays window-fitted; it never becomes a scroller.
     expect(card.className).toContain('overflow-hidden')
     expect(card.className).not.toContain('overflow-y-auto')
 
-    const pane = card.querySelector('.page-enter')
+    const pane = card.querySelector('.page-enter') as HTMLElement
     expect(pane.className).toContain('overflow-y-auto')
     expect(pane.className).toContain('min-h-0')
     // Stable gutter: the pane width doesn't jump when content grows.
@@ -173,13 +173,15 @@ describe('AppShell window-fit card layout contract', () => {
     // it never rides along with the pane.
     renderShellAt('/corec/inst-1/monitor/dashboard')
 
-    const card = document.querySelector('main .bg-card')
-    const pane = card.querySelector('.page-enter')
-    const badge = card.querySelector('.absolute.top-7')
+    const card = document.querySelector('main .bg-card') as HTMLElement
+    const pane = card.querySelector('.page-enter') as HTMLElement
+    const badge = card.querySelector('.absolute.top-7') as HTMLElement | null
     expect(badge).toBeTruthy()
     // Badge precedes the pane as a sibling region within the card.
-    const position = pane.compareDocumentPosition(badge)
+    const position = pane.compareDocumentPosition(badge as HTMLElement)
     expect(position & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy()
-    expect(pane.compareDocumentPosition(badge) & Node.DOCUMENT_POSITION_CONTAINED_BY).toBeFalsy()
+    expect(
+      pane.compareDocumentPosition(badge as HTMLElement) & Node.DOCUMENT_POSITION_CONTAINED_BY,
+    ).toBeFalsy()
   })
 })
