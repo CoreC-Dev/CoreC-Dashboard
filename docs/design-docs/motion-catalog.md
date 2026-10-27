@@ -15,6 +15,7 @@
 | 按钮涟漪+按压 | `ui/button` | `btn-ripple` + `active:scale-[0.97]` |
 | 主题圆形扩散 | `ThemeSelector` | View Transitions API `theme-circle-reveal` |
 | 侧边栏滑动高亮 | `SidebarNav` | `useNavIndicator` 测量+`--ease-spring` 滑动 |
+| 侧栏导航项悬停反馈 | `SidebarNav` 导航项 | 图标 `group-hover:scale-110` 围绕圆心放大；**刻意不做位移**——导航容器右缘是 `overflow-x-hidden` 裁剪线，2px 右移会把折叠态圆（与展开态行）推出裁剪线，图标读作偏心、右缘被切 |
 | 实时行刷新高亮 | `TagRow` | WAAPI opacity 闪烁（`flashTick`） |
 | 刷新图标旋转 | `TagToolbar`/`TagTable` | `animate-spin`（fetching 时） |
 

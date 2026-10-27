@@ -116,7 +116,15 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ collapsed, setCollapsed,
               : 'w-full h-11 rounded-lg flex items-center px-2.5 gap-2.5',
             isActive
               ? 'text-background'
-              : 'text-muted-foreground hover:text-foreground hover:bg-muted hover:translate-x-0.5',
+              : // No hover translation on purpose. The nav container clips
+                // at its right edge (overflow-x-hidden), so the old 2px
+                // rightward nudge pushed collapsed circles — and expanded
+                // rows — 2px under the clip: the icon read as off-center
+                // inside the circle and the circle's right edge looked cut
+                // off. The icon keeps its centered scale-up instead
+                // (group-hover:scale-110 below), which scales around the
+                // circle's center and can never leave it.
+                'text-muted-foreground hover:text-foreground hover:bg-muted',
           )
         }
         title={eff ? t(item.labelKey) : undefined}
