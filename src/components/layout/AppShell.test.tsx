@@ -143,3 +143,43 @@ describe('AppShell stream indicator coverage', () => {
     expect(screen.queryByText(/gave up after 10 failed attempts/)).toBeNull()
   })
 })
+
+describe('AppShell window-fit card layout contract', () => {
+  // The big bg-card FITS THE WINDOW and never scrolls; page content
+  // scrolls in its own pane INSIDE the card (keyed page-enter wrapper).
+  // jsdom cannot compute scrolling, so this pins the structural contract:
+  // the scroll must live on the pane, not on <main> or the card.
+  it('the scroll lives on the inner pane, not on main or the card', () => {
+    renderShellAt('/corec/inst-1/monitor/dashboard')
+
+    const main = document.querySelector('main')
+    expect(main.className).not.toContain('overflow-y-auto')
+    expect(main.className).toContain('min-h-0')
+
+    const card = main.querySelector('.bg-card')
+    // The card clips and stays window-fitted; it never becomes a scroller.
+    expect(card.className).toContain('overflow-hidden')
+    expect(card.className).not.toContain('overflow-y-auto')
+
+    const pane = card.querySelector('.page-enter')
+    expect(pane.className).toContain('overflow-y-auto')
+    expect(pane.className).toContain('min-h-0')
+    // Stable gutter: the pane width doesn't jump when content grows.
+    expect(pane.className).toContain('[scrollbar-gutter:stable]')
+  })
+
+  it('the stream badge sits on the card, outside the scrolling pane', () => {
+    // The badge is anchored to the fixed card — content scrolls under it,
+    // it never rides along with the pane.
+    renderShellAt('/corec/inst-1/monitor/dashboard')
+
+    const card = document.querySelector('main .bg-card')
+    const pane = card.querySelector('.page-enter')
+    const badge = card.querySelector('.absolute.top-7')
+    expect(badge).toBeTruthy()
+    // Badge precedes the pane as a sibling region within the card.
+    const position = pane.compareDocumentPosition(badge)
+    expect(position & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy()
+    expect(pane.compareDocumentPosition(badge) & Node.DOCUMENT_POSITION_CONTAINED_BY).toBeFalsy()
+  })
+})

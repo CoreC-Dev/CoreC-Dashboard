@@ -206,7 +206,7 @@ export const DriverDetailPage: React.FC = () => {
 
       {/* Connection & runtime parameters */}
       <Card className="bg-card">
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-sm font-semibold">
             <Cpu className="h-4 w-4 text-primary" />
             {t('drivers.connectionRuntimeParams')}
@@ -268,7 +268,7 @@ export const DriverDetailPage: React.FC = () => {
 
       {/* Connection Info (read-only, from current config) */}
       <Card className="bg-card">
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-sm font-semibold">
             <Cpu className="h-4 w-4 text-primary" />
             {t('drivers.connectionInfo')}
@@ -303,7 +303,7 @@ export const DriverDetailPage: React.FC = () => {
            the scan reuses the dependency scanner over the SAVED config
            (this page renders server state, not the working draft). */}
       <Card className="bg-card">
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-sm font-semibold">
             <GitBranch className="h-4 w-4 text-status-warning" />
             {t('drivers.relatedRulesTitle', { count: relatedRules.length })}
@@ -337,7 +337,7 @@ export const DriverDetailPage: React.FC = () => {
 
       {/* Current YAML snippet (read-only, collapsible) */}
       <Card className="bg-card">
-        <CardHeader className="flex-row items-center justify-between space-y-0 pb-3">
+        <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
           <div className="flex items-center gap-2">
             <FileCode2 className="h-4 w-4 text-primary" />
             <div>
@@ -376,7 +376,7 @@ export const DriverDetailPage: React.FC = () => {
 
       {/* Tag values table */}
       <Card className="bg-card">
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-sm font-semibold">
             <Database className="h-4 w-4 text-primary" />
             {t('drivers.tagValuesTitle')}

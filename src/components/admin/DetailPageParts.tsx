@@ -176,7 +176,7 @@ export const EntityEditConfigCard: React.FC<EntityEditConfigCardProps> = ({
 
   return (
     <Card className="bg-card">
-      <CardHeader className="flex-row items-center justify-between space-y-0 pb-3">
+      <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
         <div className="flex items-center gap-2">
           <Sliders className="h-4 w-4 text-primary" />
           <div>

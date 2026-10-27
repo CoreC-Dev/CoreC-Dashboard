@@ -334,7 +334,7 @@ export const DashboardPage: React.FC = () => {
               {t('dashboard.noDrivers', { defaultValue: 'No drivers configured' })}
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-2.5">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-3">
               {drivers.map((drv) => {
                 const st = ConnStateLabel[drv.state] || ConnStateLabel[0]
                 return (
@@ -379,7 +379,7 @@ export const DashboardPage: React.FC = () => {
               {t('dashboard.noTransports', { defaultValue: 'No transports configured' })}
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-2.5">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-3">
               {transports.map((tr) => {
                 const st = ConnStateLabel[tr.state] || ConnStateLabel[0]
                 return (

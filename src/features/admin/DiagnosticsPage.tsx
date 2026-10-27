@@ -227,8 +227,10 @@ export const DiagnosticsPage: React.FC = () => {
       </section>
 
       {/* Prometheus metrics: runtime tiles + latency histograms + the
-          per-driver/per-transport counter tables, one jump target. */}
-      <section id="diagnostics-metrics" className="scroll-mt-24">
+          per-driver/per-transport counter tables, one jump target.
+          space-y-5 keeps the cards inside this section on the page-wide
+          rhythm — without it they stack flush against each other. */}
+      <section id="diagnostics-metrics" className="scroll-mt-24 space-y-5">
         <Card className="border-border bg-card">
           <CardHeader className="p-4 flex flex-row items-center justify-between">
             <div>

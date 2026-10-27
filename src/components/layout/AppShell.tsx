@@ -93,9 +93,13 @@ export const AppShell: React.FC = () => {
         </header>
       )}
 
-      {/* Content — floating white rounded card, aligned with sidebar */}
-      <main className="flex-1 overflow-y-auto flex flex-col">
-        <div className="w-full p-2 md:py-4 md:px-0 flex-1 flex flex-col">
+      {/* Content — floating white rounded card. The card itself FITS THE
+           WINDOW and never scrolls; page content scrolls in its own pane
+           inside it (the keyed page-enter wrapper below). The stream badge
+           is positioned on the card, not the pane, so it stays put while
+           content moves under it. */}
+      <main className="flex-1 min-h-0 flex flex-col">
+        <div className="w-full p-2 md:py-4 md:px-0 flex-1 flex flex-col min-h-0">
           {/* Page-level stream banner — surfaces disconnected / gave-up /
                rate-limited states with a retry entry point for rejected
                streams. Mounted on EVERY instance route: on admin pages the
@@ -104,7 +108,7 @@ export const AppShell: React.FC = () => {
                socket hurts most. Renders nothing when healthy. */}
           <StreamStatusBanner />
           <div
-            className="bg-card rounded-3xl squircle px-5 py-5 md:px-8 md:py-8 flex-1 border border-border/40 relative"
+            className="bg-card rounded-3xl squircle px-5 py-5 md:px-8 md:py-8 flex-1 min-h-0 flex flex-col overflow-hidden border border-border/40 relative"
             style={{ boxShadow: 'var(--shadow-card)' }}
           >
             {/* Real-time stream indicator — floating top-right inside the
@@ -124,7 +128,13 @@ export const AppShell: React.FC = () => {
               </div>
             </div>
 
-            <div key={location.pathname} className="page-enter">
+            {/* Scroll pane — content cards live and scroll INSIDE the
+                 fixed card. scrollbar-gutter:stable keeps the pane width
+                 steady when content grows past the fold. */}
+            <div
+              key={location.pathname}
+              className="page-enter flex-1 min-h-0 overflow-y-auto [scrollbar-gutter:stable]"
+            >
               <Outlet />
             </div>
           </div>

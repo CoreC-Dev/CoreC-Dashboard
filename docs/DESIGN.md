@@ -23,6 +23,9 @@ CoreC WS 协议需限流（PLC 高频推送）、退避重连、升级拒绝检�
 ## 为什么行为变更单独提交
 重构与行为变更混提则无法单独回滚、无法在 review 时聚焦语义变化、无法对拍守恒（core-beliefs #12，契约 C4）。台账中"变更行为"项必须显式标注并独立提交。
 
+## 为什么内容在窗口内固定的大卡内部滚动
+大 bg-card（AppShell 主内容卡）适配窗口且不滚动，页面内容在卡内的 `page-enter` 滚动窗格里滚（`scrollbar-gutter:stable` 防内容增长时的宽度跳动）。理由：卡片是"面板"而非"纸张"——整卡滚动时卡的边界、24px 连续圆角与分层阴影会随内容滚出视口，浮在卡右上角的实时流徽章也跟着走；卡内滚动则卡界与徽章恒定，内容在其下滑动（macOS 设置面板 / iOS 表单的形态）。副作用受控：TagTable/终端本就自带内部滚动容器；`scrollIntoView`（诊断页锚点 chips、驱动页互跳、`?section=` 深链）自动落到最近的滚动祖先即卡内窗格；横向溢出被卡的 `overflow-hidden` 裁掉，不会压坏圆角。间距节拍随之单一化：页面级 `space-y-5`（20px）是全站卡片间距的唯一节拍——诊断页 metrics section 曾因容器缺间距类导致三对卡片 0 间距贴叠、配置中心曾整页 16px（`space-y-4`），均收敛到 20；小磁贴网格统一 `gap-3`、大卡网格 `gap-4`。
+
 ## 为什么卡片圆角用 corner-shape: squircle（渐进增强）
 iOS 的"连续圆角"不是更大的圆弧，而是曲率连续过渡的超椭圆（`squircle` = `superellipse(2)`）。CSS `corner-shape`（css-borders-4）只重绘圆角的弯曲方式、不改 `border-radius` 的尺寸语义，边框/阴影/overflow 裁剪自动跟随新曲线，布局与点击命中零影响——因此它是 Tailwind v4 设计系统下的最小实现：`index.css` 一个 `@utility squircle`，卡面在半径类旁追加该类（`ui/card` 原语覆盖全部 `<Card>` 用点，另有总览 KPI 磁贴、实例卡、侧栏/主内容容器、设置分节、弹窗等自带 `bg-card` 的卡面）。两个备选被否决：SVG clip-path 会把 `--shadow-card` 分层阴影切掉、边框不再跟随轮廓；单纯调大 `border-radius` 改变的只是圆弧半径，直边与圆弧的切点过渡依旧生硬，达不到目的。
 

@@ -241,7 +241,7 @@ export const ConfigCenterPage: React.FC = () => {
       <ValidationBanner />
 
       {mode === 'form' ? (
-        <div className="space-y-4">
+        <div className="space-y-5">
           {/* Runtime Parameter Patch Card */}
           <RuntimeParamsCard
             currentLogLevel={currentLogLevel}
@@ -283,7 +283,7 @@ export const ConfigCenterPage: React.FC = () => {
           <ConfigApplyConfirmationDialog {...applyDialogProps} />
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-5">
           {/* Changes Preview — diff against the saved server config */}
           <DiffPreview
             lastSubmittedYaml={diffBaselineYaml}

@@ -189,7 +189,7 @@ export const TransportDetailPage: React.FC = () => {
 
       {/* Queue depth indicator */}
       <Card className={`bg-card ${queueActive ? 'border-status-warning/40' : ''}`}>
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-2">
           <CardTitle className="flex items-center justify-between text-sm font-semibold">
             <span className="flex items-center gap-2">
               <Layers className="h-4 w-4 text-primary" />
@@ -245,7 +245,7 @@ export const TransportDetailPage: React.FC = () => {
 
       {/* Connection & publishing parameters */}
       <Card className="bg-card">
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-sm font-semibold">
             <Send className="h-4 w-4 text-primary" />
             {t('transports.connectionPublishingParams')}
@@ -302,7 +302,7 @@ export const TransportDetailPage: React.FC = () => {
 
       {/* Connection Info (read-only, from /configs/raw) */}
       <Card className="bg-card">
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-sm font-semibold">
             <Send className="h-4 w-4 text-primary" />
             {t('transports.connectionInfo')}
@@ -339,7 +339,7 @@ export const TransportDetailPage: React.FC = () => {
 
       {/* Current YAML config snippet (collapsible, collapsed by default) */}
       <Card className="bg-card">
-        <CardHeader className="flex-row items-center justify-between space-y-0 pb-3">
+        <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="flex items-center gap-2 text-sm font-semibold">
             <Layers className="h-4 w-4 text-primary" />
             {t('transports.currentYaml')}
