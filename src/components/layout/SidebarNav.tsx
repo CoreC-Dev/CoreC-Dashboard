@@ -181,9 +181,9 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ collapsed, setCollapsed,
       </div>
 
       {/* Live-stream status directly under the brand mark — connection
-          state belongs to the app chrome, not to a page. Collapsed rail:
-          dot only (label in title/aria); expanded: pill with dot + text. */}
-      <StreamStatusBadge collapsed={eff} />
+          state belongs to the app chrome, not to a page. Dot only; the
+          label shows on hover (title) and for screen readers (aria). */}
+      <StreamStatusBadge />
 
       {/* ===== Centered navigation area — white bubble card ===== */}
       <div

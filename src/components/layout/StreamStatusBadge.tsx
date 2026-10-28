@@ -45,40 +45,26 @@ export const streamBadgeTone = (
 }
 
 /**
- * Live-stream status badge, rendered directly below the sidebar brand
- * mark so the connection state is part of the app chrome — not of any
- * page. Expanded sidebar: centered pill with dot + label (mirrors the
- * mobile sheet). Collapsed rail: dot only — the 56px rail cannot carry
- * the text, so the label travels in title + aria-label, exactly like
- * the mobile topbar dot.
+ * Live-stream status dot, rendered directly below the sidebar brand mark.
+ * Dot only, in both the expanded sidebar and the collapsed rail — the
+ * label appears on hover via the native title tooltip and travels in
+ * aria-label for screen readers, the same shape and disclosure as every
+ * other status dot in the app (instance dots, topbar dot).
  */
-export const StreamStatusBadge: React.FC<{ collapsed: boolean }> = ({ collapsed }) => {
+export const StreamStatusBadge: React.FC = () => {
   const { t } = useTranslation()
   const aggregate = useWsStatusStore((s) => deriveAggregate(s.streams))
   const tone = streamBadgeTone(aggregate)
 
-  if (collapsed) {
-    return (
-      <span
-        role="status"
-        title={t(tone.labelKey)}
-        aria-label={t(tone.labelKey)}
-        className={cn('w-2.5 h-2.5 rounded-full shrink-0 transition-colors duration-300', tone.dot)}
-      />
-    )
-  }
-
   return (
-    <div
+    <span
       role="status"
+      title={t(tone.labelKey)}
       aria-label={t(tone.labelKey)}
-      className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50 border border-border/60"
-    >
-      <span
-        className={cn('w-2.5 h-2.5 rounded-full shrink-0 transition-colors duration-300', tone.dot)}
-        aria-hidden="true"
-      />
-      <span className={cn('text-sm font-semibold', tone.text)}>{t(tone.labelKey)}</span>
-    </div>
+      className={cn(
+        'self-center w-2.5 h-2.5 rounded-full shrink-0 transition-colors duration-300',
+        tone.dot,
+      )}
+    />
   )
 }
