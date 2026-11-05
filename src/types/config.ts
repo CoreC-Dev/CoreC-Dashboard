@@ -85,8 +85,26 @@ export interface TagConfig {
   scale?: number
   offset?: number
   deadband?: number
+  /**
+   * Heartbeat on top of the deadband (server: engine/scheduler.go
+   * applyDeadbandFilter): an unchanged value suppressed by the deadband is
+   * republished at least this often, so a consumer can tell "no change" from
+   * "link dead". Requires deadband > 0 and >= interval — the server refuses
+   * to load either misconfiguration.
+   */
+  'enforce-interval'?: string
   /** Per-tag read timeout, independent of interval. Empty = fallback to interval. */
   'read-timeout'?: string
+  /**
+   * Write protection (server: core/types.go TagConfig.Protect). Empty and
+   * read-write are writable; read-only rejects every write path (API single,
+   * batch, MQTT command); write-only accepts writes but is never collected.
+   */
+  protect?: '' | 'read-write' | 'read-only' | 'write-only'
+  /** Declares this point as the condition of a trigger group (value = group name). */
+  'trigger-group'?: string
+  /** Names the condition tag that gates this point. Mutually exclusive with trigger-group. */
+  triggers?: string
 }
 
 // ─── DriverConfig (core/driver.go:33) ────────────────────────────────

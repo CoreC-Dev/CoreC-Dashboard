@@ -702,3 +702,93 @@ describe('validateConfig: rule-groups SUB-RULE validation', () => {
     expect(circularErrors.length).toBe(1)
   })
 })
+
+// ---------------------------------------------------------------------------
+// Collection-side tag fields (mirror of config/validate.go): write protection,
+// deadband heartbeat, and trigger-gated collection.
+// ---------------------------------------------------------------------------
+describe('tag collection rules (server parity)', () => {
+  const withTag = (tag: Record<string, unknown>) => ({
+    drivers: [
+      {
+        name: 'plc1',
+        type: 'modbus-tcp',
+        settings: { host: '127.0.0.1', port: 502 },
+        tags: [tag],
+      },
+    ],
+    transports: [
+      { name: 't1', type: 'mqtt', settings: { broker: 'tcp://127.0.0.1:1883', topic: 'x' } },
+    ],
+    rules: [],
+  })
+
+  it('accepts the protect enum members, including empty', () => {
+    for (const protect of ['', 'read-write', 'read-only', 'write-only']) {
+      const res = validateConfig(
+        withTag({ name: 'sp', address: '40001', type: 'float32', protect }),
+      )
+      expect(res.errors.filter((e) => e.path.includes('protect'))).toEqual([])
+    }
+  })
+
+  it('rejects a protect spelling the server would refuse (readonly, not read-only)', () => {
+    // validateFullConfig is the path the config store actually takes: zod shape
+    // check first (the closed enum lives there), then the cross-entity rules.
+    const res = validateFullConfig(
+      withTag({ name: 'sp', address: '40001', type: 'float32', protect: 'readonly' }),
+    )
+    expect(res.valid).toBe(false)
+  })
+
+  it('requires a non-zero deadband for enforce-interval', () => {
+    const res = validateConfig(
+      withTag({
+        name: 'temp',
+        address: '40001',
+        type: 'float32',
+        interval: '1s',
+        'enforce-interval': '30s',
+      }),
+    )
+    expect(res.errors.some((e) => e.message.includes('non-zero deadband'))).toBe(true)
+
+    const ok = validateConfig(
+      withTag({
+        name: 'temp',
+        address: '40001',
+        type: 'float32',
+        interval: '1s',
+        deadband: 0.5,
+        'enforce-interval': '30s',
+      }),
+    )
+    expect(ok.errors.some((e) => e.message.includes('enforce-interval'))).toBe(false)
+  })
+
+  it('rejects a heartbeat shorter than the collection interval', () => {
+    const res = validateConfig(
+      withTag({
+        name: 'temp',
+        address: '40001',
+        type: 'float32',
+        interval: '10s',
+        deadband: 0.5,
+        'enforce-interval': '5s',
+      }),
+    )
+    expect(res.errors.some((e) => e.message.includes('must be >= interval'))).toBe(true)
+  })
+
+  it('rejects a triggers reference that names no condition on the driver', () => {
+    const cfg = withTag({
+      name: 'detail',
+      address: '40002',
+      type: 'uint16',
+      interval: '1s',
+      triggers: 'alarm_flag',
+    })
+    const res = validateConfig(cfg)
+    expect(res.errors.some((e) => e.message.includes('not a trigger-group condition'))).toBe(true)
+  })
+})

@@ -4,6 +4,8 @@
  * cross-cutting rules): name uniqueness, target references, data-source
  * presence, transport fallbacks, SUB-RULE cycles.
  */
+
+import { durationToMs } from '@/lib/configSchema/duration'
 import { DRIVER_TYPES, TRANSPORT_TYPES } from '@/types/config'
 
 export interface ConfigValidationError {
@@ -184,6 +186,81 @@ export function checkTransportFallbacks(
  * detectCircularSubRules). A rule's match field can be "SUB-RULE:group-name"
  * to delegate to a named sub-rule group; circular chains (A→B→A) are caught.
  */
+/**
+ * checkTagCollectionRules validates the collection-side tag fields against the
+ * same invariants the Go server enforces at config load (config/validate.go):
+ *
+ *  - enforce-interval is a heartbeat on top of the deadband — without a non-zero
+ *    deadband every sample is already published, and a heartbeat shorter than
+ *    the collection interval can never fire;
+ *  - trigger-group and triggers are mutually exclusive: a point that is both a
+ *    condition and a gated detail has no defined read order;
+ *  - a triggers reference must name a trigger-group condition on the SAME
+ *    driver, otherwise the group never fires and its details silently stop
+ *    being collected.
+ *
+ * Catching these here keeps the UI from saving a config the server will refuse
+ * on reload, and from hiding a collection outage behind a typo.
+ */
+export function checkTagCollectionRules(
+  tags: {
+    name: string
+    interval?: string
+    deadband?: number
+    'enforce-interval'?: string
+    'trigger-group'?: string
+    triggers?: string
+  }[],
+  pathFor: (tagName: string) => string,
+): ConfigValidationError[] {
+  const errors: ConfigValidationError[] = []
+
+  const conditions = new Set<string>()
+  for (const t of tags) {
+    if (t['trigger-group']) conditions.add(t.name)
+  }
+
+  for (const t of tags) {
+    const base = pathFor(t.name)
+
+    if (t['enforce-interval']) {
+      if (!t.deadband || t.deadband <= 0) {
+        errors.push({
+          path: `${base}.enforce-interval`,
+          message:
+            'enforce-interval requires a non-zero deadband (every sample is already published without one)',
+        })
+      } else {
+        const hb = durationToMs(t['enforce-interval'])
+        const iv = durationToMs(t.interval)
+        if (hb !== null && iv !== null && hb < iv) {
+          errors.push({
+            path: `${base}.enforce-interval`,
+            message: `enforce-interval (${t['enforce-interval']}) must be >= interval (${t.interval}) — a shorter heartbeat can never fire`,
+          })
+        }
+      }
+    }
+
+    if (t['trigger-group'] && t.triggers) {
+      errors.push({
+        path: `${base}.triggers`,
+        message:
+          'trigger-group and triggers are mutually exclusive (a point cannot both gate and be gated)',
+      })
+    }
+
+    if (t.triggers && !conditions.has(t.triggers)) {
+      errors.push({
+        path: `${base}.triggers`,
+        message: `triggers "${t.triggers}" is not a trigger-group condition on this driver — the group would never fire`,
+      })
+    }
+  }
+
+  return errors
+}
+
 export function checkSubRuleCycles(
   ruleGroups: Record<
     string,
@@ -281,6 +358,11 @@ export function validateConfig(config: unknown): ConfigValidationResult {
   warnings.push(...checkDataSourcePresence(drivers, transports, cfg.node))
   warnings.push(...checkTransportPresence(transports))
   errors.push(...checkDriverNames(drivers))
+  for (const d of drivers) {
+    errors.push(
+      ...checkTagCollectionRules(d.tags ?? [], (tag) => `drivers[${d.name}].tags[${tag}]`),
+    )
+  }
   const { names: transportNames, errors: transportNameErrors } = checkTransportNames(transports)
   errors.push(...transportNameErrors)
   errors.push(...checkTransportFallbacks(transports, transportNames))

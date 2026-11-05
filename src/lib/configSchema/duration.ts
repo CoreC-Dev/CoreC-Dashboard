@@ -50,3 +50,34 @@ export const requiredDuration = z
       })
     }
   })
+
+/**
+ * durationToMs converts a Go duration string ("1.5s", "2h45m", "500us") to
+ * milliseconds. Returns null when the string does not parse, so callers can
+ * distinguish "unset" from "malformed" instead of comparing against a silent 0.
+ */
+export function durationToMs(v: string | undefined): number | null {
+  if (!v) return null
+  const sign = v.startsWith('-') ? -1 : 1
+  const body = v.replace(/^[+-]/, '')
+  const seg = /([0-9]+(?:\.[0-9]+)?)(ns|us|µs|ms|s|m|h)/g
+  const mults: Record<string, number> = {
+    ns: 1e-6,
+    us: 1e-3,
+    µs: 1e-3,
+    ms: 1,
+    s: 1000,
+    m: 60000,
+    h: 3600000,
+  }
+  let total = 0
+  let consumed = 0
+  let m: RegExpExecArray | null
+  while ((m = seg.exec(body)) !== null) {
+    total += Number(m[1]) * mults[m[2]]
+    consumed += m[0].length
+  }
+  // Every character must belong to a segment: "1s2" or "2hz" is not a duration.
+  if (consumed !== body.length) return null
+  return sign * total
+}

@@ -33,6 +33,16 @@ const tagConfigSchema = z
     scale: z.number().optional(),
     offset: z.number().optional(),
     deadband: z.number().optional(),
+    'enforce-interval': durationString,
+    /** Mirrors the server's TagConfig.Protect closed set (config/validate.go). */
+    protect: z.enum(['', 'read-write', 'read-only', 'write-only']).optional(),
+    'trigger-group': z
+      .string()
+      .refine((v) => !/[\s,;]/.test(v), {
+        message: 'trigger-group cannot contain spaces or separators',
+      })
+      .optional(),
+    triggers: z.string().optional(),
     'read-timeout': durationString,
   })
   .passthrough()
