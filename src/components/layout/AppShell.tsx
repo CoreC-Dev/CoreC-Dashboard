@@ -138,17 +138,18 @@ export const AppShell: React.FC = () => {
           >
             <SidebarNav collapsed={collapsed} setCollapsed={setCollapsed} isMobile={isMobile} />
           </aside>
-          {/* AI assistant — instance-scoped by design: its tools call the same
-               control-plane REST API as these pages, so it only exists where an
-               active connection does (ADR-015). Self-manages open/closed and
-               its own mobile sheet; renders only its trigger button when
-               collapsed. */}
-          <AssistantPanel />
           {mainArea}
         </div>
       ) : (
         mainArea
       )}
+
+      {/* AI assistant — instance-scoped by design, since its tools call the
+           same control-plane REST API as these pages; a bare-homepage chat box
+           would find no active connection (ADR-015). Mounted once outside both
+           layout branches so mobile and desktop share one implementation rather
+           than only the desktop rail it started as. */}
+      <AssistantPanel />
     </div>
   )
 }
