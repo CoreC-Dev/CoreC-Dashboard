@@ -17,6 +17,7 @@
 | `design-docs/core-beliefs.md` | 第一性原则（争议裁决依据） | ✅ |
 | `design-docs/architecture-decisions.md` | 架构决策记录（ADR：框架判定 + D1–D7） | ✅ |
 | `design-docs/motion-catalog.md` | 前端动效目录（已有/待实施清单 + 实现约定） | ✅ |
+| `design-docs/ai-assistant.md` | 首页 AI 助手方案（ADR-015 提案，待决策） | ✅ |
 
 ## 规范文档
 | 文档 | 职责 | 状态 |

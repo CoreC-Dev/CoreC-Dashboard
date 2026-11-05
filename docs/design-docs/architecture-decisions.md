@@ -114,3 +114,19 @@
 - **决策**：登记为 **backlog**，当前不排期。目标用户为运维/控制工程师的桌面工位场景，上述项不影响核心工作流。
 - **理由**：资源优先级原则——数据正确性/可观测性/控制安全类工作（本批：写审计、备份时间线、死信重放、批量写、实时面板）完成后才轮到体验增强。
 - **影响**：无代码变更；后续有用户反馈时从 backlog 提起。
+
+## ADR-015 首页 AI 助手：浏览器直连 provider + 工具层复用 REST，MCP 不进浏览器的运行时路径（2026-11-04 提案，待决策）
+
+- **背景**：CoreC 已交付 `corec-mcp`（一个 stdio 的 MCP 适配器，10 个工具，默认只读）。用户提出在 Dashboard 首页加 AI 聊天框，可接入自定义 AI，并能通过 MCP/API 快速配置与查看 CoreC。表面上"有 MCP 就用 MCP"最省事，实际有一处硬障碍和一处前置缺口。
+- **事实（均经仓库核实，不是推测）**：
+  1. `cmd/corec-mcp` 的传输是**纯 stdio**（`main.go` 的 `serve(os.Stdin, os.Stdout)`），且它的能力是**对 REST 的适配器**，本身不持有设备状态。浏览器没有 stdio，也不该为它起子进程；因此 MCP **不能**出现在浏览器运行时路径上。它天然的宿主是桌面 MCP 客户端（Claude Desktop、IDE agent、自建 Node/CLI 侧进程）。
+  2. MCP 的 10 个工具**只有读 + 控制**（list/read/status、write_tag、pause/resume、ack_alert），**配置写入不在其中**：`PUT/PATCH /configs`、`POST /configs/validate`、备份恢复都没有对应工具。所以"通过 MCP 快速配置 CoreC"目前**字面不成立**——要成立得先给 `corec-mcp` 加配置类工具。
+  3. Dashboard 已有 43 个 REST 端点与 `src/api/endpoints` 的完整封装，`server.mjs`（固定 `/corec-api`）与 vite（动态 `/corec-proxy`）都做同源反向代理；CSP 已放宽为 `connect-src *`（ADR-004a）；API 密钥按既有决策存 localStorage（SECURITY.md「密钥存储（明示披露）」）；公网无鉴权是**已接受**的风险（ADR-005）。
+- **决策（推荐 A，B 作为可选加固；两者共用同一工具层，不互斥）**：
+  - **A. 浏览器直连 provider，工具层薄封装现有 REST。** AI 助手是一个前端 feature：provider 配置（OpenAI 兼容 / 自定义 baseURL + key）存 localStorage，与现存的 API 密钥同姿态并同样显式告知；对话用流式 `fetch`/SSE；工具调用**复用 `src/api/endpoints`**，不新增后端协议、不给浏览器加 MCP 客户端。
+  - **B. 需要隐藏 provider key 或统一出入口时，用 Dashboard 自己的 `server.mjs` 加一个极薄转发**（同源、认证、白名单 baseURL），前端只改一个 base 路径。**不是**新服务，也不编进 CoreC。
+- **理由**：
+  - **不重复造轮子**：对话 UI 与 provider 适配在同类盘面里已有成熟做法，但**没有**能同时满足"零后端 / CoreC 同源代理 / 工具面复用 43 REST / 无鉴权姿态"的现成整件——引整件等于再养一套治理。真正该复用而非重造的是 `src/api/endpoints`：REST 已有的校验与权限（tag `protect`、`write-min-interval` 429、配置校验链）就是工具调用的安全地基。
+  - **MCP 的问题不被 AI 聊天框绕过**：要让 agent 真正"配" CoreC，缺的是配置类 MCP 工具（`put_configs`/`patch_configs`/`validate_configs`/备份恢复），那是一项**改动 CoreC** 的安全决策，不该被当成"顺手"塞进 UI 需求。先补接口定义、确认幂等与 diff 语义，再谈暴露。
+  - **信任边界要显式**：ADR-005 已接受公网无鉴权，意味着能打到 UI 的人也能打到一切工具。AI 聊天框把"人逐步确认"变成"模型自主链式调用"，风险形态变了。故写类工具必须**人确认后才执行**，且默认关闭（对齐 `corec-mcp` 的 `-allow-write` 默认只读）；被拒的写入要显示引擎原话（`is read-only (protect: read-only)`、429 + `Retry-After`），不得被模型吞掉或改写。
+- **影响**（若批准）：新增一个前端 feature 与一个设置分区，**CoreC 后端零改动**；`corec-mcp` 的工具面暂不变（配置类工具另立 ADR，含权限模型）。不批准则不改代码，本 ADR 即为方案存档点。
