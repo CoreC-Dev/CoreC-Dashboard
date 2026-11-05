@@ -1288,6 +1288,16 @@
     "pprofDisabled": "Disable pprof",
     "pprofDisabledHelp": "Disable pprof profiling endpoints entirely (/debug/pprof/*). Default: false (enabled).",
     "pprofAddr": "Separate pprof Address",
+    "metricsAddr": "Separate Metrics Address",
+    "metricsAddrHelp": "Serve /metrics on a dedicated loopback-only address (e.g. 127.0.0.1:9100) instead of the authenticated API. A non-loopback bind is refused at startup. Empty = metrics on the main API port.",
+    "writeMinInterval": "Minimum Write Interval",
+    "writeMinIntervalHelp": "Minimum spacing between two writes to the same device. Writes inside the window are REFUSED, never queued: the API answers 429 and control commands dead-letter with the reason. Empty = unlimited.",
+    "writeAuditPath": "Write Audit File",
+    "writeAuditPathHelp": "Persist the write audit trail (GET /write/history) to this append-only JSONL file so it survives a restart. Empty = in-memory only.",
+    "deadLetterPath": "Dead-Letter File",
+    "deadLetterPathHelp": "Persist the write dead-letter queue (GET /write/failed) to this append-only JSONL file and replay it at startup. Empty = in-memory only.",
+    "alertActiveWindow": "Alert Active Window",
+    "alertActiveWindowHelp": "How long an alert stays active after its last fire before it is cleared to history. Default: 15m.",
     "pprofAddrHelp": "Run pprof on a separate HTTP server at this address (e.g. 127.0.0.1:6060). No authentication — bind to loopback or private interface only. Empty = pprof on main API port."
   },
   "nodeConfig": {

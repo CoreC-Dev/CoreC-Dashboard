@@ -1288,6 +1288,16 @@
     "pprofDisabled": "禁用 pprof",
     "pprofDisabledHelp": "完全禁用 pprof 性能分析端点（/debug/pprof/*）。默认：false（启用）。",
     "pprofAddr": "独立 pprof 地址",
+    "metricsAddr": "独立指标地址",
+    "metricsAddrHelp": "在此地址上单独暴露 /metrics（如 127.0.0.1:9100），不在主 API 上提供。仅允许回环地址，绑定非回环地址时拒绝启动。留空 = 指标在主 API 端口。",
+    "writeMinInterval": "写入最小间隔",
+    "writeMinIntervalHelp": "同一设备两次写入之间的最小间隔。落在窗口内的写入会被拒绝、不会排队：API 返回 429，控制指令带原因进入死信队列。留空 = 不限速。",
+    "writeAuditPath": "写审计文件",
+    "writeAuditPathHelp": "把写审计轨迹（GET /write/history）持久化到该追加式 JSONL 文件，重启后仍可查。留空 = 仅内存。",
+    "deadLetterPath": "死信文件",
+    "deadLetterPathHelp": "把写死信队列（GET /write/failed）持久化到该追加式 JSONL 文件，启动时回放。留空 = 仅内存。",
+    "alertActiveWindow": "告警活动窗口",
+    "alertActiveWindowHelp": "告警最后一次触发后保持活动的时间，超过窗口即清除并进入历史。默认 15 分钟。",
     "pprofAddrHelp": "在此地址上运行独立的 pprof HTTP 服务器（如 127.0.0.1:6060）。无需认证 — 请仅绑定到本地回环或私有网络接口。留空 = pprof 运行在主 API 端口上。"
   },
   "nodeConfig": {

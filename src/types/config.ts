@@ -212,6 +212,12 @@ interface APIConfig {
   'pprof-disabled'?: boolean
   /** Separate unauthenticated pprof port (bind to loopback only). */
   'pprof-addr'?: string
+  /**
+   * Dedicated Prometheus metrics endpoint (server: APIConfig.MetricsAddr).
+   * When set, /metrics moves to this loopback-only address and is removed from
+   * the main authenticated API; a non-loopback bind is refused at startup.
+   */
+  'metrics-addr'?: string
 }
 
 interface EngineConfig {
@@ -226,6 +232,25 @@ interface EngineConfig {
   'write-retry-count'?: number
   'command-concurrency'?: number
   'high-priority-workers'?: number
+  /**
+   * Minimum spacing between two writes reaching the same device. A write inside
+   * the window is REFUSED, never queued: the API answers 429 (+ Retry-After) and
+   * the MQTT command channel dead-letters it with the reason intact.
+   */
+  'write-min-interval'?: string
+  /**
+   * Durable write audit trail (GET /write/history): append-only JSONL surviving
+   * a restart. Empty = in-memory ring only.
+   */
+  'write-audit-path'?: string
+  /**
+   * Durable write dead-letter queue (GET /write/failed): append-only JSONL
+   * replayed at startup so crashed-out commands stay replayable. Empty =
+   * in-memory only.
+   */
+  'dead-letter-path'?: string
+  /** How long an alert stays active after its last fire (default 15m). */
+  'alert-active-window'?: string
 }
 
 interface BufferConfig {

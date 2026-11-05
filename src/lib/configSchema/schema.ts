@@ -336,6 +336,7 @@ const apiConfigSchema = z
     'idle-timeout': durationString,
     'pprof-disabled': z.boolean().optional(),
     'pprof-addr': z.string().optional(),
+    'metrics-addr': z.string().optional(),
   })
   .passthrough()
   .superRefine((a, ctx) => {
@@ -377,6 +378,13 @@ const engineConfigSchema = z
     'write-retry-count': z.number().int().nonnegative().optional(),
     'command-concurrency': z.number().int().positive().optional(),
     'high-priority-workers': z.number().int().nonnegative().optional(),
+    // Persistence and pacing knobs the server understands (core/engine.go
+    // EngineConfig). The editor had no field for them, so a config produced
+    // here could never use durable dead letters / audit trail or write pacing.
+    'write-min-interval': durationString,
+    'write-audit-path': z.string().optional(),
+    'dead-letter-path': z.string().optional(),
+    'alert-active-window': durationString,
   })
   .passthrough()
 

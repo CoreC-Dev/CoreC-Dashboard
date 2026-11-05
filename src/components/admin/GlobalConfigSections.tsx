@@ -188,6 +188,18 @@ export const ApiSection: React.FC<{
               className="h-8 text-xs font-mono"
             />
           </FieldRow>
+          <FieldRow
+            label={t('globalConfig.metricsAddr')}
+            help={t('globalConfig.metricsAddrHelp')}
+            restartRequired
+          >
+            <Input
+              value={(api['metrics-addr'] as string) ?? ''}
+              onChange={(e) => update('api.metrics-addr', e.target.value || undefined)}
+              placeholder="127.0.0.1:9100"
+              className="h-8 text-xs font-mono"
+            />
+          </FieldRow>
         </div>
       </details>
     </div>
@@ -373,6 +385,50 @@ export const EngineSection: React.FC<{
             }
             placeholder="2"
             min={0}
+            className="h-8 text-xs font-mono w-28"
+          />
+        </FieldRow>
+        <FieldRow
+          label={t('globalConfig.writeMinInterval')}
+          help={t('globalConfig.writeMinIntervalHelp')}
+        >
+          <Input
+            value={(engine['write-min-interval'] as string) ?? ''}
+            onChange={(e) => update('engine.write-min-interval', e.target.value || undefined)}
+            placeholder="200ms"
+            className="h-8 text-xs font-mono w-28"
+          />
+        </FieldRow>
+        <FieldRow
+          label={t('globalConfig.writeAuditPath')}
+          help={t('globalConfig.writeAuditPathHelp')}
+        >
+          <Input
+            value={(engine['write-audit-path'] as string) ?? ''}
+            onChange={(e) => update('engine.write-audit-path', e.target.value || undefined)}
+            placeholder=""
+            className="h-8 text-xs font-mono"
+          />
+        </FieldRow>
+        <FieldRow
+          label={t('globalConfig.deadLetterPath')}
+          help={t('globalConfig.deadLetterPathHelp')}
+        >
+          <Input
+            value={(engine['dead-letter-path'] as string) ?? ''}
+            onChange={(e) => update('engine.dead-letter-path', e.target.value || undefined)}
+            placeholder=""
+            className="h-8 text-xs font-mono"
+          />
+        </FieldRow>
+        <FieldRow
+          label={t('globalConfig.alertActiveWindow')}
+          help={t('globalConfig.alertActiveWindowHelp')}
+        >
+          <Input
+            value={(engine['alert-active-window'] as string) ?? ''}
+            onChange={(e) => update('engine.alert-active-window', e.target.value || undefined)}
+            placeholder="15m"
             className="h-8 text-xs font-mono w-28"
           />
         </FieldRow>
