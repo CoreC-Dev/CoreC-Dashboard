@@ -1396,5 +1396,44 @@
     "subRuleRef": "Insert SUB-RULE reference",
     "ruleTargets": "Multi-Targets",
     "ruleTargetsHelp": "Comma-separated list of transport names (used by mirror action to fan-out to multiple targets)."
+  },
+  "assistant": {
+    "title": "AI Assistant",
+    "you": "You",
+    "model": "Assistant",
+    "intro": "Ask about drivers, points or alerts. Answers are built from live CoreC responses, never from memory.",
+    "placeholder": "Ask about this instance...",
+    "send": "Send",
+    "stop": "Stop",
+    "thinking": "Thinking...",
+    "clear": "Clear conversation",
+    "truncated": "Stopped calling tools at the step limit.",
+    "open": "Open AI assistant",
+    "close": "Close assistant",
+    "noProvider": "No AI provider configured. Add one in Settings to use the assistant.",
+    "confirm": {
+      "title": "Allow tool \"{{tool}}\"?",
+      "approve": "Run it",
+      "decline": "Cancel"
+    },
+    "settings": {
+      "title": "AI Assistant",
+      "subtitle": "Connect an OpenAI-compatible model endpoint. The assistant reads through CoreC's own API and, if you allow it, writes through the same one.",
+      "add": "Add provider",
+      "name": "Name",
+      "model": "Model",
+      "baseUrl": "Base URL",
+      "baseUrlHelp": "OpenAI-compatible prefix ending in /v1, e.g. http://10.0.0.7:8000/v1 (vLLM) or https://api.example.com/v1.",
+      "apiKey": "API key",
+      "apiKeyOptional": "optional for a local gateway",
+      "secretNotice": "The provider key is stored in this browser's localStorage, in plain text, exactly like your CoreC API keys. Anyone who can run script in this browser can read it.",
+      "empty": "No provider yet. Add one to enable the assistant.",
+      "save": "Save",
+      "select": "Use this provider",
+      "selected": "Selected",
+      "remove": "Remove",
+      "allowWrite": "Allow write actions",
+      "allowWriteHelp": "Off by default. When on, the model may call write_tag, pause/resume and ack_alert. Every write still asks you to confirm first, and the engine's own protection can still refuse it."
+    }
   }
 }

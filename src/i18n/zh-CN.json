@@ -1396,5 +1396,44 @@
     "subRuleRef": "插入 SUB-RULE 引用",
     "ruleTargets": "多目标",
     "ruleTargetsHelp": "以逗号分隔的传输名称列表（用于 mirror 动作的扇出到多个目标）。"
+  },
+  "assistant": {
+    "title": "AI 助手",
+    "you": "你",
+    "model": "助手",
+    "intro": "可以问驱动、点位和告警。回答只来自 CoreC 的实时响应，不取自模型记忆。",
+    "placeholder": "问点什么……",
+    "send": "发送",
+    "stop": "停止",
+    "thinking": "思考中……",
+    "clear": "清空对话",
+    "truncated": "已到达工具调用步数上限，停止自动调用。",
+    "open": "展开 AI 助手",
+    "close": "收起助手",
+    "noProvider": "尚未配置 AI 提供方，请先在设置中添加。",
+    "confirm": {
+      "title": "允许执行 {{tool}}？",
+      "approve": "执行",
+      "decline": "取消"
+    },
+    "settings": {
+      "title": "AI 助手",
+      "subtitle": "接入一个 OpenAI 兼容的模型端点。助手通过 CoreC 自身的 API 读取数据，并在你允许时经同一 API 写入。",
+      "add": "添加提供方",
+      "name": "名称",
+      "model": "模型",
+      "baseUrl": "接口地址",
+      "baseUrlHelp": "以 /v1 结尾的 OpenAI 兼容前缀，例如 http://10.0.0.7:8000/v1（vLLM）或 https://api.example.com/v1。",
+      "apiKey": "API 密钥",
+      "apiKeyOptional": "本地网关可不填",
+      "secretNotice": "提供方密钥以明文保存在本浏览器的 localStorage 中，与你的 CoreC API 密钥一致。凡能在此浏览器执行脚本者都可读取它。",
+      "empty": "还没有提供方。添加一个即可启用助手。",
+      "save": "保存",
+      "select": "使用此提供方",
+      "selected": "已选",
+      "remove": "删除",
+      "allowWrite": "允许写操作",
+      "allowWriteHelp": "默认关闭。打开后模型可调用 write_tag、暂停/恢复与 ack_alert；每一次写入仍需你确认，引擎自身的写保护仍可能拒绝它。"
+    }
   }
 }

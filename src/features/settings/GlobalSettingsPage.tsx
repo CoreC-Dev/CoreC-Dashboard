@@ -3,6 +3,7 @@ import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
+import { ProviderSettings } from '@/components/admin/AssistantSettingsSection'
 import { InstanceExportDialog } from '@/components/home/InstanceExportDialog'
 import { InstanceImportDialog } from '@/components/home/InstanceImportDialog'
 import {
@@ -25,6 +26,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import i18n, { setLocale } from '@/i18n'
+import { useAssistantSettings } from '@/stores/assistantStore'
 import { useInstanceStore } from '@/stores/instanceStore'
 import { THEME_I18N_KEYS, THEME_VARIANTS, type ThemeMode, useThemeStore } from '@/stores/themeStore'
 
@@ -33,6 +35,7 @@ export const GlobalSettingsPage: React.FC = () => {
   const { theme, setTheme } = useThemeStore()
   const clearAll = useInstanceStore((s) => s.clearAll)
   const instanceCount = useInstanceStore((s) => s.instances.length)
+  const { providers, selected, allowWrite, setProviders, setAllowWrite } = useAssistantSettings()
 
   const [importOpen, setImportOpen] = useState(false)
   const [clearOpen, setClearOpen] = useState(false)
@@ -142,6 +145,27 @@ export const GlobalSettingsPage: React.FC = () => {
               {t('instances.clearAll')}
             </Button>
           </div>
+        </section>
+
+        <ProviderSettings
+          providers={providers}
+          selected={selected}
+          onChange={(list, sel) => setProviders(list, sel)}
+        />
+
+        <section className="rounded-3xl squircle border border-border bg-card p-6 space-y-3">
+          <div className="flex items-center gap-2">
+            <Label className="font-semibold">{t('assistant.settings.allowWrite')}</Label>
+          </div>
+          <p className="text-xs text-muted-foreground">{t('assistant.settings.allowWriteHelp')}</p>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={allowWrite}
+              onChange={(e) => setAllowWrite(e.target.checked)}
+            />
+            {t('assistant.settings.allowWrite')}
+          </label>
         </section>
       </main>
 

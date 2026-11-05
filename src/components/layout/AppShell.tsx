@@ -9,6 +9,7 @@ import { StreamStatusBanner } from '@/components/layout/StreamStatusBanner'
 import { TopProgressBar } from '@/components/layout/TopProgressBar'
 import { useSidebarState } from '@/components/layout/useSidebarState'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
+import { AssistantPanel } from '@/features/assistant/AssistantPanel'
 import { useAutoLoadConfig } from '@/hooks/useAutoLoadConfig'
 import { cn } from '@/lib/cn'
 import { deriveAggregate, useWsStatusStore } from '@/stores/wsStatusStore'
@@ -137,6 +138,12 @@ export const AppShell: React.FC = () => {
           >
             <SidebarNav collapsed={collapsed} setCollapsed={setCollapsed} isMobile={isMobile} />
           </aside>
+          {/* AI assistant — instance-scoped by design: its tools call the same
+               control-plane REST API as these pages, so it only exists where an
+               active connection does (ADR-015). Self-manages open/closed and
+               its own mobile sheet; renders only its trigger button when
+               collapsed. */}
+          <AssistantPanel />
           {mainArea}
         </div>
       ) : (
