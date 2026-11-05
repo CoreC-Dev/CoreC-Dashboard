@@ -3,7 +3,7 @@
 // instantly), the row edit button is a Pencil (Calculator read as
 // "compute"), and the expression field validates live — a broken expr used
 // to surface only at apply time.
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { act } from 'react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
@@ -70,9 +70,20 @@ describe('DerivedTagsEditor — delete confirm, pencil icon, live expr validatio
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Delete' }))
     })
-    await act(async () => {
-      fireEvent.click(screen.getAllByRole('button', { name: 'Delete' }).at(-1)!)
-    })
+    // Click the delete action INSIDE the confirmation dialog, not "the last
+    // Delete button on the page": the .at(-1) form depends on portal mount
+    // order finishing before the assertion runs, which made this test flaky.
+    // Generous budget: the confirm round-trip mounts and unmounts a portal
+    // dialog, and under full-suite load (1000+ files in parallel) the default
+    // 5 s is a coin flip rather than a signal of broken behaviour.
+    await waitFor(
+      () => {
+        const dialog = screen.getByRole('alertdialog')
+        fireEvent.click(within(dialog).getByRole('button', { name: 'Delete' }))
+        expect(useConfigStore.getState().workingConfig?.['derived-tags']).toHaveLength(0)
+      },
+      { timeout: 15000 },
+    )
     expect(useConfigStore.getState().workingConfig?.['derived-tags']).toHaveLength(0)
   })
 
