@@ -1,5 +1,5 @@
 /**
- * types/assistant.ts — the homepage AI assistant's data model.
+ * types/assistant.ts — the instance-scoped AI assistant's data model.
  *
  * Kept in types/ because api/ and features/ both speak it, and types/ is the
  * only layer neither is allowed to depend upward on. Provider settings live
