@@ -80,6 +80,8 @@ const VALID_INSTANCES_JSON = JSON.stringify([
 ])
 
 describe('GlobalSettingsPage import dialog', () => {
+  // 15s: mount + Radix dialog + paste/paste-submit lands within ~100ms of the
+  // 5s default on a loaded runner, which made this case fail and pass at random.
   it('reports unusable JSON as a parse failure, not "added 0, skipped 0"', () => {
     const dialog = openImportWith('this is not json')
     submitImport(dialog)
@@ -90,7 +92,7 @@ describe('GlobalSettingsPage import dialog', () => {
     )
     // The dialog stays open so the operator can fix the payload.
     expect(screen.getByRole('dialog')).toBeTruthy()
-  })
+  }, 15000)
 
   it('shows a brief success note on a clean import, then closes', () => {
     const dialog = openImportWith(VALID_INSTANCES_JSON)

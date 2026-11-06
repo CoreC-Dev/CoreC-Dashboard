@@ -131,7 +131,7 @@ const readTools: AssistantToolSpec[] = [
     execute: (args) =>
       run(async () => {
         const name = argStr(args, 'name')
-        if (!name) throw new Error('driver_status requires a non-empty name')
+        if (!name.trim()) throw new Error('driver_status requires a non-empty name')
         const d = await getDriver(name)
         return {
           content: JSON.stringify({
@@ -301,7 +301,7 @@ const writeTools: AssistantToolSpec[] = [
     execute: (args) =>
       run(async () => {
         const name = argStr(args, 'name')
-        if (!name) throw new Error('pause_driver requires a non-empty name')
+        if (!name.trim()) throw new Error('pause_driver requires a non-empty name')
         await pauseDriver(name)
         return { content: JSON.stringify({ paused: name }), summary: `paused ${name}` }
       }),
@@ -318,7 +318,7 @@ const writeTools: AssistantToolSpec[] = [
     execute: (args) =>
       run(async () => {
         const name = argStr(args, 'name')
-        if (!name) throw new Error('resume_driver requires a non-empty name')
+        if (!name.trim()) throw new Error('resume_driver requires a non-empty name')
         await resumeDriver(name)
         return { content: JSON.stringify({ resumed: name }), summary: `resumed ${name}` }
       }),
