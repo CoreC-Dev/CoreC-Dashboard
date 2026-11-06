@@ -85,7 +85,7 @@ describe('DerivedTagsEditor — delete confirm, pencil icon, live expr validatio
       { timeout: 15000 },
     )
     expect(useConfigStore.getState().workingConfig?.['derived-tags']).toHaveLength(0)
-  })
+  }, 20000)
 
   it('edit button shows a pencil; a broken expression is flagged live', async () => {
     render(

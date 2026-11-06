@@ -8,7 +8,7 @@ import { act } from 'react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { DriversPage } from '@/features/admin/DriversPage'
-import i18n from '@/i18n'
+import { setLocale } from '@/i18n'
 import { useConfigStore } from '@/stores/configStore'
 import { useConnectionStore } from '@/stores/connectionStore'
 
@@ -33,7 +33,11 @@ function wrap(el: React.ReactElement) {
 
 beforeAll(async () => {
   useConnectionStore.getState().setConnected(true)
-  await i18n.changeLanguage('en')
+  // setLocale, not i18n.changeLanguage: the app switches language through it,
+  // and it also persists corec_locale. Calling changeLanguage directly left the
+  // store on zh-CN while this file rendered en, so the file only held together
+  // for as long as nothing re-read the store.
+  await setLocale('en')
   vi.stubGlobal(
     'ResizeObserver',
     class {
