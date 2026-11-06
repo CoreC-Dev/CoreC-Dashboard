@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { assistantTools } from '@/features/assistant/tools'
+import { assistantTools, filterPoints } from '@/features/assistant/tools'
 
 /**
  * The tool list IS the authorization: a tool the model cannot see is a tool
@@ -56,5 +56,44 @@ describe('assistantTools', () => {
         .map((t) => t.name)
         .sort(),
     ).toEqual(['ack_alert', 'pause_driver', 'resume_driver', 'write_tag'])
+  })
+})
+
+/**
+ * filterPoints covers the read_tag half of list_tags. The neighbours here
+ * (sp1, sp_2, speed) are the case that made folding read_tag into a substring
+ * filter wrong: all four share a prefix, and only one is the point asked for.
+ */
+describe('filterPoints', () => {
+  const entries: [string, unknown][] = [
+    ['sp', 1],
+    ['sp1', 2],
+    ['sp_2', 3],
+    ['speed', 4],
+    ['temp', 5],
+  ]
+
+  it('returns the whole snapshot for an empty needle', () => {
+    expect(filterPoints(entries, '', false)).toHaveLength(5)
+    expect(filterPoints(entries, '', true)).toHaveLength(5)
+  })
+
+  it('substring mode keeps every point sharing the prefix', () => {
+    const names = filterPoints(entries, 'sp', false).map(([n]) => n)
+    expect(names.sort()).toEqual(['sp', 'sp1', 'sp_2', 'speed'])
+  })
+
+  it('exact mode keeps only the named point', () => {
+    const names = filterPoints(entries, 'sp', true).map(([n]) => n)
+    expect(names).toEqual(['sp'])
+  })
+
+  it('exact mode on a miss is empty, never a neighbour', () => {
+    expect(filterPoints(entries, 's', true)).toEqual([])
+    expect(filterPoints(entries, 'spx', true)).toEqual([])
+  })
+
+  it('substring mode on a miss is also empty', () => {
+    expect(filterPoints(entries, 'zzz', false)).toEqual([])
   })
 })

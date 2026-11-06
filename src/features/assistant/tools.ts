@@ -75,6 +75,26 @@ function argStr(args: Record<string, unknown>, key: string): string {
   return typeof v === 'string' ? v : ''
 }
 
+/**
+ * filterPoints narrows a /tags snapshot to the names a query asked for.
+ *
+ * `exact` is corec-mcp's read_tag folded into list_tags: that verb returns ONE
+ * point, while a substring filter is the only thing this tool had, and
+ * "filter=sp" would hand back sp, sp1, sp_2 and speed alike. Exact mode returns
+ * just the named point, and an empty list on a miss -- a wrong neighbour is
+ * worse than nothing when the caller is about to read or write it.
+ *
+ * Empty needle = no filter (the whole snapshot), in both modes.
+ */
+export function filterPoints(
+  entries: [string, unknown][],
+  needle: string,
+  exact: boolean,
+): [string, unknown][] {
+  if (!needle) return entries
+  return entries.filter(([name]) => (exact ? name === needle : name.includes(needle)))
+}
+
 const readTools: AssistantToolSpec[] = [
   {
     name: 'list_drivers',
@@ -137,6 +157,11 @@ const readTools: AssistantToolSpec[] = [
       properties: {
         driver: { type: 'string', description: 'optional driver name to filter by' },
         tag: { type: 'string', description: 'optional tag name substring to filter by' },
+        exact: {
+          type: 'boolean',
+          description:
+            'when true, tag is the exact point name (like corec-mcp read_tag) instead of a substring',
+        },
       },
       required: [],
     },
@@ -154,8 +179,7 @@ const readTools: AssistantToolSpec[] = [
             summary: `${driver}: no cached values`,
           }
         }
-        const entries = Object.entries(res.tags)
-        const matches = needle ? entries.filter(([name]) => name.includes(needle)) : entries
+        const matches = filterPoints(Object.entries(res.tags), needle, args.exact === true)
         const capped = matches.slice(0, MAX_LISTED_TAGS)
         const tags = Object.fromEntries(capped)
         const out = { tags, count: matches.length }

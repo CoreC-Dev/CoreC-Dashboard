@@ -21,7 +21,7 @@
 | # | 事实 | 出处 | 对方案的影响 |
 |---|---|---|---|
 | 1 | `corec-mcp` 传输为**纯 stdio**，且是对 REST 的适配器 | `cmd/corec-mcp/main.go` `serve(os.Stdin, os.Stdout)` | MCP **不进浏览器运行时路径**；它是桌面 MCP 客户端的宿主 |
-| 2 | MCP 10 个工具只有读 + 控制，**无配置写入** | `cmd/corec-mcp/tools.go` 工具清单 | "通过 MCP 配置 CoreC"字面不成立，需先扩 MCP 工具（另案） |
+| 2 | MCP 12 个工具：8 个读（含 `get_configs` / `validate_configs`）+ 4 个控制，**无配置写入** | `cmd/corec-mcp/tools.go` 与 `tools_manifest.json` | 读配置、校验配置两边都有；**写回**配置仍只有 REST，MCP 与助手都没暴露 |
 | 3 | 控制面 44 个 REST 端点，含 `PUT/PATCH /configs`、`/configs/validate`、备份恢复 | `hub/route/router.go` | 浏览器侧配置能力**已经存在**，AI 只是调用者 |
 | 4 | Dashboard 已有 `server.mjs` 同源代理（`/corec-api` 固定、`/corec-proxy` 动态）与 vite 开发代理 | `server.mjs`、`vite.config.ts` | 不需要为 AI 新增代理架构；需要时只加一条薄路由 |
 | 5 | 实例元数据与 API 密钥存 localStorage，UI 明示披露 | `docs/SECURITY.md`「密钥存储（明示披露）」 | provider 密钥同姿态存储**不新增风险类别**，但必须同样明示 |
@@ -63,7 +63,7 @@
 
 **助手未实现（不要当成已有能力）**：`get_configs_raw`、`patch_configs`、`apply_configs`、`create_backup`、`restore_backup`。配置**写回**需要先定权限与审计模型（见 §7 前置项），在此之前助手只能"读配置 + 校验配置"。
 
-**与 MCP 工具面对齐的实况**：MCP 10 个工具，助手 11 个，二者**共享 9 个**同名同参数（`list_drivers`/`driver_status`/`list_tags`/`list_alerts`/`list_paused_drivers`/`write_tag`/`pause_driver`/`resume_driver`/`ack_alert`）。差异两处：MCP 独有 `read_tag`（工具内做精确匹配），助手独有 `get_configs` 与 `validate_configs`。`tools.test.ts` 断言的是**助手这 11 个名字**，不校验与 Go 侧的差集——所以新增/删除 MCP 工具时，这条测试不会自动失败。这是已知缺口，不是保障。
+**与 MCP 工具面对齐的实况**：MCP 12 个工具，助手 11 个，二者**同名 11 个**（助手缺 `read_tag`，该读能力由 `list_tags({exact:true})` 覆盖：精确匹配单个点位，未命中返回空而非邻近点）。对齐由 CoreC 的 `scripts/check-tools-parity.mjs` 机器校验（`make parity`，CI 的 doc-gate 任务内执行），读 `cmd/corec-mcp/tools_manifest.json` 与 `src/features/assistant/tools.ts` 对比，漂移即红。差异登记在该脚本的 `coveredBy`（`read_tag` → `list_tags`）与 `uiOnly`（当前为空）；未登记的任何差异都失败，不会自动豁免。
 
 **强制规则（不随配置放宽）**：
 
