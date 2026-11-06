@@ -1,15 +1,18 @@
-# 首页 AI 助手方案
+# 实例作用域的 AI 助手方案
 
-> 状态：**提案，待决策**（对应 ADR-015）。本文给出选型、接口契约、分期与验收口径；未批准前不改代码。
-> 写作约定同 `docs/design-docs/`：只写"为什么这样做、边界在哪"，可验证的事实标注出处。
+> 状态：**已采纳，P1 已实施**（ADR-015）。选型、契约、分期与验收口径见下。
+> 实施位置与本文最初设想不同：**不在裸首页**（`/`，`InstancePanel`）——那里没有
+> `ConnectionProvider`，`apiRequest` 拿不到活跃连接，任何工具调用都会抛
+> "No active CoreC instance"。实际挂在实例作用域的 `AppShell`（`/corec/:id/*`），
+> 见 §7。写作约定同 `docs/design-docs/`：只写"为什么这样做、边界在哪"，可验证的事实标注出处。
 
 ## 1. 目标与区间
 
-在 Dashboard 首页（`/`，`InstancePanel`）加一个可收起的对话面板，做到三件事：
+在选中的 CoreC 实例页内（`/corec/:id/*`，`AppShell`）提供可收起的对话面板，做到三件事：
 
 1. **接自定义 AI**：provider（名称/baseURL/模型/密钥）由用户在设置页填写，支持 OpenAI 兼容的 `/chat/completions`（含 SSE 流式），一家都不预置密钥。
 2. **能看**：查询驱动/传输/点位/告警/统计/配置，答案里的数字来自 CoreC 的真实响应，不是模型的记忆。
-3. **能改**：通过既有 REST 完成配置编辑与写入指令，**每一次改动都给出可审阅的 diff 并由人确认后才发出**。
+3. **能改**：通过既有 REST 完成设备侧写入与采集控制（`write_tag`/暂停恢复/`ack_alert`），**每一次改动都给出可审阅的调用摘要并由人确认后才发出**。配置文件的写回不在 P1 范围，见 §7。
 
 **不做**：以 AI 替代现有表单与曲线；把模型判断当作数据来源；绕过 `corec` 的校验链（AI 只是另一个客户端，走的仍是同一套 API 与权限）。
 
@@ -40,26 +43,27 @@
 - **照抄的收益**是真实且廉价的：工具名、参数、只读/写分类、错误语义的都直接沿用 `corec-mcp/tools.go`，不必重新发明一套工具命名（`list_drivers`、`read_tag`、`write_tag`……），也避免"MCP 里的工具和 UI 助手里的工具行为不一致"这种长期债务。
 - 要让助手能**配置**而 MCP 也能配，缺的那一步是**给 `corec-mcp` 加配置类工具**，那是 CoreC 侧的安全决策（见 §7 前置项），不在本提案范围。
 
-## 4. 工具层契约（UI 助手与 MCP 共用同一份定义）
+## 4. 工具层契约（已实现的 11 个）
 
-工具清单**照抄** `corec-mcp`，只读在前，写在 `-allow-write` 等价开关后才注册：
+已实现的工具与 `corec-mcp/tools.go` 同名同参数，只读在前，写工具在"允许写操作"开关打开后才注册：
 
 | 工具 | REST | 类 | 说明 |
 |---|---|---|---|
 | `list_drivers` | `GET /drivers` | 读 | 驱动清单与状态 |
-| `driver_status` | `GET /drivers/{name}` | 读 | 单驱动（含暂停/调度健康） |
-| `list_tags` | `GET /tags?driver=&tag=` | 读 | 点位最新值 |
-| `read_tag` | `GET /tags?driver=&tag=`（本地精确匹配） | 读 | 单点精确读 |
+| `driver_status` | `GET /drivers/{name}` | 读 | 单驱动状态 |
+| `list_tags` | `GET /tags` 或 `GET /drivers/{name}/tags`（本地按子串过滤） | 读 | 点位最新值；最多列 50 点，超出注明 |
 | `list_alerts` | `GET /alerts` | 读 | 活动告警 |
 | `list_paused_drivers` | `GET /drivers/paused` | 读 | 暂停驱动 |
+| `get_configs` | `GET /configs/raw` | 读 | 运行中配置 YAML 原文；受 64 KiB 截断 |
+| `validate_configs` | `POST /configs/validate` | 读 | dry-run 校验候选配置，不改状态 |
 | `write_tag` | `POST /write` | 写｜需确认 | 写点位；引擎写保护与限速照样生效 |
-| `pause_driver` / `resume_driver` | `POST /drivers/{n}/pause\|resume` | 写｜需确认 | 暂停/恢复采集 |
+| `pause_driver` | `POST /drivers/{name}/pause` | 写｜需确认 | 暂停采集 |
+| `resume_driver` | `POST /drivers/{name}/resume` | 写｜需确认 | 恢复采集 |
 | `ack_alert` | `POST /alerts/ack` | 写｜需确认 | 确认告警 |
-| `get_configs` / `get_configs_raw` | `GET /configs`、`/configs/raw` | 读* | 原文只渲染，不整段喂模型（见 §6） |
-| `validate_configs` | `POST /configs/validate` | 读* | dry-run 校验；**优先于**直接 apply
-| `patch_configs`（建议新增） | `PATCH /configs` | 写｜需确认 | **无写工具前"配置"退化为"读配置 + 给 diff"**，以 `validate_configs` 当校验回执；更适合 AI 的小粒度变更 |
-| `apply_configs` | `PUT /configs` | 写｜需确认 | 全量重载；危险，默认**不注册**，开关显式打开 |
-| `create_backup` / `restore_backup` | `POST /configs/backups`、`.../restore` | 写｜需确认 | 还原同样危险，默认不注册 |
+
+**助手未实现（不要当成已有能力）**：`get_configs_raw`、`patch_configs`、`apply_configs`、`create_backup`、`restore_backup`。配置**写回**需要先定权限与审计模型（见 §7 前置项），在此之前助手只能"读配置 + 校验配置"。
+
+**与 MCP 工具面对齐的实况**：MCP 10 个工具，助手 11 个，二者**共享 9 个**同名同参数（`list_drivers`/`driver_status`/`list_tags`/`list_alerts`/`list_paused_drivers`/`write_tag`/`pause_driver`/`resume_driver`/`ack_alert`）。差异两处：MCP 独有 `read_tag`（工具内做精确匹配），助手独有 `get_configs` 与 `validate_configs`。`tools.test.ts` 断言的是**助手这 11 个名字**，不校验与 Go 侧的差集——所以新增/删除 MCP 工具时，这条测试不会自动失败。这是已知缺口，不是保障。
 
 **强制规则（不随配置放宽）**：
 
@@ -99,12 +103,14 @@ provider:
 
 **上下文守卫（必须，否则会烧 token / 撑爆窗口）**：
 
-- 大响应默认**摘要化**：`list_tags` 在百级点位时返回"共 N 点，示例前 5 条 + 可按 driver/tag 过滤"；`get_configs_raw` 原文**不在会话里回显**，只作为变更预览的数据源；
-- 单次工具结果硬上限（如 64 KiB，超出截断并标注"已截断，可加过滤条件重查"）；
-- 工具轮次上限（如 8 步）与总时长上限，超限则停止调用并向用户说明“已停止自动调用”；
-- 历史滚动压缩：保留 system + 最近 K 轮，更早的总结为一条摘要消息。压缩是**有损**的，必须让用户能看到"已压缩多少"。
+**上下文守卫（已实现）**：
 
-## 7. 前置项与阶段
+- **单次工具结果硬上限 64 KiB**：超出截断，并在内容里写明"已截断 N 字符，请加过滤条件重查"，让模型知道它没看全。
+- **`list_tags` 最多列 50 点**：更多时返回 `count` 与注明"仅显示 50 / 共 N，请按 driver/tag 收窄"。
+- **工具轮次上限 8 步**：到顶后停止自动调用，转向用户可见的"已停止自动调用工具"标记，而不是继续追问模型。
+- **未实现**：历史滚动压缩与总时长上限。当前会话按轮次线性增长，长对话会累积 token——这是已知缺口，不是既有能力。
+
+## 7. 阶段划分与前置项（截至本轮）
 
 **前置项（不属于本 UI 需求，需单独决策）**
 
@@ -113,14 +119,14 @@ provider:
 
 **分期**
 
-| 期 | 内容 | 出口标准 |
-|---|---|---|
-| P1 | 只读助手：provider 配置、对话面板、6 只读工具、摘要化、轮次上限、i18n、error 呈现 | 断网 provider 给出可行动提示；工具结果与 `curl` 同一端点一致；不写任何 CoreC 状态 |
-| P2 | 写类工具（含人工确认卡与 diff 预览），默认关闭、需显式开启 | 只读点写入被引擎以 `is read-only` 拒绝且原样可见；429 原样呈现；拒绝写入则绝不发出请求（网络面板为证） |
-| P3 | （跨仓）MCP 配置类工具 + 助手改用 patch | 见前置项 |
-| P4 | 可选：会话持久化、提示词模板、可完全离线且本地分身 |
+| 期 | 内容 | 状态 | 出口标准 |
+|---|---|---|---|---|
+| P1 | provider 配置、对话面板（浮标 + Sheet，移动/桌面共用）、7 只读工具、截断与轮次上限、i18n、错误呈现 | **已实施** | 未配 provider 时只说明不渲染输入框；工具结果与 `curl` 同一端点一致；不写任何 CoreC 状态 |
+| P2 | 4 个写类工具（`write_tag`/暂停/恢复/`ack_alert`），默认关闭、需显式开启、每次人工确认 | **已实施，默认关闭** | 只读点写入被引擎以 `is read-only` 拒绝且原样可见；429 原样呈现；拒绝确认则不发出请求 |
+| P3 | （跨仓）MCP 配置类工具 + 助手改用 patch | **未做** | 见前置项 |
+| P4 | 会话持久化、提示词模板、历史压缩 | **未做** | — |
 
-## 8. 验收口径（P1）
+## 8. 验收口径（P1 + P2 已达成部分）
 
 1. **零 CoreC 改动**：后端 `hub/`、`core/` 无 diff；助手只经既有端占。
 2. **零新增重型依赖**：不引入 OpenAI/Anthropic SDK 或整套 web-SDK，对话层是对 `/v1/chat/completions` 的一次流式 `fetch`。可加零或极端轻的手写实现。
@@ -134,5 +140,5 @@ provider:
 - **密钥落在 localStorage 的 XSS 风险**：沿用既有姿态（实例 key 已如此）。新增的是**一个**第三方 key，不是新模式；但用户应知悉“本机浏览器被攻破即 provider key 泄露”。
 - **无鉴权部署下写工具 = 能访问 UI 者皆可写**：P2 默认关闭、需显式开，且一次性使用确认卡；仍不构成对 ADR-005 的补救，只是不让新增面扩大既有敞口。
 - **模型可能编造设备参数**：所有数字必须来自工具结果；UI 不呈现模型的"记忆数字"，工具结果在界面中以引用块独立呈现。
-- **MCP 与助手能力面漂移**：两边工具定义若各写一份，迟早不一致。§4 的"共用同一份定义"是硬要求，不是建议。
+- **MCP 与助手能力面漂移**：两边工具定义是**两份手抄**（`cmd/corec-mcp/tools.go` 与 `src/features/assistant/tools.ts`），不是共享源码——语言不同。防漂移目前靠一条测试断言两边工具名一致（`tools.test.ts`），它只能保证"名字没分家"，**不能**保证参数与错误语义同步。改 MCP 工具面时必须同步改前端，这条约束写在两处文件的头注释里。
 

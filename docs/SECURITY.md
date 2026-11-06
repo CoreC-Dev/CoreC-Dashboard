@@ -17,6 +17,15 @@
 | 模板默认密钥 | 模板携带显式占位符 `REPLACE_ME_WITH_A_STRONG_SECRET`，加载模板时自动替换为随机密钥（见 ADR-006） | ADR-006 |
 | WS token 走 URL 查询串 | 维持 + 确保 CoreC 不记 query | ADR-007 |
 
+## AI 助手（ADR-015）
+
+- **Provider 密钥存储（明示披露）**：与实例 API 密钥同一姿态——存 localStorage 的 `corec_ai_providers`，**明文、不经服务端**。设置页文案逐字写明"凡能在此浏览器执行脚本者都可读取它"。不入 CoreC 配置文件，不进 `GET /configs`，不写日志。
+- **出站请求面**：对话层对用户填写的 `baseUrl` + `/chat/completions` 发 `fetch`，`Authorization: Bearer <key>` 仅在有 key 时发送。CSP 已是 `connect-src *`（ADR-004a），**未为助手进一步放宽**。
+- **工具面即授权面**：写类工具（`write_tag`/`pause_driver`/`resume_driver`/`ack_alert`）在"允许写操作"关闭时**不注册**——模型的工具清单里根本没有它们，不是"调用被拒"。解析层另有 `toolClass === 'write'` 时强制走人工确认，避免调用方漏配开关时静默写入。
+- **写开关不持久化**：`allowWrite` 初始 `false`，刷新即回落。这是刻意选择——避免一次开启后长期"忘记关"。
+- **拒绝回真**：人工拒绝以 `{"refused":true,"reason":"the operator declined this write"}` 回给模型并带 `toolError`，不允许被转述成成功；引擎侧拒绝（`is read-only (protect: read-only)`、`429`+`Retry-After`）原样透出。
+- **不新增后端权限面**：ADMIN-01 的立场不变——本服务不鉴权、不持任何 key、所有数据以 URL 参数**透传**给 CoreC。助手同理：它只经既有 REST，权限边界始终是调用方持有的 CoreC API secret。
+
 ## 安全门禁现状
 - **依赖完整性**：`package-lock.json` 锁定官方 registry 完整性哈希；`npm audit` 需 `--registry=https://registry.npmjs.org`（npmmirror 不支持 audit 端点）。
 - **安全响应头**：`server.mjs` `serveStatic` 加 `X-Content-Type-Options: nosniff` / `Referrer-Policy: strict-origin-when-cross-origin` / `X-Frame-Options: DENY` / `Permissions-Policy`（`server.mjs:399-403`）。HSTS 不加——部署经 HTTP 自定义域（`deploy.yml`），HSTS 会强制 HTTPS 触发 Mixed Content；改 HTTPS 部署时再加（`server.mjs:404-405` 注释）。
