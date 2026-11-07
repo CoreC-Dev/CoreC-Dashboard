@@ -141,6 +141,12 @@ describe('runTurn', () => {
     expect(res.truncated).toBe(true)
     // Bounded, not "until the model stops": the exact number is the budget.
     expect(vi.mocked(tools[0].execute).mock.calls.length).toBeLessThanOrEqual(8)
+    // The budget is provider round-trips, and exhausting it must NOT buy one
+    // more: the docs say the limit turns into a visible marker "而不是继续追问
+    // 模型" (rather than asking the model again). A retry after the last tool
+    // batch would be invisible to the operator and unbounded in wall time.
+    expect(vi.mocked(tools[0].execute).mock.calls.length).toBe(8)
+    expect(call).toBe(8)
   })
 
   it('reports an unknown tool instead of throwing', async () => {
