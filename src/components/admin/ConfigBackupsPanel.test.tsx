@@ -94,6 +94,8 @@ describe('ConfigBackupsPanel', () => {
     expect(screen.getByText('log-level: debug')).toBeTruthy()
   })
 
+  // 20 s: mounts the panel and drives its dialog; ~8 s here, and over the 5 s
+  // default as soon as anything else shares the machine.
   it('requires the double confirmation before restoring, then calls the endpoint', async () => {
     const restored: ConfigBackupRestoreResult = { outcome: 'restored' }
     vi.mocked(api.restoreConfigBackup).mockResolvedValue(restored)
@@ -128,7 +130,7 @@ describe('ConfigBackupsPanel', () => {
       expect(api.restoreConfigBackup).toHaveBeenCalledWith('1767225600123456789.yaml')
     })
     expect(await screen.findByText('Backup restored — configuration hot-reloaded')).toBeTruthy()
-  })
+  }, 20000)
 
   it('shows the server message verbatim when the restore is rejected (400)', async () => {
     const rejected: ConfigBackupRestoreResult = {

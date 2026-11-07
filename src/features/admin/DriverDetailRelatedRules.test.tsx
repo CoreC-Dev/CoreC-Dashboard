@@ -102,6 +102,8 @@ afterEach(() => {
 })
 
 describe('driver detail page — related rules & tag-explorer deep link', () => {
+  // 20 s: mounts the panel and drives its dialog; ~8 s here, and over the 5 s
+  // default as soon as anything else shares the machine.
   it('lists rules consuming the driver, each linking to the rules page', async () => {
     renderAt(<DriverDetailPage />, '/corec/i1/admin/drivers/plc1', '/corec/:id/admin/drivers/:name')
 
@@ -115,7 +117,7 @@ describe('driver detail page — related rules & tag-explorer deep link', () => 
     expect(chip).toBeTruthy()
     expect(chip.getAttribute('href')).toBe('/corec/i1/admin/rules')
     expect(screen.queryByText(/fwd-all/)).toBeNull()
-  })
+  }, 20000)
 
   it('says so when no rule consumes the driver', async () => {
     // Serve a config without the driver-referencing rule for the whole
