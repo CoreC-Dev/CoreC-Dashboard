@@ -16,7 +16,7 @@
  * Write tools are only REGISTERED when allowWrite is true. With writes off
  * they are absent from the list the model sees - not present-and-refused.
  */
-import { ApiError } from '@/api/client'
+import { ApiError, extractApiError } from '@/api/client'
 import {
   ackAlert,
   getAlerts,
@@ -51,9 +51,25 @@ function clip(s: string, limit = MAX_TOOL_CHARS): string {
   return `${s.slice(0, limit)}\n...[truncated ${dropped} characters; narrow the query by driver/tag to see the rest]`
 }
 
-/** The engine's own reason text, verbatim - never paraphrased or swallowed. */
+/**
+ * The engine's own reason text, verbatim - never paraphrased or swallowed.
+ *
+ * ApiError.message is the transport's summary ("API request failed: 429 Too Many
+ * Requests"); the engine's sentence is in .body, and for a refused write that
+ * sentence is the whole answer: "is read-only (protect: read-only)" says the
+ * point is guarded, "accepts a write every 200ms (retry in 187ms)" says back off
+ * and by how much. Both come back as a 4xx whose status line is identical, so a
+ * model that only ever sees the status has to guess which happened -- and the
+ * guess it makes is "retry", which is exactly wrong for a read-only point.
+ *
+ * extractApiError is what the rest of this repo already uses to read that
+ * body (WriteControlPage, useAutoLoadConfig); this module having been the one
+ * place that read .message instead was the drift, not the fix.
+ */
 function reasonOf(err: unknown): string {
-  if (err instanceof ApiError) return err.message || `HTTP ${err.status}`
+  if (err instanceof ApiError) {
+    return err.body ? extractApiError(err.body, err.message) : err.message || `HTTP ${err.status}`
+  }
   return err instanceof Error ? err.message : String(err)
 }
 

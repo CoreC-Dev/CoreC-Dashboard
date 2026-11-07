@@ -203,7 +203,18 @@ describe('tool execution: refusals reach the model intact', () => {
     // apologizes, a model that reads this explains the write protection to the
     // operator. run() must not wrap it.
     const engineSaid = 'tag "sp" is read-only (protect: read-only)'
-    apiRequestMock.mockRejectedValue(new ApiErrorCtor(400, engineSaid))
+    // Constructed the way apiRequest constructs it, not the way that is
+    // convenient: the TRANSPORT summary is .message, the engine's sentence is
+    // the response body. The earlier version passed only .message, which let a
+    // reasonOf that read .message alone look correct here while discarding the
+    // engine's words on every real request.
+    apiRequestMock.mockRejectedValue(
+      new ApiErrorCtor(
+        400,
+        'API request failed: 400 Bad Request',
+        JSON.stringify({ error: engineSaid }),
+      ),
+    )
 
     const res = await spec('write_tag').execute({
       driver: 'd',
@@ -219,7 +230,13 @@ describe('tool execution: refusals reach the model intact', () => {
 
   it('a 429 keeps its status and Retry-After reason', async () => {
     const engineSaid = 'tag "sp" is write-paced (write-min-interval 200ms)'
-    apiRequestMock.mockRejectedValue(new ApiErrorCtor(429, engineSaid))
+    apiRequestMock.mockRejectedValue(
+      new ApiErrorCtor(
+        429,
+        'API request failed: 429 Too Many Requests',
+        JSON.stringify({ error: engineSaid }),
+      ),
+    )
 
     const res = await spec('write_tag').execute({
       driver: 'd',
