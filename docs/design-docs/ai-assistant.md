@@ -147,6 +147,14 @@ provider:
 - **MCP `isError` 语义**：真实 `corec` 上确认 `validate_configs` 的 400 是"判定"而非"故障"，见 CoreC `docs/guide/mcp.md`。
 - **工具注册与写开关**：`tools.test.ts` 钉住写动词恰好四个、默认不注册；`AssistantPanel.test.tsx` 钉住未配 provider 时不渲染输入框。
 
+### 本地校验器与后端校验器的关系（2026-11-07，实测）
+
+用 19 份配置对比 `src/lib/configSchema/validators.ts` 的 `validateConfig` 和运行中的 `corec`：后端拒绝、本地放行的有 12 例（`api.secret` 缺失或过短、非法与零值 duration、driver/tag 空名、非法 `type`、拼错的 `protect`、同驱动内 tag 重名、含空格的 `trigger-group`）。
+
+**这个数字容易读错，所以先说明它不意味着"表单会放行坏配置"**：表单的保存路径不走这份本地校验器，走的是 `useValidateConfig()` → `api.validateConfigs()`（`src/api/hooks/index.ts:227`），即 `POST /configs/validate`，由后端判定。我最初按"表单用的是本地校验器"解释这 12 例，并写进了本节；随后查调用点推翻了它——生产路径不经过 `validators.ts`。
+
+所以本地校验器是**离线/辅助路径的第二实现**，不是权威。权威是后端；它与 `schema.ts` 的字段级 zod schema 拼起来，覆盖后端规则的一部分。两边不一致时，**用户看到的最终结论以后端为准**，这也是本文件只把后端实测结果写进"已验证"的原因。
+
 ### 未验证（必须说清）
 
 - **真实 AI 服务商链路**。provider 的 SSE 解析、`tool_calls` 分片归并、`tool_choice:"auto"` 的实际行为，全部用假 `fetch`/假服务器测过两个方向（支持 tool_calls 与否），但**没有一个真实厂商端点参与**。不同实现对分片格式、`finish_reason`、并行工具调用的取舍不同，测试测不出来。联调脚本见 `/root/DSH/notes/probe-assistant-provider.mjs`（不在仓库内，需外部端点才有意义）。
