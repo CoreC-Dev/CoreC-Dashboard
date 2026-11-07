@@ -130,7 +130,7 @@
   - **MCP 的问题不被 AI 聊天框绕过**：要让 agent 真正"配" CoreC，缺的是配置类 MCP 工具（`put_configs`/`patch_configs`/`validate_configs`/备份恢复），那是一项**改动 CoreC** 的安全决策，不该被当成"顺手"塞进 UI 需求。先补接口定义、确认幂等与 diff 语义，再谈暴露。
   - **信任边界要显式**：ADR-005 已接受公网无鉴权，意味着能打到 UI 的人也能打到一切工具。AI 聊天框把"人逐步确认"变成"模型自主链式调用"，风险形态变了。故写类工具必须**人确认后才执行**，且默认关闭（对齐 `corec-mcp` 的 `-allow-write` 默认只读）；被拒的写入要显示引擎原话（`is read-only (protect: read-only)`、429 + `Retry-After`），不得被模型吞掉或改写。
 - **影响**（若批准）：新增一个前端 feature 与一个设置分区，**CoreC 后端零改动**；`corec-mcp` 的工具面暂不变（配置类工具另立 ADR，含权限模型）。不批准则不改代码，本 ADR 即为方案存档点。
-- **实施记录（P1 只读版）**：`src/types/assistant.ts`（数据模型）、`src/features/assistant/{provider.ts,runtime.ts,tools.ts,storage.ts,useAssistant.ts,useAssistantSettings.ts,AssistantPanel.tsx,ProviderSettings.tsx}`、`AppShell.tsx` 挂载点、设置页 provider 分区与写开关。工具面 11 个（7 只读 + 4 写），写工具在 `allowWrite` 关闭时**不注册**；`allowWrite` 默认 false 且不持久化，刷新即回落只读。provider 密钥与实例密钥同存 localStorage、在 UI 明示披露。
+- **实施记录（P1 只读版）**：`src/types/assistant.ts`（数据模型）、`src/features/assistant/{provider.ts,runtime.ts,tools.ts,useAssistant.ts,AssistantPanel.tsx}`、`src/stores/assistantStore.ts`（provider 设置与写开关状态）、`src/lib/assistantStorage.ts`（localStorage 持久化）、`src/components/admin/AssistantSettingsSection.tsx`（设置页 provider 分区）、`AppShell.tsx` 挂载点。工具面 11 个（7 只读 + 4 写），写工具在 `allowWrite` 关闭时**不注册**；`allowWrite` 默认 false 且不持久化，刷新即回落只读。provider 密钥与实例密钥同存 localStorage、在 UI 明示披露。
 - **实施中的三处判断（与原提案的差异，均为收紧）**：
   1. **不把助手放到裸首页 `/`**。`/` 渲染 `InstancePanel` 时没有 `ConnectionProvider`，`apiRequest` 的 `getActiveConnection()` 为 null，任何工具调用都会抛 "No active CoreC instance"。会话挂在 `/corec/:id/*` 的 `AppShell` 上——真实现状优先于"首页有个框"的字面要求。
   2. **不做"给 MCP 加配置类工具"**。它需要先定权限模型（AI 能否改 `secret`）、审计归属（人还是模型改的）与冲突语义，属独立决策；本期内配置能力**只经 REST 只读查看 + 校验**，写入工具仅限设备侧 `write_tag`/暂停恢复/ack。

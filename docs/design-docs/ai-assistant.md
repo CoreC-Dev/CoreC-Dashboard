@@ -63,7 +63,11 @@
 
 **助手未实现（不要当成已有能力）**：`get_configs_raw`、`patch_configs`、`apply_configs`、`create_backup`、`restore_backup`。配置**写回**需要先定权限与审计模型（见 §7 前置项），在此之前助手只能"读配置 + 校验配置"。
 
-**与 MCP 工具面对齐的实况**：MCP 12 个工具，助手 11 个，二者**同名 11 个**（助手缺 `read_tag`，该读能力由 `list_tags({exact:true})` 覆盖：精确匹配单个点位，未命中返回空而非邻近点）。对齐由 CoreC 的 `scripts/check-tools-parity.mjs` 机器校验（`make parity`，CI 的 doc-gate 任务内执行），读 `cmd/corec-mcp/tools_manifest.json` 与 `src/features/assistant/tools.ts` 对比，漂移即红。差异登记在该脚本的 `coveredBy`（`read_tag` → `list_tags`）与 `uiOnly`（当前为空）；未登记的任何差异都失败，不会自动豁免。
+**与 MCP 工具面对齐的实况**：MCP 12 个工具，助手 11 个，二者**同名 11 个**（助手缺 `read_tag`，该读能力由 `list_tags({exact:true})` 覆盖：精确匹配单个点位，未命中返回空而非邻近点）。
+
+对齐由**另一个仓库**校验，不在本仓 CI 里：CoreC 的 `scripts/check-tools-parity.mjs` 读 CoreC 自己的 `cmd/corec-mcp/tools_manifest.json`（由 Go 测试从 `toolDefs()` 生成），再读本仓的 `src/features/assistant/tools.ts` 做差集，由 CoreC 的 `make parity` / CI doc-gate 任务执行，漂移会红在 CoreC 那边。本仓的 `tools.test.ts` 只断言本仓这一侧（写动词恰好四个、默认不注册、参数 schema 是 object），**它不知道 Go 侧改了什么**——这一点必须说清楚，否则会误以为前端测试在守跨仓契约。
+
+差异登记在 CoreC 那个脚本里：`coveredBy`（`read_tag` → `list_tags`）、`uiOnly`（当前为空）。未登记的任何差异都失败，不自动豁免。
 
 **强制规则（不随配置放宽）**：
 
