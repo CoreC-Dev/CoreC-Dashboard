@@ -55,6 +55,42 @@ const validConfig = {
   ],
 } satisfies CoreCConfig
 
+import { durationToMs } from '@/lib/configSchema/duration'
+
+// These six cases were each ACCEPTED or REJECTED differently by this module and by
+// a real corec, until the grammar here was matched to time.ParseDuration. They are
+// handed to the dashboard's form before the server ever sees them, so a disagreement
+// is shown to the operator as *their* mistake. Each expectation below is the running
+// server's verdict, recorded from POST /configs/validate, not a reading of Go's docs.
+describe('duration grammar parity with corec', () => {
+  it('accepts a missing leading zero (server: .5s == 500ms)', () => {
+    expect(isValidGoDuration('.5s')).toBe(true)
+    expect(durationToMs('.5s')).toBe(500)
+    expect(isValidGoDuration('5.s')).toBe(true) // server: 5s
+    expect(durationToMs('5.s')).toBe(5000)
+    expect(isValidGoDuration('+.5s')).toBe(true)
+  })
+
+  it('accepts both microsecond spellings (server: U+00B5 and U+03BC)', () => {
+    const microSign = '1\u00b5s' // 1µs
+    const greekMu = '1\u03bcs' // 1μs
+    expect(isValidGoDuration(microSign)).toBe(true)
+    expect(isValidGoDuration(greekMu)).toBe(true)
+    // One microsecond is 0.001 ms. Reading the Greek mu as 'us' by accident, or
+    // missing both spellings, is the failure this pins.
+    expect(durationToMs(microSign)).toBeCloseTo(0.001, 9)
+    expect(durationToMs(greekMu)).toBeCloseTo(0.001, 9)
+  })
+
+  it('applies a negative sign to the whole duration (server: -1h30m == -90m)', () => {
+    // The trap: reading segments independently gives -1h + 30m == -30m, which is
+    // still negative and still "rejected", so a sign bug hides behind the verdict.
+    // The magnitude is what shows it.
+    expect(durationToMs('-1h30m')).toBe(-5_400_000)
+    expect(isValidGoDuration('-1s')).toBe(false)
+  })
+})
+
 describe('isValidGoDuration', () => {
   it('accepts standard durations', () => {
     expect(isValidGoDuration('30s')).toBe(true)
