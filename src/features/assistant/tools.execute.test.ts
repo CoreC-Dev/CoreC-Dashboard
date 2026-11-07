@@ -262,8 +262,15 @@ describe('tool execution: refusals reach the model intact', () => {
     // the shape a real large config has.
     apiRequestMock.mockResolvedValue('# ' + 'x'.repeat(70 * 1024) + '\nglobal: {}\n')
     const res = await spec('get_configs').execute({})
-    expect(res.content.length).toBeGreaterThan(64 * 1024)
-    expect(res.content.length).toBeLessThan(66 * 1024)
+    // The previous form required res.content.length > 64 * 1024 -- it asserted
+    // that the result BREACH the cap, on the theory that anything under the cap
+    // meant no clipping had happened. But a hard limit the clipped output
+    // exceeds by construction is not a hard limit, and the 80-byte notice this
+    // test was bending over backward to allow was the very thing breaking every
+    // cut. "Clipped" means: shorter than the input, and no longer than the cap
+    // once the notice is counted.
+    expect(new TextEncoder().encode(res.content).length).toBeLessThanOrEqual(64 * 1024)
+    expect(res.content.length).toBeLessThan(70 * 1024)
     expect(res.content).toContain('truncated')
     expect(res.content).toContain('narrow the query')
   })
