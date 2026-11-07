@@ -139,6 +139,27 @@ provider:
 5. **一致性**：不引入第二份 CoreC 类型/字段定义（现有 `src/types/config.ts` 与 `src/api/endpoints` 为准）。
 6. **门禁**：`lint`/`typecheck`/`custom:lint`/`docs:lint`/`vitest`/`test:server` 全过。
 
+## 9. 验证记录与一次记录失误
+
+### 已验证（可复现）
+
+- **时长文法与真实后端对齐**：32 个字符串同时喂给 `isValidGoDuration` 与运行中的 `corec` 的 `POST /configs/validate`，结论 0 处不一致。回归用例在 `configSchema.test.ts` 的 `duration grammar parity with corec`，做了变异验证（把文法改回旧正则，对应 2 条立即失败）。
+- **MCP `isError` 语义**：真实 `corec` 上确认 `validate_configs` 的 400 是"判定"而非"故障"，见 CoreC `docs/guide/mcp.md`。
+- **工具注册与写开关**：`tools.test.ts` 钉住写动词恰好四个、默认不注册；`AssistantPanel.test.tsx` 钉住未配 provider 时不渲染输入框。
+
+### 未验证（必须说清）
+
+- **真实 AI 服务商链路**。provider 的 SSE 解析、`tool_calls` 分片归并、`tool_choice:"auto"` 的实际行为，全部用假 `fetch`/假服务器测过两个方向（支持 tool_calls 与否），但**没有一个真实厂商端点参与**。不同实现对分片格式、`finish_reason`、并行工具调用的取舍不同，测试测不出来。联调脚本见 `/root/DSH/notes/probe-assistant-provider.mjs`（不在仓库内，需外部端点才有意义）。
+- **浏览器实际渲染**。jsdom 不等于浏览器，布局与交互未真机验证。
+
+### 一次记录失误（2026-11-07）
+
+提交 `5fc9171`（`fix(schema): accept the Go durations the server accepts`）的说明**只写了事情的一半**：它陈述了"6 处不一致中 3 处是前端误拒合法值"，随后**没有再写**另外 3 处（`-5s` / `0s` / `00ms`，前端放行、后端拒绝）。
+
+代码本身是完整的——`isValidGoDuration` 里 `startsWith('-')` 与 `isZeroDuration` 两条校验都在（该文件第 68–69 行），测试也覆盖了。**缺的只是说明**。原因是我写说明时被输出中的乱码字符打断，选择了"先提交再补说明"，而补说明那一步没有发生。
+
+不修改这条历史（已推送，重写对读者无益）；在此记录，因为 `git log` 的读者会据此误以为只修复了单向问题。**提交信息也是文档**，它同样受本文档"不说过头话、不省略该说的话"的约束。
+
 ## 9. 已知风险（明示，不隐瞒）
 
 - **密钥落在 localStorage 的 XSS 风险**：沿用既有姿态（实例 key 已如此）。新增的是**一个**第三方 key，不是新模式；但用户应知悉“本机浏览器被攻破即 provider key 泄露”。
