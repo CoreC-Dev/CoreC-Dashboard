@@ -51,7 +51,7 @@
 |---|---|---|---|
 | `list_drivers` | `GET /drivers` | 读 | 驱动清单与状态 |
 | `driver_status` | `GET /drivers/{name}` | 读 | 单驱动状态 |
-| `list_tags` | `GET /tags` 或 `GET /drivers/{name}/tags`（本地按子串过滤） | 读 | 点位最新值；最多列 50 点，超出注明 |
+| `list_tags` | 带 `driver` 时 `GET /drivers/{name}/tags`，否则 `GET /tags`；**子串/精确过滤在本仓库本地**：`filterPoints(entries, tag, exact)` | 读 | 点位最新值；最多列 50 点，超出注明。`exact:true` 时兼任 `corec-mcp` 的 `read_tag`——精确匹配单点，未命中返回空，不取邻近点 |
 | `list_alerts` | `GET /alerts` | 读 | 活动告警 |
 | `list_paused_drivers` | `GET /drivers/paused` | 读 | 暂停驱动 |
 | `get_configs` | `GET /configs/raw` | 读 | 运行中配置 YAML 原文；受 64 KiB 截断 |
@@ -60,6 +60,8 @@
 | `pause_driver` | `POST /drivers/{name}/pause` | 写｜需确认 | 暂停采集 |
 | `resume_driver` | `POST /drivers/{name}/resume` | 写｜需确认 | 恢复采集 |
 | `ack_alert` | `POST /alerts/ack` | 写｜需确认 | 确认告警 |
+
+> `list_tags` 的过滤位置与 `corec-mcp` 不同，这是刻意的：`corec-mcp` 把 `driver`/`tag` 作为查询串交给服务端过滤；助手按 `driver` 选路由（`/drivers/{name}/tags` 或 `/tags`），`tag` 则取回后在本地过滤。两侧工具名与参数契约由 CoreC 的 `scripts/check-tools-parity.mjs` 对上（差异只在 `coveredBy` 里登记），实现位置不同不进契约。
 
 **助手未实现（不要当成已有能力）**：`get_configs_raw`、`patch_configs`、`apply_configs`、`create_backup`、`restore_backup`。配置**写回**需要先定权限与审计模型（见 §7 前置项），在此之前助手只能"读配置 + 校验配置"。
 
