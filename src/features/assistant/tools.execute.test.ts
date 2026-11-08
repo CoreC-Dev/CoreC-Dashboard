@@ -207,14 +207,14 @@ describe('tool execution: reads', () => {
 
     const filtered = body(await spec('list_alerts').execute({ driver: 'b' }))
     expect(filtered.active_count).toBe(1) // the answer to "active for b"
-    expect(filtered.acked_count).toBe(1)
+    expect(filtered.total_acked).toBe(1)
     expect(filtered.unacked_count).toBe(0)
     expect(filtered.total_active).toBe(3) // the answer to "active anywhere"
     expect(filtered.alerts as unknown[]).toHaveLength(1)
 
     const unfiltered = body(await spec('list_alerts').execute({}))
     expect(unfiltered.active_count).toBe(3)
-    expect(unfiltered.acked_count).toBe(1)
+    expect(unfiltered.total_acked).toBe(1)
     expect(unfiltered.unacked_count).toBe(2)
     expect(unfiltered.total_active).toBe(3)
   })
@@ -345,7 +345,7 @@ describe('tool execution: refusals reach the model intact', () => {
   it('a huge payload is clipped and says so', async () => {
     // get_configs hands back the raw YAML string; a padded comment is exactly
     // the shape a real large config has.
-    apiRequestMock.mockResolvedValue('# ' + 'x'.repeat(70 * 1024) + '\nglobal: {}\n')
+    apiRequestMock.mockResolvedValue(`# ${'x'.repeat(70 * 1024)}\nglobal: {}\n`)
     const res = await spec('get_configs').execute({})
     // The previous form required res.content.length > 64 * 1024 -- it asserted
     // that the result BREACH the cap, on the theory that anything under the cap

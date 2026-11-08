@@ -30,7 +30,7 @@ import { z } from 'zod'
 const SEGMENT_BODY = String.raw`(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:ns|us|µs|μs|ms|s|m|h)`
 
 /** A whole duration: optional sign, one or more segments, nothing else. */
-const GO_DURATION_RE = new RegExp(String.raw`^[+-]?${SEGMENT_BODY}(?:${SEGMENT_BODY})*$`)
+const GO_DURATION_RE = new RegExp(`^[+-]?${SEGMENT_BODY}(?:${SEGMENT_BODY})*$`)
 
 /** The same segments, for walking through an already-validated string. */
 const SEGMENT_RE_G = new RegExp(SEGMENT_BODY, 'g')

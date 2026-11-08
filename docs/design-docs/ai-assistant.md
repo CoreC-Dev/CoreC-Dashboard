@@ -52,7 +52,7 @@
 | `list_drivers` | `GET /drivers` | 读 | 驱动清单与状态 |
 | `driver_status` | `GET /drivers/{name}` | 读 | 单驱动状态 |
 | `list_tags` | 带 `driver` 时 `GET /drivers/{name}/tags`，否则 `GET /tags`；**子串/精确过滤在本仓库本地**：`filterPoints(entries, tag, exact)` | 读 | 点位最新值；最多列 50 点（返回 `matched` / `returned` 与 `note`）。`exact:true` 时兼任 `corec-mcp` 的 `read_tag`——精确匹配单点，未命中返回空，不取邻近点 |
-| `list_alerts` | `GET /alerts` | 读 | 活动告警。传 `driver` 时在**本地**过滤 `alerts`，三个计数按**过滤后**的集合重算（`active_count` / `acked_count` / `unacked_count`），另带 `total_active` 保留引擎全局数。后端不认 `driver` 参数，透传后端计数会给出"该驱动 300 条"而实际 3 条 |
+| `list_alerts` | `GET /alerts` | 读 | 活动告警。传 `driver` 时在**本地**过滤 `alerts`，`active_count` / `unacked_count` 按**过滤后**的集合重算，`total_active` / `total_acked` 保留引擎全局数。后端不认 `driver` 参数（`getAlerts` 不读请求参数），透传后端计数会给出"该驱动 300 条"而实际 3 条。不再返回后端那个 `acked_count`（同名在两处含义不同，比分两个名字更糟）；每条告警自身的 `acked` 已在 `alerts` 里 |
 | `list_paused_drivers` | `GET /drivers/paused` | 读 | 暂停驱动 |
 | `get_configs` | `GET /configs/raw` | 读 | 运行中配置 YAML 原文；受 64 KiB 截断 |
 | `validate_configs` | `POST /configs/validate` | 读 | dry-run 校验候选配置，不改状态 |

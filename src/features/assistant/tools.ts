@@ -32,6 +32,7 @@ import {
   writeTag,
 } from '@/api/endpoints'
 import type { AssistantToolSpec, ToolResult } from '@/features/assistant/types'
+import { clip } from '@/lib/clipText'
 import type { WriteCommand } from '@/types/models'
 
 /**
@@ -40,93 +41,8 @@ import type { WriteCommand } from '@/types/models'
  * truncate and SAY SO rather than letting the model reason confidently from
  * half a document.
  */
-/** 64 KiB in UTF-8 bytes. The unit matters: see clip(). */
-const MAX_TOOL_BYTES = 64 * 1024
-
 /** Points listed per call; more is a flood, and the UI has filters for it. */
 const MAX_LISTED_TAGS = 50
-
-/** UTF-8 size of one string, without allocating a Buffer per character. */
-function byteLength(s: string): number {
-  return new TextEncoder().encode(s).length
-}
-
-/**
- * clip caps a tool result at limit BYTES and says how much it withheld.
- *
- * Two things this used to get wrong, both of which the docs had already promised:
- *
- *   bytes, not .length  The limit is documented in KiB. String.length counts UTF-16
- *                       code units, and a Chinese character is
- *                       three UTF-8 bytes -- so a 64 Ki *characters*
- *                       cap let a CJK payload reach ~196 KiB, three times what the
- *                       sentence says, and a code-unit ceiling is not a byte
- *                       ceiling at all.
- *
- *   the notice counts  The suffix ("...[truncated N characters...]") is part of
- *                       the tool result the model receives, so slicing at `limit`
- *                       and then appending it produced results up to ~80 bytes long.
- *                       A "hard limit" that every truncated result exceeds by
- *                       construction is not a limit. The suffix is now paid for
- *                       out of the budget: the kept prefix is limit - suffix bytes.
- *
- * N is the number of bytes withheld rather than the number kept, because that is
- * the quantity the reader does not have: they can measure what arrived, and cannot
- * see what did not.
- */
-function clip(s: string, limit = MAX_TOOL_BYTES): string {
-  const total = byteLength(s)
-  if (total <= limit) return s
-
-  const notice = (withheld: number) =>
-    `\n...[truncated ${withheld} bytes; narrow the query by driver/tag to see the rest]`
-
-  // Reserve the notice's own size, then find how much of s fits under limit - notice.
-  // The notice shrinks as `withheld` grows (fewer digits), so iterate to a fixed point
-  // instead of guessing: starting from the full size and shrinking always converges
-  // in two or three passes, because the notice is well under the limit.
-  let budget = limit - byteLength(notice(total))
-  let kept = s
-  for (let pass = 0; pass < 4; pass += 1) {
-    kept = cutToBytes(s, Math.max(0, budget))
-    const n = notice(total - byteLength(kept))
-    if (byteLength(kept) + byteLength(n) <= limit) return kept + n
-    budget -= byteLength(notice(total)) - byteLength(n) + 1
-    if (budget <= 0) break
-  }
-  // Degenerate limit: return the notice alone, clipped so the caller never gets
-  // more than it asked for.
-  const n = notice(total)
-  return n.length > limit ? n.slice(0, limit) : n
-}
-
-/**
- * cutToBytes returns the longest prefix of s whose UTF-8 encoding fits in max.
- *
- * Cutting at String.length would split a surrogate pair (every emoji, every
- * character outside the BMP) and leave a lone half, which is not a character and
- * which JSON.stringify then escaping-mangles. A tool result that ends in a
- * replacement glyph teaches the model the payload was corrupt.
- */
-function cutToBytes(s: string, max: number): string {
-  if (max <= 0) return ''
-  if (byteLength(s) <= max) return s
-  // Walk code points, charging each its real UTF-8 cost. A byte-wise slice of
-  // the encoder's output would split a multi-byte character; slicing at
-  // String.length would split a surrogate pair (an emoji, any non-BMP glyph).
-  // Either way the model receives a trailing replacement glyph and reads it as
-  // local corruption. The loop cannot split an iteration, so it cannot split a
-  // character.
-  let used = 0
-  let end = 0
-  for (const ch of s) {
-    const cost = byteLength(ch)
-    if (used + cost > max) break
-    used += cost
-    end += ch.length // 1 for BMP, 2 when iteration yields a surrogate pair
-  }
-  return s.slice(0, end)
-}
 
 /**
  * The engine's own reason text, verbatim - never paraphrased or swallowed.
@@ -329,14 +245,21 @@ const readTools: AssistantToolSpec[] = [
         // total_active keeps the engine-wide figure, under a name that says so, so
         // the caller can still see that plc1's 3 are part of 300 and go filter the
         // rest rather than concluding the plant is quiet.
+        //
+        // The engine-wide acked_count gets the same treatment as *_total, NOT the
+        // name acked_count: the server's acked_count counts acknowledgements across
+        // /alerts as a whole, and handing back a different acked_count computed
+        // over the filtered set would give one key two meanings depending on who
+        // answered -- the same ambiguity, moved rather than removed. Each entry
+        // already carries `acked`, so per-set acknowledgement needs no field.
         const active = alerts.length
         const acked = alerts.filter((a) => a.acked).length
         return {
           content: JSON.stringify({
             active_count: active,
-            acked_count: acked,
             unacked_count: active - acked,
             total_active: res.active_count,
+            total_acked: res.acked_count,
             alerts,
           }),
           summary: `${active} active alert(s)`,
