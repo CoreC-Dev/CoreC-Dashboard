@@ -42,8 +42,14 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ eff }) => {
     document.documentElement.style.setProperty('--theme-x', `${x}px`)
     document.documentElement.style.setProperty('--theme-y', `${y}px`)
     document.documentElement.style.setProperty('--theme-r', `${endRadius}px`)
-    document.startViewTransition(() => {
+    // Scope the circular-reveal CSS to THIS transition only — route
+    // transitions also snapshot root and must crossfade instead.
+    document.documentElement.setAttribute('data-theme-reveal', '')
+    const transition = document.startViewTransition(() => {
       flushSync(() => setTheme(newTheme as typeof theme))
+    })
+    transition.finished.finally(() => {
+      document.documentElement.removeAttribute('data-theme-reveal')
     })
   }
 

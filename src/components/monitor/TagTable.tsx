@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { TagRow } from '@/components/monitor/TagRow'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { LoadingState } from '@/components/ui/loading-state'
+import { TableSkeleton } from '@/components/ui/page-skeleton'
 import { COLS, ROW_HEIGHT, tagKey } from '@/lib/tagExplorer'
 import type { DataPoint } from '@/types/models'
 
@@ -63,7 +63,7 @@ export function TagTable({
         <div className="text-xs text-muted-foreground">{t('tags.clickToOpenTrend')}</div>
       </div>
       {showLoading ? (
-        <LoadingState />
+        <TableSkeleton rows={10} />
       ) : showError ? (
         <div className="space-y-3 py-10 text-center">
           <AlertCircle className="mx-auto h-8 w-8 text-status-error" />
@@ -90,7 +90,7 @@ export function TagTable({
            * so the 860px floor would only force a pointless horizontal
            * scroll — the table fits the viewport instead. */}
           <table className="w-full min-w-0 md:min-w-[860px] text-xs text-left">
-            <thead className="sticky top-0 z-10 block bg-muted/80 border-b border-border uppercase font-semibold text-xs text-muted-foreground tracking-wider">
+            <thead className="sticky top-0 z-10 block bg-muted border-b border-border uppercase font-semibold text-xs text-muted-foreground tracking-wider">
               <tr className="flex items-center">
                 <th
                   className="px-4 py-2.5 shrink-0 overflow-hidden max-md:flex-1"

@@ -14,7 +14,7 @@ import {
 } from '@/api/hooks'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
-import { LoadingState } from '@/components/ui/loading-state'
+import { InlinePanelSkeleton } from '@/components/ui/page-skeleton'
 import { useParsedConfig } from '@/hooks/useParsedConfig'
 import { getDriverConnectionSummary, getTransportConnectionSummary } from '@/lib/connectionInfo'
 import { ConnStateLabel } from '@/lib/constants'
@@ -172,7 +172,7 @@ export const TopologyPage: React.FC = () => {
               {/* Loading is not "no drivers" — the dashed empty state
                    renders only once the query has settled. */}
               {driversLoading && drivers.length === 0 ? (
-                <LoadingState className="py-8" />
+                <InlinePanelSkeleton rows={3} className="p-0" />
               ) : drivers.length === 0 ? (
                 <div className="p-3 rounded-lg border border-dashed text-xs text-muted-foreground text-center">
                   {t('topology.noDrivers', { defaultValue: 'No southbound drivers attached' })}
@@ -263,7 +263,7 @@ export const TopologyPage: React.FC = () => {
 
             <div className="space-y-2">
               {transportsLoading && transports.length === 0 ? (
-                <LoadingState className="py-8" />
+                <InlinePanelSkeleton rows={3} className="p-0" />
               ) : transports.length === 0 ? (
                 <div className="p-3 rounded-lg border border-dashed text-xs text-muted-foreground text-center">
                   {t('topology.noTransports', {

@@ -1,4 +1,4 @@
-import { ArrowLeft, ChevronLeft, ChevronRight, Globe } from 'lucide-react'
+import { ArrowLeft, ChevronLeft, ChevronRight, Globe, Search } from 'lucide-react'
 import type React from 'react'
 import { Fragment, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -11,6 +11,7 @@ import { useNavIndicator } from '@/components/layout/useNavIndicator'
 import { setLocale } from '@/i18n'
 import { cn } from '@/lib/cn'
 import { useAlertStore } from '@/stores/alertStore'
+import { useUiStore } from '@/stores/uiStore'
 
 interface SidebarNavProps {
   collapsed: boolean
@@ -71,6 +72,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ collapsed, setCollapsed,
   const { t, i18n: i18nInst } = useTranslation()
   const navigate = useNavigate()
   const { id: instanceId } = useParams<{ id: string }>()
+  const setCommandOpen = useUiStore((s) => s.setCommandOpen)
 
   // On mobile, sidebar is always expanded (drawer shows full text)
   const eff = isMobile ? false : collapsed
@@ -105,6 +107,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ collapsed, setCollapsed,
       <NavLink
         key={item.path}
         to={item.path}
+        viewTransition
         ref={(el) => {
           if (el) itemRefs.current.set(item.path, el)
           else itemRefs.current.delete(item.path)
@@ -189,7 +192,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ collapsed, setCollapsed,
       <div
         className={cn(
           'flex flex-col relative',
-          isMobile ? '' : 'flex-1 justify-center min-h-0',
+          isMobile ? '' : 'flex-1 min-h-0',
           eff ? 'items-center' : '',
         )}
       >
@@ -197,14 +200,14 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ collapsed, setCollapsed,
           className={cn(
             'bg-card rounded-3xl squircle border border-border/40 flex flex-col',
             eff ? 'p-2' : 'p-2.5',
-            !isMobile && 'max-h-full overflow-hidden',
+            !isMobile && 'flex-1 min-h-0 max-h-full overflow-hidden',
           )}
           style={{ boxShadow: 'var(--shadow-card)' }}
         >
           <div
             ref={navContainerRef}
             className={cn(
-              'relative flex flex-col min-h-0 overflow-y-auto overflow-x-hidden',
+              'relative flex flex-col flex-1 min-h-0 overflow-y-auto overflow-x-hidden',
               eff ? 'items-center gap-1.5' : 'w-full gap-1',
             )}
           >
@@ -256,6 +259,31 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ collapsed, setCollapsed,
           )}
           style={{ boxShadow: 'var(--shadow-card)' }}
         >
+          {/* Command palette trigger */}
+          <button
+            type="button"
+            onClick={() => setCommandOpen(true)}
+            className={cn(
+              'grid place-items-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200',
+              eff
+                ? 'w-9 h-9 rounded-full'
+                : 'w-full h-11 rounded-lg flex items-center px-2.5 gap-2.5',
+            )}
+            aria-label={t('command.title')}
+          >
+            <Search className="w-[18px] h-[18px] shrink-0" />
+            {!eff && (
+              <>
+                <span className="text-sm font-medium truncate text-left flex-1">
+                  {t('command.open')}
+                </span>
+                <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                  ⌘K
+                </kbd>
+              </>
+            )}
+          </button>
+
           {/* Back to home */}
           <button
             type="button"

@@ -1,4 +1,4 @@
-import { RefreshCw, Search } from 'lucide-react'
+import { RefreshCw, Search, X } from 'lucide-react'
 import { useId } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
@@ -37,6 +37,30 @@ interface TagToolbarProps {
 
 /** Search input + driver/group/quality filter dropdowns + stale-only toggle
  *  + result count + refresh. */
+function FilterChip({
+  label,
+  clearLabel,
+  onClear,
+}: {
+  label: string
+  clearLabel: string
+  onClear: () => void
+}) {
+  return (
+    <span className="inline-flex max-w-full items-center gap-1 rounded-full border border-border bg-muted/60 py-0.5 pl-2.5 pr-1 text-xs text-foreground/80">
+      <span className="max-w-[12rem] truncate">{label}</span>
+      <button
+        type="button"
+        onClick={onClear}
+        aria-label={clearLabel}
+        className="rounded-full p-0.5 text-muted-foreground transition-colors hover:bg-background hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        <X className="h-3 w-3" />
+      </button>
+    </span>
+  )
+}
+
 export function TagToolbar({
   searchTerm,
   onSearchChange,
@@ -56,6 +80,24 @@ export function TagToolbar({
 }: TagToolbarProps) {
   const { t } = useTranslation()
   const staleId = useId()
+
+  const hasActiveFilters =
+    searchTerm !== '' ||
+    selectedDriver !== 'all' ||
+    selectedGroup !== 'all' ||
+    selectedQuality !== 'all' ||
+    staleOnly
+
+  const qualityLabel = (q: QualityFilter) =>
+    q === 'good' ? t('common.good') : q === 'bad' ? t('common.bad') : t('common.uncertain')
+
+  const clearAll = () => {
+    onSearchChange('')
+    onDriverChange('all')
+    onGroupChange('all')
+    onQualityChange('all')
+    onStaleOnlyChange(false)
+  }
 
   return (
     <Card className="border-border bg-card">
@@ -135,6 +177,56 @@ export function TagToolbar({
               {t('tags.staleOnly')}
             </label>
           </div>
+
+          {/* Active-filter summary — the controls above are compact, so it is
+           * easy to forget a filter is on and read the result count as the
+           * total. Chips name every active condition and clear it in place. */}
+          {hasActiveFilters && (
+            <div className="flex basis-full flex-wrap items-center gap-1.5 pt-1">
+              {searchTerm && (
+                <FilterChip
+                  label={`“${searchTerm}”`}
+                  clearLabel={t('common.close')}
+                  onClear={() => onSearchChange('')}
+                />
+              )}
+              {selectedDriver !== 'all' && (
+                <FilterChip
+                  label={selectedDriver}
+                  clearLabel={t('common.close')}
+                  onClear={() => onDriverChange('all')}
+                />
+              )}
+              {selectedGroup !== 'all' && (
+                <FilterChip
+                  label={selectedGroup}
+                  clearLabel={t('common.close')}
+                  onClear={() => onGroupChange('all')}
+                />
+              )}
+              {selectedQuality !== 'all' && (
+                <FilterChip
+                  label={qualityLabel(selectedQuality)}
+                  clearLabel={t('common.close')}
+                  onClear={() => onQualityChange('all')}
+                />
+              )}
+              {staleOnly && (
+                <FilterChip
+                  label={t('tags.staleOnly')}
+                  clearLabel={t('common.close')}
+                  onClear={() => onStaleOnlyChange(false)}
+                />
+              )}
+              <button
+                type="button"
+                onClick={clearAll}
+                className="px-1 text-xs text-muted-foreground underline-offset-2 transition-colors hover:text-foreground hover:underline"
+              >
+                {t('tags.clearFilters')}
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="flex items-center space-x-2 shrink-0">

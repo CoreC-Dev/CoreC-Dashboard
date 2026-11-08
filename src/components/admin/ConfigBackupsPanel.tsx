@@ -38,7 +38,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { LoadingState } from '@/components/ui/loading-state'
+import { InlinePanelSkeleton } from '@/components/ui/page-skeleton'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { computeLcsDiff } from '@/lib/yamlDiff'
 import type { ConfigBackupInfo } from '@/types/api'
@@ -208,7 +208,7 @@ export const ConfigBackupsPanel: React.FC = () => {
         )}
 
         {backupsQuery.isLoading ? (
-          <LoadingState className="py-6" />
+          <InlinePanelSkeleton rows={4} />
         ) : backupsQuery.isError ? (
           <div className="space-y-3 py-6 text-center">
             <AlertCircle className="mx-auto h-7 w-7 text-status-error" />

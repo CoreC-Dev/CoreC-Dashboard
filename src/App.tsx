@@ -4,6 +4,7 @@ import { HashRouter, Navigate, Route, Routes, useLocation, useParams } from 'rea
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { AppShell } from '@/components/layout/AppShell'
 import { ConnectionGate } from '@/components/layout/ConnectionGate'
+import { Toaster } from '@/components/layout/Toaster'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ConnectionProvider } from '@/contexts/ConnectionContext'
 import i18n from '@/i18n'
@@ -247,6 +248,7 @@ export const App: React.FC = () => {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </HashRouter>
+      <Toaster />
     </ErrorBoundary>
   )
 }

@@ -55,6 +55,11 @@
 
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
+
+  /* UI chrome (labels, table cells, toolbar controls) reads better at 13px
+   * than 12px; `text-xs` was the single most-used size in the app. */
+  --text-xs: 0.8125rem;
+  --text-xs--line-height: 1.3;
 }
 
 /*
@@ -97,6 +102,9 @@
     --popover-foreground: 213 11% 9%;
     --primary: 163 41% 53%;            /* #54b89c logo teal */
     --primary-foreground: 164 41% 12%;  /* dark teal text */
+    /* Text-only variant. The logo teal is 2.4:1 on white — fine as a fill
+     * or dot, unreadable as 12–13px link/label text. */
+    --primary-text: 163 48% 30%;
     --secondary: 210 20% 97%;          /* #f7f8f9 surface-soft */
     --secondary-foreground: 213 11% 9%;
     --muted: 210 20% 97%;              /* #f7f8f9 */
@@ -120,6 +128,14 @@
     --status-stale: 36 60% 42%;        /* dimmed amber */
     --status-queued: 210 80% 50%;      /* #2d88e0 — readable as text + dot */
     --status-idle: 219 6% 42%;         /* darker muted */
+    /* Text-only status variants — AA-compliant on the white card. Dots and
+     * fills keep the more saturated originals above. */
+    --status-running-text: 146 65% 29%;
+    --status-warning-text: 36 82% 30%;
+    --status-error-text: 354 70% 42%;
+    --status-stale-text: 36 65% 32%;
+    --status-queued-text: 210 85% 37%;
+    --status-idle-text: 219 8% 38%;
 
     --chart-1: 163 41% 53%;            /* logo teal */
     --chart-2: 146 62% 38%;            /* green */
@@ -146,6 +162,7 @@
     --popover-foreground: 216 18% 94%;
     --primary: 163 41% 55%;            /* #54b89c logo teal */
     --primary-foreground: 164 41% 10%;
+    --primary-text: 163 41% 62%;       /* bright teal reads well on dark */
     --secondary: 219 11% 15%;          /* #23262c surface-soft */
     --secondary-foreground: 216 18% 94%;
     --muted: 219 11% 15%;              /* #23262c */
@@ -170,8 +187,14 @@
     --status-stale: 41 70% 52%;
     --status-queued: 207 100% 68%;     /* #5bb6ff */
     --status-idle: 219 7% 61%;         /* #9499a1 */
+    --status-running-text: 149 63% 58%;
+    --status-warning-text: 41 100% 66%;
+    --status-error-text: 354 100% 72%;
+    --status-stale-text: 41 75% 58%;
+    --status-queued-text: 207 100% 70%;
+    --status-idle-text: 219 8% 66%;
 
-    --shadow-card: 0 1px 2px hsl(0 0% 0% / 0.45), 0 12px 32px -18px hsl(0 0% 0% / 0.7);
+    --shadow-card: inset 0 1px 0 hsl(0 0% 100% / 0.04), 0 1px 2px hsl(0 0% 0% / 0.45), 0 12px 32px -18px hsl(0 0% 0% / 0.7);
     --shadow-card-hover: 0 2px 6px hsl(0 0% 0% / 0.5), 0 20px 44px -20px hsl(0 0% 0% / 0.8);
     --shadow-panel: 0 32px 80px -32px hsl(0 0% 0% / 0.85);
   }
@@ -288,7 +311,7 @@
     --status-stale: 41 70% 52%;
     --status-queued: 207 100% 68%;
     --status-idle: 225 12% 60%;
-    --shadow-card: 0 1px 2px hsl(0 0% 0% / 0.5), 0 12px 32px -18px hsl(0 0% 0% / 0.72);
+    --shadow-card: inset 0 1px 0 hsl(0 0% 100% / 0.04), 0 1px 2px hsl(0 0% 0% / 0.5), 0 12px 32px -18px hsl(0 0% 0% / 0.72);
     --shadow-card-hover: 0 2px 6px hsl(0 0% 0% / 0.55), 0 20px 44px -20px hsl(0 0% 0% / 0.82);
     --shadow-panel: 0 32px 80px -32px hsl(0 0% 0% / 0.85);
   }
@@ -327,7 +350,7 @@
     --status-stale: 41 70% 52%;
     --status-queued: 207 100% 68%;
     --status-idle: 145 8% 60%;
-    --shadow-card: 0 1px 2px hsl(0 0% 0% / 0.5), 0 12px 32px -18px hsl(0 0% 0% / 0.72);
+    --shadow-card: inset 0 1px 0 hsl(0 0% 100% / 0.04), 0 1px 2px hsl(0 0% 0% / 0.5), 0 12px 32px -18px hsl(0 0% 0% / 0.72);
     --shadow-card-hover: 0 2px 6px hsl(0 0% 0% / 0.55), 0 20px 44px -20px hsl(0 0% 0% / 0.82);
     --shadow-panel: 0 32px 80px -32px hsl(0 0% 0% / 0.85);
   }
@@ -404,6 +427,40 @@ p {
 /* Tabular numbers for data displays */
 .tnum {
   font-variant-numeric: tabular-nums;
+}
+
+/* ------------------------------------------------------------------
+ * Text-ink guards
+ *
+ * Tailwind's `text-primary` / `text-status-*` utilities resolve to the
+ * SATURATED fill colors, which are correct for dots, badges and charts but
+ * fail WCAG AA as 12–13px text on a white card (primary 2.4:1, green 3.4:1,
+ * amber 3.1:1, blue 3.7:1). These unlayered rules remap ONLY the text
+ * utilities to accessible ink variants; `bg-*`, `border-*`, `ring-*` and
+ * `fill-*` deliberately keep the saturated originals. Dark themes get
+ * brighter inks from their own token blocks.
+ * ------------------------------------------------------------------ */
+.text-primary,
+.hover\:text-primary:hover {
+  color: hsl(var(--primary-text));
+}
+.text-status-running {
+  color: hsl(var(--status-running-text));
+}
+.text-status-warning {
+  color: hsl(var(--status-warning-text));
+}
+.text-status-error {
+  color: hsl(var(--status-error-text));
+}
+.text-status-stale {
+  color: hsl(var(--status-stale-text));
+}
+.text-status-queued {
+  color: hsl(var(--status-queued-text));
+}
+.text-status-idle {
+  color: hsl(var(--status-idle-text));
 }
 
 /* Soft glow for live/active indicators.
@@ -517,6 +574,100 @@ p {
   }
 }
 
+/* ------------------------------------------------------------------
+ * Overlay motion
+ *
+ * Radix keeps `data-state=closed` mounted until the exit animation ends,
+ * so exit rules work without forceMount. `scale`/`translate` are animated
+ * as individual properties so they compose with each primitive's existing
+ * `transform: translate(-50%, -50%)` centering instead of replacing it.
+ * ------------------------------------------------------------------ */
+@keyframes overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes overlay-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+@keyframes dialog-in {
+  from { opacity: 0; scale: 0.96; }
+  to { opacity: 1; scale: 1; }
+}
+@keyframes dialog-out {
+  from { opacity: 1; scale: 1; }
+  to { opacity: 0; scale: 0.98; }
+}
+@keyframes popover-in {
+  from { opacity: 0; scale: 0.97; }
+  to { opacity: 1; scale: 1; }
+}
+@keyframes popover-out {
+  from { opacity: 1; scale: 1; }
+  to { opacity: 0; scale: 0.98; }
+}
+@keyframes sheet-in-left {
+  from { opacity: 0.4; translate: -100% 0; }
+  to { opacity: 1; translate: 0 0; }
+}
+@keyframes sheet-out-left {
+  from { opacity: 1; translate: 0 0; }
+  to { opacity: 0.4; translate: -100% 0; }
+}
+@keyframes sheet-in-right {
+  from { opacity: 0.4; translate: 100% 0; }
+  to { opacity: 1; translate: 0 0; }
+}
+@keyframes sheet-out-right {
+  from { opacity: 1; translate: 0 0; }
+  to { opacity: 0.4; translate: 100% 0; }
+}
+
+.overlay-motion[data-state='open'] {
+  animation: overlay-in 0.18s var(--ease-smooth) both;
+}
+.overlay-motion[data-state='closed'] {
+  animation: overlay-out 0.16s ease both;
+}
+.dialog-motion[data-state='open'] {
+  animation: dialog-in 0.22s var(--ease-spring) both;
+}
+.dialog-motion[data-state='closed'] {
+  animation: dialog-out 0.16s ease both;
+}
+.popover-motion[data-state='open'] {
+  animation: popover-in 0.14s var(--ease-smooth) both;
+}
+.popover-motion[data-state='closed'] {
+  animation: popover-out 0.1s ease both;
+}
+.sheet-motion-left[data-state='open'] {
+  animation: sheet-in-left 0.28s var(--ease-smooth) both;
+}
+.sheet-motion-left[data-state='closed'] {
+  animation: sheet-out-left 0.2s ease both;
+}
+.sheet-motion-right[data-state='open'] {
+  animation: sheet-in-right 0.28s var(--ease-smooth) both;
+}
+.sheet-motion-right[data-state='closed'] {
+  animation: sheet-out-right 0.2s ease both;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.toast-in {
+  animation: toast-in 0.22s var(--ease-spring) both;
+}
+
 /* Banner slide-down — validation/unsaved banners enter from above with a
    spring settle. */
 @keyframes banner-enter {
@@ -533,25 +684,35 @@ p {
   animation: banner-enter 0.3s var(--ease-spring) both;
 }
 
-/* Skeleton shimmer — directional sweep for content placeholders (composited
-   background-position, no layout repaints). Replaces animate-pulse blocks. */
-@keyframes skeleton-shimmer {
-  0% {
-    background-position: -200% 0;
+/* Skeleton shimmer — a transform-driven highlight sweep. Animating
+   background-position (the old implementation) repaints the whole block on
+   every frame; translating a pseudo-element stays on the compositor. */
+@keyframes skeleton-sweep {
+  from {
+    transform: translateX(-100%);
   }
-  100% {
-    background-position: 200% 0;
+  to {
+    transform: translateX(100%);
   }
 }
 .skeleton-shimmer {
+  position: relative;
+  overflow: hidden;
+  background: hsl(var(--muted));
+}
+.skeleton-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
   background: linear-gradient(
     90deg,
-    hsl(var(--muted)) 25%,
-    hsl(var(--muted-foreground) / 0.12) 37%,
-    hsl(var(--muted)) 63%
+    transparent 20%,
+    hsl(var(--muted-foreground) / 0.12) 50%,
+    transparent 80%
   );
-  background-size: 200% 100%;
-  animation: skeleton-shimmer 1.4s var(--ease-smooth) infinite;
+  transform: translateX(-100%);
+  animation: skeleton-sweep 1.4s var(--ease-smooth) infinite;
+  pointer-events: none;
 }
 
 /* Details/accordion content reveal — fades + slides in on open. Native
@@ -720,14 +881,15 @@ details[open] > .details-reveal {
 }
 
 /* Theme transition — circular reveal from the theme selector position.
-   Uses the View Transitions API. The old snapshot stays put (animation:
-   none) while the new snapshot expands from a circle centred at the
-   click position, giving the "原地扩散至全屏" effect. */
-::view-transition-old(root) {
+   Uses the View Transitions API. Scoped to html[data-theme-reveal] so it
+   cannot hijack ordinary route transitions (which use the browser's default
+   crossfade). The old snapshot stays put (animation: none) while the new
+   snapshot expands from a circle centred at the click position. */
+html[data-theme-reveal]::view-transition-old(root) {
   animation: none;
   mix-blend-mode: normal;
 }
-::view-transition-new(root) {
+html[data-theme-reveal]::view-transition-new(root) {
   animation: theme-circle-reveal 0.5s var(--ease-smooth, ease);
 }
 @keyframes theme-circle-reveal {

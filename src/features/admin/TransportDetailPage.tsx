@@ -20,7 +20,7 @@ import { TransportTestSender } from '@/components/admin/TransportTestSender'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { LoadingState } from '@/components/ui/loading-state'
+import { DetailSkeleton } from '@/components/ui/page-skeleton'
 import { TransportEditConfigSection } from '@/features/admin/transportDetail/EditConfigSection'
 import { useParsedConfig } from '@/hooks/useParsedConfig'
 import { extractTransportYaml, getTransportConnectionFields } from '@/lib/connectionInfo'
@@ -58,7 +58,7 @@ export const TransportDetailPage: React.FC = () => {
         <BackLink to={`${adminBase}/transports`}>
           {t('transports.transportList', { defaultValue: 'Back to Transports' })}
         </BackLink>
-        <LoadingState text={t('common.loading', { defaultValue: 'Loading transport...' })} />
+        <DetailSkeleton />
       </div>
     )
   }

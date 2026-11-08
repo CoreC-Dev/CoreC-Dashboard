@@ -14,7 +14,7 @@ const SheetOverlay = React.forwardRef<
   <DialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      'fixed inset-0 z-50 bg-black/40 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
+      'fixed inset-0 z-50 bg-black/40 backdrop-blur-sm overlay-motion',
       className,
     )}
     {...props}
@@ -35,11 +35,11 @@ const SheetContent = React.forwardRef<
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        'fixed z-50 flex flex-col bg-card overflow-hidden transition-transform duration-300 data-[state=open]:animate-in data-[state=closed]:animate-out',
+        'fixed z-50 flex flex-col bg-card overflow-hidden shadow-[var(--shadow-panel)]',
         side === 'left' &&
-          'inset-y-0 left-0 h-full w-[17rem] border-r border-border shadow-2xl data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left',
+          'inset-y-0 left-0 h-full w-[17rem] border-r border-border sheet-motion-left',
         side === 'right' &&
-          'inset-y-0 right-0 h-full w-[17rem] border-l border-border shadow-2xl data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right',
+          'inset-y-0 right-0 h-full w-[17rem] border-l border-border sheet-motion-right',
         className,
       )}
       {...props}

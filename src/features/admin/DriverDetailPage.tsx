@@ -26,7 +26,7 @@ import { BackLink, formatTimestamp, Param, StatCard } from '@/components/admin/D
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { LoadingState } from '@/components/ui/loading-state'
+import { DetailSkeleton } from '@/components/ui/page-skeleton'
 import { DriverEditConfigSection } from '@/features/admin/driverDetail/EditConfigSection'
 import { useParsedConfig } from '@/hooks/useParsedConfig'
 import { extractDriverYaml, getDriverConnectionFields } from '@/lib/connectionInfo'
@@ -81,7 +81,7 @@ export const DriverDetailPage: React.FC = () => {
         <BackLink to={`${adminBase}/drivers`}>
           {t('drivers.driverList', { defaultValue: 'Back to Drivers' })}
         </BackLink>
-        <LoadingState text={t('common.loading', { defaultValue: 'Loading driver...' })} />
+        <DetailSkeleton />
       </div>
     )
   }

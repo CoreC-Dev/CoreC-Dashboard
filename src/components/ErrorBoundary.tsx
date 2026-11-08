@@ -57,7 +57,7 @@ export class ErrorBoundary extends Component<Props, State> {
   render(): ReactNode {
     if (this.state.hasError && this.state.error) {
       return (
-        <div className="flex items-center justify-center min-h-screen p-6">
+        <div className="flex items-center justify-center min-h-dvh p-6">
           <Card className="max-w-lg w-full border-destructive/30">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-destructive">

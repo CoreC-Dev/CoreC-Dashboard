@@ -121,7 +121,7 @@ export const InstancePanel: React.FC = () => {
   })
 
   return (
-    <div className="min-h-screen bg-background text-foreground relative">
+    <div className="min-h-dvh bg-background text-foreground relative">
       {/* Subtle decorative gradient orb */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden="true">
         <div

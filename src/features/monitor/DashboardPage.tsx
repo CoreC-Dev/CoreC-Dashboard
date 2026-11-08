@@ -12,20 +12,28 @@ import {
   TrendingUp,
 } from 'lucide-react'
 import type React from 'react'
-import { useMemo } from 'react'
+import { lazy, Suspense, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router-dom'
 import { useDeadLetters, useDrivers, useStats, useTransports } from '@/api/hooks'
-import { MemoryChart } from '@/components/charts/MemoryChart'
-import { TrafficChart } from '@/components/charts/TrafficChart'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { CountUpNumber } from '@/components/ui/count-up-number'
+import { EmptyState } from '@/components/ui/empty-state'
 import { Skeleton } from '@/components/ui/skeleton'
 import { DashboardDeadLetterCard } from '@/features/monitor/DashboardDeadLetterCard'
 import i18n from '@/i18n'
 import { ConnStateLabel } from '@/lib/constants'
 import { formatNumber, formatUptime } from '@/lib/utils'
+
+// The two live charts pull in recharts — by far the heaviest part of this
+// route. Defer them so the KPI row paints first and the charts stream in.
+const TrafficChart = lazy(() =>
+  import('@/components/charts/TrafficChart').then((m) => ({ default: m.TrafficChart })),
+)
+const MemoryChart = lazy(() =>
+  import('@/components/charts/MemoryChart').then((m) => ({ default: m.MemoryChart })),
+)
 
 /**
  * First-load placeholder that mirrors the real dashboard layout. A spinner
@@ -393,39 +401,23 @@ export const DashboardPage: React.FC = () => {
       {/* Row 2 — Real-time charts */}
       <div className="grid grid-cols-1 gap-4 card-stagger lg:grid-cols-2">
         <Card className="border-border bg-card card-enter">
-          <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0 px-5 pb-1 pt-4">
+          <CardHeader className="space-y-0 px-5 pb-1 pt-4">
             <CardTitle className="text-sm font-semibold">{t('dashboard.trafficChart')}</CardTitle>
-            <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
-              <span className="flex items-center gap-1.5">
-                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-chart-1" aria-hidden />
-                {t('dashboard.readPerSec')}
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-chart-2" aria-hidden />
-                {t('dashboard.publishPerSec')}
-              </span>
-            </div>
           </CardHeader>
-          <CardContent className="px-4 pb-4 pt-2">
-            <TrafficChart />
+          <CardContent className="px-4 pb-4 pt-1">
+            <Suspense fallback={<Skeleton className="h-56 w-full rounded-2xl" />}>
+              <TrafficChart />
+            </Suspense>
           </CardContent>
         </Card>
         <Card className="border-border bg-card card-enter">
-          <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0 px-5 pb-1 pt-4">
+          <CardHeader className="space-y-0 px-5 pb-1 pt-4">
             <CardTitle className="text-sm font-semibold">{t('dashboard.memoryChart')}</CardTitle>
-            <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
-              <span className="flex items-center gap-1.5">
-                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-chart-1" aria-hidden />
-                {t('dashboard.heapAllocMb')}
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-chart-2" aria-hidden />
-                {t('dashboard.sysMemMb')}
-              </span>
-            </div>
           </CardHeader>
-          <CardContent className="px-4 pb-4 pt-2">
-            <MemoryChart />
+          <CardContent className="px-4 pb-4 pt-1">
+            <Suspense fallback={<Skeleton className="h-56 w-full rounded-2xl" />}>
+              <MemoryChart />
+            </Suspense>
           </CardContent>
         </Card>
       </div>
@@ -449,14 +441,11 @@ export const DashboardPage: React.FC = () => {
         </CardHeader>
         <CardContent className="px-5 pb-5 pt-0">
           {drivers.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 py-8 text-center">
-              <span className="grid h-10 w-10 place-items-center rounded-full bg-muted text-muted-foreground">
-                <Cpu className="h-4 w-4" aria-hidden />
-              </span>
-              <div className="text-sm text-muted-foreground">
-                {t('dashboard.noDrivers', { defaultValue: 'No drivers configured' })}
-              </div>
-            </div>
+            <EmptyState
+              icon={Cpu}
+              title={t('dashboard.noDrivers', { defaultValue: 'No drivers configured' })}
+              compact
+            />
           ) : (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6">
               {drivers.map((drv) => {
@@ -515,14 +504,11 @@ export const DashboardPage: React.FC = () => {
         </CardHeader>
         <CardContent className="px-5 pb-5 pt-0">
           {transports.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 py-8 text-center">
-              <span className="grid h-10 w-10 place-items-center rounded-full bg-muted text-muted-foreground">
-                <Send className="h-4 w-4" aria-hidden />
-              </span>
-              <div className="text-sm text-muted-foreground">
-                {t('dashboard.noTransports', { defaultValue: 'No transports configured' })}
-              </div>
-            </div>
+            <EmptyState
+              icon={Send}
+              title={t('dashboard.noTransports', { defaultValue: 'No transports configured' })}
+              compact
+            />
           ) : (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6">
               {transports.map((tr) => {

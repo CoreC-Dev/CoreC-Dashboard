@@ -16,6 +16,16 @@
     "diagnostics": "Diagnostics",
     "settings": "Settings"
   },
+  "command": {
+    "title": "Command palette",
+    "open": "Search",
+    "placeholder": "Search pages, drivers, transports…",
+    "empty": "No matches",
+    "hint": "↑↓ select · ↵ open · esc close",
+    "pages": "Pages",
+    "drivers": "Drivers",
+    "transports": "Transports"
+  },
   "aria": {
     "corecHome": "CoreC home",
     "navigation": "Navigation",
@@ -300,6 +310,8 @@
     "heapAllocMb": "Heap Alloc (MB)",
     "sysMemMb": "Sys Mem (MB)",
     "realtimeMonitor": "Real-time monitoring & control",
+    "pause": "Freeze chart",
+    "resume": "Resume chart",
     "chartWaiting": "Waiting for live data…",
     "chartDisconnected": "Disconnected — chart updates paused"
   },
@@ -326,6 +338,7 @@
     "write": "Write",
     "writeToTag": "Write to PLC Tag",
     "writeToTagDesc": "Direct Southbound control command through CoreC Command Manager",
+    "writeSuccess": "Write sent",
     "writeFailed": "Write failed",
     "newTargetValue": "New Target Value",
     "enterValue": "Enter value",

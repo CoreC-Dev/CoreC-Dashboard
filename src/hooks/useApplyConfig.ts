@@ -4,6 +4,7 @@ import { ApiError } from '@/api/client'
 import { useUpdateConfig, useValidateConfig } from '@/api/hooks'
 import { useConfigHistoryStore } from '@/stores/configHistoryStore'
 import { isSeedBlocked, useConfigStore } from '@/stores/configStore'
+import { pushToast } from '@/stores/toastStore'
 
 /**
  * Shared apply-config dialog state for list/detail pages.
@@ -79,9 +80,14 @@ export function useApplyConfig(options: UseApplyConfigOptions) {
           addSnapshot(yaml)
           markSaved()
           setOpen(false)
+          pushToast({ kind: 'success', title: t('config.reloadSuccess') })
           onApplySuccess?.()
         },
-        onError: (err) => setApplyError(err instanceof Error ? err.message : String(err)),
+        onError: (err) => {
+          const message = err instanceof Error ? err.message : String(err)
+          setApplyError(message)
+          pushToast({ kind: 'error', title: t('config.reloadFailed'), description: message })
+        },
       },
     )
   }

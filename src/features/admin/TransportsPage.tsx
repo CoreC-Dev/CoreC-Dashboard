@@ -11,7 +11,7 @@ import { SeedBlockedBanner } from '@/components/admin/SeedBlockedBanner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { LoadingState } from '@/components/ui/loading-state'
+import { ListCardsSkeleton } from '@/components/ui/page-skeleton'
 import { ConfigApplyConfirmationDialog } from '@/components/wizard/ConfigApplyConfirmationDialog'
 import { EntitySearchBar, filterEntities } from '@/components/wizard/EntitySearchBar'
 import { UnsavedChangesBanner } from '@/components/wizard/UnsavedChangesBanner'
@@ -266,7 +266,7 @@ export const TransportsPage: React.FC = () => {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 card-stagger">
           {isLoading && transports.length === 0 ? (
-            <LoadingState className="col-span-full py-12" />
+            <ListCardsSkeleton withHeader={false} className="col-span-full" />
           ) : isError ? (
             <Card className="col-span-full p-8 text-center space-y-3">
               <AlertCircle className="mx-auto h-8 w-8 text-status-error" />

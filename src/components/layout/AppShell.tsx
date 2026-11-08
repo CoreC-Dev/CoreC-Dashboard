@@ -3,6 +3,7 @@ import type React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import { AlertStreamProvider } from '@/components/layout/AlertStreamProvider'
+import { CommandPalette } from '@/components/layout/CommandPalette'
 import { SidebarNav } from '@/components/layout/SidebarNav'
 import { streamBadgeTone } from '@/components/layout/StreamStatusBadge'
 import { StreamStatusBanner } from '@/components/layout/StreamStatusBanner'
@@ -91,7 +92,7 @@ export const AppShell: React.FC = () => {
   )
 
   return (
-    <div className="h-screen w-full bg-background text-foreground overflow-hidden relative">
+    <div className="h-dvh w-full bg-background text-foreground overflow-hidden relative">
       {/* Instance-level alert subscription: keeps the /logs
            warn/error stream, sound, browser notifications, and the sidebar
            badge alive on EVERY route of the instance — not just the alerts
@@ -150,6 +151,7 @@ export const AppShell: React.FC = () => {
            layout branches so mobile and desktop share one implementation rather
            than only the desktop rail it started as. */}
       <AssistantPanel />
+      <CommandPalette />
     </div>
   )
 }

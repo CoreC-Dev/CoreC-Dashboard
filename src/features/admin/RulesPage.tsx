@@ -16,7 +16,7 @@ import { SeedBlockedBanner } from '@/components/admin/SeedBlockedBanner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { LoadingState } from '@/components/ui/loading-state'
+import { TableSkeleton } from '@/components/ui/page-skeleton'
 import { ConfigApplyConfirmationDialog } from '@/components/wizard/ConfigApplyConfirmationDialog'
 import { EntitySearchBar, filterEntities } from '@/components/wizard/EntitySearchBar'
 import { UnsavedChangesBanner } from '@/components/wizard/UnsavedChangesBanner'
@@ -329,7 +329,7 @@ export const RulesPage: React.FC = () => {
         <p className="text-xs text-muted-foreground">{t('rules.runtimeEditHint')}</p>
         <Card className="border-border bg-card overflow-hidden">
           {isLoading ? (
-            <LoadingState />
+            <TableSkeleton rows={5} />
           ) : isError ? (
             <div className="space-y-3 py-10 text-center">
               <AlertCircle className="mx-auto h-8 w-8 text-status-error" />

@@ -16,6 +16,16 @@
     "diagnostics": "系统诊断",
     "settings": "系统设置"
   },
+  "command": {
+    "title": "命令面板",
+    "open": "搜索",
+    "placeholder": "搜索页面、驱动或传输…",
+    "empty": "没有匹配项",
+    "hint": "↑↓ 选择 · ↵ 打开 · esc 关闭",
+    "pages": "页面",
+    "drivers": "驱动",
+    "transports": "传输"
+  },
   "aria": {
     "corecHome": "CoreC 首页",
     "navigation": "导航",
@@ -300,6 +310,8 @@
     "heapAllocMb": "堆分配 (MB)",
     "sysMemMb": "系统内存 (MB)",
     "realtimeMonitor": "实时监控与控制",
+    "pause": "暂停图表",
+    "resume": "继续图表",
     "chartWaiting": "等待实时数据…",
     "chartDisconnected": "连接中断，图表已暂停更新"
   },
@@ -326,6 +338,7 @@
     "write": "写入",
     "writeToTag": "写入 PLC 测点",
     "writeToTagDesc": "通过 CoreC 指令管理器直接下发南向控制指令",
+    "writeSuccess": "写入已下发",
     "writeFailed": "写入失败",
     "newTargetValue": "新目标值",
     "enterValue": "输入数值",

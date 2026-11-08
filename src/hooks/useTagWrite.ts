@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useWriteTag } from '@/api/hooks'
 import { isNumericType } from '@/lib/tagExplorer'
 import { validateValue } from '@/lib/writeValidation'
+import { pushToast } from '@/stores/toastStore'
 import type { DataPoint } from '@/types/models'
 
 interface UseTagWriteResult {
@@ -85,8 +86,15 @@ export function useTagWrite(): UseTagWriteResult {
       })
       setSelectedTagForWrite(null)
       setWriteValue('')
+      pushToast({
+        kind: 'success',
+        title: t('tags.writeSuccess', { defaultValue: 'Write sent' }),
+        description: `${selectedTagForWrite.driver}/${selectedTagForWrite.tag}`,
+      })
     } catch (err: unknown) {
-      setWriteError(err instanceof Error ? err.message : t('tags.writeFailed'))
+      const message = err instanceof Error ? err.message : t('tags.writeFailed')
+      setWriteError(message)
+      pushToast({ kind: 'error', title: t('tags.writeFailed'), description: message })
     }
   }
 

@@ -27,7 +27,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
-import { LoadingState } from '@/components/ui/loading-state'
+import { InlinePanelSkeleton } from '@/components/ui/page-skeleton'
 import {
   Select,
   SelectContent,
@@ -281,7 +281,7 @@ export const DeadLetterReplayList: React.FC<DeadLetterReplayListProps> = ({
         )}
 
         {isLoading && deadLetters.length === 0 ? (
-          <LoadingState className="py-8" />
+          <InlinePanelSkeleton rows={5} />
         ) : isError ? (
           <div className="space-y-3 py-8 text-center">
             <AlertCircle className="mx-auto h-8 w-8 text-status-error" />

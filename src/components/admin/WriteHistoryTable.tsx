@@ -6,7 +6,7 @@ import { useWriteHistory } from '@/api/hooks'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { LoadingState } from '@/components/ui/loading-state'
+import { TableSkeleton } from '@/components/ui/page-skeleton'
 
 /**
  * WriteHistoryTable — the write operation audit trail (GET /write/history):
@@ -58,7 +58,7 @@ export const WriteHistoryTable: React.FC = () => {
 
       <CardContent className="p-0">
         {isLoading ? (
-          <LoadingState className="py-8" />
+          <TableSkeleton rows={6} />
         ) : isError ? (
           <div className="space-y-3 py-8 text-center">
             <AlertCircle className="mx-auto h-8 w-8 text-status-error" />

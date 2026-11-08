@@ -118,7 +118,7 @@ export function useNavIndicator(
         transition,
         opacity: 1,
         pointerEvents: 'none',
-        willChange: 'transform, width, height',
+        willChange: 'transform',
       }
     : { position: 'absolute', opacity: 0, pointerEvents: 'none' }
 

@@ -48,7 +48,7 @@ export const GlobalSettingsPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-dvh bg-background text-foreground">
       {/* Top bar */}
       <header className="h-14 border-b border-border bg-card px-4 flex items-center justify-between sticky top-0 z-30">
         <div className="flex items-center space-x-3">

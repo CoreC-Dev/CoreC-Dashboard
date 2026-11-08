@@ -24,7 +24,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { LoadingState } from '@/components/ui/loading-state'
+import { InlinePanelSkeleton } from '@/components/ui/page-skeleton'
 import {
   Select,
   SelectContent,
@@ -407,7 +407,7 @@ export const DeadLetterTable: React.FC<DeadLetterTableProps> = ({
         )}
 
         {loadingDlq ? (
-          <LoadingState className="py-8" />
+          <InlinePanelSkeleton rows={4} />
         ) : errorDlq ? (
           <div className="space-y-3 py-8 text-center">
             <AlertCircle className="mx-auto h-8 w-8 text-status-error" />
