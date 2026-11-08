@@ -192,7 +192,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ collapsed, setCollapsed,
       <div
         className={cn(
           'flex flex-col relative',
-          isMobile ? '' : 'flex-1 min-h-0',
+          isMobile ? '' : 'flex-1 justify-center min-h-0',
           eff ? 'items-center' : '',
         )}
       >
@@ -200,14 +200,14 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ collapsed, setCollapsed,
           className={cn(
             'bg-card rounded-3xl squircle border border-border/40 flex flex-col',
             eff ? 'p-2' : 'p-2.5',
-            !isMobile && 'flex-1 min-h-0 max-h-full overflow-hidden',
+            !isMobile && 'max-h-full overflow-hidden',
           )}
           style={{ boxShadow: 'var(--shadow-card)' }}
         >
           <div
             ref={navContainerRef}
             className={cn(
-              'relative flex flex-col flex-1 min-h-0 overflow-y-auto overflow-x-hidden',
+              'relative flex flex-col min-h-0 overflow-y-auto overflow-x-hidden',
               eff ? 'items-center gap-1.5' : 'w-full gap-1',
             )}
           >

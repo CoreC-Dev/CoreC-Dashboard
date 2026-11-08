@@ -63,31 +63,18 @@
 }
 
 /*
- * iOS-style continuous corners for card surfaces ("squircle").
+ * Card corner curvature.
  *
- * `corner-shape: squircle` (= superellipse(2), css-borders-4) redraws the
- * corner with continuously-varying curvature instead of a circular arc, so
- * the straight edge flows into the corner tangentially — the soft
- * transition iOS uses. border-radius keeps sizing the corner; only its
- * curvature changes, so layout, hit-testing and the radius scale are
- * untouched. Borders, outlines, box-shadows and background/overflow
- * clipping all follow the new curve automatically.
- *
- * Progressive enhancement by construction: Chromium/Edge 139+ render the
- * squircle; engines without corner-shape (current Firefox/Safari) ignore
- * the declaration and keep the circular corners — the existing look IS
- * the fallback, no @supports branch needed. Where border-radius resolves
- * to 0 the property is a no-op, so attaching it next to any rounded-* is
- * safe.
- *
- * An SVG clip-path squircle was rejected here: clip-path cuts the layered
- * --shadow-card shadows off and borders stop following the outline,
- * breaking the card design language. Apply as `squircle` next to the
- * card's radius class (`rounded-3xl` on card-level surfaces — see
- * docs/DESIGN.md).
+ * The visual preview (and the look the product owner prefers) uses plain
+ * circular corners. A continuous "squircle" curve at the SAME 24px radius
+ * reads noticeably tighter — the corner appears smaller even though the
+ * radius token is identical. Keeping `corner-shape: round` makes the class
+ * a stable hook for callers/tests while matching the preview's larger, softer
+ * corner. Radius continues to come from the rounded-* utility, so layout and
+ * hit-testing are unchanged.
  */
 @utility squircle {
-  corner-shape: squircle;
+  corner-shape: round;
 }
 
 @layer base {
@@ -104,7 +91,7 @@
     --primary-foreground: 164 41% 12%;  /* dark teal text */
     /* Text-only variant. The logo teal is 2.4:1 on white — fine as a fill
      * or dot, unreadable as 12–13px link/label text. */
-    --primary-text: 163 48% 30%;
+    --primary-text: 163 41% 53%;
     --secondary: 210 20% 97%;          /* #f7f8f9 surface-soft */
     --secondary-foreground: 213 11% 9%;
     --muted: 210 20% 97%;              /* #f7f8f9 */
@@ -130,12 +117,12 @@
     --status-idle: 219 6% 42%;         /* darker muted */
     /* Text-only status variants — AA-compliant on the white card. Dots and
      * fills keep the more saturated originals above. */
-    --status-running-text: 146 65% 29%;
-    --status-warning-text: 36 82% 30%;
-    --status-error-text: 354 70% 42%;
-    --status-stale-text: 36 65% 32%;
-    --status-queued-text: 210 85% 37%;
-    --status-idle-text: 219 8% 38%;
+    --status-running-text: 146 62% 38%;
+    --status-warning-text: 36 78% 44%;
+    --status-error-text: 354 70% 45%;
+    --status-stale-text: 36 60% 42%;
+    --status-queued-text: 210 80% 50%;
+    --status-idle-text: 219 6% 42%;
 
     --chart-1: 163 41% 53%;            /* logo teal */
     --chart-2: 146 62% 38%;            /* green */
@@ -148,7 +135,7 @@
      * negative-spread ambient shadow. Reads crisper than one blurred blob. */
     --shadow-card: 0 1px 2px hsl(220 20% 10% / 0.04), 0 10px 28px -14px hsl(220 20% 10% / 0.14);
     --shadow-card-hover: 0 2px 6px hsl(220 20% 10% / 0.05), 0 18px 40px -18px hsl(220 20% 10% / 0.22);
-    --shadow-panel: 0 28px 70px -28px hsl(220 20% 10% / 0.32);
+    --shadow-panel: 0 32px 80px -30px hsl(220 20% 10% / 0.38);
   }
 
   /* ---------- Dark theme ---------- */
@@ -235,7 +222,7 @@
     --status-idle: 35 8% 42%;
     --shadow-card: 0 1px 2px hsl(30 15% 14% / 0.04), 0 10px 28px -14px hsl(30 15% 14% / 0.14);
     --shadow-card-hover: 0 2px 6px hsl(30 15% 14% / 0.05), 0 18px 40px -18px hsl(30 15% 14% / 0.22);
-    --shadow-panel: 0 28px 70px -28px hsl(30 15% 14% / 0.32);
+    --shadow-panel: 0 32px 80px -30px hsl(30 15% 14% / 0.38);
   }
 
   /* ---------- Light Nord ---------- */
@@ -274,7 +261,7 @@
     --status-idle: 220 10% 42%;
     --shadow-card: 0 1px 2px hsl(220 20% 12% / 0.04), 0 10px 28px -14px hsl(220 20% 12% / 0.14);
     --shadow-card-hover: 0 2px 6px hsl(220 20% 12% / 0.05), 0 18px 40px -18px hsl(220 20% 12% / 0.22);
-    --shadow-panel: 0 28px 70px -28px hsl(220 20% 12% / 0.32);
+    --shadow-panel: 0 32px 80px -30px hsl(220 20% 12% / 0.38);
   }
 
   /* ---------- Dark Midnight ---------- */
