@@ -140,9 +140,6 @@ export function TagTrendPanel({
               >
                 {trendPaused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
               </Button>
-              {/* 待验证-1 (verified): lightweight-charts only auto-follows the
-               *  newest bar while it sits at the visible right edge — once the
-               *  operator pans/zooms into history there was no way back. */}
               <Button
                 variant="ghost"
                 size="sm"

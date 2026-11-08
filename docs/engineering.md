@@ -22,14 +22,14 @@ npm run build    # tsc -b && vite build → dist/
 npm test                  # vitest run + server 冒烟（node --test scripts/server-smoke.test.mjs）
 npm run test:coverage     # 覆盖率门禁（v8 provider）
 ```
-- 配置：`vitest.config.ts`（jsdom + `src/test/setup.ts` + v8 coverage；全局阈值 lines 41 / statements 40 / branches 30 / functions 31）。
+- 配置：`vitest.config.ts`（jsdom + `src/test/setup.ts` + v8 coverage）。
 
 ## Lint / 格式化
 ```bash
 npm run lint      # biome check src scripts server.mjs vite.config.ts
 npm run lint:all  # biome + docs/structure/custom/any 四项自定义检查
 ```
-`biome.json`：`noExplicitAny` 为 error；存量 any 基线由 `npm run any:ratchet` 维护（只降不升）。
+`biome.json`：`noExplicitAny` 为 error；any 基线由 `npm run any:ratchet` 维护。
 
 ## 生产运行
 ```bash

@@ -55,12 +55,10 @@ export function validateRuleExpression(expr: string): ValidationResult {
     return { valid: false, errors: ['expression cannot be empty'], warnings }
   }
 
-  // Special case: ALL (case-insensitive)
   if (trimmed.toUpperCase() === 'ALL') {
     return { valid: true, errors, warnings }
   }
 
-  // Special case: SUB-RULE:group-name
   if (/^SUB-RULE:/i.test(trimmed)) {
     const groupName = trimmed.slice('SUB-RULE:'.length).trim()
     if (!groupName) {
@@ -69,7 +67,6 @@ export function validateRuleExpression(expr: string): ValidationResult {
     return { valid: errors.length === 0, errors, warnings }
   }
 
-  // Special case: RULE-SET:provider-name
   if (/^RULE-SET:/i.test(trimmed)) {
     const providerName = trimmed.slice('RULE-SET:'.length).trim()
     if (!providerName) {

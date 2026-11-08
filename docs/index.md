@@ -9,4 +9,3 @@
 | `SECURITY.md` | 安全态势 |
 | `RELIABILITY.md` | 性能与可靠性态势 |
 | `engineering.md` | 开发、构建、测试、调试、部署 |
-| `design-docs/motion-catalog.md` | 前端动效目录 |

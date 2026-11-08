@@ -36,6 +36,6 @@ Conventional Commits；单一职责；重构与行为变更不混提；提交直
   import { afterEach } from 'vitest'
   afterEach(() => cleanup())
   ```
-  遗漏会导致 DOM 残留、后续测试断言串扰。纯函数测试（无 DOM 渲染）不需要 cleanup。
+  纯函数测试（无 DOM 渲染）不需要 cleanup。
 - Mock 约定：`globalThis.fetch` 用 `vi.fn()` mock；无 msw、无 user-event。Biome 强制单引号。
 - 覆盖率门禁：`npm run test:coverage`（v8 provider），阈值在 `vitest.config.ts` 中配置。CI（`ci.yml`）的 Coverage 步骤执行该门禁。

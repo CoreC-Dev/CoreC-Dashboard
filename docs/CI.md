@@ -10,6 +10,6 @@
 ## 本地与门禁配套
 
 - **pre-commit hook（husky）**：`npx biome check src` + `docs:lint` / `structure:lint` / `custom:lint` / `any:ratchet` 四项自定义检查（`.husky/pre-commit`）；commit-msg hook 校验 Conventional Commits（`.husky/commit-msg`）。
-- **覆盖率门禁**：`vitest.config.ts` 全局阈值（lines 41 / statements 40 / branches 30 / functions 31），由 CI 的 Coverage 步骤执行。
+- **覆盖率门禁**：`vitest.config.ts` 全局阈值，由 CI 的 Coverage 步骤执行。
 - **lockfile**：`package-lock.json` 为唯一 lockfile，CI 安装用 `npm ci`。
 - **发布链路**：`deploy.yml` 的 GitHub Pages、custom domain、CNAME；质量门禁由 `ci.yml` 承载，deploy 经 `workflow_call` 复用。

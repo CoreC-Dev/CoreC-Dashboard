@@ -7,7 +7,7 @@ import react from '@vitejs/plugin-react'
 import { defineConfig, type Plugin } from 'vite'
 
 /**
- * Vite dev-server plugin: dynamic per-instance same-origin proxy (TD-SEC-001/002, D3).
+ * Vite dev-server plugin: dynamic per-instance same-origin proxy.
  * In dev the browser sends /corec-proxy/* with X-CoreC-Target header (HTTP) or
  * /corec-ws?target=... (WS). This middleware proxies to the target backend so
  * the dev workflow matches production (server.mjs).
@@ -117,7 +117,7 @@ function dynamicProxyPlugin(): Plugin {
 }
 
 /**
- * Vite plugin: self-host Monaco editor assets (TD-PERF-010, D7).
+ * Vite plugin: self-host Monaco editor assets.
  * Serves node_modules/monaco-editor/min/vs at /monaco/min/vs in dev mode.
  * In production, copies the assets to dist/monaco/min/vs during build.
  */
@@ -196,7 +196,6 @@ export default defineConfig({
     rollupOptions: {
       output: {
         // Split heavy vendor libs into cached chunks so the dashboard shell
-        // (recharts is the biggest offender — 9.6MB installed, pulls d3 deps)
         // doesn't bloat the first-paint bundle on the default /monitor route.
         // Note: rolldown (Vite 8) requires manualChunks as a function.
         manualChunks: (id) => {

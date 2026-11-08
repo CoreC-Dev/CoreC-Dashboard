@@ -10,7 +10,6 @@ export {
   TRANSPORT_SETTINGS_REGISTRY,
   TRANSPORT_TOPLEVEL_FIELDS,
 } from '@/lib/settingsRegistryTransport'
-// Types & shared fragments
 export type {
   SettingsField,
   TypeFieldRegistry,

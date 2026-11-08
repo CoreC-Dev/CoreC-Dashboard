@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// TagTrendPanel (待验证-1) — the pause indicator carries the
+// TagTrendPanel — the pause indicator carries the
 // expectation-management copy, gap samples (whitespace markers) stay out of
 // the stats bar / count / CSV export, the Back-to-live button jumps the
 // (mocked) chart to the live edge, and the exported CSV leads with the
@@ -105,7 +105,7 @@ describe('TagTrendPanel — gap samples excluded from stats and count', () => {
   })
 })
 
-describe('TagTrendPanel — back to live (待验证-1)', () => {
+describe('TagTrendPanel — back to live', () => {
   it('shows the Back to live button and wires it to the chart scroll', () => {
     renderPanel({ trendSamples: [{ time: 10, value: 1 }] })
 
