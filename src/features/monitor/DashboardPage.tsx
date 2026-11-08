@@ -12,7 +12,7 @@ import {
   TrendingUp,
 } from 'lucide-react'
 import type React from 'react'
-import { lazy, Suspense, useMemo } from 'react'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router-dom'
 import { useDeadLetters, useDrivers, useStats, useTransports } from '@/api/hooks'
@@ -20,56 +20,11 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { CountUpNumber } from '@/components/ui/count-up-number'
 import { EmptyState } from '@/components/ui/empty-state'
-import { Skeleton } from '@/components/ui/skeleton'
+import { DashboardCharts } from '@/features/monitor/DashboardCharts'
 import { DashboardDeadLetterCard } from '@/features/monitor/DashboardDeadLetterCard'
-import i18n from '@/i18n'
+import { DashboardSkeleton } from '@/features/monitor/DashboardSkeleton'
 import { ConnStateLabel } from '@/lib/constants'
 import { formatNumber, formatUptime } from '@/lib/utils'
-
-// The two live charts pull in recharts — by far the heaviest part of this
-// route. Defer them so the KPI row paints first and the charts stream in.
-const TrafficChart = lazy(() =>
-  import('@/components/charts/TrafficChart').then((m) => ({ default: m.TrafficChart })),
-)
-const MemoryChart = lazy(() =>
-  import('@/components/charts/MemoryChart').then((m) => ({ default: m.MemoryChart })),
-)
-
-/**
- * First-load placeholder that mirrors the real dashboard layout. A spinner
- * in the middle of an empty page tells the operator "something is loading";
- * this keeps the eventual card grid in place so the page settles instead of
- * jumping when the first stats snapshot lands.
- */
-const DashboardSkeleton: React.FC = () => (
-  <div className="space-y-6" role="status" aria-busy="true" aria-label={i18n.t('common.loading')}>
-    <div className="space-y-2">
-      <Skeleton className="h-7 w-44" />
-      <Skeleton className="h-4 w-64" />
-    </div>
-    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
-      {Array.from({ length: 6 }, (_, i) => (
-        <div
-          key={i}
-          className="rounded-3xl squircle border border-border bg-card p-4"
-          style={{ boxShadow: 'var(--shadow-card)' }}
-        >
-          <div className="flex items-start justify-between gap-2">
-            <Skeleton className="h-3 w-16" />
-            <Skeleton className="h-7 w-7 rounded-lg" />
-          </div>
-          <Skeleton className="mt-3.5 h-6 w-20" />
-          <Skeleton className="mt-2.5 h-3 w-14" />
-        </div>
-      ))}
-    </div>
-    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-      <Skeleton className="h-[292px] rounded-3xl" />
-      <Skeleton className="h-[292px] rounded-3xl" />
-    </div>
-    <Skeleton className="h-44 rounded-3xl" />
-  </div>
-)
 
 /**
  * Monitor dashboard — fixed 5-row layout per ARCHITECTURE_RESTRUCTURE.md.
@@ -391,28 +346,7 @@ export const DashboardPage: React.FC = () => {
       </div>
 
       {/* Row 2 — Real-time charts */}
-      <div className="grid grid-cols-1 gap-4 card-stagger lg:grid-cols-2">
-        <Card className="border-border bg-card card-enter">
-          <CardHeader className="space-y-0 px-5 pb-1 pt-4">
-            <CardTitle className="text-sm font-semibold">{t('dashboard.trafficChart')}</CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 pb-4 pt-1">
-            <Suspense fallback={<Skeleton className="h-56 w-full rounded-2xl" />}>
-              <TrafficChart />
-            </Suspense>
-          </CardContent>
-        </Card>
-        <Card className="border-border bg-card card-enter">
-          <CardHeader className="space-y-0 px-5 pb-1 pt-4">
-            <CardTitle className="text-sm font-semibold">{t('dashboard.memoryChart')}</CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 pb-4 pt-1">
-            <Suspense fallback={<Skeleton className="h-56 w-full rounded-2xl" />}>
-              <MemoryChart />
-            </Suspense>
-          </CardContent>
-        </Card>
-      </div>
+      <DashboardCharts />
 
       {/* Row 3 — Driver matrix */}
       <Card className="border-border bg-card">
