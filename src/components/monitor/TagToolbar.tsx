@@ -218,13 +218,15 @@ export function TagToolbar({
                   onClear={() => onStaleOnlyChange(false)}
                 />
               )}
-              <button
-                type="button"
-                onClick={clearAll}
-                className="px-1 text-xs text-muted-foreground underline-offset-2 transition-colors hover:text-foreground hover:underline"
-              >
-                {t('tags.clearFilters')}
-              </button>
+              {filteredCount > 0 && (
+                <button
+                  type="button"
+                  onClick={clearAll}
+                  className="px-1 text-xs text-muted-foreground underline-offset-2 transition-colors hover:text-foreground hover:underline"
+                >
+                  {t('tags.clearFilters')}
+                </button>
+              )}
             </div>
           )}
         </div>

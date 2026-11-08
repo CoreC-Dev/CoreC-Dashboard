@@ -172,7 +172,10 @@ export const TopologyPage: React.FC = () => {
               {/* Loading is not "no drivers" — the dashed empty state
                    renders only once the query has settled. */}
               {driversLoading && drivers.length === 0 ? (
-                <InlinePanelSkeleton rows={3} className="p-0" />
+                <div className="flex flex-col items-center gap-2 py-4">
+                  <img src="/logo-animated.svg" alt="CoreC" className="h-8 w-8" />
+                  <InlinePanelSkeleton rows={3} className="w-full p-0" />
+                </div>
               ) : drivers.length === 0 ? (
                 <div className="p-3 rounded-lg border border-dashed text-xs text-muted-foreground text-center">
                   {t('topology.noDrivers', { defaultValue: 'No southbound drivers attached' })}
@@ -263,7 +266,10 @@ export const TopologyPage: React.FC = () => {
 
             <div className="space-y-2">
               {transportsLoading && transports.length === 0 ? (
-                <InlinePanelSkeleton rows={3} className="p-0" />
+                <div className="flex flex-col items-center gap-2 py-4">
+                  <img src="/logo-animated.svg" alt="CoreC" className="h-8 w-8" />
+                  <InlinePanelSkeleton rows={3} className="w-full p-0" />
+                </div>
               ) : transports.length === 0 ? (
                 <div className="p-3 rounded-lg border border-dashed text-xs text-muted-foreground text-center">
                   {t('topology.noTransports', {
