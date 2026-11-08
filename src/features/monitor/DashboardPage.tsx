@@ -42,12 +42,7 @@ const MemoryChart = lazy(() =>
  * jumping when the first stats snapshot lands.
  */
 const DashboardSkeleton: React.FC = () => (
-  <div
-    className="space-y-6"
-    role="status"
-    aria-busy="true"
-    aria-label={i18n.t('common.loading')}
-  >
+  <div className="space-y-6" role="status" aria-busy="true" aria-label={i18n.t('common.loading')}>
     <div className="space-y-2">
       <Skeleton className="h-7 w-44" />
       <Skeleton className="h-4 w-64" />
@@ -222,10 +217,7 @@ export const DashboardPage: React.FC = () => {
           disabled={statsFetching}
           className="h-8 shrink-0 gap-1.5"
         >
-          <RefreshCw
-            className={`h-3.5 w-3.5 ${statsFetching ? 'animate-spin' : ''}`}
-            aria-hidden
-          />
+          <RefreshCw className={`h-3.5 w-3.5 ${statsFetching ? 'animate-spin' : ''}`} aria-hidden />
           <span>{t('common.refresh')}</span>
         </Button>
       </div>

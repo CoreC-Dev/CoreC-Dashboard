@@ -29,10 +29,7 @@ const ToastRow: React.FC<{ item: ToastItem }> = ({ item }) => {
   const Icon = ICONS[item.kind]
 
   useEffect(() => {
-    const id = window.setTimeout(
-      () => dismiss(item.id),
-      item.kind === 'error' ? 8000 : 4000,
-    )
+    const id = window.setTimeout(() => dismiss(item.id), item.kind === 'error' ? 8000 : 4000)
     return () => window.clearTimeout(id)
   }, [item.id, item.kind, dismiss])
 
@@ -48,9 +45,7 @@ const ToastRow: React.FC<{ item: ToastItem }> = ({ item }) => {
       <div className="min-w-0 flex-1">
         <div className="text-sm font-semibold leading-snug">{item.title}</div>
         {item.description && (
-          <div className="mt-0.5 break-words text-xs text-muted-foreground">
-            {item.description}
-          </div>
+          <div className="mt-0.5 break-words text-xs text-muted-foreground">{item.description}</div>
         )}
       </div>
       <button

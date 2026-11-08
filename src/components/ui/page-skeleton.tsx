@@ -81,11 +81,7 @@ export function ListCardsSkeleton({
 }
 
 /** Detail page placeholder: header + two stacked panels. */
-export function DetailSkeleton({
-  className,
-}: {
-  className?: string
-}): React.ReactElement {
+export function DetailSkeleton({ className }: { className?: string }): React.ReactElement {
   return (
     <div className={cn('space-y-6', className)} aria-busy="true" aria-hidden>
       <div className="space-y-2">

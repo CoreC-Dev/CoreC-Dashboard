@@ -54,7 +54,6 @@ export const CommandPalette: React.FC = () => {
       setActive(0)
     }
   }, [open])
-
   const entries = useMemo<PaletteEntry[]>(() => {
     const base = instanceId ? `/corec/${instanceId}` : ''
     const pages = [...buildMonitorItems(base), ...buildAdminGroups(base).flatMap((g) => g.items)]
@@ -110,10 +109,6 @@ export const CommandPalette: React.FC = () => {
     return filtered.slice(0, 12)
   }, [entries, query])
 
-  useEffect(() => {
-    setActive(0)
-  }, [query])
-
   const runAt = (index: number) => {
     const entry = results[index]
     if (entry) entry.run()
@@ -126,10 +121,12 @@ export const CommandPalette: React.FC = () => {
         <div className="flex items-center gap-2 border-b border-border px-4 pr-10">
           <Search className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
           <input
-            // biome-ignore lint/a11y/noAutofocus: the palette is only mounted while open, and the input is its whole point.
             autoFocus
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              setQuery(e.target.value)
+              setActive(0)
+            }}
             onKeyDown={(e) => {
               if (e.key === 'ArrowDown') {
                 e.preventDefault()
