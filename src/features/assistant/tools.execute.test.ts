@@ -87,7 +87,12 @@ describe('tool execution: reads', () => {
     for (let i = 0; i < 60; i++) snapshot[`t${i}`] = { value: i }
     apiRequestMock.mockResolvedValue({ tags: snapshot })
     const res = await spec('list_tags').execute({})
-    expect(body(res).count).toBe(60)
+    // 60 matched, 50 returned. Both are reported, under names that say which is
+    // which: a bare `count` beside a truncated `tags` reads as tags.length, and a
+    // model that believes it holds all 60 answers questions about the other 10
+    // with "not in cache" instead of "not shown".
+    expect(body(res).matched).toBe(60)
+    expect(body(res).returned).toBe(50)
     expect(Object.keys(body(res).tags as object)).toHaveLength(50)
     expect(String(body(res).note)).toContain('50')
   })
@@ -96,6 +101,24 @@ describe('tool execution: reads', () => {
     apiRequestMock.mockResolvedValue({ tags: { sp: { value: 1 }, sp1: { value: 2 } } })
     const res = await spec('list_tags').execute({ tag: 'sp', exact: true })
     expect(Object.keys(body(res).tags as object)).toEqual(['sp'])
+  })
+
+  it('list_tags reports returned == tags.length, and matched == returned under the cap', async () => {
+    // Both counts are derivable from the payload, so asserting them protects
+    // nothing on its own. Their job is to stay equal to it: `returned` is the only
+    // one of the two that cannot be re-derived from `tags` alone in the truncated
+    // case (it equals the cap by argument, not by observation), which is exactly
+    // the case where a drifting count would do the most damage.
+    const snapshot: Record<string, unknown> = {}
+    for (let i = 0; i < 7; i++) snapshot[`t${i}`] = { value: i }
+    apiRequestMock.mockResolvedValue({ tags: snapshot })
+
+    const res = await spec('list_tags').execute({})
+    const b = body(res)
+    expect(b.matched).toBe(7)
+    expect(b.returned).toBe(7)
+    expect(b.returned).toBe(Object.keys(b.tags as object).length)
+    expect(b.note).toBeUndefined()
   })
 
   it('list_alerts filters by driver locally', async () => {

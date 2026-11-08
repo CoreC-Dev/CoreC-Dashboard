@@ -51,7 +51,7 @@
 |---|---|---|---|
 | `list_drivers` | `GET /drivers` | 读 | 驱动清单与状态 |
 | `driver_status` | `GET /drivers/{name}` | 读 | 单驱动状态 |
-| `list_tags` | 带 `driver` 时 `GET /drivers/{name}/tags`，否则 `GET /tags`；**子串/精确过滤在本仓库本地**：`filterPoints(entries, tag, exact)` | 读 | 点位最新值；最多列 50 点，超出注明。`exact:true` 时兼任 `corec-mcp` 的 `read_tag`——精确匹配单点，未命中返回空，不取邻近点 |
+| `list_tags` | 带 `driver` 时 `GET /drivers/{name}/tags`，否则 `GET /tags`；**子串/精确过滤在本仓库本地**：`filterPoints(entries, tag, exact)` | 读 | 点位最新值；最多列 50 点（返回 `matched` / `returned` 与 `note`）。`exact:true` 时兼任 `corec-mcp` 的 `read_tag`——精确匹配单点，未命中返回空，不取邻近点 |
 | `list_alerts` | `GET /alerts` | 读 | 活动告警 |
 | `list_paused_drivers` | `GET /drivers/paused` | 读 | 暂停驱动 |
 | `get_configs` | `GET /configs/raw` | 读 | 运行中配置 YAML 原文；受 64 KiB 截断 |
@@ -111,8 +111,8 @@ provider:
 
 **上下文守卫（已实现）**：
 
-- **单次工具结果硬上限 64 KiB**：超出截断，并在内容里写明"已截断 N 字符，请加过滤条件重查"，让模型知道它没看全。
-- **`list_tags` 最多列 50 点**：更多时返回 `count` 与注明"仅显示 50 / 共 N，请按 driver/tag 收窄"。
+- **单次工具结果硬上限 64 KiB**：超出截断，并在内容里写明"已截断 N 字节，请加过滤条件重查"，让模型知道它没看全。上限按 **UTF-8 字节**计（`KiB` 就是字节；按 `String.length` 计的中文载荷会到三倍）；提示语本身计入上限，否则每条被截断的结果都必然超标。N 是**扣下**的字节数（读者量得出到手多少，量不出扣了多少）。
+- **`list_tags` 最多列 50 点**：返回 `matched`（命中数）与 `returned`（本次返回数），超出时另加 `note`："showing 50 of N; narrow by driver/tag"。两个计数分开，是因为它们不等时恰好最要紧——模型若把命中数当成自己的 `tags` 规模，就会对没拿到的那部分回答"缓存里没有"，而那部分它根本没见过。
 - **工具轮次上限 8 步**：到顶后停止自动调用，转向用户可见的"已停止自动调用工具"标记，而不是继续追问模型。
 - **未实现**：历史滚动压缩与总时长上限。当前会话按轮次线性增长，长对话会累积 token——这是已知缺口，不是既有能力。
 

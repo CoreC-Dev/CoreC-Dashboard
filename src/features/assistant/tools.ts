@@ -275,7 +275,16 @@ const readTools: AssistantToolSpec[] = [
         const matches = filterPoints(Object.entries(res.tags), needle, args.exact === true)
         const capped = matches.slice(0, MAX_LISTED_TAGS)
         const tags = Object.fromEntries(capped)
-        const out = { tags, count: matches.length }
+        // Counts are named for what they bound. A bare `count` next to a
+        // truncated `tags` object reads as "the length of tags" -- the obvious
+        // meaning of the word in a JSON body -- and the one case where it
+        // differs is exactly the case where reading it wrong matters: 300
+        // matched, 50 sent, and a model that believes it was given 300 answers
+        // "how many points have no value in cache" with "none" when it has
+        // seen one sixth of the map.
+        //   matched  is how many the filter hit
+        //   returned is how many are in this object, so the two can be compared
+        const out = { tags, matched: matches.length, returned: capped.length }
         if (matches.length > MAX_LISTED_TAGS) {
           Object.assign(out, {
             note: `showing ${MAX_LISTED_TAGS} of ${matches.length}; narrow by driver/tag`,
