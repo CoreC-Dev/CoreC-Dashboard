@@ -58,16 +58,19 @@ export const TopologyPage: React.FC = () => {
   // config is edited via PUT /configs.
   const config = useParsedConfig(rawYaml)
 
-  // Precompute connection summaries once per config/drivers/transports change
-  // instead of recomputing inside every.map() iteration.
+  // Prefer the status `endpoint` field the backend now reports; fall back
+  // to parsing the raw YAML for older backends. This keeps the topology
+  // page working without re-implementing config semantics in the frontend.
   const driverConnSummaries = useMemo(() => {
     const m = new Map<string, string>()
-    for (const d of drivers) m.set(d.name, getDriverConnectionSummary(config, d.name))
+    for (const d of drivers)
+      m.set(d.name, d.endpoint ?? getDriverConnectionSummary(config, d.name))
     return m
   }, [config, drivers])
   const transportConnSummaries = useMemo(() => {
     const m = new Map<string, string>()
-    for (const tr of transports) m.set(tr.name, getTransportConnectionSummary(config, tr.name))
+    for (const tr of transports)
+      m.set(tr.name, tr.endpoint ?? getTransportConnectionSummary(config, tr.name))
     return m
   }, [config, transports])
 

@@ -38,6 +38,8 @@ export interface DriverStatus {
   read_count: number
   error_count: number
   reconnect_count: number
+  /** Compact connection target (host:port, serial device, OPC endpoint). */
+  endpoint?: string
 }
 
 export interface TransportStatus {
@@ -50,6 +52,8 @@ export interface TransportStatus {
   last_publish: string
   queue_size: number
   dropped_commands: number
+  /** Compact connection target (broker URL, webhook URL, notify channel). */
+  endpoint?: string
 }
 
 export interface RuleStat {
