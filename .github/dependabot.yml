@@ -1,4 +1,3 @@
-# Dependabot (H6, quality audit 2026-10-21).
 version: 2
 updates:
   - package-ecosystem: npm
