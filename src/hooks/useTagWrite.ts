@@ -39,7 +39,9 @@ export function useTagWrite(): UseTagWriteResult {
 
   const openWrite = useCallback((point: DataPoint) => {
     setSelectedTagForWrite(point)
-    setWriteValue(String(point.value))
+    // null/undefined means "never collected": pre-filling the literal
+    // "null" would submit it verbatim for string tags.
+    setWriteValue(point.value == null ? '' : String(point.value))
   }, [])
 
   const closeWrite = useCallback(() => {

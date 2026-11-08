@@ -39,7 +39,8 @@ export function useConnection(): ConnectionContextValue {
 }
 
 // Per-instance QueryClient cache. Keyed by instance ID so switching instances
-// gives a fresh cache and switching back restores the previous one.
+// gives a fresh cache. The provider deletes its entry on unmount, so returning
+// to an instance creates an empty client and refetches.
 const queryClientCache = new Map<string, QueryClient>()
 
 // Track the last instance whose config store was reset, so navigating away
