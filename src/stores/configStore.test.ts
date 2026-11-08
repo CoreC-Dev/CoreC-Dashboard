@@ -271,9 +271,9 @@ describe('configStore — driver CRUD', () => {
     expect(s.workingConfig?.drivers?.[0]?.settings.host).toBe('10.0.0.99')
   })
 
-  it('upsertDriver returns false when no working config', () => {
+  it('upsertDriver works after resetToEmpty', () => {
     useConfigStore.getState().resetToEmpty()
-    // resetToEmpty creates {}, so upsertDriver should work
+    // resetToEmpty creates {}, so upsertDriver creates the drivers array.
     const ok = useConfigStore.getState().upsertDriver(newDriver)
     expect(ok).toBe(true)
   })

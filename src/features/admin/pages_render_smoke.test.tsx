@@ -158,11 +158,9 @@ vi.setConfig({ testTimeout: 15_000 })
 
 describe('render smoke (#185 regression)', () => {
   it('TransportsPage renders without infinite loop', async () => {
-    let container: ReturnType<typeof render> | undefined
     act(() => {
-      container = render(wrap(<TransportsPage />))
+      render(wrap(<TransportsPage />))
     })
-    expect(container?.container).toBeTruthy()
     // Static page chrome renders synchronously — an empty <div> would fail here.
     expect(screen.getByText('Northbound Transports')).toBeTruthy()
     expect(screen.getByText('Runtime Status')).toBeTruthy()
@@ -172,11 +170,9 @@ describe('render smoke (#185 regression)', () => {
   })
 
   it('RulesPage renders without infinite loop', async () => {
-    let container: ReturnType<typeof render> | undefined
     act(() => {
-      container = render(wrap(<RulesPage />))
+      render(wrap(<RulesPage />))
     })
-    expect(container?.container).toBeTruthy()
     // Static page chrome renders synchronously — an empty <div> would fail here.
     expect(screen.getByText('Rule Pipeline & Routing')).toBeTruthy()
     expect(screen.getByText('Runtime Rules')).toBeTruthy()
@@ -192,11 +188,9 @@ describe('render smoke (#185 regression)', () => {
     // the vi.mock calls at the top) — jsdom can host neither. The REAL
     // EventLogTerminal component still mounts, proving the page wires
     // the terminal section without a real socket.
-    let container: ReturnType<typeof render> | undefined
     act(() => {
-      container = render(wrap(<DiagnosticsPage />))
+      render(wrap(<DiagnosticsPage />))
     })
-    expect(container?.container).toBeTruthy()
     // Static page chrome renders synchronously — an empty <div> would fail here.
     expect(screen.getByText('Observability & Diagnostics')).toBeTruthy()
     expect(screen.getByText('Prometheus Runtime Metrics')).toBeTruthy()

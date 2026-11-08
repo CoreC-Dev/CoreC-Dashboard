@@ -1,3 +1,6 @@
+// @vitest-environment node
+// streamChat only uses fetch/Response/ReadableStream (Node globals); the jsdom
+// environment does not expose ReadableStream, so this suite runs in node.
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { streamChat } from '@/features/assistant/provider'
 import type { AssistantProvider } from '@/types/assistant'

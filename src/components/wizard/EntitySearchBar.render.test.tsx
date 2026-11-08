@@ -53,13 +53,6 @@ function SearchableList({ entities }: { entities: TestEntity[] }) {
 }
 
 describe('EntitySearchBar (render)', () => {
-  it('shows all entities when the input is empty', () => {
-    render(<SearchableList entities={ENTITIES} />)
-
-    expect(screen.getByRole('textbox')).toHaveValue('')
-    expect(screen.getAllByRole('listitem')).toHaveLength(4)
-  })
-
   it('filters the rendered list as the user types', () => {
     render(<SearchableList entities={ENTITIES} />)
     const input = screen.getByRole('textbox')

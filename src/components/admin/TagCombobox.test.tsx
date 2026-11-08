@@ -26,8 +26,7 @@ const TAGS = [
 describe('TagCombobox', () => {
   it('renders an editable input with the current value', () => {
     render(<TagCombobox value="temp" onChange={() => {}} availableTags={TAGS} />)
-    const input = screen.getByDisplayValue('temp')
-    expect(input).toBeInTheDocument()
+    screen.getByDisplayValue('temp')
   })
 
   it('shows all tags on focus when input is empty', () => {

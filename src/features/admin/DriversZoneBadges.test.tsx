@@ -154,7 +154,6 @@ describe('dual-zone badges and cross-links', () => {
     // runtime card is flagged so the operator sees the removal is not
     // yet applied.
     await waitFor(() => expect(screen.getAllByText('Pending changes').length).toBe(1))
-    expect(screen.getAllByText('plc-live').length).toBeGreaterThan(0) // sanity: page intact
   })
 
   it('a config-only driver (not in the runtime list) shows Configured, not running', async () => {

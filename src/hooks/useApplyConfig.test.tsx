@@ -189,7 +189,10 @@ describe('useApplyConfig — server-side validate before the PUT', () => {
       result.current.dialogProps.onConfirm()
     })
     await vi.waitFor(() => expect(putCalls).toHaveLength(1))
-    expect(result.current.dialogProps.validationWarnings).toContain('idle mode: no data source')
+    // setServerWarnings lands in a later render than the PUT mutation callback.
+    await vi.waitFor(() =>
+      expect(result.current.dialogProps.validationWarnings).toContain('idle mode: no data source'),
+    )
     expect(result.current.open).toBe(false)
   })
 

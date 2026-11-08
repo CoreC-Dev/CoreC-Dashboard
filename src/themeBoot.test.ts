@@ -16,6 +16,8 @@
 // path is a string argument (not an import statement) and vite/client types
 // the call itself. The sha256 uses WebCrypto (globalThis.crypto), which the
 // DOM lib types and Node 18+ provides.
+// @ts-expect-error — node builtin; the app tsconfig intentionally omits node types.
+import { createHash } from 'node:crypto'
 import { describe, expect, it } from 'vitest'
 
 const htmlModules = import.meta.glob('../index.html', {
@@ -23,7 +25,9 @@ const htmlModules = import.meta.glob('../index.html', {
   import: 'default',
   eager: true,
 }) as Record<string, string>
-const html = Object.values(htmlModules)[0] ?? ''
+// Normalize CRLF: the pinned hash is computed over the committed (LF) bytes;
+// a Windows checkout must not change what the CSP is compared against.
+const html = (Object.values(htmlModules)[0] ?? '').replace(/\r\n/g, '\n')
 
 function extractInlineScript(source: string): string {
   const match = source.match(/<script>([\s\S]*?)<\/script>/)
@@ -73,9 +77,10 @@ function bootWith(savedTheme: string | null, prefersDark = false) {
   }
 }
 
-async function sha256Base64(text: string): Promise<string> {
-  const digest = await globalThis.crypto.subtle.digest('SHA-256', new TextEncoder().encode(text))
-  return btoa(String.fromCharCode(...new Uint8Array(digest)))
+function sha256Base64(text: string): string {
+  // Node's crypto is available to the test runner; jsdom's `crypto` does not
+  // expose SubtleCrypto.
+  return createHash('sha256').update(text).digest('base64')
 }
 
 describe('theme bootstrap', () => {
@@ -86,8 +91,8 @@ describe('theme bootstrap', () => {
     expect(modulePos).toBeGreaterThan(bootPos)
   })
 
-  it('CSP pins the exact sha256 hash of the inline script', async () => {
-    const digest = await sha256Base64(script)
+  it('CSP pins the exact sha256 hash of the inline script', () => {
+    const digest = sha256Base64(script)
     expect(cspScriptSrc(html)).toContain(`'sha256-${digest}'`)
   })
 
