@@ -157,6 +157,68 @@ describe('tool execution: reads', () => {
     expect(alerts[0].driver).toBe('b')
   })
 
+  it('list_alerts counts the filtered set, and keeps the engine-wide total apart', async () => {
+    // Three alerts on the engine, one of them on driver b. The engine answers
+    // active_count: 3 -- it has no idea a driver filter is coming, and it is
+    // correct: three alerts ARE active. Repeating that number beside the
+    // one-element `alerts` array would say "b has 3 active alerts" when b has
+    // one. Both numbers are true; they are true about different sets, and only
+    // the names can tell the reader which is which.
+    apiRequestMock.mockResolvedValue({
+      alerts: [
+        {
+          key: 'k1',
+          rule: 'r1',
+          driver: 'a',
+          tag: 't',
+          quality: 3,
+          count: 1,
+          acked: false,
+          first_fired: '',
+          last_fired: '',
+        },
+        {
+          key: 'k2',
+          rule: 'r2',
+          driver: 'b',
+          tag: 't',
+          quality: 3,
+          count: 2,
+          acked: true,
+          first_fired: '',
+          last_fired: '',
+        },
+        {
+          key: 'k3',
+          rule: 'r3',
+          driver: 'c',
+          tag: 't',
+          quality: 3,
+          count: 5,
+          acked: false,
+          first_fired: '',
+          last_fired: '',
+        },
+      ],
+      history: [],
+      active_count: 3,
+      acked_count: 1,
+    })
+
+    const filtered = body(await spec('list_alerts').execute({ driver: 'b' }))
+    expect(filtered.active_count).toBe(1) // the answer to "active for b"
+    expect(filtered.acked_count).toBe(1)
+    expect(filtered.unacked_count).toBe(0)
+    expect(filtered.total_active).toBe(3) // the answer to "active anywhere"
+    expect(filtered.alerts as unknown[]).toHaveLength(1)
+
+    const unfiltered = body(await spec('list_alerts').execute({}))
+    expect(unfiltered.active_count).toBe(3)
+    expect(unfiltered.acked_count).toBe(1)
+    expect(unfiltered.unacked_count).toBe(2)
+    expect(unfiltered.total_active).toBe(3)
+  })
+
   it('get_configs returns the YAML verbatim, not a quoted blob', async () => {
     apiRequestMock.mockResolvedValue('global:\n  engine:\n    workers: 4\n')
     const res = await spec('get_configs').execute({})

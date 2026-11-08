@@ -319,9 +319,27 @@ const readTools: AssistantToolSpec[] = [
             acked: a.acked,
             last_fired: a.last_fired,
           }))
+        // The counts are re-derived from what is being returned, not copied from
+        // the engine. CoreC's /alerts reports active_count over ALL drivers, so
+        // passing it through beside a driver-filtered `alerts` array says "300
+        // active" and shows three: the number is true about a set the caller did
+        // not ask about and cannot see. A filtered answer has to be counted over
+        // the filtered set.
+        //
+        // total_active keeps the engine-wide figure, under a name that says so, so
+        // the caller can still see that plc1's 3 are part of 300 and go filter the
+        // rest rather than concluding the plant is quiet.
+        const active = alerts.length
+        const acked = alerts.filter((a) => a.acked).length
         return {
-          content: JSON.stringify({ active_count: res.active_count, alerts }),
-          summary: `${alerts.length} active alert(s)`,
+          content: JSON.stringify({
+            active_count: active,
+            acked_count: acked,
+            unacked_count: active - acked,
+            total_active: res.active_count,
+            alerts,
+          }),
+          summary: `${active} active alert(s)`,
         }
       }),
   },
