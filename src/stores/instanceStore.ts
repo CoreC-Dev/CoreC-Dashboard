@@ -1,6 +1,12 @@
 import { z } from 'zod'
 import { create } from 'zustand'
-import { safePersist, safeRead } from '@/lib/storage'
+import {
+  safePersist,
+  safeRead,
+  safeRemove,
+  safeSessionPersist,
+  safeSessionRead,
+} from '@/lib/storage'
 
 import type { CoreCInstance } from '@/types/models'
 
@@ -92,6 +98,8 @@ interface InstanceState {
    * refresh. Surfaced as a visible warning instead of silent data loss.
    */
   persistFailed: boolean
+  /** True = secrets are also written to localStorage (opt-in, XSS-exposed). */
+  rememberSecrets: boolean
 
   addInstance: (data: Omit<CoreCInstance, 'id' | 'createdAt' | 'sortOrder'>) => string
   updateInstance: (id: string, data: Partial<Omit<CoreCInstance, 'id' | 'createdAt'>>) => void
@@ -108,15 +116,31 @@ interface InstanceState {
   exportInstances: (includeSecrets?: boolean) => string
   importInstances: (json: string, mode?: 'merge' | 'replace') => ImportResult
   clearAll: () => void
+  setRememberSecrets: (remember: boolean) => void
 }
 
 const STORAGE_KEY = 'corec_instances'
 /**
- * Secrets are stored in localStorage alongside instance metadata so
- * API keys persist across tabs and browser sessions. The operator
- * explicitly opted into this convenience; clearAll() removes both.
+ * Secrets live in sessionStorage by default: they survive reloads in this
+ * tab but not browser restarts, and the long-lived localStorage copy is
+ * removed. Operators who need cross-session convenience opt in with
+ * rememberSecrets, which writes them to localStorage (readable by any XSS
+ * on this origin — the UI states that trade-off).
  */
 const SECRETS_STORAGE_KEY = 'corec_instance_secrets'
+const REMEMBER_SECRETS_KEY = 'corec_remember_secrets'
+let rememberSecretsPersisted = safeRead(REMEMBER_SECRETS_KEY) === 'true'
+
+function parseSecretMap(raw: string | null): Record<string, string> {
+  if (!raw) return {}
+  try {
+    const parsed = JSON.parse(raw)
+    if (parsed && typeof parsed === 'object') return parsed as Record<string, string>
+  } catch {
+    /* best-effort */
+  }
+  return {}
+}
 
 /** Strip the secret field from an instance for safe persistent storage. */
 function stripSecret(instance: CoreCInstance): Omit<CoreCInstance, 'secret'> & { secret?: string } {
@@ -144,18 +168,22 @@ function loadInstances(): CoreCInstance[] {
   return []
 }
 
-/** Load the id→secret map from localStorage. */
+/**
+ * Load the id→secret map. sessionStorage is authoritative; a legacy
+ * localStorage copy is migrated into it and then removed unless the
+ * operator has opted into remembering secrets.
+ */
 function loadSecrets(): Record<string, string> {
-  try {
-    const raw = safeRead(SECRETS_STORAGE_KEY)
-    if (raw) {
-      const parsed = JSON.parse(raw)
-      if (parsed && typeof parsed === 'object') return parsed
-    }
-  } catch {
-    /* best-effort */
+  const fromSession = parseSecretMap(safeSessionRead(SECRETS_STORAGE_KEY))
+  const legacy = parseSecretMap(safeRead(SECRETS_STORAGE_KEY))
+  const merged = { ...legacy, ...fromSession }
+  safeSessionPersist(SECRETS_STORAGE_KEY, JSON.stringify(merged))
+  if (rememberSecretsPersisted) {
+    safePersist(SECRETS_STORAGE_KEY, JSON.stringify(merged))
+  } else {
+    safeRemove(SECRETS_STORAGE_KEY)
   }
-  return {}
+  return merged
 }
 
 /**
@@ -167,15 +195,21 @@ function persistInstances(instances: CoreCInstance[]): boolean {
   // Store non-sensitive metadata in localStorage (persistent).
   const safeInstances = instances.map((i) => stripSecret(i))
   const metaOk = safePersist(STORAGE_KEY, JSON.stringify(safeInstances))
-  // Store secrets in localStorage (persist across tabs and sessions).
+  // Secrets go to sessionStorage; only an explicit opt-in copies them to
+  // localStorage. Otherwise any stale long-lived copy is removed.
   const secrets: Record<string, string> = {}
   for (const inst of instances) {
     if (inst.secret) {
       secrets[inst.id] = inst.secret
     }
   }
-  const secretsOk = safePersist(SECRETS_STORAGE_KEY, JSON.stringify(secrets))
-  return metaOk && secretsOk
+  const payload = JSON.stringify(secrets)
+  const sessionOk = safeSessionPersist(SECRETS_STORAGE_KEY, payload)
+  if (rememberSecretsPersisted) {
+    return metaOk && sessionOk && safePersist(SECRETS_STORAGE_KEY, payload)
+  }
+  safeRemove(SECRETS_STORAGE_KEY)
+  return metaOk && sessionOk
 }
 
 function generateId(): string {
@@ -189,6 +223,7 @@ export const useInstanceStore = create<InstanceState>((set, get) => ({
   probing: {},
   probeErrors: {},
   persistFailed: false,
+  rememberSecrets: rememberSecretsPersisted,
 
   addInstance: (data) => {
     const id = generateId()
@@ -321,6 +356,18 @@ export const useInstanceStore = create<InstanceState>((set, get) => ({
     const persisted = persistInstances(next)
     set({ instances: next, persistFailed: !persisted })
     return { added, skipped, invalid, parseError: false }
+  },
+
+  setRememberSecrets: (remember) => {
+    if (remember === rememberSecretsPersisted) {
+      set({ rememberSecrets: remember })
+      return
+    }
+    rememberSecretsPersisted = remember
+    if (remember) safePersist(REMEMBER_SECRETS_KEY, 'true')
+    else safeRemove(REMEMBER_SECRETS_KEY)
+    const persisted = persistInstances(get().instances)
+    set({ rememberSecrets: remember, persistFailed: !persisted })
   },
 
   clearAll: () => {

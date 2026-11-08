@@ -79,6 +79,8 @@
     "addNew": "Add New CoreC",
     "myInstances": "My CoreC Instances",
     "instanceCount": "{{count}} instance(s)",
+    "rememberSecrets": "Remember instance API keys after closing the browser",
+    "rememberSecretsDesc": "Off by default: keys stay in this tab only. Turning this on writes them to localStorage, where any script on this origin can read them.",
     "export": "Export",
     "import": "Import",
     "exportAll": "Export All Instance Configs",

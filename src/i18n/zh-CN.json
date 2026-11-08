@@ -79,6 +79,8 @@
     "addNew": "添加新 CoreC",
     "myInstances": "我的 CoreC 实例",
     "instanceCount": "共 {{count}} 个实例",
+    "rememberSecrets": "关闭浏览器后仍记住实例 API 密钥",
+    "rememberSecretsDesc": "默认关闭：密钥只保留在当前标签页。开启后会写入 localStorage，同源的任何脚本都能读取。",
     "export": "导出",
     "import": "导入",
     "exportAll": "导出所有实例配置",

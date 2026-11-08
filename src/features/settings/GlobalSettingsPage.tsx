@@ -35,6 +35,8 @@ export const GlobalSettingsPage: React.FC = () => {
   const { theme, setTheme } = useThemeStore()
   const clearAll = useInstanceStore((s) => s.clearAll)
   const instanceCount = useInstanceStore((s) => s.instances.length)
+  const rememberSecrets = useInstanceStore((s) => s.rememberSecrets)
+  const setRememberSecrets = useInstanceStore((s) => s.setRememberSecrets)
   const { providers, selected, allowWrite, setProviders, setAllowWrite } = useAssistantSettings()
 
   const [importOpen, setImportOpen] = useState(false)
@@ -120,6 +122,19 @@ export const GlobalSettingsPage: React.FC = () => {
           <p className="text-xs text-muted-foreground">
             {t('instances.instanceCount', { count: instanceCount })}
           </p>
+
+          <div className="space-y-2 rounded-2xl border border-border p-3">
+            <label className="flex items-start gap-2 text-sm">
+              <input
+                type="checkbox"
+                className="mt-1"
+                checked={rememberSecrets}
+                onChange={(e) => setRememberSecrets(e.target.checked)}
+              />
+              <span>{t('instances.rememberSecrets')}</span>
+            </label>
+            <p className="text-xs text-muted-foreground">{t('instances.rememberSecretsDesc')}</p>
+          </div>
 
           <div className="space-y-2">
             <Button variant="outline" className="w-full justify-start" onClick={handleExport}>

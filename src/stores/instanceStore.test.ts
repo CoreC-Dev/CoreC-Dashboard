@@ -35,18 +35,27 @@ beforeEach(() => {
   sessionStorage.clear()
   // Reset the store to a clean state (the module-level initialInstances was
   // captured once at import time; setState overrides it for each test).
-  useInstanceStore.setState({ instances: [], probing: {}, probeErrors: {}, persistFailed: false })
+  useInstanceStore.setState({
+    instances: [],
+    probing: {},
+    probeErrors: {},
+    persistFailed: false,
+    rememberSecrets: false,
+  })
+  useInstanceStore.getState().setRememberSecrets(false)
   vi.restoreAllMocks()
 })
 
 describe('instanceStore — secret persistence', () => {
-  it('stores secrets in localStorage, stripped from the metadata entry', () => {
+  it('stores secrets in sessionStorage, stripped from localStorage metadata', () => {
     const id = useInstanceStore.getState().addInstance(newInstanceData({ name: 'gw-1' }))
 
     const localRaw = localStorage.getItem(STORAGE_KEY)
-    const secretsRaw = localStorage.getItem(SECRETS_STORAGE_KEY)
+    const secretsRaw = sessionStorage.getItem(SECRETS_STORAGE_KEY)
     expect(localRaw).toBeTruthy()
     expect(secretsRaw).toBeTruthy()
+    // Default: no long-lived plaintext secret copy.
+    expect(localStorage.getItem(SECRETS_STORAGE_KEY)).toBeNull()
 
     const localParsed = JSON.parse(localRaw as string) as Array<Record<string, unknown>>
     const secretsParsed = JSON.parse(secretsRaw as string) as Record<string, string>
@@ -56,19 +65,33 @@ describe('instanceStore — secret persistence', () => {
     expect(localParsed[0].id).toBe(id)
     expect(localParsed[0].secret).toBeUndefined()
 
-    // Secret persisted to localStorage keyed by instance id.
+    // Secret persisted to sessionStorage keyed by instance id.
     expect(secretsParsed[id]).toBe('secret-token')
   })
 
-  it('omits empty secrets from the localStorage secrets map', () => {
+  it('omits empty secrets from the sessionStorage secrets map', () => {
     const id = useInstanceStore
       .getState()
       .addInstance(newInstanceData({ name: 'no-secret', secret: '' }))
-    const secretsParsed = JSON.parse(localStorage.getItem(SECRETS_STORAGE_KEY) as string) as Record<
+    const secretsParsed = JSON.parse(
+      sessionStorage.getItem(SECRETS_STORAGE_KEY) as string,
+    ) as Record<string, string>
+    expect(secretsParsed[id]).toBeUndefined()
+  })
+
+  it('copies secrets to localStorage only after explicit opt-in', () => {
+    useInstanceStore.getState().setRememberSecrets(true)
+    const id = useInstanceStore.getState().addInstance(newInstanceData({ name: 'remembered' }))
+
+    const persisted = JSON.parse(localStorage.getItem(SECRETS_STORAGE_KEY) as string) as Record<
       string,
       string
     >
-    expect(secretsParsed[id]).toBeUndefined()
+    expect(persisted[id]).toBe('secret-token')
+
+    useInstanceStore.getState().setRememberSecrets(false)
+    expect(localStorage.getItem(SECRETS_STORAGE_KEY)).toBeNull()
+    expect(JSON.parse(sessionStorage.getItem(SECRETS_STORAGE_KEY) as string)[id]).toBe('secret-token')
   })
 })
 
@@ -298,7 +321,7 @@ describe('instanceStore — clearAll', () => {
     useInstanceStore.getState().addInstance(newInstanceData({ name: 'a', secret: 's1' }))
     useInstanceStore.getState().addInstance(newInstanceData({ name: 'b', secret: 's2' }))
     expect(localStorage.getItem(STORAGE_KEY)).toBeTruthy()
-    expect(localStorage.getItem(SECRETS_STORAGE_KEY)).toBeTruthy()
+    expect(sessionStorage.getItem(SECRETS_STORAGE_KEY)).toBeTruthy()
 
     useInstanceStore.getState().clearAll()
 
@@ -308,7 +331,8 @@ describe('instanceStore — clearAll', () => {
 
     const localParsed = JSON.parse(localStorage.getItem(STORAGE_KEY) as string)
     expect(localParsed).toEqual([])
-    const secretsParsed = JSON.parse(localStorage.getItem(SECRETS_STORAGE_KEY) as string)
+    expect(localStorage.getItem(SECRETS_STORAGE_KEY)).toBeNull()
+    const secretsParsed = JSON.parse(sessionStorage.getItem(SECRETS_STORAGE_KEY) as string)
     expect(secretsParsed).toEqual({})
   })
 })
@@ -388,6 +412,11 @@ describe('instanceStore — loadInstances resilience', () => {
     expect(instances).toHaveLength(1)
     expect(instances[0].id).toBe(id)
     expect(instances[0].secret).toBe('restored-secret')
+    // The legacy long-lived copy is migrated into sessionStorage and removed.
+    expect(localStorage.getItem(SECRETS_STORAGE_KEY)).toBeNull()
+    expect(JSON.parse(sessionStorage.getItem(SECRETS_STORAGE_KEY) as string)[id]).toBe(
+      'restored-secret',
+    )
   })
 })
 
