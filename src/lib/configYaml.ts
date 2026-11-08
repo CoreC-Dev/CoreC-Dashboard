@@ -67,7 +67,19 @@ const DUMP_OPTS = {
 
 /** Serialize a typed config object back to a YAML string acceptable to CoreC. */
 export function dumpConfigYaml(config: CoreCConfig): string {
-  return dump(config, DUMP_OPTS)
+  try {
+    return dump(config, DUMP_OPTS)
+  } catch (err) {
+    // js-yaml identifies plain objects by realm-local prototype identity, so a
+    // structurally plain config that crossed a realm boundary (iframe, worker,
+    // test VM) is rejected as "unacceptable". Config is JSON data by contract;
+    // normalize through JSON and retry once, then rethrow the original error.
+    try {
+      return dump(JSON.parse(JSON.stringify(config)) as CoreCConfig, DUMP_OPTS)
+    } catch {
+      throw err
+    }
+  }
 }
 
 /**
