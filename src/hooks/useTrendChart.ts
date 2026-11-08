@@ -22,8 +22,7 @@ interface UseTrendChartResult {
   chartContainerRef: React.RefObject<HTMLDivElement | null>
   /** Jump the time scale back to the live edge after the operator panned or
    *  zoomed into history — lightweight-charts only auto-follows while the
-   *  newest bar is at the visible right edge (audit 待验证-1 verification:
-   *  no scrollToRealTime/fitContent call existed anywhere before this). */
+   *  newest bar is at the visible right edge. */
   scrollToLive: () => void
 }
 

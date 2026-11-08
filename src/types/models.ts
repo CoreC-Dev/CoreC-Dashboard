@@ -62,7 +62,7 @@ export interface RuleStat {
   // CoreC serializes targets as null (not []) when empty.
   targets: string[] | null
   priority: number
-  /** iptables-style continue flag (ADR-010). */
+  /** iptables-style continue flag. */
   continue: boolean
   disabled: boolean
   hit_count: number
@@ -253,7 +253,7 @@ export interface CoreCInstance {
   createdAt: string
   /** Sort order for card display. */
   sortOrder: number
-  /** Per-instance proxy mode (ADR-004a). 'auto' follows global detection. */
+  /** Per-instance proxy mode. 'auto' follows global detection. */
   useProxy?: 'auto' | 'proxy' | 'direct'
 }
 

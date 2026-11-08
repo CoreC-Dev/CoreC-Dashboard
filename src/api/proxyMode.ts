@@ -1,17 +1,5 @@
 /**
- * Proxy mode detection (ADR-004 addendum).
- *
- * ADR-004 introduced a same-origin proxy (`/corec-proxy/*` via server.mjs) for
- * security: the browser sends same-origin requests, server.mjs forwards them to
- * the real CoreC backend. This keeps CSP `connect-src 'self'` and prevents
- * credential leakage.
- *
- * However, when deployed to static hosting (e.g. GitHub Pages) there is no
- * server.mjs — the proxy endpoint returns 404. This module detects that
- * condition at startup and falls back to direct connections (fetch directly to
- * `baseUrl + path`). In direct mode, CSP is relaxed to `connect-src * ws: wss:`
- * and credentials travel to the backend in the browser (the pre-ADR-004
- * behavior). This is less secure but restores functionality on static hosts.
+ * Proxy mode detection.
  *
  * Detection: probe `HEAD /corec-proxy/` once at startup.
  * - 404 → direct mode (static host, no proxy)
@@ -46,8 +34,6 @@ export async function detectProxyMode(): Promise<'proxy' | 'direct'> {
 // text/html, which would otherwise be misjudged as proxy mode — and every
 // subsequent /corec-proxy/* call would silently fetch HTML instead of
 // JSON. The real proxy (server.mjs) answers JSON or a bare status.
-// (待验证-1: verified GitHub Pages serves genuine 404s — no false
-// positives there; the content-type sniff closes the rewrite-host gap.)
 function isDirectSignal(res: Response): boolean {
   if (res.status === 404) return true
   const contentType = res.headers.get('content-type') ?? ''
@@ -75,7 +61,7 @@ export function resetProxyMode(): void {
 /**
  * Resolve the effective proxy mode for a specific instance.
  *
- * Per-instance setting (ADR-004a) takes precedence:
+ * Per-instance setting takes precedence:
  * - 'proxy'  → force proxy (server.mjs forwards to backend)
  * - 'direct' → force direct (browser connects to backend)
  * - 'auto' / undefined → follow the global auto-detected mode

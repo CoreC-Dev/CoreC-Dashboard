@@ -200,7 +200,7 @@ if (violations.length === 0 && singleSourceViolations.length === 0) {
     console.error(`  - ${v}`)
   }
   console.error(
-    `\n修复指引：将共享逻辑下沉到更底层（lib/api/hooks/stores/components），或在 EXEMPTIONS 登记已知技术债（含 TD ID + 批次）。`,
+    `\n修复指引：将共享逻辑下沉到更底层（lib/api/hooks/stores/components），或在 EXEMPTIONS 登记已知技术债。`,
   )
   process.exit(1)
 }

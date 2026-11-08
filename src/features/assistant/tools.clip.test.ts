@@ -1,14 +1,6 @@
 // @vitest-environment jsdom
 //
-// clip's contract, as docs/design-docs/ai-assistant.md:114 states it:
-//
-//   单次工具结果硬上限 64 KiB：超出截断，并在内容里写明"已截断 N 字符，请加过滤条件重查"
-//
-// "Hard limit 64 KiB" is a claim about a number, so it earns a test that measures
-// the number -- not one that searches the output for the word "truncated" and
-// calls the promise kept. The existing suite did the latter. It passed while the
-// cap was exceeded on four of the five shapes below, including one where the
-// result was three times the stated ceiling.
+// 单次工具结果硬上限 64 KiB：超出截断，并在内容里写明"已截断 N 字符，请加过滤条件重查"
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('@/api/client', async (importOriginal) => {

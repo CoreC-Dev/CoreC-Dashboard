@@ -10,16 +10,6 @@
  *  arrays. The adapter carries `group` (settings vs top-level) and
  *  `boolean` so detail pages can build YAML correctly and convert
  *  boolean selects on save.
- *
- *  Resolved divergences (registry adopted as single source per ADR-009;
- *  each is a documented behavior change):
- *  - Reconnect group now shown for every driver (was only modbus-tcp)
- *  - `retry` follows registry (present for modbus-tcp/rtu, absent for udp variants)
- *  - OPCUA security-policy: 4 registry options (was 6 — drops Basic128Rsa15/Basic256)
- *  - Placeholders now match registry (e.g. modbus-tls port 502→802 bug fix)
- *  - zh-CN labels follow registry wording (retry, caFile)
- *  - driver `tags-file`/`tags-interval` now written top-level (was inside
- *    `settings` — bug fix aligning with configSchema + wizard)
  */
 
 import type { SettingsField, TypeFieldRegistry } from '@/lib/settingsRegistry'

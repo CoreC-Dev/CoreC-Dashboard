@@ -64,11 +64,8 @@ checkFile('AGENTS.md')
 checkFile('ARCHITECTURE.md')
 checkFile('docs/index.md')
 checkFile('docs/CI.md')
-checkFile('docs/design-docs/core-beliefs.md')
-checkFile('docs/design-docs/architecture-decisions.md')
 
 checkLinks('docs/index.md')
-checkLinks('docs/design-docs/index.md')
 checkLinks('AGENTS.md')
 
 checkSections('AGENTS.md', [

@@ -37,7 +37,7 @@ types ← lib ← api ← stores ← hooks/contexts ← components ← features 
 2. **下层干净**：`stores` 不引 `components`/`features`；`lib` 不引 `components`/`features`/`stores`/`api`；`components` 不引 `features`。
 3. **UI 原语近纯展示**：`components/ui` 17 原语不引 `hooks`/`stores`/`features`。
 4. **流式路径已加固**：`CoreCWebSocket` 退避+抖动+重连上限+环形缓冲限流；图表窗口封顶；rAF 批处理；`apiRequest` 15s 超时；路由懒加载 + manualChunks 充分拆分。
-5. **无 XSS sink**：无 `dangerouslySetInnerHTML`/`innerHTML`/`eval`。代理转发面分两路：`/corec-api/*` 目标固定；`/corec-proxy/*` 与 `/corec-ws` 按设计接受客户端指定目标（ADR-004a 多实例能力）。
+5. **无 XSS sink**：无 `dangerouslySetInnerHTML`/`innerHTML`/`eval`。代理转发面分两路：`/corec-api/*` 目标固定；`/corec-proxy/*` 与 `/corec-ws` 接受客户端指定目标。
 
 ## 状态管理边界
 - **服务端状态** → @tanstack/react-query（`api/hooks`，staleTime 3s，按 hook 设 refetchInterval 5–30s；mutation 失效对应 query key）

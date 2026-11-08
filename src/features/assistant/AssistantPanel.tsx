@@ -4,7 +4,7 @@
  * Mounted by AppShell, i.e. only inside a /corec/:id/* scope where an active
  * connection exists (apiRequest reads it). A bare-homepage chat box would find
  * getActiveConnection() null and every tool call would throw "No active CoreC
- * instance" -- see ADR-015 for why it is instance-scoped by design.
+ * instance".
  *
  * Layout: an inline rail on desktop, a floating button + sheet on mobile
  * (Radix Dialog, focus-trapped for a11y) so narrow screens keep their content

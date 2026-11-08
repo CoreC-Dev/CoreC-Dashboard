@@ -27,8 +27,6 @@ npm run lint     # lint
 - 前端约定：[`docs/FRONTEND.md`](docs/FRONTEND.md)
 - 安全态势：[`docs/SECURITY.md`](docs/SECURITY.md)
 - 可靠性态势：[`docs/RELIABILITY.md`](docs/RELIABILITY.md)
-- 设计理据：[`docs/DESIGN.md`](docs/DESIGN.md)
 - 工程化说明：[`docs/engineering.md`](docs/engineering.md)
-- CI 决定：[`docs/CI.md`](docs/CI.md)
-- 设计决策记录：[`docs/design-docs/architecture-decisions.md`](docs/design-docs/architecture-decisions.md)
+- CI：[`docs/CI.md`](docs/CI.md)
 - 后端仓库：[`CoreC`](https://github.com/CoreC-Dev/CoreC)（本仓所有 API 的上游）

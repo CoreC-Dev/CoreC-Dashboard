@@ -89,7 +89,7 @@
 
 ## 实现约定
 
-- **优先复用** `--ease-spring/--ease-smooth/--ease-snap` 与现有 CSS 类；不引入 framer-motion 等新动画依赖（`core-beliefs`：依赖最小化）。
+- **优先复用** `--ease-spring/--ease-smooth/--ease-snap` 与现有 CSS 类；不引入 framer-motion 等新动画依赖。
 - **共享指示器**统一走 `useSlidingIndicator`（`components/layout/`）：测量活动项相对容器的 box，返回绝对定位 overlay 样式，切换时 spring 滑动。
 - **FLIP** 模式：测旧位 → DOM 更新 → invert(transform) → play(transition)。用于排序/增删重排。
 - **可访问性**：所有装饰性动效 `aria-hidden` 或 `pointer-events:none`；不得用动效传达非装饰信息；`prefers-reduced-motion` 下全部降级为瞬切（已由全局守护覆盖）。

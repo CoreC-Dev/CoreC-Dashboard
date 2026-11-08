@@ -88,8 +88,7 @@ const NOTIFY_EDIT_KEYS = new Set([
 ])
 
 // `headers` is a map field not yet modeled by the registry (SettingsField has no
-// map/object type); retained as an explicit supplement until the registry gains
-// one. TODO: move into the registry once it supports map/object fields.
+// map/object type); retained as an explicit supplement.
 const HEADERS_SUPPLEMENT: RegistryEditField = {
   key: 'headers',
   labelKey: 'transports.editConfig.headers',

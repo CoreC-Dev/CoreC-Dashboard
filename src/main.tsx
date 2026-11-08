@@ -13,7 +13,7 @@ import App from '@/App'
 // CSP script-src/style-src to drop the cdn.jsdelivr.net allow-list.
 loader.config({ paths: { vs: '/monaco/min/vs' } })
 
-// Detect proxy mode before rendering (ADR-004 addendum): probes /corec-proxy/
+// Detect proxy mode before rendering: probes /corec-proxy/
 // to determine if server.mjs is running. On static hosts (GitHub Pages) it
 // returns 404 → direct connection mode. Must complete before any API calls.
 detectProxyMode().then(() => {

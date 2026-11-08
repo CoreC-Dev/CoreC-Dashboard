@@ -110,7 +110,7 @@ export const RuleWizard: React.FC<RuleWizardProps> = ({
   // Transform config
   const [transformExpr, setTransformExpr] = useState(existingRule?.transform?.expression ?? '')
   const [tagRename, setTagRename] = useState(existingRule?.transform?.['tag-rename'] ?? '')
-  // Continue flag (ADR-010): keep evaluating after this rule matches
+  // Continue flag: keep evaluating after this rule matches
   const [continueFlag, setContinueFlag] = useState(existingRule?.continue ?? false)
   const [currentStep, setCurrentStep] = useState(0)
 

@@ -91,13 +91,7 @@ describe('registryToEditFields', () => {
     expect(keys).toContain('flush-interval')
   })
 
-  // ─── Documented divergences the registry adopted (per ADR-009) ─────
-
   it('DOCUMENTED: registry has reconnect fields that detail arrays lack for some drivers', () => {
-    // The registry includes reconnect-interval, reconnect-max-interval,
-    // max-reconnect-failures for every driver. The pre-registry forms
-    // showed them only for modbus-tcp — the registry exposing them
-    // everywhere is a documented behavior change (ADR-009).
     for (const type of ['modbus-tls', 'modbus-rtu', 's7', 'opcua']) {
       const registry = getDriverFieldRegistry(type)!
       const fields = registryToEditFields(registry)
@@ -106,9 +100,6 @@ describe('registryToEditFields', () => {
   })
 
   it('DOCUMENTED: OPCUA registry has 4 security-policy options (detail page has 6)', () => {
-    // The registry's 4-option set is deliberate — Basic128Rsa15 and
-    // Basic256 were dropped when the registry became the single source
-    // (documented behavior change, ADR-009).
     const registry = getDriverFieldRegistry('opcua')!
     const fields = registryToEditFields(registry)
     const securityPolicy = fields.find((f) => f.key === 'security-policy')

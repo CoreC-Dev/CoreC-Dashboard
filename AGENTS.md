@@ -1,22 +1,17 @@
 # AGENTS.md
 
-> 本文件是**内容目录**，不是百科全书。需要细节时，按下方指引跳转。
-
 ## 这是什么项目
 CoreC-Dashboard —— 面向 IIoT CoreC 后端的 React 单页前端：多实例监控、实时数据流（WebSocket）、配置中心（YAML/表单）、规则管理与写入控制。目标用户为运维/控制工程师。
 
 ## 如何开始
 - 架构总览：见 `ARCHITECTURE.md`
-- 设计理念与操作原则：见 `docs/design-docs/core-beliefs.md`
-- 架构决策记录：见 `docs/design-docs/architecture-decisions.md`
-- CI 与框架判定：见 `docs/CI.md`
+- CI：`docs/CI.md`
 
 ## 硬性约束（不可违反）
 - 分层依赖单向：`types ← lib ← api ← stores ← hooks/contexts ← components ← features ← App`，禁止反向与跨层
 - `types/` 不得导入 `@/lib`、`@/stores`、`@/api`；`lib/` 不得导入 `@/components`、`@/features`、`@/stores`、`@/api`
 - `features/*` 之间禁止直接互引（跨域仅经 `api/hooks`、`stores`、`components`、`lib` 共享）
 - 边界处必须解析数据形状（zod / 显式校验），禁止信任外部输入（导入 JSON、后端响应、用户粘贴 YAML）
-- 重构不改变业务行为；行为变更必须显式登记并单独提交
 - 违反以上约束会被自定义 linter（`scripts/custom-lint.mjs` 等）与结构测试（`scripts/structure-lint.mjs`）拦截
 
 ## 目录地图
@@ -45,11 +40,8 @@ src/
 - 前端约定：`docs/FRONTEND.md`
 - 安全态势：`docs/SECURITY.md`
 - 可靠性态势：`docs/RELIABILITY.md`
-- 设计理据：`docs/DESIGN.md`
 - 工程化说明：`docs/engineering.md`
 
 ## 工作方式
-- 变更前先读相关 `docs/`，变更后同步更新文档
-- 提交粒度单一职责（Conventional Commits）；提交直接落 `main`，由 CI 全门禁约束（原 `harnessing` 分支策略已废止，见 ADR-009）
-- 一次性工作记录（审计、执行计划、评分快照）完成任务后即从仓库清理，仓库只保留描述现状的活文档
-- 任何交互式决策确认后必须写入仓库文档（见 `docs/design-docs/architecture-decisions.md`）
+- 以代码为唯一事实来源；仓库内不记录决策、理由、过程与临时状态。
+- 提交粒度单一职责（Conventional Commits）；提交直接落 `main`，由 CI 全门禁约束。

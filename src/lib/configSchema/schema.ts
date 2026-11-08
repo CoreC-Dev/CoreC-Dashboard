@@ -302,7 +302,7 @@ const ruleConfigSchema = z
       })
     }
     // drop + continue is contradictory: drop means "discard and stop",
-    // continue means "keep evaluating" (ADR-010, mirrors config/validate.go).
+    // continue means "keep evaluating" (mirrors config/validate.go).
     if (r.action === 'drop' && r.continue === true) {
       ctx.addIssue({
         code: 'custom',
