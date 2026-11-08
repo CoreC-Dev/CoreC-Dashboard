@@ -45,7 +45,7 @@ export const TrafficChart = memo(function TrafficChart() {
   return (
     <div className="relative w-full h-56 pt-2 [&_*]:outline-none">
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+        <AreaChart data={data} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
           <defs>
             <linearGradient id="readGrad" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.4} />
@@ -56,21 +56,38 @@ export const TrafficChart = memo(function TrafficChart() {
               <stop offset="95%" stopColor="hsl(var(--chart-2))" stopOpacity={0} />
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} />
+          <CartesianGrid
+            vertical={false}
+            strokeDasharray="4 6"
+            stroke="hsl(var(--border))"
+            opacity={0.8}
+          />
           <XAxis
             dataKey="time"
-            stroke="hsl(var(--muted-foreground))"
-            fontSize={12}
+            axisLine={false}
             tickLine={false}
+            tickMargin={10}
+            minTickGap={28}
+            tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
           />
-          <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} />
+          <YAxis
+            axisLine={false}
+            tickLine={false}
+            width={40}
+            tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+          />
           <Tooltip
+            cursor={{ stroke: 'hsl(var(--muted-foreground) / 0.35)', strokeDasharray: '4 4' }}
             contentStyle={{
-              backgroundColor: 'hsl(var(--card))',
+              backgroundColor: 'hsl(var(--popover))',
               borderColor: 'hsl(var(--border))',
-              borderRadius: '8px',
-              fontSize: '13px',
+              borderRadius: '12px',
+              boxShadow: 'var(--shadow-panel)',
+              fontSize: '12px',
+              padding: '8px 10px',
             }}
+            labelStyle={{ color: 'hsl(var(--muted-foreground))', marginBottom: 2 }}
+            itemStyle={{ padding: 0 }}
           />
           <Area
             type="monotone"

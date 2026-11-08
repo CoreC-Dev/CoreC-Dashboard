@@ -175,7 +175,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ collapsed, setCollapsed,
           <img
             src="/logo-animated.svg"
             alt="CoreC"
-            className={cn('shrink-0 transition-all duration-300', eff ? 'w-9 h-9' : 'w-28 h-28')}
+            className={cn('shrink-0 transition-all duration-300', eff ? 'w-9 h-9' : 'w-20 h-20')}
           />
         </Link>
       </div>

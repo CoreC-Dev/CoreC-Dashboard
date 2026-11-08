@@ -36,22 +36,40 @@ export const MemoryChart = memo(function MemoryChart() {
   return (
     <div className="relative w-full h-56 pt-2 [&_*]:outline-none">
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} />
+        <LineChart data={data} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
+          <CartesianGrid
+            vertical={false}
+            strokeDasharray="4 6"
+            stroke="hsl(var(--border))"
+            opacity={0.8}
+          />
           <XAxis
             dataKey="time"
-            stroke="hsl(var(--muted-foreground))"
-            fontSize={12}
+            axisLine={false}
             tickLine={false}
+            tickMargin={10}
+            minTickGap={28}
+            tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
           />
-          <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} unit="MB" />
+          <YAxis
+            axisLine={false}
+            tickLine={false}
+            width={48}
+            unit="MB"
+            tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+          />
           <Tooltip
+            cursor={{ stroke: 'hsl(var(--muted-foreground) / 0.35)', strokeDasharray: '4 4' }}
             contentStyle={{
-              backgroundColor: 'hsl(var(--card))',
+              backgroundColor: 'hsl(var(--popover))',
               borderColor: 'hsl(var(--border))',
-              borderRadius: '8px',
-              fontSize: '13px',
+              borderRadius: '12px',
+              boxShadow: 'var(--shadow-panel)',
+              fontSize: '12px',
+              padding: '8px 10px',
             }}
+            labelStyle={{ color: 'hsl(var(--muted-foreground))', marginBottom: 2 }}
+            itemStyle={{ padding: 0 }}
           />
           <Line
             type="monotone"

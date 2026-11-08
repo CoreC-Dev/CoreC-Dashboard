@@ -72,7 +72,7 @@ export const AppShell: React.FC = () => {
                socket hurts most. Renders nothing when healthy. */}
           <StreamStatusBanner />
           <div
-            className="bg-card rounded-3xl squircle px-5 py-5 md:px-8 md:py-8 flex-1 min-h-0 flex flex-col overflow-hidden border border-border/40"
+            className="bg-card rounded-3xl squircle px-5 py-5 md:px-10 md:py-9 flex-1 min-h-0 flex flex-col overflow-hidden border border-border/40"
             style={{ boxShadow: 'var(--shadow-card)' }}
           >
             {/* Scroll pane — content cards live and scroll INSIDE the
