@@ -24,7 +24,7 @@ export const DashboardCharts: React.FC = () => {
           <CardTitle className="text-sm font-semibold">{t('dashboard.trafficChart')}</CardTitle>
         </CardHeader>
         <CardContent className="px-4 pb-4 pt-1">
-          <Suspense fallback={<Skeleton className="h-56 w-full rounded-2xl" />}>
+          <Suspense fallback={<Skeleton className="h-[264px] w-full rounded-2xl" />}>
             <TrafficChart />
           </Suspense>
         </CardContent>
@@ -34,7 +34,7 @@ export const DashboardCharts: React.FC = () => {
           <CardTitle className="text-sm font-semibold">{t('dashboard.memoryChart')}</CardTitle>
         </CardHeader>
         <CardContent className="px-4 pb-4 pt-1">
-          <Suspense fallback={<Skeleton className="h-56 w-full rounded-2xl" />}>
+          <Suspense fallback={<Skeleton className="h-[264px] w-full rounded-2xl" />}>
             <MemoryChart />
           </Suspense>
         </CardContent>

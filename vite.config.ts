@@ -193,6 +193,19 @@ export default defineConfig({
     // Reset to default (500KB) now that vendor libs are manually split.
     // The warning surfaces regressions instead of being silenced.
     chunkSizeWarningLimit: 500,
+    // Route-only vendors must not be preloaded by the entry HTML. A cold
+    // homepage used to fetch recharts (~102KB gzip) plus YAML/monaco chunks
+    // for routes the operator had not opened. JS-side dependency preloads
+    // stay intact, so a lazy route still warms its own deps.
+    modulePreload: {
+      resolveDependencies: (_filename, deps) =>
+        deps.filter(
+          (dep) =>
+            !/(vendor-recharts|vendor-monaco|vendor-charts|vendor-xterm|vendor-jsyaml|configYaml)/.test(
+              dep,
+            ),
+        ),
+    },
     rollupOptions: {
       output: {
         // Split heavy vendor libs into cached chunks so the dashboard shell
@@ -200,11 +213,23 @@ export default defineConfig({
         // Note: rolldown (Vite 8) requires manualChunks as a function.
         manualChunks: (id) => {
           if (id.includes('node_modules')) {
+            // className utilities are imported by virtually every component.
+            // If they land in vendor-recharts (as they did), the whole chart
+            // library becomes a dependency of the app shell and every page —
+            // including the homepage — downloads it. Keep them in their own
+            // tiny chunk, before the recharts rule.
+            if (
+              id.includes('clsx') ||
+              id.includes('tailwind-merge') ||
+              id.includes('class-variance-authority')
+            )
+              return 'vendor-cn'
+            if (id.includes('lucide-react')) return 'vendor-icons'
             if (id.includes('recharts') || id.includes('d3-')) return 'vendor-recharts'
             if (id.includes('react-dom') || id.includes('/react/') || id.includes('react-router'))
               return 'vendor-react'
             if (id.includes('@tanstack/react-query')) return 'vendor-query'
-            if (id.includes('@radix-ui/')) return 'vendor-radix'
+            if (id.includes('@radix-ui/') || id.includes('@floating-ui/')) return 'vendor-radix'
             if (id.includes('lightweight-charts')) return 'vendor-charts'
             if (id.includes('@xterm/')) return 'vendor-xterm'
             if (id.includes('js-yaml')) return 'vendor-jsyaml'

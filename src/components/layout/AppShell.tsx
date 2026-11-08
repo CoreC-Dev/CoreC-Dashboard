@@ -1,5 +1,6 @@
 import { Menu } from 'lucide-react'
 import type React from 'react'
+import { lazy, Suspense } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import { AlertStreamProvider } from '@/components/layout/AlertStreamProvider'
@@ -11,9 +12,14 @@ import { TopProgressBar } from '@/components/layout/TopProgressBar'
 import { useSidebarState } from '@/components/layout/useSidebarState'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { AssistantPanel } from '@/features/assistant/AssistantPanel'
-import { useAutoLoadConfig } from '@/hooks/useAutoLoadConfig'
 import { cn } from '@/lib/cn'
 import { deriveAggregate, useWsStatusStore } from '@/stores/wsStatusStore'
+
+// Admin-only config seeding: the YAML parser + /configs/raw request are not
+// needed on monitor/home routes, so the whole chain stays in a lazy chunk.
+const AdminConfigSeed = lazy(() =>
+  import('@/components/layout/AdminConfigSeed').then((m) => ({ default: m.AdminConfigSeed })),
+)
 
 export const AppShell: React.FC = () => {
   const { t } = useTranslation()
@@ -24,9 +30,8 @@ export const AppShell: React.FC = () => {
 
   // Seed configStore from the live server config on first admin mount so
   // list pages (Drivers/Transports/Rules) have a populated working config
-  // before the operator clicks "Create".  Without this, the first Create
-  // calls resetToEmpty() and silently drops global.api from the server config.
-  useAutoLoadConfig()
+  // before the operator clicks "Create".  Rendered below only on /admin
+  // routes, so monitor pages do not pay for YAML parsing.
 
   // Main content area — shared by mobile (full-width) and desktop (inside the centered group)
   const mainArea = (
@@ -98,6 +103,11 @@ export const AppShell: React.FC = () => {
            badge alive on EVERY route of the instance — not just the alerts
            page. Behavior-only provider; renders nothing. */}
       <AlertStreamProvider />
+      {location.pathname.includes('/admin') && (
+        <Suspense fallback={null}>
+          <AdminConfigSeed />
+        </Suspense>
+      )}
       {/* Subtle decorative gradient orb */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden="true">
         <div

@@ -10,6 +10,7 @@ import { ThemeSelector } from '@/components/layout/ThemeSelector'
 import { useNavIndicator } from '@/components/layout/useNavIndicator'
 import { setLocale } from '@/i18n'
 import { cn } from '@/lib/cn'
+import { prefetchRoute } from '@/lib/routePrefetch'
 import { useAlertStore } from '@/stores/alertStore'
 import { useUiStore } from '@/stores/uiStore'
 
@@ -108,6 +109,8 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ collapsed, setCollapsed,
         key={item.path}
         to={item.path}
         viewTransition
+        onMouseEnter={() => prefetchRoute(item.path)}
+        onFocus={() => prefetchRoute(item.path)}
         ref={(el) => {
           if (el) itemRefs.current.set(item.path, el)
           else itemRefs.current.delete(item.path)

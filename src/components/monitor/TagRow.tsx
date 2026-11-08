@@ -34,6 +34,7 @@ export const TagRow = memo(function TagRow({
   // Updated inside the flashTick effect so it stays in sync with the WAAPI
   // replay. Ref (not state) to avoid extra re-renders.
   const lastValueRef = useRef<number | null>(null)
+  const lastFlashAtRef = useRef(0)
   const [flashDir, setFlashDir] = useState<'up' | 'down' | 'none'>('none')
 
   // Replay a 1s tint flash whenever this row receives a fresh WS update.
@@ -60,6 +61,12 @@ export const TagRow = memo(function TagRow({
       num !== null && prev !== null && num !== prev ? (num > prev ? 'up' : 'down') : 'none',
     )
     lastValueRef.current = num
+    // The value + arrow still update on every frame; only the tint replay is
+    // throttled. At 60 WS flushes/s, one WAAPI animation per row per frame
+    // meant thousands of animation objects per second across visible rows.
+    const now = performance.now()
+    if (now - lastFlashAtRef.current < 250) return
+    lastFlashAtRef.current = now
     const anim = el.animate([{ opacity: 1 }, { opacity: 0 }], {
       duration: 1000,
       easing: 'ease-out',

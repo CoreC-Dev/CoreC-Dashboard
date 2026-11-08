@@ -13,6 +13,7 @@
 import { readFile, stat } from 'node:fs/promises'
 import { createServer, request as httpRequest } from 'node:http'
 import { extname, join, resolve, sep } from 'node:path'
+import { gzipSync } from 'node:zlib'
 
 const PORT = parseInt(process.argv[2] || '8080', 10)
 const DIST = resolve(process.argv[3] || './dist')
@@ -395,6 +396,36 @@ function proxyDynamicUpgrade(req, socket, head) {
 }
 
 /** Serve static file or SPA fallback. */
+const CACHE_IMMUTABLE = 'public, max-age=31536000, immutable'
+const CACHE_HTML = 'no-cache'
+const CACHE_SHORT = 'public, max-age=3600'
+const COMPRESSIBLE = /\.(?:js|css|html|json|svg|txt|map)$/i
+
+/**
+ * Write a static response with gzip (when accepted) and a cache policy that
+ * matches the asset type: hashed /assets/* are immutable for a year, the
+ * SPA shell must revalidate, everything else gets a short cache.
+ */
+function sendStatic(req, res, data, ext, cacheControl) {
+  const headers = {
+    'Content-Type': MIME[ext] || 'application/octet-stream',
+    'Cache-Control': cacheControl,
+    Vary: 'Accept-Encoding',
+  }
+  const acceptsGzip = /\bgzip\b/.test(req.headers['accept-encoding'] || '')
+  if (COMPRESSIBLE.test(ext) && data.length > 1024 && acceptsGzip) {
+    const gz = gzipSync(data, { level: 6 })
+    headers['Content-Encoding'] = 'gzip'
+    headers['Content-Length'] = gz.length
+    res.writeHead(200, headers)
+    res.end(gz)
+    return
+  }
+  headers['Content-Length'] = data.length
+  res.writeHead(200, headers)
+  res.end(data)
+}
+
 async function serveStatic(req, res) {
   // 安全响应头
   res.setHeader('X-Content-Type-Options', 'nosniff')
@@ -414,16 +445,21 @@ async function serveStatic(req, res) {
     if (s.isDirectory()) {
       try {
         const data = await readFile(join(p, 'index.html'))
-        res.writeHead(200, { 'Content-Type': MIME['.html'] })
-        res.end(data)
+        sendStatic(req, res, data, '.html', CACHE_HTML)
         return
       } catch {
         // fall through to SPA fallback
       }
     } else {
       const data = await readFile(p)
-      res.writeHead(200, { 'Content-Type': MIME[extname(p)] || 'application/octet-stream' })
-      res.end(data)
+      const ext = extname(p)
+      sendStatic(
+        req,
+        res,
+        data,
+        ext,
+        req.url.startsWith('/assets/') ? CACHE_IMMUTABLE : CACHE_SHORT,
+      )
       return
     }
   } catch {
@@ -431,8 +467,7 @@ async function serveStatic(req, res) {
   }
   try {
     const data = await readFile(join(DIST, 'index.html'))
-    res.writeHead(200, { 'Content-Type': MIME['.html'] })
-    res.end(data)
+    sendStatic(req, res, data, '.html', CACHE_HTML)
   } catch {
     res.writeHead(404, { 'Content-Type': 'text/plain' })
     res.end('Not Found')
