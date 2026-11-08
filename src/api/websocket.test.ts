@@ -36,6 +36,7 @@ class MockWebSocket {
   static readonly CLOSED = 3
 
   readonly url: string
+  readonly protocols: string[] = []
   onopen: ((ev: Event) => void) | null = null
   onmessage: ((ev: MessageEvent) => void) | null = null
   onerror: ((ev: Event) => void) | null = null
@@ -45,8 +46,9 @@ class MockWebSocket {
   closed = false
   readonly sent: unknown[] = []
 
-  constructor(url: string) {
+  constructor(url: string, protocols?: string[] | string) {
     this.url = url
+    this.protocols = Array.isArray(protocols) ? protocols : protocols ? [protocols] : []
     MockWebSocket.instances.push(this)
   }
 
@@ -488,10 +490,12 @@ describe('CoreCWebSocket', () => {
       const client = new CoreCWebSocket('/tags/stream', {}, vi.fn())
       const inst = MockWebSocket.last()
 
-      // URL should be ws://127.0.0.1:9090/tags/stream?token=... (direct)
+      // URL must not carry the token anymore; it travels as a subprotocol.
       expect(inst.url).toContain('ws://127.0.0.1:9090/tags/stream')
       expect(inst.url).not.toContain('/corec-ws')
-      expect(inst.url).toContain('token=test-secret-token')
+      expect(inst.url).not.toContain('token=')
+      expect(inst.protocols).toContain('corec.v1')
+      expect(inst.protocols).toContain(`token.${encodeURIComponent('test-secret-token')}`)
       client.destroy()
     })
 
@@ -502,7 +506,8 @@ describe('CoreCWebSocket', () => {
 
       expect(inst.url).toContain('ws://127.0.0.1:9090/ws')
       expect(inst.url).toContain('tag=temp1')
-      expect(inst.url).toContain('token=test-secret-token')
+      expect(inst.url).not.toContain('token=')
+      expect(inst.protocols).toContain(`token.${encodeURIComponent('test-secret-token')}`)
       client.destroy()
     })
   })

@@ -91,8 +91,9 @@ export class CoreCWebSocket<T = unknown> {
       let wsUrl: URL
       if (proxyMode === 'proxy') {
         // Same-origin WS proxy: the browser connects to
-        // ws://<same-origin>/corec-ws?target=<backend>&token=...;
-        // server.mjs proxies the upgrade to the real backend.
+        // ws://<same-origin>/corec-ws?target=<backend> (the bearer token
+        // travels in the Sec-WebSocket-Protocol header, which server.mjs
+        // forwards); server.mjs proxies the upgrade to the real backend.
         wsUrl = new URL(`/corec-ws`, window.location.origin)
         wsUrl.protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
         wsUrl.searchParams.set('target', targetUrl.toString())
@@ -102,20 +103,23 @@ export class CoreCWebSocket<T = unknown> {
         wsUrl = targetUrl
       }
 
-      if (secret) {
-        // SECURITY NOTE: The token travels in the WS URL query
-        // string. In proxy mode the URL is same-origin (token not in backend
-        // logs). In direct mode the token is visible to the backend.
-        wsUrl.searchParams.set('token', secret)
-      }
-
       Object.entries(this.params).forEach(([key, val]) => {
         if (val !== undefined && val !== null) {
           wsUrl.searchParams.set(key, val)
         }
       })
 
-      this.ws = new WebSocket(wsUrl.toString())
+      // Browsers cannot set Authorization headers on WebSocket upgrades.
+      // Offer the bearer token as a subprotocol so it never lands in the
+      // URL query (access logs / Referer). server.mjs forwards the header
+      // to the backend; the backend also still accepts the legacy
+      // `?token=` for older clients.
+      const protocols: string[] = ['corec.v1']
+      if (secret) {
+        protocols.push(`token.${encodeURIComponent(secret)}`)
+      }
+
+      this.ws = new WebSocket(wsUrl.toString(), protocols)
 
       this.ws.onopen = () => {
         this.retryCount = 0
