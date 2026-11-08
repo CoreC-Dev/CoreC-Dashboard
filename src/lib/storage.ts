@@ -58,4 +58,3 @@ export const safeSessionRemove = (key: string): void => {
     /* storage disabled — nothing to remove */
   }
 }
-

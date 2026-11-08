@@ -91,7 +91,9 @@ describe('instanceStore — secret persistence', () => {
 
     useInstanceStore.getState().setRememberSecrets(false)
     expect(localStorage.getItem(SECRETS_STORAGE_KEY)).toBeNull()
-    expect(JSON.parse(sessionStorage.getItem(SECRETS_STORAGE_KEY) as string)[id]).toBe('secret-token')
+    expect(JSON.parse(sessionStorage.getItem(SECRETS_STORAGE_KEY) as string)[id]).toBe(
+      'secret-token',
+    )
   })
 })
 

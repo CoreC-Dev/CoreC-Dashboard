@@ -63,8 +63,7 @@ export const TopologyPage: React.FC = () => {
   // page working without re-implementing config semantics in the frontend.
   const driverConnSummaries = useMemo(() => {
     const m = new Map<string, string>()
-    for (const d of drivers)
-      m.set(d.name, d.endpoint ?? getDriverConnectionSummary(config, d.name))
+    for (const d of drivers) m.set(d.name, d.endpoint ?? getDriverConnectionSummary(config, d.name))
     return m
   }, [config, drivers])
   const transportConnSummaries = useMemo(() => {
