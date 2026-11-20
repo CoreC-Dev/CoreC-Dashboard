@@ -6,10 +6,11 @@ import { CoreCWebSocket, type WSStatus } from '@/api/websocket'
 /**
  * CoreCWebSocket behavior.
  *
- * Covers: sliding-window rate limiting (>500 msg/s drops), exponential backoff
- * with ±20% jitter, maxRetries=10 → 'rejected', upgrade-rejection detection
- * (1006/1008/1011 when never opened), destroy() nulling handlers + clearing the
- * pending reconnect, and secret-disappears stopping reconnect.
+ * Covers: sliding-window rate limiting (drops above maxMsgPerSec), exponential
+ * backoff with jitter, retry exhaustion (maxRetries) → 'rejected',
+ * upgrade-rejection detection (1006/1008/1011 when never opened), destroy()
+ * nulling handlers + clearing the pending reconnect, and secret-disappears
+ * stopping reconnect.
  *
  * The source drives the browser WebSocket via `new WebSocket(url)` plus the
  * `onopen/onmessage/onerror/onclose` properties and `close()` — it does not use
