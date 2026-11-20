@@ -103,7 +103,7 @@ describe('getConfigsRaw (GET /configs/raw)', () => {
   })
 
   it('surfaces redacted sentinel without leaking the real secret', async () => {
-    // Simulates the server's redaction: secret → "***", never the real value.
+    // 客户端原样透传：mock 含 "***" 哨兵值（非服务端脱敏——服务端返回明文）。
     const yamlText = 'global:\n  api:\n    secret: "***"\n'
     mockFetch.mockResolvedValueOnce(
       new Response(yamlText, {
@@ -144,8 +144,7 @@ describe('validateConfigs (POST /configs/validate)', () => {
     // A validation failure is a normal outcome: the endpoint returns 400 with a
     // JSON {valid:false,error} body. The wrapper must normalize this into a
     // structured result so the UI can render the error rather than catching.
-    // (Uses a hard validation error — short api.secret — since "no data source"
-    // is now a non-blocking warning, not a 400.)
+    // (Uses a hard validation error — short api.secret.)
     const errBody = JSON.stringify({
       valid: false,
       error: 'config validation failed: api.secret must be at least 8 characters',
@@ -673,8 +672,6 @@ describe('getMetricsText (GET /metrics)', () => {
   })
 })
 
-// ─── Server-side config backups (GET /configs/backups*) ────────────────
-
 describe('getConfigBackups (GET /configs/backups)', () => {
   it('requests the list and zod-parses the metadata entries', async () => {
     const backups = {
@@ -923,10 +920,7 @@ describe('restoreConfigBackup (POST /configs/backups/{name}/restore)', () => {
   })
 })
 
-// ─── Write history & instance health ──────────────────────────────────
-// These endpoints zod-parse the response at the boundary (AGENTS.md:
-// backend responses are untrusted), so each describe also covers a
-// malformed-body rejection next to the happy path.
+// Each describe also covers a malformed-body rejection next to the happy path.
 
 describe('getWriteHistory (GET /write/history)', () => {
   it('requests /write/history and parses the newest-first audit entries', async () => {

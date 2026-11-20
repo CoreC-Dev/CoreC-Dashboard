@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import { VALID_FIELDS, validateRuleExpression } from '@/lib/ruleExprValidator'
 
 describe('validateRuleExpression', () => {
-  // ─── Special keywords ──────────────────────────────────────────
   it('accepts ALL (case-insensitive)', () => {
     expect(validateRuleExpression('ALL').valid).toBe(true)
     expect(validateRuleExpression('all').valid).toBe(true)
@@ -28,13 +27,11 @@ describe('validateRuleExpression', () => {
     expect(r.errors[0]).toContain('requires a provider name')
   })
 
-  // ─── Empty ──────────────────────────────────────────────────────
   it('rejects empty expression', () => {
     expect(validateRuleExpression('').valid).toBe(false)
     expect(validateRuleExpression('   ').valid).toBe(false)
   })
 
-  // ─── Valid expressions ─────────────────────────────────────────
   it('accepts string equality', () => {
     expect(validateRuleExpression("tag == 'temperature'").valid).toBe(true)
   })
@@ -80,7 +77,6 @@ describe('validateRuleExpression', () => {
     expect(validateRuleExpression('value == true').valid).toBe(true)
   })
 
-  // ─── Syntax errors ─────────────────────────────────────────────
   it('rejects unbalanced parentheses (unclosed)', () => {
     const r = validateRuleExpression('(value > 50')
     expect(r.valid).toBe(false)
@@ -117,7 +113,6 @@ describe('validateRuleExpression', () => {
     expect(r.errors.some((e) => e.includes('range'))).toBe(true)
   })
 
-  // ─── Warnings ──────────────────────────────────────────────────
   it('warns about unknown fields', () => {
     const r = validateRuleExpression("unknown_field == 'x'")
     expect(r.warnings.some((w) => w.includes('unknown field'))).toBe(true)
@@ -133,7 +128,6 @@ describe('validateRuleExpression', () => {
     expect(r.warnings.some((w) => w.includes('unknown field'))).toBe(false)
   })
 
-  // ─── Regression: string literal contents should be ignored ───
   it('does not false-positive on parens inside string literals', () => {
     expect(validateRuleExpression("tag == ')('").valid).toBe(true)
     expect(validateRuleExpression("tag == '(test'").valid).toBe(true)
@@ -149,7 +143,6 @@ describe('validateRuleExpression', () => {
     expect(validateRuleExpression('(tag == "temp"').valid).toBe(false)
   })
 
-  // ─── Regression: typo/range checks must use stripped expression ──
   it('does not false-positive on "matchs" inside string literals', () => {
     const r = validateRuleExpression("tag == 'matchs'")
     expect(r.valid).toBe(true)
@@ -179,7 +172,6 @@ describe('validateRuleExpression', () => {
     expect(r.errors.some((e) => e.includes('range'))).toBe(true)
   })
 
-  // ─── Re-audit: dangling-logical-operator check must use stripped ──
   it('does not false-positive on dangling && inside string literal', () => {
     const r = validateRuleExpression("tag == ' &&)'")
     expect(r.errors.some((e) => e.includes('dangling logical operator'))).toBe(false)
@@ -205,7 +197,6 @@ describe('validateRuleExpression', () => {
     expect(r.errors.some((e) => e.includes('starts with logical operator'))).toBe(true)
   })
 
-  // ─── Re-audit: double-quote check must use stripped ─────────
   it('does not warn about double-quotes inside single-quoted literal', () => {
     const r = validateRuleExpression('tag == \'say "hi"\'')
     expect(r.warnings.some((w) => w.includes('double-quoted'))).toBe(false)

@@ -1,12 +1,10 @@
 /**
  * Wizard gate-reason helpers.
  *
- * "Please fix the errors before continuing" told the operator nothing
- * about WHICH of a dozen registry fields was still empty. The step-1
- * gates in DriverWizard/TransportWizard use these helpers to compute a
- * concrete reason for the Wizard's gate-hint line: the i18n LABEL KEYS
- * of required settings fields whose value is still empty, so the caller
- * can translate and list them ("Missing required: Host, Port").
+ * The step-1 gates in DriverWizard/TransportWizard use these helpers to
+ * compute a concrete reason for the Wizard's gate-hint line: the i18n
+ * LABEL KEYS of required settings fields whose value is still empty, so
+ * the caller can translate and list them ("Missing required: Host, Port").
  */
 import type { TypeFieldRegistry } from '@/lib/settingsRegistry'
 

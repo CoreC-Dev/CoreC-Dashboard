@@ -1,10 +1,8 @@
 /**
  * configSchema/schema.ts — the per-entity zod tree: tag, driver,
  * transport, rule, rule-provider, api/engine/buffer/global/node, and the
- * top-level coreCConfigSchema. Mirrors the server-side validation in
- * CoreC's config.validate() plus the per-driver/transport Init-time
- * required field checks, so invalid configs are caught before the
- * PUT /configs hot-reload.
+ * top-level coreCConfigSchema. Dashboard 校验（部分严于服务端），在
+ * PUT /configs 热重载前拦截无效配置。
  */
 import { z } from 'zod'
 import { durationString, requiredDuration } from '@/lib/configSchema/duration'
@@ -22,7 +20,6 @@ import {
 
 export { isValidGoDuration } from '@/lib/configSchema/duration'
 
-// ─── TagConfig schema ────────────────────────────────────────────────
 const tagConfigSchema = z
   .object({
     name: z.string().min(1, 'tag name cannot be empty'),
@@ -47,7 +44,6 @@ const tagConfigSchema = z
   })
   .passthrough()
 
-// ─── Driver settings: per-type required-field checks ─────────────────
 // settings is a dynamic map (server: map[string]any); we keep it as a
 // record and add conditional required-field validation via superRefine.
 const driverSettingsSchema = z.record(z.string(), z.unknown()).default({})
@@ -123,7 +119,6 @@ const driverConfigSchema = z
     }
   })
 
-// ─── Transport settings ──────────────────────────────────────────────
 const transportSettingsSchema = z.record(z.string(), z.unknown()).default({})
 
 const transportConfigSchema = z
@@ -141,7 +136,7 @@ const transportConfigSchema = z
   .superRefine((t, ctx) => {
     const s = t.settings ?? {}
     // Fail fast if batch/retry fields are misplaced inside settings
-    // (server config.validate:235 — silent misconfiguration otherwise).
+    // (server config.validate fails fast on misplaced keys).
     const misplaced = [
       'batch-size',
       'batch_size',
@@ -172,7 +167,7 @@ const transportConfigSchema = z
           message: 'mqtt: broker is required',
         })
       } else {
-        // TLS scheme ↔ TLS files consistency (publisher.go:441)
+        // TLS scheme ↔ TLS files consistency (publisher.go)
         const brokerStr = String(broker)
         const isTlsScheme = /^(mqtts|ssl|tls|tcps|wss):\/\//.test(brokerStr)
         const hasTlsFiles = !!(s['tls-cert-file'] || s['tls-key-file'] || s['tls-ca-file'])
@@ -257,7 +252,6 @@ const transportConfigSchema = z
     }
   })
 
-// ─── Rule schema ─────────────────────────────────────────────────────
 const transformConfigSchema = z
   .object({
     expression: z.string().min(1, 'transform expression cannot be empty'),
@@ -321,7 +315,6 @@ const ruleProviderConfigSchema = z
   })
   .passthrough()
 
-// ─── Global config schemas ───────────────────────────────────────────
 const apiConfigSchema = z
   .object({
     listen: z.string().optional(),
@@ -340,7 +333,7 @@ const apiConfigSchema = z
   })
   .passthrough()
   .superRefine((a, ctx) => {
-    // config.validate:199-208 — secret required (min 8 chars) when listen is set.
+    // Secret required (min 8 chars) when listen is set (aligns with server config validation).
     if (a.listen) {
       if (!a.secret) {
         ctx.addIssue({
@@ -356,7 +349,8 @@ const apiConfigSchema = z
         })
       }
     }
-    // TLS cert/key must be paired (server: ListenAndServeTLS requires both).
+    // TLS cert/key must be paired (Dashboard check; the server silently
+    // falls back to plaintext HTTP when only one is configured).
     if (!a['tls-cert'] !== !a['tls-key']) {
       ctx.addIssue({
         code: 'custom',
@@ -378,9 +372,7 @@ const engineConfigSchema = z
     'write-retry-count': z.number().int().nonnegative().optional(),
     'command-concurrency': z.number().int().positive().optional(),
     'high-priority-workers': z.number().int().nonnegative().optional(),
-    // Persistence and pacing knobs the server understands (core/engine.go
-    // EngineConfig). The editor had no field for them, so a config produced
-    // here could never use durable dead letters / audit trail or write pacing.
+    // Persistence and pacing knobs the server understands (EngineConfig).
     'write-min-interval': durationString,
     'write-audit-path': z.string().optional(),
     'dead-letter-path': z.string().optional(),
@@ -396,7 +388,6 @@ const bufferConfigSchema = z
   })
   .passthrough()
   .superRefine((b, ctx) => {
-    // config.validate:106-113
     if (b.enabled) {
       if (!b.path) {
         ctx.addIssue({
@@ -435,9 +426,6 @@ const nodeConfigSchema = z
     'topic-prefix': z.string().optional(),
   })
   .passthrough()
-
-// ─── Top-level config schema (shape only; cross-entity via validateConfig) ──
-// ─── Derived tag schema ──────────────────────────────────────────────
 
 export const derivedTagConfigSchema = z.object({
   name: z.string().min(1, { message: 'derived tag name is required' }),

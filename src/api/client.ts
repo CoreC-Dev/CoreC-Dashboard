@@ -74,12 +74,12 @@ export async function apiRequest<T = unknown>(
   let url: string
   if (proxyMode === 'proxy') {
     // Same-origin proxy: the browser sends /corec-proxy<path>
-    // with X-CoreC-Target header; server.mjs forwards to the real backend.
-    // Keeps CSP connect-src 'self' and prevents credential leakage.
+    // with X-CoreC-Target header; server.mjs forwards to the real backend,
+    // avoiding direct browser-to-backend connections (CSP: see index.html,
+    // currently connect-src *).
     url = `/corec-proxy${cleanPath}`
   } else {
-    // Direct connection (static-host fallback):
-    // fetch baseUrl + path directly. CSP relaxed to connect-src *.
+    // Direct connection (static-host fallback): fetch baseUrl + path directly.
     url = `${cleanBase}${cleanPath}`
   }
 

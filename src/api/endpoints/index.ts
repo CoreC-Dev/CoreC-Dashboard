@@ -41,7 +41,6 @@ import type { DriverStatus, TransportStatus, WriteCommand } from '@/types/models
 export const getServerInfo = (options?: { signal?: AbortSignal }) =>
   apiRequest<ServerInfoResponse>('/', options)
 
-// Configurations
 export const getConfigs = () => apiRequest<ConfigSummaryResponse>('/configs')
 export const updateConfigs = (data: { path?: string; payload?: string }) =>
   apiRequest<void>('/configs', {
@@ -58,7 +57,7 @@ export const patchConfigs = (data: {
     body: JSON.stringify(data),
   })
 
-// Path A — full config round-trip with secret redaction.
+// Full config round-trip (plaintext, secrets included).
 //
 // getConfigsRaw returns the COMPLETE active config as YAML text with all
 // values in plaintext, including secrets (api.secret, mqtt/http/driver
@@ -107,12 +106,11 @@ export const validateConfigs = async (payload: string): Promise<ValidateConfigRe
   }
 }
 
-// ─── Server-side config backups (hub/route/configs_backups.go) ─────────
-//
-// CoreC snapshots the persisted config file before every reload (newest 10
-// kept). The list endpoint returns metadata only; the content endpoint
-// mirrors GET /configs/raw's posture — the backup YAML carries the same
-// plaintext secrets and is reachable only through this authed path.
+// Server-side config backups (hub/route/configs_backups.go): CoreC snapshots
+// the persisted config file before every reload (bounded by configBackupMax).
+// The list endpoint returns metadata only; the content endpoint mirrors
+// GET /configs/raw's posture — the backup YAML carries the same plaintext
+// secrets and is reachable only through this authed path.
 
 /** GET /configs/backups — metadata of the retained backups, newest first. */
 export const getConfigBackups = async (): Promise<ConfigBackupsResponse> =>
@@ -128,15 +126,6 @@ export const getConfigBackupContent = (name: string) =>
     headers: { Accept: 'application/yaml' },
   })
 
-/**
- * POST /configs/backups/{name}/restore — runs the backup content through
- * the exact PUT /configs reload chain (parse → validate → apply → persist).
- * 204 → { outcome: 'restored' }. A 400 (backup failed validation, nothing
- * applied), 404 (unknown backup name), or 503 (no persisted config path) is
- * the ANSWER, not a transport error: normalized into { outcome: 'rejected' }
- * with the server message verbatim — same family as validateConfigs and
- * postDriverTest. Genuine failures (401/timeout/5xx) throw ApiError.
- */
 /**
  * POST /configs/backups — manual snapshot of the CURRENT on-disk config
  * (distinct from the automatic pre-overwrite snapshots every reload takes).
@@ -162,6 +151,15 @@ export const createConfigBackup = async (): Promise<ConfigBackupCreateResult> =>
   }
 }
 
+/**
+ * POST /configs/backups/{name}/restore — runs the backup content through
+ * the exact PUT /configs reload chain (parse → validate → apply → persist).
+ * 204 → { outcome: 'restored' }. A 400 (backup failed validation, nothing
+ * applied), 404 (unknown backup name), or 503 (no persisted config path) is
+ * the ANSWER, not a transport error: normalized into { outcome: 'rejected' }
+ * with the server message verbatim — same family as validateConfigs and
+ * postDriverTest. Genuine failures (401/timeout/5xx) throw ApiError.
+ */
 export const restoreConfigBackup = async (name: string): Promise<ConfigBackupRestoreResult> => {
   try {
     await apiRequest<void>(`/configs/backups/${encodeURIComponent(name)}/restore`, {
@@ -184,14 +182,12 @@ export const restoreConfigBackup = async (name: string): Promise<ConfigBackupRes
   }
 }
 
-// Southbound Drivers
 export const getDrivers = () => apiRequest<DriversListResponse>('/drivers')
 export const getDriver = (name: string) =>
   apiRequest<DriverStatus>(`/drivers/${encodeURIComponent(name)}`)
 export const getDriverTags = (name: string) =>
   apiRequest<DriverTagsResponse>(`/drivers/${encodeURIComponent(name)}/tags`)
 
-// Northbound Transports
 export const getTransports = () => apiRequest<TransportsListResponse>('/transports')
 export const getTransport = (name: string) =>
   apiRequest<TransportStatus>(`/transports/${encodeURIComponent(name)}`)
@@ -210,7 +206,6 @@ export const testTransport = (name: string) =>
     method: 'POST',
   })
 
-// Realtime Tags & Control
 export const getTags = () => apiRequest<GlobalTagsResponse>('/tags')
 /** Server-side filtered /tags: driver snapshot / name prefix / substring. */
 export const getTagsFiltered = (params: { driver?: string; prefix?: string; tag?: string }) => {
@@ -249,8 +244,6 @@ export const writeTagBatch = (cmds: WriteCommand[]) =>
 export const getDeadLetters = (source?: 'engine' | 'ingress') =>
   apiRequest<DeadLetterResponse>(`/write/failed${source ? `?source=${source}` : ''}`)
 
-// First-class alerts: the engine's alert registry.
-// Zod-validated at the boundary (AGENTS.md: 后端响应不可信任).
 /** Config change audit trail: newest-first successful mutations. */
 export const getConfigAudit = async (): Promise<ConfigAuditResponse> =>
   configAuditResponseSchema.parse(await apiRequest<unknown>('/configs/audit'))
@@ -265,7 +258,6 @@ export const ackAlert = (key: string) =>
     body: JSON.stringify({ key }),
   })
 
-// Rules Engine
 export const getRules = () => apiRequest<RulesListResponse>('/rules')
 // Resource-level DELETE: single-resource removal; the
 // backend splices internally and runs the full PUT /configs safety chain.
@@ -283,17 +275,9 @@ export const toggleRule = (name: string, disabled: boolean) =>
     body: JSON.stringify({ name, disabled }),
   })
 
-// Statistics & Metrics
 export const getStats = () => apiRequest<StatsResponse>('/stats')
 export const getMetricsText = () => apiRequest<string>('/metrics')
 
-// Write Operation History & Instance Health
-//
-// These responses are validated with zod at this boundary (AGENTS.md:
-// 后端响应不可信任) — the endpoints take `unknown` from apiRequest and
-// parse, so a contract drift surfaces here instead of rendering garbage
-// in the UI. Legacy endpoints above keep their TS type assertions.
-//
 // /version and /healthz/* are PUBLIC CoreC routes (registered outside the
 // auth group); apiRequest still attaches the Bearer token, which the
 // server ignores — the same /corec-proxy routing and header handling as
@@ -301,19 +285,8 @@ export const getMetricsText = () => apiRequest<string>('/metrics')
 export const getWriteHistory = async (): Promise<WriteHistoryResponse> =>
   writeHistoryResponseSchema.parse(await apiRequest<unknown>('/write/history'))
 
-/**
- * Staged API surface (typed wrappers for backend routes whose UI hasn't
- * been built yet; check the backend repo before removing) — these mirror
- * real backend routes built for this frontend. Adoption status:
- * - getWriteHistoryFiltered: WIRED (WriteHistoryTable, server-side limit)
- * - getTagsFiltered: not adopted — TagExplorer's live WS stream pushes the
- *   full tag set, so server-side initial filtering would desync the view
- * - deleteDriver/Transport/Rule, getConfigAudit, writeTagBatch: awaiting
- *   their UI (delete-confirm flows, config-center audit view, batch-write
- *   panel)
- * Do not "clean these up" without checking the backend repo first.
- */
-/** Server-side filtered write history: compliance retrieval in one call. */
+// 下列端点封装后端路由，当前调用方见各 feature。
+/** Server-side filtered write history. */
 export const getWriteHistoryFiltered = async (params: {
   driver?: string
   tag?: string

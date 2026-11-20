@@ -107,16 +107,13 @@ describe('registryToEditFields', () => {
   })
 
   it('DOCUMENTED: modbus-tls registry port default is 802 (detail page placeholder is 502)', () => {
-    // 802 is the correct default port for modbus-tls (the pre-registry
-    // placeholder 502 is plain Modbus). Assert the registry's value
-    // flows through the adapter.
+    // 802 is the correct default port for modbus-tls. Assert the registry's
+    // value flows through the adapter.
     const registry = getDriverFieldRegistry('modbus-tls')!
     const fields = registryToEditFields(registry)
     const port = fields.find((f) => f.key === 'port')
     expect(port?.placeholder).toBe('802')
   })
-
-  // ─── Single-source parity: every registry field flows through the adapter ─
 
   it('every driver registry field is tagged with a group (settings|top)', () => {
     for (const type of ['modbus-tcp', 'modbus-rtu', 'modbus-tls', 's7', 'opcua']) {
@@ -124,7 +121,7 @@ describe('registryToEditFields', () => {
       for (const f of fields) {
         expect(['settings', 'top']).toContain(f.group)
       }
-      // tags-file / tags-interval are top-level (bug fix: were inside settings).
+      // tags-file / tags-interval are top-level fields.
       const tagsFile = fields.find((f) => f.key === 'tags-file')
       expect(tagsFile?.group).toBe('top')
     }
@@ -207,8 +204,6 @@ describe('registryToEditFields', () => {
     for (const k of mqttKeys) expect(mqttAll.has(k)).toBe(true)
     for (const k of httpKeys) expect(httpAll.has(k)).toBe(true)
   })
-
-  // ─── Secret fields ────────────────────────────────────────────
 
   it('maps registry password fields to the password kind — never plain text', () => {
     const mqtt = registryToEditFields(getTransportFieldRegistry('mqtt')!)

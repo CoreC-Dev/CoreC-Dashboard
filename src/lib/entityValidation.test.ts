@@ -6,8 +6,6 @@ import {
 } from '@/lib/entityValidation'
 import type { CoreCConfig, DriverConfig, RuleConfig, TransportConfig } from '@/types/config'
 
-// ─── Fixtures ──────────────────────────────────────────────────────
-
 const validDriver: DriverConfig = {
   name: 'plc1',
   type: 'modbus-tcp',
@@ -34,8 +32,6 @@ const baseConfig: CoreCConfig = {
   transports: [validTransport],
   rules: [validRule],
 }
-
-// ─── validateDriverInContext ──────────────────────────────────────
 
 describe('validateDriverInContext', () => {
   it('passes for a valid driver in a valid config', () => {
@@ -82,8 +78,6 @@ describe('validateDriverInContext', () => {
   })
 })
 
-// ─── validateTransportInContext ───────────────────────────────────
-
 describe('validateTransportInContext', () => {
   it('passes for a valid transport in a valid config', () => {
     const result = validateTransportInContext(baseConfig, {
@@ -104,8 +98,6 @@ describe('validateTransportInContext', () => {
     expect(result.errors.some((e) => e.message.includes('Duplicate'))).toBe(false)
   })
 })
-
-// ─── validateRuleInContext ────────────────────────────────────────
 
 describe('validateRuleInContext', () => {
   it('passes for a valid rule in a valid config', () => {

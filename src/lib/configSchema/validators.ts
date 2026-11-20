@@ -1,8 +1,9 @@
 /**
  * configSchema/validators.ts — cross-entity validation rules that zod
- * schemas alone can't express (mirrors CoreC config.validate's
- * cross-cutting rules): name uniqueness, target references, data-source
- * presence, transport fallbacks, SUB-RULE cycles.
+ * schemas alone can't express: name uniqueness, target references,
+ * data-source presence, SUB-RULE cycles（与 CoreC config.validate 对齐）,
+ * plus Dashboard-only checks the server does not perform (transport
+ * fallbacks).
  */
 
 import { durationToMs } from '@/lib/configSchema/duration'
@@ -36,8 +37,7 @@ function hasAutoDiscoveryInbound(node: { id?: string; subscribe?: string[] } | u
 
 /**
  * Check that each rule's target / targets reference an existing transport.
- * Returns the produced errors (in iteration order); byte-identical to the
- * inline loops previously duplicated for top-level `rules` and `rule-groups`.
+ * Returns the produced errors (in iteration order).
  * `pathFor(ruleName)` yields the path prefix (without the trailing
  * `.target`/`.targets`), e.g. `rules[foo]` or `rule-groups[g].foo`.
  */
@@ -113,7 +113,7 @@ export function checkTransportPresence(transports: { name: string }[]): ConfigVa
   return []
 }
 
-/** Driver name uniqueness + type registry (config.validate:139-155). */
+/** Driver name uniqueness + type registry (与 CoreC config.validate 对齐). */
 export function checkDriverNames(
   drivers: { name: string; type: string }[],
 ): ConfigValidationError[] {
@@ -134,7 +134,7 @@ export function checkDriverNames(
   return errors
 }
 
-/** Transport name uniqueness + type registry (config.validate:210-226). */
+/** Transport name uniqueness + type registry (与 CoreC config.validate 对齐). */
 export function checkTransportNames(transports: { name: string; type: string }[]): {
   names: Set<string>
   errors: ConfigValidationError[]
@@ -156,7 +156,7 @@ export function checkTransportNames(transports: { name: string; type: string }[]
   return { names, errors }
 }
 
-/** Transport fallback must reference an existing, distinct transport. */
+/** Transport fallback must reference an existing, distinct transport (Dashboard-only check). */
 export function checkTransportFallbacks(
   transports: { name: string; fallback?: string }[],
   transportNames: Set<string>,
@@ -169,7 +169,7 @@ export function checkTransportFallbacks(
         message: `fallback transport "${t.fallback}" not found`,
       })
     }
-    // Self-fallback is a no-op (transport falls back to itself = infinite loop)
+    // Self-fallback is meaningless: on failure the transport falls back to itself.
     if (t.fallback && t.fallback === t.name) {
       errors.push({
         path: `transports[${t.name}].fallback`,
@@ -180,12 +180,6 @@ export function checkTransportFallbacks(
   return errors
 }
 
-/**
- * Rule groups: validate target refs inside group rules + detect circular
- * SUB-RULE references via DFS (mirrors rule/engine.go:98-112
- * detectCircularSubRules). A rule's match field can be "SUB-RULE:group-name"
- * to delegate to a named sub-rule group; circular chains (A→B→A) are caught.
- */
 /**
  * checkTagCollectionRules validates the collection-side tag fields against the
  * same invariants the Go server enforces at config load (config/validate.go):
@@ -198,9 +192,6 @@ export function checkTransportFallbacks(
  *  - a triggers reference must name a trigger-group condition on the SAME
  *    driver, otherwise the group never fires and its details silently stop
  *    being collected.
- *
- * Catching these here keeps the UI from saving a config the server will refuse
- * on reload, and from hiding a collection outage behind a typo.
  */
 export function checkTagCollectionRules(
   tags: {
@@ -261,6 +252,12 @@ export function checkTagCollectionRules(
   return errors
 }
 
+/**
+ * Rule groups: validate target refs inside group rules + detect circular
+ * SUB-RULE references via DFS (与后端 detectCircularSubRules 对齐). A rule's
+ * match field can be "SUB-RULE:group-name" to delegate to a named sub-rule
+ * group; circular chains (A→B→A) are caught.
+ */
 export function checkSubRuleCycles(
   ruleGroups: Record<
     string,
@@ -272,7 +269,6 @@ export function checkSubRuleCycles(
   const groupNames = Object.keys(ruleGroups)
   if (groupNames.length === 0) return errors
 
-  // Validate target references inside group rules
   for (const [groupName, groupRules] of Object.entries(ruleGroups)) {
     errors.push(
       ...checkRuleTargetRefs(
@@ -283,7 +279,6 @@ export function checkSubRuleCycles(
     )
   }
 
-  // Detect circular SUB-RULE references via DFS
   const SUB_RULE_PREFIX = 'SUB-RULE:'
   const visited = new Set<string>()
   const inStack = new Set<string>()
@@ -312,7 +307,6 @@ export function checkSubRuleCycles(
             break
           }
         } else {
-          // Reference to non-existent group
           errors.push({
             path: `rule-groups[${name}].${r.name}.match`,
             message: `SUB-RULE references non-existent group "${refName}"`,
@@ -339,8 +333,8 @@ export function checkSubRuleCycles(
 /**
  * Validate cross-entity consistency rules that zod schemas can't express.
  * Run this AFTER schema.parse() succeeds (shape/intra-entity checks pass).
- * Mirrors config.validate:122-272. Delegates to named pure validators so
- * each cross-entity rule is testable in isolation.
+ * Delegates to named pure validators so each cross-entity rule is testable
+ * in isolation.
  */
 export function validateConfig(config: unknown): ConfigValidationResult {
   const cfg = config as CrossEntityConfig

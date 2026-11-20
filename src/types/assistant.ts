@@ -1,10 +1,8 @@
 /**
  * types/assistant.ts — the instance-scoped AI assistant's data model.
  *
- * Kept in types/ because api/ and features/ both speak it, and types/ is the
- * only layer neither is allowed to depend upward on. Provider settings live
- * in localStorage exactly like the instance metadata (SECURITY.md「密钥存储
- * （明示披露）」): this is a declared, disclosed trade-off, not a new one.
+ * Provider 设置（含 apiKey）存 localStorage，设置 UI 须明示披露。
+ * 实例元数据存 localStorage，实例密钥默认存 sessionStorage（仅显式勾选记住时写 localStorage）。
  */
 
 /** A provider the user can point the assistant at. */
@@ -19,8 +17,8 @@ export interface AssistantProvider {
   model: string
   /**
    * Bearer key. Optional: local gateways (vLLM without --api-key) do not
-   * authenticate. Stored in localStorage next to the instance secrets — see
-   * the module doc; the settings UI must disclose this the same way.
+   * authenticate. Stored in localStorage（provider 设置）— the settings UI
+   * must disclose this.
    */
   apiKey?: string
   /** Extra headers for gateways that need them (e.g. X-Org-Id). */

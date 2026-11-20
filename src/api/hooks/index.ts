@@ -81,10 +81,9 @@ export function useTransport(name: string) {
 }
 
 export function useTags() {
-  // No refetchInterval: TagExplorerPage seeds from this REST snapshot once,
-  // then the /tags/stream WebSocket owns live state (hasSeeded guard ignores
-  // subsequent polls). A 5s REST poll was pure waste — ~12 req/min eliminated.
-  // Manual Refresh calls refetch() explicitly. [perf: redundant poll removed]
+  // No refetchInterval: TagExplorerPage 以 REST 快照做低频 reconcile（新增/删除
+  // 标签），实时值由 /tags/stream 拥有；useTags 本身不轮询。Manual Refresh
+  // calls refetch() explicitly.
   return useConnectedQuery({
     queryKey: ['tags'],
     queryFn: api.getTags,
@@ -115,12 +114,10 @@ export function useConfigs() {
 }
 
 /**
- * Path A — fetches the full active config as raw YAML text from
- * GET /configs/raw. Verified against the backend (hub/executor
- * RawConfigYAML): the server returns the config PLAINTEXT, secrets
- * included — there is no masking and no sentinel-merge on submit. The
- * editor and every PUT therefore round-trip real secret values; the
- * endpoint is authenticated for exactly this reason.
+ * Fetches the full active config as raw YAML text from GET /configs/raw.
+ * The server returns the config PLAINTEXT, secrets included — there is no
+ * masking and no sentinel-merge on submit. The editor and every PUT
+ * therefore round-trip real secret values; the endpoint is authenticated.
  *
  * Not polled (no refetchInterval): the raw config only changes via PUT
  * /configs, and useUpdateConfig invalidates ['configsRaw'] on success.
@@ -133,9 +130,7 @@ export function useConfigRaw() {
 }
 
 export function useDeadLetters() {
-  // Poll every 15s (was 4s). Dead letters are a low-urgency diagnostic queue —
-  // 4s was excessively aggressive (~15 req/min) for data that changes slowly.
-  // [behavior change: refetchInterval 4000→15000 — deliberate cadence slowdown]
+  // Low-urgency diagnostic queue: 15s poll cadence.
   return useConnectedQuery({
     queryKey: ['deadLetters'],
     queryFn: api.getDeadLetters,
@@ -143,7 +138,6 @@ export function useDeadLetters() {
   })
 }
 
-// Mutations
 export function useWriteTag() {
   const queryClient = useQueryClient()
   return useMutation({
@@ -152,7 +146,7 @@ export function useWriteTag() {
       queryClient.invalidateQueries({ queryKey: ['tags'] })
       queryClient.invalidateQueries({ queryKey: ['deadLetters'] })
       // The write audit trail must reflect the write immediately rather
-      // than waiting for the next 15s poll.
+      // than waiting for the next poll.
       queryClient.invalidateQueries({ queryKey: ['writeHistory'] })
       // Invalidate the specific driver's tags and status so the UI reflects
       // the write immediately rather than waiting for the next poll.
@@ -215,7 +209,7 @@ export function useUpdateConfig() {
 }
 
 /**
- * Path A — server-side dry-run validation of a config payload via
+ * Server-side dry-run validation of a config payload via
  * POST /configs/validate. Runs parse + config validation WITHOUT applying,
  * so the operator can catch errors before committing a PUT /configs.
  *
@@ -232,8 +226,7 @@ export function useValidateConfig() {
 
 /**
  * Prometheus /metrics text. Used by the Diagnostics page with a configurable
- * refetchInterval (default 12s) so polling is managed by TanStack Query
- * instead of a manual setInterval.
+ * refetchInterval; polling is managed by TanStack Query.
  */
 export function useMetrics(refetchInterval: number | false = 12_000) {
   return useConnectedQuery({
@@ -244,15 +237,7 @@ export function useMetrics(refetchInterval: number | false = 12_000) {
 }
 
 /**
- * Write operation history (GET /write/history) — the audit trail of every
- * tag write (forward API + reverse stream commands), newest-first, capped
- * server-side at 1000 entries. Polls at the 15s diagnostic cadence used by
- * the other low-urgency queues (deadLetters, rules) — an audit log does
- * not need the 5s stats cadence.
- */
-/**
  * Send one test point through a transport (POST /transports/{name}/test).
- * Lives in the api hooks layer so every surface shares one mutation.
  */
 export function useTransportTest() {
   return useMutation({
@@ -260,6 +245,11 @@ export function useTransportTest() {
   })
 }
 
+/**
+ * Write operation history (GET /write/history) — the audit trail of every
+ * tag write (forward API + reverse stream commands), newest-first, capped
+ * server-side (writeAuditCapacity). Polls at the 15s diagnostic cadence.
+ */
 export function useWriteHistory(params?: {
   driver?: string
   tag?: string
@@ -276,10 +266,9 @@ export function useWriteHistory(params?: {
 }
 
 /**
- * CoreC version (GET /version, public). Static for the process lifetime —
- * the 30s serverInfo cadence is plenty; exists mainly so the Diagnostics
- * health strip shows an authoritative version even before/without a
- * successful authed GET / probe.
+ * CoreC version (GET /version, public). Static for the process lifetime;
+ * polled at the serverInfo cadence so the Diagnostics health strip shows an
+ * authoritative version even before/without a successful authed GET / probe.
  */
 export function useVersion() {
   return useConnectedQuery({
@@ -291,8 +280,7 @@ export function useVersion() {
 
 /**
  * Liveness probe (GET /healthz/live, public) — 200 {"status":"alive"}
- * whenever the process can serve HTTP. 15s matches the diagnostics
- * cadence; k8s probes ~10s, but a UI badge does not need to be hotter.
+ * whenever the process can serve HTTP. 15s diagnostic cadence.
  */
 export function useHealthzLive() {
   return useConnectedQuery({
@@ -348,7 +336,7 @@ export function useRulesPreview() {
   })
 }
 
-// ─── Server-side config backups (/configs/backups*) ─────────────────────
+// Server-side config backups (/configs/backups*)
 
 /**
  * Retained server-side config backups (GET /configs/backups), newest
@@ -423,15 +411,7 @@ export function useRestoreConfigBackup() {
   })
 }
 
-// Re-export ApiError so features don't reach into the raw HTTP client.
-// api/client is an internal transport detail; consumers should catch ApiError via this surface.
 export { ApiError } from '@/api/client'
-// Re-export CoreCWebSocket + WSStatus for consumers that need direct lifecycle control
-// (complex useEffect with intertwined local state). Simple consumers should use
-// useCoreCWebSocket below instead.
-// Re-export the WS status store surface so manual CoreCWebSocket consumers
-// (useTagExplorerStream, the global alert provider) wire into the same
-// aggregation the auto-wired hooks use, without reaching into @/stores twice.
 export { CoreCWebSocket, makeStreamId, useWsStatusStore, type WSStatus }
 
 /**
@@ -441,11 +421,9 @@ export { CoreCWebSocket, makeStreamId, useWsStatusStore, type WSStatus }
  *
  * The socket is ALSO wired into the global WS status store:
  * every status change feeds the AppShell badge + monitor banner, message
- * activity pings the "last update" timestamp (throttled ≥1s in the store),
- * and limiter drops feed the rate-limit hint. Consumer-provided onStatus is
- * chained after the store sink, so existing consumers (charts,
- * RealtimeStreamsPanel) keep working unchanged — this is how /traffic and
- * /memory became visible without touching their components.
+ * activity pings the "last update" timestamp (throttled in the store),
+ * and limiter drops feed the rate-limit hint. Status goes to the store
+ * sink first; the consumer-provided onStatus is chained after it.
  */
 export function useCoreCWebSocket<T>(
   path: string,

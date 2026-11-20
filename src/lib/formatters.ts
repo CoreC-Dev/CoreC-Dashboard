@@ -3,8 +3,7 @@ import type { TFunction } from 'i18next'
 /**
  * Format a timestamp as a compact relative-time label
  * (e.g. "刚刚", "3分钟前", "2小时前", "5天前"). Returns '' for a missing
- * timestamp. Mirrors the helper used by InstanceCard so rule stat cells and
- * instance cards share one presentation style.
+ * timestamp.
  *
  * Pure: takes `t` explicitly instead of importing the i18n singleton.
  */

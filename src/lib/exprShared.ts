@@ -6,8 +6,7 @@
  * and share the same result shape and balanced-parentheses check. This
  * module centralizes that duplication so the two validators stay in sync.
  *
- * The paren checker is byte-for-byte behavior-identical to the inline loops
- * it replaces: it scans left-to-right, tracks nesting depth, emits a single
+ * The paren checker scans left-to-right, tracks nesting depth, emits a single
  * "closing before opening" error (and stops) when depth would go negative,
  * and emits a single "N unclosed" error when depth remains positive at EOF.
  */
@@ -28,7 +27,7 @@ export interface ValidationResult {
  *   - 'unbalanced parentheses: N unclosed "("'
  *
  * On a closing ")" that drives depth below zero, pushes the first error and
- * stops scanning (mirrors the original inline `break` behaviour).
+ * stops scanning.
  */
 export function checkBalancedParens(s: string): string[] {
   const errors: string[] = []

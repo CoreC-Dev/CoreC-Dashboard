@@ -2,15 +2,14 @@
  * Settings Field Metadata — Shared Types & Fragments
  */
 
-// ─── Field descriptor types ──────────────────────────────────────────
 export type FieldType =
-  | 'text' // free-form string (host, path, endpoint, expression)
-  | 'number' // integer or float input
+  | 'text'
+  | 'number'
   | 'duration' // Go duration string ("30s", "500ms") — text input with validation
-  | 'boolean' // checkbox / switch
+  | 'boolean'
   | 'enum' // single-select from a fixed list of strings
   | 'select' // single-select from a dynamic list (e.g. transport names)
-  | 'password' // text input with masked display
+  | 'password'
   | 'object' // composite: nested sub-fields rendered as a sub-grid (e.g. parser)
 
 export interface FieldGroup {
@@ -51,7 +50,6 @@ export interface TypeFieldRegistry {
   groups: Array<FieldGroup & { fields: SettingsField[] }>
 }
 
-// ─── Reusable field group fragments ──────────────────────────────────
 export const RECONNECT_GROUP = {
   label: 'settings.reconnect',
   advanced: true,
@@ -81,7 +79,6 @@ export const RECONNECT_GROUP = {
   ] satisfies SettingsField[],
 }
 
-// ─── Reusable modbus TCP-family connection fields ───────────────────
 // host/port/slave-id/timeout repeated verbatim across modbus-tcp,
 // modbus-rtuovertcp, modbus-udp, modbus-rtuoverudp, and modbus-tls. Only the
 // host placeholder varies between entries; modbus-tls additionally overrides

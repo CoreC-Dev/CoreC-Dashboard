@@ -180,9 +180,6 @@ export interface MemoryFrame {
 /**
  * A saved CoreC instance — a persistent identity for a gateway/edge node
  * the operator manages from the dashboard.
- *
- * (Domain types live in types/ rather than stores/ so every layer
- * can import them without touching a store.)
  */
 export interface CoreCInstance {
   /** Auto-generated unique identifier (used in routes /corec/:id/*). */
@@ -261,6 +258,5 @@ export interface CoreCInstance {
   useProxy?: 'auto' | 'proxy' | 'direct'
 }
 
-/** WebSocket connection lifecycle state (shared by the client, status
- * store, and UI — lives in types/ so no layer back-edges are needed). */
+/** WebSocket connection lifecycle state (shared by the client, status store, and UI). */
 export type WSStatus = 'connecting' | 'open' | 'closed' | 'error' | 'rejected'

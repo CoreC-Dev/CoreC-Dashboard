@@ -36,8 +36,6 @@ const baseConfig: CoreCConfig = {
   transports: [transport],
 }
 
-// ─── parse / dump ───────────────────────────────────────────────────
-
 describe('parseConfigYaml', () => {
   it('parses a valid YAML mapping into a config object', () => {
     const yaml = 'node:\n  id: edge\n  role: collector\n'
@@ -95,8 +93,6 @@ describe('dumpConfigYaml', () => {
   })
 })
 
-// ─── driver CRUD ────────────────────────────────────────────────────
-
 describe('driver helpers', () => {
   it('upsert adds a new driver', () => {
     const updated = upsertDriver(baseConfig, {
@@ -141,8 +137,6 @@ describe('driver helpers', () => {
   })
 })
 
-// ─── transport CRUD ─────────────────────────────────────────────────
-
 describe('transport helpers', () => {
   it('upsert + find + remove', () => {
     const updated = upsertTransport(baseConfig, {
@@ -158,8 +152,6 @@ describe('transport helpers', () => {
   })
 })
 
-// ─── rule providers ─────────────────────────────────────────────────
-
 describe('rule provider helpers', () => {
   it('upsert + uniqueness', () => {
     const updated = upsertRuleProvider(baseConfig, {
@@ -172,8 +164,6 @@ describe('rule provider helpers', () => {
     expect(isRuleProviderNameUnique(updated, 'prov2')).toBe(true)
   })
 })
-
-// ─── rule groups (Record shape) ─────────────────────────────────────
 
 describe('rule group helpers', () => {
   it('upsert + find + remove + uniqueness', () => {

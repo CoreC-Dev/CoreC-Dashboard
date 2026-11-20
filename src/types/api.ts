@@ -64,12 +64,9 @@ export interface RulesListResponse {
 
 export type StatsResponse = EngineStats
 
-// ─── Write operation history (GET /write/history) ─────────────────────
-//
 // CoreC keeps a bounded in-memory audit log of every tag write — both
 // forward REST API writes and reverse stream ("command") writes — served
-// newest-first, capped at 1000 entries. The response is validated with
-// zod at the endpoint boundary (AGENTS.md: 后端响应不可信任).
+// newest-first, capped server-side (writeAuditCapacity).
 
 /** Origin of an audited write: forward REST API write or reverse stream command write. */
 export const writeAuditSourceSchema = z.enum(['api', 'command'])
@@ -106,7 +103,7 @@ export const writeAuditEntrySchema = z.object({
 })
 
 export const writeHistoryResponseSchema = z.object({
-  /** Newest-first, server-capped at 1000 entries. */
+  /** Newest-first, server-capped (writeAuditCapacity). */
   writes: z.array(writeAuditEntrySchema),
   /** Entry count, mirroring DeadLetterResponse's shape (hub/route/write_history.go). */
   count: z.number(),
@@ -114,8 +111,6 @@ export const writeHistoryResponseSchema = z.object({
 
 export type WriteHistoryResponse = z.infer<typeof writeHistoryResponseSchema>
 
-// ─── Config change audit (GET /configs/audit) ────────────────────────
-//
 // Bounded, newest-first trail of successful configuration mutations.
 // In-memory only: the on-disk truth is the
 // config file + backups.
@@ -135,12 +130,9 @@ export const configAuditResponseSchema = z.object({
 
 export type ConfigAuditResponse = z.infer<typeof configAuditResponseSchema>
 
-// ─── First-class alerts (GET /alerts, POST /alerts/ack) ──────────────
-//
 // The engine's alert registry: active alerts have
 // identity (rule|driver|tag), a fire count, and an ack flag; the
 // bounded history carries fired/acked/cleared events newest-first.
-// Validated with zod at the endpoint boundary (后端响应不可信任).
 
 export const alertSchema = z.object({
   key: z.string(),
@@ -171,8 +163,6 @@ export const alertsResponseSchema = z.object({
 
 export type AlertsResponse = z.infer<typeof alertsResponseSchema>
 
-// ─── Public instance endpoints (/version, /healthz/*) ────────────────
-//
 // These are registered OUTSIDE CoreC's auth group (hub/route/router.go)
 // so Kubernetes probes can reach them without a secret. The dashboard
 // still calls them through the authed client — the attached Bearer token
@@ -232,8 +222,6 @@ export type HealthzReadyResult =
       }
     }
 
-// ─── Driver connectivity test (POST /drivers/test) ────────────────────
-//
 // The backend instantiates a THROWAWAY driver from the request, drives it
 // through the same init→start lifecycle a configured driver follows,
 // measures the connect attempt, and always tears the instance down. Both
@@ -286,8 +274,6 @@ export type DriverTestResult =
   | { outcome: 'completed'; data: DriverTestResponse }
   | { outcome: 'rejected'; error: string }
 
-// ─── Rule preview (POST /rules/preview) ───────────────────────────────
-//
 // Offline trial-run of a match expression against a sample data point in
 // a scratch rule engine — the active rule set is never touched, so rule
 // authors can validate syntax and semantics BEFORE saving (hub/route/
@@ -351,14 +337,11 @@ export interface RulesPreviewRequest {
   point?: PreviewDataPointInput
 }
 
-// ─── Server-side config backups (/configs/backups*) ─────────────────────
-//
 // CoreC snapshots the persisted config file before every reload and keeps
-// the newest 10 backups next to it (hub/executor/backups.go). The list
+// the newest backups next to it (bounded by configBackupMax). The list
 // carries METADATA only — backup content holds the same plaintext secrets
 // as GET /configs/raw and is served solely through GET /configs/backups/{name}
-// (hub/route/configs_backups.go). All three endpoints zod-parse at the
-// boundary (AGENTS.md: 后端响应不可信任).
+// (hub/route/configs_backups.go).
 
 /** One backup entry of GET /configs/backups — metadata only, never content. */
 export const configBackupInfoSchema = z.object({
@@ -375,7 +358,7 @@ export const configBackupInfoSchema = z.object({
 })
 export type ConfigBackupInfo = z.infer<typeof configBackupInfoSchema>
 
-/** GET /configs/backups → {backups:[…]}, newest first, server-capped at 10. */
+/** GET /configs/backups → {backups:[…]}, newest first, server-capped (configBackupMax). */
 export const configBackupsResponseSchema = z.object({
   backups: z.array(configBackupInfoSchema),
 })
@@ -413,13 +396,10 @@ export const createdBackupSchema = z.object({
   name: z.string(),
 })
 
-// ─── Realtime WS push frames (/traffic, /memory) ─────────────────────────
-//
-// CoreC pushes these JSON frames on a ticker (default 1s, tunable via
-// ?interval= — hub/route/traffic.go / memory.go). The CoreCWebSocket layer
-// only JSON.parses, so consumers validate each frame against these schemas
-// at the boundary (AGENTS.md: 后端响应不可信任) and drop malformed pushes
-// instead of rendering garbage. The shapes mirror the existing
+// CoreC pushes these JSON frames on a ticker (tunable via ?interval= —
+// hub/route/traffic.go / memory.go). The CoreCWebSocket layer only
+// JSON.parses, so consumers validate each frame against these schemas
+// at the boundary and drop malformed pushes. The shapes mirror
 // models.TrafficFrame / models.MemoryFrame.
 
 /**
@@ -436,13 +416,10 @@ export const memoryFrameSchema = z.object({
 })
 export type MemoryFrameMessage = z.infer<typeof memoryFrameSchema>
 
-// ─── /logs frame ────────────────────────────────────────────────────────
-// The backend marshals slog.Level as a
-// STRING ("WARN", "DEBUG", "ERROR+2" for custom severities — verified by
-// compiling json.Marshal against the Go source), while LogEvent.level is
-// the numeric contract (-8/0/4/8). Numeric input passes through so
-// legacy mocks keep their meaning; unparseable levels fail the parse so
-// the frame is dropped at the boundary instead of misclassified.
+// The backend marshals slog.Level as a STRING ("WARN", "DEBUG", "ERROR+2"
+// for custom severities), while LogEvent.level is the numeric contract.
+// parseLogLevel normalizes both forms; unparseable levels fail the parse
+// so the frame is dropped at the boundary.
 const LOG_LEVEL_BASES = {
   DEBUG: -8,
   INFO: 0,
@@ -450,7 +427,7 @@ const LOG_LEVEL_BASES = {
   ERROR: 8,
 } as const
 
-/** Normalize a backend level value (string | legacy number) → number; NaN if unparseable. */
+/** Normalize a backend level value (string | number) → number; NaN if unparseable. */
 export function parseLogLevel(level: unknown): number {
   if (typeof level === 'number') return level
   if (typeof level !== 'string') return Number.NaN
@@ -468,12 +445,8 @@ export const logEventSchema = z.object({
 })
 export type LogEventFrame = z.infer<typeof logEventSchema>
 
-// ─── /traffic frames ───────────────────────────────────────────────────
-// Default mode pushes server-side diffed RATES; ?mode=totals keeps the
-// legacy cumulative counters. The two modes are a discriminated union
-// so either contract validates and the panel picks fields by shape —
-// a cumulative-only schema would silently drop every default-mode
-// rate frame.
+// Default mode pushes server-side diffed RATES; ?mode=totals pushes
+// cumulative counters. Both shapes validate through the union below.
 export const trafficRateFrameSchema = z.object({
   read_rate: z.number(),
   publish_rate: z.number(),

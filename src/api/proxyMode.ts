@@ -41,8 +41,7 @@ function isDirectSignal(res: Response): boolean {
 }
 
 /**
- * Get the cached proxy mode. Returns 'proxy' if detection hasn't run yet
- * (backward-compatible default for server.mjs deployments).
+ * Get the cached proxy mode. Returns 'proxy' if detection hasn't run yet.
  */
 export function getProxyMode(): 'proxy' | 'direct' {
   return mode ?? 'proxy'

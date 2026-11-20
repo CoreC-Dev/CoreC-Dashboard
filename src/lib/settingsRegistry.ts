@@ -4,7 +4,6 @@
  * Re-exports types, driver/transport registries, and lookup helpers.
  */
 
-// Registries
 export { DRIVER_SETTINGS_REGISTRY, DRIVER_TOPLEVEL_FIELDS } from '@/lib/settingsRegistryDriver'
 export {
   TRANSPORT_SETTINGS_REGISTRY,
@@ -17,17 +16,12 @@ export type {
 
 import { DRIVER_SETTINGS_REGISTRY } from '@/lib/settingsRegistryDriver'
 import { TRANSPORT_SETTINGS_REGISTRY } from '@/lib/settingsRegistryTransport'
-// Local imports for helpers
 import type { TypeFieldRegistry } from '@/lib/settingsRegistryTypes'
 
-// ─── Lookup helpers ──────────────────────────────────────────────────
-
-/** Returns the field registry for a driver type, or undefined if unknown. */
 export function getDriverFieldRegistry(type: string): TypeFieldRegistry | undefined {
   return DRIVER_SETTINGS_REGISTRY[type]
 }
 
-/** Returns the field registry for a transport type, or undefined if unknown. */
 export function getTransportFieldRegistry(type: string): TypeFieldRegistry | undefined {
   return TRANSPORT_SETTINGS_REGISTRY[type]
 }
@@ -45,7 +39,6 @@ export function buildDefaultSettings(
   for (const group of registry.groups) {
     for (const field of group.fields) {
       if (field.type === 'object' && field.subFields) {
-        // Build nested object from sub-field defaults
         const sub: Record<string, unknown> = {}
         for (const subField of field.subFields) {
           if (subField.default !== undefined) {

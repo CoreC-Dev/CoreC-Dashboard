@@ -1,8 +1,6 @@
 /**
- * configSchema/index.ts — the public validation surface, unchanged.
- * validateFullConfig composes the zod tree (./schema) with the
- * cross-entity checks (./validators). Every existing
- * `from '@/lib/configSchema'` import keeps resolving.
+ * configSchema/index.ts — validateFullConfig composes the zod tree
+ * (./schema) with the cross-entity checks (./validators).
  */
 import { coreCConfigSchema } from '@/lib/configSchema/schema'
 import {

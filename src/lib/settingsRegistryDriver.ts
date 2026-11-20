@@ -8,7 +8,6 @@ import {
   type TypeFieldRegistry,
 } from '@/lib/settingsRegistryTypes'
 
-// ─── Driver settings registries ──────────────────────────────────────
 export const DRIVER_SETTINGS_REGISTRY: Record<string, TypeFieldRegistry> = {
   'modbus-tcp': {
     groups: [
@@ -395,10 +394,7 @@ export const DRIVER_TOPLEVEL_FIELDS: SettingsField[] = [
     label: 'settings.tagsFile',
     type: 'text',
     default: 'tags.yaml',
-    // The help copy lives under driverWizard.* (both packs) — these
-    // two fields used to point at settings.tagsFileHelp/tagsIntervalHelp,
-    // keys that never existed, so the edit form rendered the raw key string
-    // ("settings.tagsFileHelp") as the help text.
+    // The help copy lives under driverWizard.* (both packs).
     help: 'driverWizard.tagsFileHelp',
   },
   {

@@ -1,9 +1,9 @@
 /**
  * CoreC Config YAML utilities.
  *
- * Provides typed parse/dump plus single-entity upsert/remove helpers that
- * implement the "read full config → modify one entity → PUT /configs"
- * workflow dictated by CoreC's API (no per-resource CRUD endpoints).
+ * Provides typed parse/dump plus single-entity upsert/remove helpers.
+ * CoreC 单资源创建/更新经 PUT /configs 全量回写；删除另有
+ * DELETE /{drivers,transports,rules}/{name}。
  *
  * All entity mutations are pure: they return a NEW CoreCConfig object and
  * never mutate the input, so callers can build optimistic-update snapshots
@@ -19,8 +19,6 @@ import type {
   RuleProviderConfig,
   TransportConfig,
 } from '@/types/config'
-
-// ─── Parse / dump ────────────────────────────────────────────────────
 
 /**
  * Reject objects containing prototype-polluting keys (__proto__, constructor,
@@ -102,14 +100,12 @@ export function yamlDiffersFromConfig(yaml: string, working: CoreCConfig | null)
   }
 }
 
-// ─── Array entity helpers (driver / transport / rule / rule-provider) ─
 // The four array-keyed entities — drivers[], transports[], rules[], and
 // 'rule-providers'[] — each expose the same find/upsert/remove/isNameUnique
 // quadruple, differing only in the config key and element type. This factory
-// captures the shared logic; each named export below is a thin wrapper so the
-// public API (consumed by configStore) stays byte-identical to the previous
-// hand-written implementations. rule-groups uses a Record shape (not an
-// array) and is left as-is below.
+// captures the shared logic; each named export below is a thin wrapper.
+// rule-groups uses a Record shape (not an array) and is handled separately
+// below.
 
 /** Minimal shape required of an array-entity element (all four satisfy this). */
 interface NamedEntity {
@@ -147,14 +143,11 @@ function makeArrayEntityHelpers<E extends NamedEntity>(opts: {
   }
 }
 
-// ─── Driver entity helpers ───────────────────────────────────────────
-
 const driverHelpers = makeArrayEntityHelpers<DriverConfig>({
   read: (config) => config.drivers,
   write: (config, drivers) => ({ ...config, drivers }),
 })
 
-/** Find a driver by name. Returns undefined if absent. */
 export function findDriver(config: CoreCConfig, name: string): DriverConfig | undefined {
   return driverHelpers.find(config, name)
 }
@@ -167,12 +160,9 @@ export function upsertDriver(config: CoreCConfig, driver: DriverConfig): CoreCCo
   return driverHelpers.upsert(config, driver)
 }
 
-/** Remove a driver by name. No-op if absent. Returns a new config object. */
 export function removeDriver(config: CoreCConfig, name: string): CoreCConfig {
   return driverHelpers.remove(config, name)
 }
-
-// ─── Transport entity helpers ────────────────────────────────────────
 
 const transportHelpers = makeArrayEntityHelpers<TransportConfig>({
   read: (config) => config.transports,
@@ -190,8 +180,6 @@ export function upsertTransport(config: CoreCConfig, transport: TransportConfig)
 export function removeTransport(config: CoreCConfig, name: string): CoreCConfig {
   return transportHelpers.remove(config, name)
 }
-
-// ─── Rule entity helpers ─────────────────────────────────────────────
 
 const ruleHelpers = makeArrayEntityHelpers<RuleConfig>({
   read: (config) => config.rules,
@@ -215,8 +203,6 @@ export function removeRule(config: CoreCConfig, name: string): CoreCConfig {
   return ruleHelpers.remove(config, name)
 }
 
-// ─── Name-uniqueness validation (mirrors config.validate) ────────────
-
 /** Returns true if `name` is unique among existing drivers (case-sensitive). */
 export function isDriverNameUnique(config: CoreCConfig, name: string): boolean {
   return driverHelpers.isNameUnique(config, name)
@@ -230,14 +216,11 @@ export function isRuleNameUnique(config: CoreCConfig, name: string): boolean {
   return ruleHelpers.isNameUnique(config, name)
 }
 
-// ─── Rule Providers (rule-providers[]) ────────────────────────────────
-
 const ruleProviderHelpers = makeArrayEntityHelpers<RuleProviderConfig>({
   read: (config) => config['rule-providers'],
   write: (config, providers) => ({ ...config, 'rule-providers': providers }),
 })
 
-/** Find a rule provider by name. */
 export function findRuleProvider(
   config: CoreCConfig,
   name: string,
@@ -245,29 +228,22 @@ export function findRuleProvider(
   return ruleProviderHelpers.find(config, name)
 }
 
-/** Add or replace a rule provider (keyed by name). */
 export function upsertRuleProvider(config: CoreCConfig, provider: RuleProviderConfig): CoreCConfig {
   return ruleProviderHelpers.upsert(config, provider)
 }
 
-/** Remove a rule provider by name. */
 export function removeRuleProvider(config: CoreCConfig, name: string): CoreCConfig {
   return ruleProviderHelpers.remove(config, name)
 }
 
-/** Check rule-provider name uniqueness. */
 export function isRuleProviderNameUnique(config: CoreCConfig, name: string): boolean {
   return ruleProviderHelpers.isNameUnique(config, name)
 }
 
-// ─── Rule Groups (rule-groups: Record<string, RuleConfig[]>) ──────────
-
-/** Find a rule group by name. */
 export function findRuleGroup(config: CoreCConfig, name: string): RuleConfig[] | undefined {
   return config['rule-groups']?.[name]
 }
 
-/** Add or replace a rule group (keyed by group name). */
 export function upsertRuleGroup(
   config: CoreCConfig,
   name: string,
@@ -278,41 +254,33 @@ export function upsertRuleGroup(
   return { ...config, 'rule-groups': groups }
 }
 
-/** Remove a rule group by name. */
 export function removeRuleGroup(config: CoreCConfig, name: string): CoreCConfig {
   const groups = { ...(config['rule-groups'] ?? {}) }
   delete groups[name]
   return { ...config, 'rule-groups': groups }
 }
 
-/** Check rule-group name uniqueness. */
 export function isRuleGroupNameUnique(config: CoreCConfig, name: string): boolean {
   return !(config['rule-groups'] && name in config['rule-groups'])
 }
-
-// ─── Derived Tags (derived-tags[]) ───────────────────────────────────
 
 const derivedTagHelpers = makeArrayEntityHelpers<DerivedTagConfig>({
   read: (config) => config['derived-tags'],
   write: (config, tags) => ({ ...config, 'derived-tags': tags }),
 })
 
-/** Find a derived tag by name. */
 export function findDerivedTag(config: CoreCConfig, name: string): DerivedTagConfig | undefined {
   return derivedTagHelpers.find(config, name)
 }
 
-/** Add or replace a derived tag (keyed by name). */
 export function upsertDerivedTag(config: CoreCConfig, tag: DerivedTagConfig): CoreCConfig {
   return derivedTagHelpers.upsert(config, tag)
 }
 
-/** Remove a derived tag by name. */
 export function removeDerivedTag(config: CoreCConfig, name: string): CoreCConfig {
   return derivedTagHelpers.remove(config, name)
 }
 
-/** Check derived-tag name uniqueness. */
 export function isDerivedTagNameUnique(config: CoreCConfig, name: string): boolean {
   return derivedTagHelpers.isNameUnique(config, name)
 }

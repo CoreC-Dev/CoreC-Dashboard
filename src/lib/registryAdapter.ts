@@ -14,8 +14,7 @@
 
 import type { SettingsField, TypeFieldRegistry } from '@/lib/settingsRegistry'
 
-/** Flat edit-field shape (mirrors EditField from DetailPageParts, but defined
- *  here to respect layer boundaries — lib/ cannot import from components/). */
+/** Flat edit-field shape（lib 层定义，不引用 components）。 */
 export interface RegistryEditField {
   key: string
   labelKey: string

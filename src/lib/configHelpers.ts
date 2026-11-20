@@ -5,8 +5,6 @@ import type { CoreCConfig } from '@/types/config'
  * Example: setNestedPath(obj, 'api.listen', '0.0.0.0:9090')
  *          → obj.api = { ...obj.api, listen: '0.0.0.0:9090' }
  * When value is undefined, the key is deleted from its parent.
- *
- * (Pure path-manipulation helper — such logic belongs in lib/, not inside a store.)
  */
 export function setNestedPath(root: Record<string, unknown>, path: string, value: unknown): void {
   const parts = path.split('.')
@@ -32,10 +30,7 @@ export function setNestedPath(root: Record<string, unknown>, path: string, value
 
 /**
  * Structural deep-equality for plain JSON-serializable config objects.
- * Replaces the previous `JSON.stringify(a) === JSON.stringify(b)` approach,
- * which (a) allocated two strings on every keystroke and (b) was technically
- * incorrect for objects with different key-insertion orders. This recursive
- * check is order-independent and allocation-free for equal objects.
+ * 键序无关递归深比较（相等时零分配）。
  */
 function deepEqual(a: unknown, b: unknown): boolean {
   if (a === b) return true

@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import { validateTransformExpression } from '@/lib/transformExprValidator'
 
 describe('validateTransformExpression', () => {
-  // ─── Valid expressions ─────────────────────────────────────────
   it('accepts simple value reference', () => {
     expect(validateTransformExpression('value').valid).toBe(true)
   })
@@ -39,7 +38,6 @@ describe('validateTransformExpression', () => {
     expect(validateTransformExpression('value * 3.14159').valid).toBe(true)
   })
 
-  // ─── Regression: scientific notation ──────────────────────────
   it('accepts scientific notation with lowercase e', () => {
     expect(validateTransformExpression('value * 1e3').valid).toBe(true)
   })
@@ -63,13 +61,11 @@ describe('validateTransformExpression', () => {
     expect(r.warnings.some((w) => w.includes('does not reference'))).toBe(true)
   })
 
-  // ─── Empty ──────────────────────────────────────────────────────
   it('rejects empty expression', () => {
     expect(validateTransformExpression('').valid).toBe(false)
     expect(validateTransformExpression('   ').valid).toBe(false)
   })
 
-  // ─── Syntax errors ─────────────────────────────────────────────
   it('rejects unbalanced parentheses (unclosed)', () => {
     const r = validateTransformExpression('(value + 1')
     expect(r.valid).toBe(false)
@@ -105,7 +101,7 @@ describe('validateTransformExpression', () => {
     expect(r.errors.some((e) => e.includes('consecutive'))).toBe(true)
   })
 
-  // FL-1: binary operator followed by unary minus is valid (e.g. "value * -3")
+  // Binary operator followed by unary minus is valid (e.g. "value * -3")
   it('accepts binary operator followed by unary minus', () => {
     expect(validateTransformExpression('value * -3').valid).toBe(true)
     expect(validateTransformExpression('value + -2').valid).toBe(true)
@@ -119,7 +115,6 @@ describe('validateTransformExpression', () => {
     expect(r.errors.some((e) => e.includes('invalid characters'))).toBe(true)
   })
 
-  // ─── Warnings ──────────────────────────────────────────────────
   it('warns about constant expressions', () => {
     const r = validateTransformExpression('42 + 1')
     expect(r.warnings.some((w) => w.includes('constant'))).toBe(true)
@@ -135,7 +130,6 @@ describe('validateTransformExpression', () => {
     expect(r.warnings.some((w) => w.includes('division by zero'))).toBe(true)
   })
 
-  // ─── Regression: missing operators between operands ────────
   it('rejects two operands with no operator (value + number)', () => {
     const r = validateTransformExpression('value 2')
     expect(r.valid).toBe(false)
@@ -166,7 +160,6 @@ describe('validateTransformExpression', () => {
     expect(validateTransformExpression('(value + 1) * 2').valid).toBe(true)
   })
 
-  // ─── Re-audit: scientific notation bypass ──────────────────
   it('rejects missing operator with scientific notation (value 1e3)', () => {
     const r = validateTransformExpression('value 1e3')
     expect(r.valid).toBe(false)
@@ -190,7 +183,6 @@ describe('validateTransformExpression', () => {
     expect(validateTransformExpression('1.5e3 * value').valid).toBe(true)
   })
 
-  // ─── Re-audit: paren-boundary missing operator ─────────────
   it('rejects missing operator across paren boundary ((value + 1) 2)', () => {
     const r = validateTransformExpression('(value + 1) 2')
     expect(r.valid).toBe(false)

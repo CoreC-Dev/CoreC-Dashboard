@@ -2,9 +2,8 @@
  * Nav-hover route warming.
  *
  * The sidebar knows the destination before the click, so the matching lazy
- * chunk can be fetched during the ~100ms the pointer spends on the item.
- * The module import map is static on purpose: Rollup reuses the exact same
- * chunks as App.tsx, so this adds no duplicate code — only earlier fetches.
+ * chunk is fetched on hover. The module import map shares the same chunks
+ * as App.tsx.
  */
 const loaders: Record<string, () => Promise<unknown>> = {
   '/monitor/dashboard': () => import('@/features/monitor/DashboardPage'),

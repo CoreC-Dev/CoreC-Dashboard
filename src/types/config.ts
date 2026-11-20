@@ -1,16 +1,9 @@
 /**
  * CoreC Configuration Type System
  *
- * 1:1 mapping from CoreC Go structs. Property names use the exact YAML tag
+ * 字段与 CoreC Go 结构对齐。Property names use the exact YAML tag
  * strings (kebab-case) from the server so that `js-yaml.dump(config)`
  * round-trips to a YAML document the CoreC parser accepts unchanged.
- *
- * Source structs (verified against /workspace/codespace/CoreC):
- *   core/engine.go   → Config, NodeConfig, GlobalConfig, EngineConfig, APIConfig, BufferConfig
- *   core/types.go    → TagConfig, DataType
- *   core/driver.go   → DriverConfig
- *   core/transport.go→ TransportConfig
- *   core/rule.go     → RuleConfig, RuleProviderConfig, TransformConfig
  *
  * Per-protocol `settings` interfaces are derived from config.example.yaml
  * and the setting keys actually read by each driver/transport implementation.
@@ -19,7 +12,6 @@
  * `*Settings` interfaces model known fields for type-safe form rendering.
  */
 
-// ─── Data types (core/types.go) ─────────────────────────────────────
 export const DATA_TYPES = [
   'bool',
   'int8',
@@ -39,7 +31,6 @@ export type DataType = (typeof DATA_TYPES)[number]
 /** Canonical alias — lives in types/ (not lib/) so importing it never creates a types↔lib cycle. */
 export type DataTypeString = DataType
 
-// ─── Driver / transport / rule enumerations ──────────────────────────
 // Registered types (core/registry.go + driver/all, transport/all).
 export const DRIVER_TYPES = [
   'modbus-tcp',
@@ -75,7 +66,6 @@ export const NODE_ROLES = ['collector', 'relay', 'aggregator', 'sink'] as const
 
 export const PARITY_VALUES = ['none', 'even', 'odd'] as const
 
-// ─── TagConfig (core/types.go:213) ───────────────────────────────────
 export interface TagConfig {
   name: string
   address: string
@@ -107,7 +97,6 @@ export interface TagConfig {
   triggers?: string
 }
 
-// ─── DriverConfig (core/driver.go:33) ────────────────────────────────
 export interface DriverConfig {
   name: string
   type: DriverType | string
@@ -124,7 +113,6 @@ export interface DriverConfig {
   'tags-interval'?: string
 }
 
-// ─── TransportConfig (core/transport.go:50) ──────────────────────────
 // NOTE: batch-size / flush-interval / retry-count / buffer-size / fallback
 // are TOP-LEVEL fields (siblings of `settings`), NOT entries inside settings.
 // config.validate fails fast if they are misplaced inside settings.
@@ -135,13 +123,12 @@ export interface TransportConfig {
   'batch-size'?: number
   'flush-interval'?: string
   'retry-count'?: number
-  /** Command/data channel capacity (default 100). */
+  /** Command/data channel capacity (default: DefaultCommandBufferSize). */
   'buffer-size'?: number
   /** Fallback transport name used when this transport fails to publish. */
   fallback?: string
 }
 
-// ─── Rule config (core/rule.go) ──────────────────────────────────────
 interface TransformConfig {
   /** Arithmetic expression: supports +, -, *, /, parens, and variable `value`. */
   expression: string
@@ -180,7 +167,6 @@ export interface RuleProviderConfig {
 /** rule-groups: named, reusable sub-rule groups keyed by group name. */
 type RuleGroups = Record<string, RuleConfig[]>
 
-// ─── DerivedTagConfig (core/derived.go) ──────────────────────────────
 export interface DerivedTagConfig {
   name: string
   /** Arithmetic expression; identifiers resolve to tag names in the cache. */
@@ -196,7 +182,6 @@ export interface DerivedTagConfig {
   'stale-guard'?: string
 }
 
-// ─── Global config (core/engine.go) ──────────────────────────────────
 interface APIConfig {
   listen?: string
   /** Shared secret for management API auth. Min 8 chars when listen is set. */
@@ -233,9 +218,10 @@ interface EngineConfig {
   'command-concurrency'?: number
   'high-priority-workers'?: number
   /**
-   * Minimum spacing between two writes reaching the same device. A write inside
-   * the window is REFUSED, never queued: the API answers 429 (+ Retry-After) and
-   * the MQTT command channel dead-letters it with the reason intact.
+   * Minimum spacing between two writes reaching the same driver. A write inside
+   * the window is refused, never queued: the API answers 429 (+ Retry-After);
+   * the command channel waits per the window and retries, and dead-letters the
+   * write after retries are exhausted.
    */
   'write-min-interval'?: string
   /**
@@ -249,13 +235,13 @@ interface EngineConfig {
    * in-memory only.
    */
   'dead-letter-path'?: string
-  /** How long an alert stays active after its last fire (default 15m). */
+  /** How long an alert stays active after its last fire (default: DefaultAlertActiveWindow). */
   'alert-active-window'?: string
 }
 
 interface BufferConfig {
   enabled?: boolean
-  /** Max buffered batches; <=0 defaults to 10000. Must be >= 10 when > 0. */
+  /** Max buffered batches (default: DefaultOfflineBufferMaxEntries; must be >= 10 when > 0). */
   'max-size'?: number
   /** Buffer file directory — required when enabled=true. */
   path?: string
@@ -279,7 +265,6 @@ export interface NodeConfig {
   'topic-prefix'?: string
 }
 
-// ─── Top-level Config (core/engine.go:142) ───────────────────────────
 export interface CoreCConfig {
   node?: NodeConfig
   global?: GlobalConfig

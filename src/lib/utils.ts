@@ -23,7 +23,6 @@ export function formatUptime(uptime: string | number | null | undefined): string
     if (secs > 0) return `${secs}s`
     return uptime
   }
-  // Nanoseconds to seconds
   const totalSeconds = Math.floor(uptime / 1e9)
   const days = Math.floor(totalSeconds / 86400)
   const hours = Math.floor((totalSeconds % 86400) / 3600)

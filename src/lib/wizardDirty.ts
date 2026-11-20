@@ -14,15 +14,13 @@
  * on it.
  *
  * Pure functions so they are unit-testable without rendering the wizards;
- * the wizards simply forward their current state. Layering: types ← lib.
+ * the wizards simply forward their current state.
  */
 import type { DriverConfig, RuleAction, TransportConfig } from '@/types/config'
 
-/** Order-insensitive deep equality via canonical JSON — fine for the small
- *  plain objects a wizard draft holds (settings maps, tag arrays). */
+/** 浅比较：JSON.stringify 逐字相等（键序敏感，仅适用于 wizard 草稿这类
+ *  键序稳定的小对象）。 */
 const sameJson = (a: unknown, b: unknown): boolean => JSON.stringify(a) === JSON.stringify(b)
-
-// ─── DriverWizard ────────────────────────────────────────────────────
 
 export interface DriverDraftInput {
   /** Zero-based wizard step the user is on. */
@@ -56,8 +54,6 @@ export const isDriverDraftDirty = (d: DriverDraftInput): boolean => {
   return d.currentStep > 0 || d.selectedType !== null
 }
 
-// ─── TransportWizard ─────────────────────────────────────────────────
-
 export interface TransportDraftInput {
   currentStep: number
   isEdit: boolean
@@ -84,8 +80,6 @@ export const isTransportDraftDirty = (t: TransportDraftInput): boolean => {
   }
   return t.currentStep > 0 || t.selectedType !== null
 }
-
-// ─── RuleWizard ──────────────────────────────────────────────────────
 
 export interface RuleDraftInput {
   currentStep: number

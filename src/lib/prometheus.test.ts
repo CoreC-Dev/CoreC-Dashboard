@@ -97,7 +97,6 @@ corec_goroutines 5
     expect(parsed[0].value).toBe(1.5e9)
   })
 
-  // ─── Regression: `}` inside quoted label values ──────────────
   it('parses labels with } inside quoted values', () => {
     const raw = `my_metric{label="value_}"} 1\n`
     const parsed = parsePrometheusMetrics(raw)

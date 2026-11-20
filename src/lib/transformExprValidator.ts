@@ -87,12 +87,10 @@ export function validateTransformExpression(expr: string): ValidationResult {
     warnings.push('division by zero detected — this will produce an error at runtime')
   }
 
-  // Structural sanity check for pure-literal expressions (no `value`).
-  // We substitute 'value' with a numeric literal; if the result contains only
-  // digits/operators, a pure-literal expression should reduce to a number.
-  // This replaces an earlier `new Function(...)` eval which — although gated
-  // by an alphabetic-char pre-check — could be bypassed via JSFuck-style
-  // symbol combinations (self-XSS anti-pattern).
+  // Structural sanity check for pure-literal expressions (no `value`),
+  // without eval. We substitute 'value' with a numeric literal; if the result
+  // contains only digits/operators, a pure-literal expression should reduce
+  // to a number.
   const testExprRaw = trimmed.replace(/\bvalue\b/g, '1')
   // Strip float-with-exponent literals (e.g. 1e3, 1.5e-10) to '1' BEFORE the
   // letter check, so scientific notation does not trip the /[a-zA-Z]/ guard
@@ -102,9 +100,7 @@ export function validateTransformExpression(expr: string): ValidationResult {
     // Detect two adjacent operands with no operator between them. After
     // substituting value→1 and stripping float literals, this manifests as
     // two number-like tokens separated only by whitespace OR by a paren
-    // boundary (e.g. "(1) 2", "2 (1)", "1 (2)"). The old
-    // `new Function(\`return (1 2)\`)` caught these via JS SyntaxError;
-    // the structural replacement must restore that coverage.
+    // boundary (e.g. "(1) 2", "2 (1)", "1 (2)").
     if (/\d\)?\s+\(?\d/.test(testExpr)) {
       if (errors.length === 0) {
         errors.push('expression has a syntax error — two operands with no operator between them')

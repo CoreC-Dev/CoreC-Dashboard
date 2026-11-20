@@ -8,11 +8,9 @@ import {
   trafficTotalsFrameSchema,
 } from '@/types/api'
 
-// ─── /logs level contract ──────────────────────────────────────
-// The backend marshals slog.Level as a STRING ("WARN" — verified by
-// compiling json.Marshal against the Go source); the frontend contract
-// is numeric. These tests pin the normalization so the silent breakage
-// (alert feed dead, every line tagged [INFO]) can never regress.
+// /logs level contract: the backend marshals slog.Level as a STRING
+// ("WARN"); the frontend contract is numeric. These tests pin the
+// normalization.
 
 describe('logEventSchema — backend string levels normalize to the numeric contract', () => {
   const frame = {
@@ -60,10 +58,9 @@ describe('parseLogLevel — severity classification used by alert feed + termina
   })
 })
 
-// ─── /traffic frame contract ───────────────────────────────────
-// The backend's default mode pushes server-side diffed rate frames; the
-// old cumulative-only schema dropped 100% of them (panel stuck on
-// "waiting"). The union now accepts both modes.
+// /traffic frame contract: the backend's default mode pushes server-side
+// diffed rate frames; ?mode=totals pushes cumulative counters. The union
+// accepts both modes.
 
 describe('trafficFrameSchema — both modes validate', () => {
   it('accepts the default rate frame', () => {

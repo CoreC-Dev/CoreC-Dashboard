@@ -1,9 +1,9 @@
 /**
  * Connection info extraction utilities.
  *
- * CoreC's /drivers and /transports endpoints return only runtime status +
- * counters — NO connection parameters (broker, host, port, URL, etc.).
- * Those live in the full config YAML from GET /configs/raw.
+ * CoreC's /drivers and /transports endpoints return runtime status +
+ * counters + a compact endpoint summary; the full connection parameters
+ * (including credentials) live in the config YAML from GET /configs/raw.
  *
  * These helpers extract human-readable connection summaries from a parsed
  * CoreCConfig so detail pages and list cards can show them as read-only info.
@@ -85,7 +85,6 @@ export function getDriverConnectionFields(
       }
   }
 
-  // Tags info
   if (driver.tags && driver.tags.length > 0) {
     fields.push({ label: 'Tags', value: `${driver.tags.length} configured` })
   }

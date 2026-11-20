@@ -267,8 +267,6 @@ describe('mutation cache invalidation', () => {
   })
 })
 
-// ─── Server-side config backups ─────────────────────────────────────────
-
 describe('useConfigBackups / useRestoreConfigBackup — config backup timeline', () => {
   const backups = {
     backups: [{ name: '1767225600123456789.yaml', timestamp: '2026-01-01T00:00:00Z', size: 1024 }],

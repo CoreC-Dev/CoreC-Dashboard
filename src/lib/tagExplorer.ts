@@ -70,9 +70,7 @@ export const insertPauseGap = (samples: TrendSample[]): TrendSample[] => {
 
 /**
  * Merge freshly staged WS samples into the trend buffer, coalescing
- * same-second updates into ONE sample (last value wins). The old flush
- * bumped a duplicate second to last.time + 1 — a FABRICATED timestamp that
- * pushed the chart axis forward and then shipped in every exported CSV row.
+ * same-second updates into ONE sample (last value wins, real timestamp kept).
  * Out-of-order samples (clock skew) are dropped rather than re-dated.
  * Pure; the MAX_TREND_SAMPLES window trim is included.
  */
@@ -115,29 +113,24 @@ export const matchesQualityFilter = (
   return true
 }
 
-// ─── Honest timestamps ─────────────────────────────────────────────────
-
-/** Past this age a timestamp cell dims — the audit's ">5 分钟降低透明度"
- *  horizon: an old frozen value must stop looking as fresh as a live one. */
+/** Past this age a timestamp cell dims. */
 export const RELATIVE_DIM_MS = 5 * 60_000
 
-/** Minimal t() surface — keeps this lib free of an i18n instance dependency
- *  (FRONTEND.md: formatters take t explicitly). */
+/** Minimal t() surface — keeps this lib free of an i18n instance dependency. */
 export type Translate = (key: string, opts?: { count?: number }) => string
 
 /** Display shape for a monitor timestamp.
  * - <60s old → common.justNow ("刚刚" / "just now")
  * - 1–59min → common.minutesAgo ("3分钟前" / "3m ago")
  * - 1–23h → common.hoursAgo; ≥24h → common.daysAgo
- * - older than RELATIVE_DIM_MS (5min) the caller dims the cell, and the
- * full locale date-time rides along for the hover tooltip — a stale
- * "09:15:32" from yesterday no longer reads as just-refreshed.
- * - a MISSING timestamp is the most suspect: renders '-' and dims. */
+ * - older than RELATIVE_DIM_MS the caller dims the cell, and the full locale
+ *   date-time rides along for the hover tooltip.
+ * - a MISSING timestamp renders '-' and dims. */
 export interface RelativeTimestamp {
   text: string
   /** Full date-time for the title tooltip. */
   full: string
-  /** true when older than the 5-minute dim horizon (or unknown). */
+  /** true when older than RELATIVE_DIM_MS (or unknown). */
   dim: boolean
 }
 

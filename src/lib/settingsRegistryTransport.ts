@@ -5,7 +5,6 @@
 import { NOTIFY_SETTINGS_REGISTRY } from '@/lib/settingsRegistryNotify'
 import type { SettingsField, TypeFieldRegistry } from '@/lib/settingsRegistryTypes'
 
-// ─── Parser field (chained-core inbound) ─────────────────────────────
 // Shared between MQTT and HTTP transports. The parser is a nested object
 // in the YAML config (settings.parser.type, settings.parser.driver, …),
 // modelled here as a composite 'object' field with sub-fields.
@@ -82,7 +81,6 @@ const PARSER_FIELD: SettingsField = {
   ],
 }
 
-// ─── Transport settings registries ───────────────────────────────────
 export const TRANSPORT_SETTINGS_REGISTRY: Record<string, TypeFieldRegistry> = {
   mqtt: {
     groups: [
@@ -421,7 +419,6 @@ export const TRANSPORT_SETTINGS_REGISTRY: Record<string, TypeFieldRegistry> = {
   notify: NOTIFY_SETTINGS_REGISTRY,
 }
 
-// ─── Transport top-level (non-settings) fields ───────────────────────
 // These are siblings of `settings`, NOT inside it (config.validate fails fast
 // on misplacement). Rendered in a dedicated "Publishing" step of the wizard.
 export const TRANSPORT_TOPLEVEL_FIELDS: SettingsField[] = [

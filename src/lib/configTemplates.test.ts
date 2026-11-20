@@ -4,7 +4,6 @@ import { CONFIG_TEMPLATES } from '@/lib/configTemplates'
 import { parseConfigYaml } from '@/lib/configYaml'
 
 describe('configTemplates', () => {
-  // ─── Template registry ──────────────────────────────────────────
   it('has at least 5 templates', () => {
     expect(CONFIG_TEMPLATES.length).toBeGreaterThanOrEqual(5)
   })
@@ -34,7 +33,6 @@ describe('configTemplates', () => {
     expect(categories.has('blank')).toBe(true)
   })
 
-  // ─── YAML parsing ───────────────────────────────────────────────
   it('all templates parse as valid YAML', () => {
     for (const t of CONFIG_TEMPLATES) {
       const config = parseConfigYaml(t.yaml)
@@ -43,7 +41,6 @@ describe('configTemplates', () => {
     }
   })
 
-  // ─── Config validation ──────────────────────────────────────────
   it('non-blank templates pass validateFullConfig', () => {
     for (const t of CONFIG_TEMPLATES) {
       if (t.id === 'blank') continue // blank template has no drivers/transports, expected to fail
@@ -63,7 +60,6 @@ describe('configTemplates', () => {
     expect(config.global).toBeDefined()
   })
 
-  // ─── Template-specific checks ───────────────────────────────────
   it('modbus-mqtt template has modbus-tcp driver and mqtt transport', () => {
     const config = parseConfigYaml(CONFIG_TEMPLATES.find((t) => t.id === 'modbus-mqtt')!.yaml)
     expect(config.drivers?.[0]?.type).toBe('modbus-tcp')

@@ -73,10 +73,8 @@ describe('insertPauseGap', () => {
 })
 
 describe('formatRelativeTime', () => {
-  // Pin the clock — under a loaded shared CI tree the test's Date.now()
-  // and the helper's Date.now() could straddle a second boundary and flip
-  // the expected title/age (A-domain flake report). Frozen now ⇒ the
-  // helper reads the exact instant these expectations compute.
+  // Pin the clock so the test's Date.now() and the helper's Date.now()
+  // cannot straddle a second boundary and flip the expected title/age.
   beforeEach(() => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-03-15T08:00:00Z'))

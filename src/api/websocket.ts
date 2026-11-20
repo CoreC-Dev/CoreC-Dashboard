@@ -14,8 +14,8 @@ export class CoreCWebSocket<T = unknown> {
   /**
    * Rate-limit reporter: called (at most once per second while dropping
    * continues) with the number of messages dropped by the sliding-window
-   * limiter since the previous report. Consumers surface this so the
-   * >500 msg/s cap is visible instead of silent.
+   * limiter since the previous report. Consumers surface this so the cap
+   * is visible instead of silent.
    */
   private onDropCallback?: (dropped: number) => void
   private isDestroyed = false
@@ -42,11 +42,8 @@ export class CoreCWebSocket<T = unknown> {
   private static readonly RING_CAPACITY = 512
   private static readonly RING_MASK = 511 // RING_CAPACITY - 1
   private ringBuf: number[] = new Array(CoreCWebSocket.RING_CAPACITY)
-  /** Index of the oldest entry in the ring buffer. */
   private ringHead = 0
-  /** Number of valid entries currently in the ring buffer. */
   private ringCount = 0
-  /** Frames dropped since the last onDrop report (reset on each report). */
   private droppedSinceReport = 0
   /** Timestamp of the last onDrop report (throttles reports to ≥1/s). */
   private lastDropReportAt = 0
@@ -135,12 +132,10 @@ export class CoreCWebSocket<T = unknown> {
         // The ring buffer is O(1) per message with zero allocations after
         // initialization — no array growth, no slice/compaction.
         const now = Date.now()
-        // Prune timestamps older than 1 second from the head of the ring.
         while (this.ringCount > 0 && now - this.ringBuf[this.ringHead] > 1000) {
           this.ringHead = (this.ringHead + 1) & CoreCWebSocket.RING_MASK
           this.ringCount--
         }
-        // Drop if the window is at capacity.
         if (this.ringCount >= this.maxMsgPerSec) {
           // Report the drop instead of dropping silently: the operator must
           // be able to tell "the plant went quiet" apart from "the UI shed
@@ -154,7 +149,6 @@ export class CoreCWebSocket<T = unknown> {
           }
           return // drop this message
         }
-        // Push the current timestamp at the tail of the ring.
         const tail = (this.ringHead + this.ringCount) & CoreCWebSocket.RING_MASK
         this.ringBuf[tail] = now
         this.ringCount++

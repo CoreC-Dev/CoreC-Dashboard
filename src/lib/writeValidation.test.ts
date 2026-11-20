@@ -67,8 +67,8 @@ describe('validateValue — int8 (-128..127)', () => {
     })
   })
 
-  // FL-4: int types now enforce integer-ness — a fractional value
-  // inside the range is rejected with errNotInteger.
+  // int types enforce integer-ness — a fractional value inside the range
+  // is rejected with errNotInteger.
   it('rejects a fractional value inside the range (10.5)', () => {
     validateValue('10.5', 'int8', t)
     expect(tMock).toHaveBeenCalledWith('write.errNotInteger', {
@@ -249,8 +249,7 @@ describe('validateValue — fallback for unknown non-numeric types', () => {
 })
 
 // parseWriteValue — the value conversion shared by the single-write form and
-// the batch-write table. Relocated verbatim from WriteControlPage's local
-// parseValue, so these cases pin the exact behavior both callers rely on.
+// the batch-write table.
 describe('parseWriteValue', () => {
   it.each([
     ['true', 'bool', true],

@@ -95,8 +95,6 @@ describe('settingsRegistry — buildDefaultSettings', () => {
   })
 })
 
-// ─── Field metadata coverage across all types ────────────────────────
-
 describe('settingsRegistry — field metadata (all driver types)', () => {
   it('every driver type resolves a registry with at least one group', () => {
     for (const type of DRIVER_TYPES) {
@@ -232,14 +230,10 @@ describe('settingsRegistry — buildDefaultSettings (all types)', () => {
   })
 })
 
-// ─── Registry i18n key integrity ────────────────────────────────
-// Registry fields reference i18n keys as raw strings; a key pointing at a
-// wrong/non-existent namespace renders the literal key as UI copy (the
-// driver edit form showed "settings.tagsFileHelp" because the text lives
-// at driverWizard.tagsFileHelp). Walk every field of every registry and
-// assert each dot-shaped label/help/group-label key resolves in BOTH
-// language packs, so a future namespace slip fails here instead of in
-// production copy.
+// Registry i18n key integrity: registry fields reference i18n keys as raw
+// strings; a key pointing at a wrong/non-existent namespace renders the
+// literal key as UI copy. Walk every field of every registry and assert each
+// dot-shaped label/help/group-label key resolves in BOTH language packs.
 
 function flattenJsonKeys(obj: unknown, prefix = ''): string[] {
   if (obj && typeof obj === 'object') {

@@ -57,11 +57,8 @@ const validConfig = {
 
 import { durationToMs } from '@/lib/configSchema/duration'
 
-// These six cases were each ACCEPTED or REJECTED differently by this module and by
-// a real corec, until the grammar here was matched to time.ParseDuration. They are
-// handed to the dashboard's form before the server ever sees them, so a disagreement
-// is shown to the operator as *their* mistake. Each expectation below is the running
-// server's verdict, recorded from POST /configs/validate, not a reading of Go's docs.
+// Duration grammar parity with the server's time.ParseDuration: these cases
+// reach the dashboard's form before the server ever sees them.
 describe('duration grammar parity with corec', () => {
   it('accepts a missing leading zero (server: .5s == 500ms)', () => {
     expect(isValidGoDuration('.5s')).toBe(true)
@@ -544,7 +541,6 @@ describe('validateConfig — cross-entity rules', () => {
     expect(res.errors.some((e) => e.message.includes('unknown driver type'))).toBe(true)
   })
 
-  // ─── Transport fallback validation ──────────────────────────────
   it('passes when transport fallback references an existing transport', () => {
     const res = validateConfig({
       ...validConfig,
@@ -608,8 +604,6 @@ describe('validateFullConfig', () => {
     expect(validateFullConfig(validConfig).valid).toBe(true)
   })
 })
-
-// ─── Rule groups: SUB-RULE circular reference detection ──────────
 
 describe('validateConfig: rule-groups SUB-RULE validation', () => {
   it('passes for rule groups with no SUB-RULE references', () => {
@@ -719,7 +713,6 @@ describe('validateConfig: rule-groups SUB-RULE validation', () => {
     expect(res.errors.some((e) => e.message.includes('circular'))).toBe(true)
   })
 
-  // ─── Regression: no duplicate cycle errors with inbound node ──
   it('reports exactly one circular error when an inbound node references a cycle', () => {
     const res = validateConfig({
       ...validConfig,
@@ -739,10 +732,8 @@ describe('validateConfig: rule-groups SUB-RULE validation', () => {
   })
 })
 
-// ---------------------------------------------------------------------------
 // Collection-side tag fields (mirror of config/validate.go): write protection,
 // deadband heartbeat, and trigger-gated collection.
-// ---------------------------------------------------------------------------
 describe('tag collection rules (server parity)', () => {
   const withTag = (tag: Record<string, unknown>) => ({
     drivers: [

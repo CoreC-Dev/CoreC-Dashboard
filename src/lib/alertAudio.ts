@@ -1,16 +1,9 @@
 /**
  * Alert audio — module-level AudioContext manager for the alert beep.
  *
- * Browsers only let audio start from (or after) a user gesture, so the
- * AlertsPage sound toggle calls primeAlertAudio() inside its click handler
- * to unlock the context; later WebSocket-driven beeps reuse the same
- * context. The context is module-level (not a ref inside a component) so it
- * survives navigation — the beep now belongs to the instance-level alert
- * provider, not to whichever page happens to be mounted.
- *
- * Extracted verbatim from AlertsPage's playBeep (sine, 800 Hz, gain 0.2,
- * 0.2 s) — no behavior change. Fails silently when AudioContext is
- * unavailable or blocked (jsdom, locked-down browsers).
+ * 模块级 AudioContext 跨导航存活；用户手势经 primeAlertAudio() 解锁
+ * （由 alertStore.toggleSound 调用），后续 WebSocket 驱动的 beep 复用同一
+ * context。AudioContext 不可用或被阻止时静默失败（jsdom、受限浏览器）。
  */
 
 let ctx: AudioContext | null = null

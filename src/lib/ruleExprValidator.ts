@@ -28,10 +28,11 @@ import { checkBalancedParens, type ValidationResult } from '@/lib/exprShared'
  *   SUB-RULE:group-name     special: delegate to sub-rule group
  *   RULE-SET:provider-name  special: delegate to external rule provider
  *
- * Valid fields: driver, device, group, tag, quality, type, value
+ * Common fields: driver, device, group, tag, quality, type, value
+ * （完整字段集见后端 pointEnv）.
  */
 
-/** Valid field names in the rule expression DSL. */
+/** Common field names in the rule expression DSL（完整集见后端 pointEnv）. */
 export const VALID_FIELDS = [
   'driver',
   'device',

@@ -10,11 +10,9 @@
  *     unit     := "ns" | "us" | "µs" | "μs" | "ms" | "s" | "m" | "h"
  *
  * Three quirks a naive pattern misses, each of which REJECTS a value the server
- * accepts. A false alarm costs as much as a miss here: the operator cannot save
- * a config CoreC would have taken, and learns to distrust the form.
+ * accepts:
  *
- *   - the integer part may be empty. ".5s" is 500ms, and "5.s" is 5s. The old
- *     pattern required at least one leading digit;
+ *   - the integer part may be empty. ".5s" is 500ms, and "5.s" is 5s;
  *   - the microsecond unit is spelled two ways. "µs" is U+00B5 MICRO SIGN and
  *     "μs" is U+03BC GREEK SMALL LETTER MU. They are visually identical and Go
  *     accepts both (it carries two byte prefixes for exactly this reason);
