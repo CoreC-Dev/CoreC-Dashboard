@@ -117,7 +117,9 @@ export type WriteHistoryResponse = z.infer<typeof writeHistoryResponseSchema>
 
 export const configAuditEntrySchema = z.object({
   at: z.string(),
-  action: z.enum(['reload', 'patch', 'restore']),
+  // The backend records only reload/patch (hub/executor); backup restore
+  // goes through Reload and is recorded as reload.
+  action: z.enum(['reload', 'patch']),
   remote: z.string().optional(),
   keys: z.array(z.string()).optional(),
   details: z.string().optional(),
