@@ -8,7 +8,7 @@
 
 ## 技术栈
 
-React 19 · Vite 8（rolldown）· TypeScript 7 · Tailwind v4 · React Router 7 · TanStack Query · Zustand · Radix UI · react-hook-form · Zod 4 · i18next · Biome · Vitest。图表 recharts / lightweight-charts；编辑器 Monaco；终端 xterm。
+React · Vite（rolldown）· TypeScript · Tailwind · React Router · TanStack Query · Zustand · Radix UI · react-hook-form · Zod · i18next · Biome · Vitest。图表 recharts / lightweight-charts；编辑器 Monaco；终端 xterm。
 
 ## 快速开始
 

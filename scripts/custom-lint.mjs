@@ -1,8 +1,6 @@
 #!/usr/bin/env node
-// custom-lint.mjs —— 自定义品味 linter
-// 检查：文件大小上限（防 God 组件/文件）、生产代码无 console.log、统一 @/ 别名导入。
-// 已知超标文件作为显式豁免（登记时写明理由并钉版尺寸）；新超标即失败。
-// 当前豁免表为空；新文件超 500 行需拆分，或在此登记（含理由与尺寸钉版）。
+// custom-lint.mjs —— 自定义代码规范 linter（文件大小/console.log/相对导入）
+// 超标文件作为显式豁免（登记时写明理由并钉版尺寸）；新超标即失败。
 // 用法：node scripts/custom-lint.mjs   退出码 0=通过 1=失败
 
 import { readdirSync, readFileSync } from 'node:fs'
@@ -15,12 +13,10 @@ const src = resolve(root, 'src')
 
 const MAX_LINES = 500
 
-// 已登记豁免：超标文件须写明理由并钉版尺寸；文件拆分达标后从本表删除以收紧门禁。
-// 当前豁免表为空：新文件超 500 行必须拆分，或在此登记含理由与尺寸钉版的豁免。
+// 已登记豁免：超标文件须写明理由并钉版尺寸；拆分达标后从本表删除以收紧门禁。
 const SIZE_EXEMPTIONS = []
 const exemptSet = new Set(SIZE_EXEMPTIONS.map((e) => e.file))
 
-// --- 递归收集源文件 ---
 function walk(dir, acc = []) {
   for (const e of readdirSync(dir, { withFileTypes: true })) {
     if (e.isDirectory()) walk(resolve(dir, e.name), acc)
@@ -85,11 +81,10 @@ for (const f of allFiles) {
   }
 }
 
-// --- 报告 ---
 const unusedExemptions = SIZE_EXEMPTIONS.filter((e) => !usedExemptions.has(e.file))
 
 if (errors.length === 0) {
-  console.log(`✅ custom-lint 通过：无超标文件、无 console.log。`)
+  console.log(`✅ custom-lint 通过：无超标文件、无 console.log、无相对导入。`)
   if (usedExemptions.size > 0) {
     console.log(`   已登记大小豁免（拆分后移除）：${usedExemptions.size} 个文件`)
   }

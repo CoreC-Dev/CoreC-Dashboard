@@ -157,7 +157,6 @@ function monacoSelfHostPlugin(): Plugin {
       })
     },
     async writeBundle() {
-      // Copy monaco/min/vs to dist/monaco/min/vs for production.
       const distDir = path.resolve(import.meta.dirname, 'dist/monaco/min/vs')
       if (!existsSync(MONACO_VS_DIR)) return
       const { cp } = await import('node:fs/promises')
@@ -166,10 +165,8 @@ function monacoSelfHostPlugin(): Plugin {
   }
 }
 
-// https://vite.dev/config/
 export default defineConfig({
-  // Relative asset paths so the build works under any host path — including
-  // GitHub Pages custom domains, project subpaths, and local static servers.
+  // base './'：相对资源路径，适配任意宿主子路径
   base: './',
   plugins: [react(), tailwindcss(), dynamicProxyPlugin(), monacoSelfHostPlugin()],
   resolve: {
@@ -190,13 +187,8 @@ export default defineConfig({
     },
   },
   build: {
-    // Reset to default (500KB) now that vendor libs are manually split.
-    // The warning surfaces regressions instead of being silenced.
     chunkSizeWarningLimit: 500,
-    // Route-only vendors must not be preloaded by the entry HTML. A cold
-    // homepage used to fetch recharts (~102KB gzip) plus YAML/monaco chunks
-    // for routes the operator had not opened. JS-side dependency preloads
-    // stay intact, so a lazy route still warms its own deps.
+    // 入口 HTML 不预加载仅路由用到的 vendor chunk；懒路由仍预热自身依赖
     modulePreload: {
       resolveDependencies: (_filename, deps) =>
         deps.filter(
@@ -208,16 +200,10 @@ export default defineConfig({
     },
     rollupOptions: {
       output: {
-        // Split heavy vendor libs into cached chunks so the dashboard shell
-        // doesn't bloat the first-paint bundle on the default /monitor route.
-        // Note: rolldown (Vite 8) requires manualChunks as a function.
+        // manualChunks：按 vendor 库分包（函数形式，rolldown 要求）
         manualChunks: (id) => {
           if (id.includes('node_modules')) {
-            // className utilities are imported by virtually every component.
-            // If they land in vendor-recharts (as they did), the whole chart
-            // library becomes a dependency of the app shell and every page —
-            // including the homepage — downloads it. Keep them in their own
-            // tiny chunk, before the recharts rule.
+            // className 工具单独成 vendor-cn，规则先于 recharts，避免并入图表 chunk
             if (
               id.includes('clsx') ||
               id.includes('tailwind-merge') ||

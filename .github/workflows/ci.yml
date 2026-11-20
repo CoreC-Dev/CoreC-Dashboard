@@ -1,4 +1,4 @@
-# CI —— 持续集成质量门禁（阶段 3 建立）
+# CI —— 持续集成质量门禁
 # PR + 全分支触发；deploy.yml 通过 workflow_call 复用本工作流。
 # 门禁：biome lint → typecheck → docs-lint → 结构测试 → 自定义 linter → any 棘轮 → build → test → coverage
 name: CI
@@ -45,7 +45,7 @@ jobs:
       - name: 结构测试（分层依赖方向）
         run: npm run structure:lint
 
-      - name: 自定义 linter（文件大小/console.log）
+      - name: 自定义 linter（文件大小/console.log/相对导入）
         run: npm run custom:lint
 
       - name: any 棘轮（noExplicitAny 基线）

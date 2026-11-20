@@ -4,9 +4,9 @@
 `types ← lib ← api ← stores ← hooks/contexts ← components ← features ← App`。每层只依赖更底层。`features/*` 间禁止直接互引——跨域共享经 `api/hooks`/`stores`/`components`/`lib`。
 
 ## 状态管理边界
-- **服务端状态** → @tanstack/react-query。`api/hooks` 统一封装；`staleTime` 3s（`contexts/ConnectionContext.tsx` 的 QueryClient）；按 hook 设 `refetchInterval`（5–30s）；mutation 成功失效对应 query key。**禁止把服务端数据复制进 Zustand 长期保存。**
-- **后端响应校验**：新端点在 `api/endpoints` 层用 zod parse 后端响应（如 /write/history、/version、/healthz/*——503 未就绪体被归一化为 `{ready:false,…}`、/drivers/test——连通与不通都是 200，400 拒绝归一化为 `{outcome:'rejected'}`、/rules/preview——400 编译错误/501 不支持原样透传为 `{outcome:'error'}`、/configs/backups*——列表/备份原文 zod 解析，恢复 204 归一化为 `{outcome:'restored'}`，400 校验失败/404 未找到/503 无配置路径归一化为 `{outcome:'rejected'}` 携服务器原文）；存量端点暂保持 TS 类型断言。WS 推送帧同理：`/traffic`、`/memory` 帧经 `types/api` 的 zod schema 逐帧校验，坏帧丢弃不渲染。
-- **本地 UI/领域状态** → Zustand。`configStore`（工作配置/保存/脏标记；实现拆 `stores/slices/configCrudSlice` + `configGetterSlice`）、`instanceStore`（实例+密钥隔离存储）、`configHistory`（快照栈封顶 10，localStorage 持久化，跨刷新保留）。
+- **服务端状态** → @tanstack/react-query。`api/hooks` 统一封装；`staleTime` 在 `contexts/ConnectionContext.tsx` 的 QueryClient 设置；按 hook 设 `refetchInterval`（见 `api/hooks`）；mutation 成功失效对应 query key。**禁止把服务端数据复制进 Zustand 长期保存。**
+- **后端响应校验**：部分端点在 `api/endpoints` 层用 zod parse 后端响应（见 index.ts parse 调用，如 /write/history、/version、/healthz/*——503 未就绪体被归一化为 `{ready:false,…}`、/drivers/test——连通与不通都是 200，400 拒绝归一化为 `{outcome:'rejected'}`、/rules/preview——400 编译错误/501 不支持原样透传为 `{outcome:'error'}`、/configs/backups*——列表 zod 解析，备份原文为 YAML 文本直传，恢复 204 归一化为 `{outcome:'restored'}`，400 校验失败/404 未找到/503 无配置路径归一化为 `{outcome:'rejected'}` 携服务器原文）；其余端点用 TS 类型断言。WS 推送帧：`RealtimeStreamsPanel` 对 `/traffic`、`/memory` 帧逐帧 zod 校验（坏帧丢弃）；图表组件直接消费原始帧。
+- **本地 UI/领域状态** → Zustand。`configStore`（工作配置/保存/脏标记；实现拆 `stores/slices/configCrudSlice` + `configGetterSlice`）、`instanceStore`（实例+密钥隔离存储）、`configHistory`（快照栈封顶，localStorage 持久化，跨刷新保留）。
 - **连接状态** → `contexts/ConnectionContext`（探测生命周期 + abort + unmount 清理）。
 - 选窄 selector，避免订阅整个数组致宽重渲。
 
@@ -17,10 +17,10 @@ react-hook-form + zodResolver。schema 与组件同域定义；校验分支必�
 i18next。**i18n 是 lib 的 peer 层而非 lib 的内部依赖**——`cn` 抽离在 `lib/cn.ts`（零 `@/` 导入），`lib` 无任何文件引 `@/i18n`。格式化器集中在 `lib/formatters.ts`，`t` 显式传入（`TFunction` 仅类型导入）。
 
 ## UI 原语
-`components/ui` 保持纯展示：不引 `hooks`/`stores`/`features`/`api`。`cn`（className 合并）应零 src 依赖。
+`components/ui` 保持纯展示：不引 `hooks`/`stores`/`features`/`api`/`contexts`。`cn`（className 合并）应零 src 依赖。
 
 ## 实时流
-WebSocket 经 `api/websocket.ts`（退避+抖动+重连上限 10+环形缓冲限流 500msg/s）。**默认经 `useCoreCWebSocket` hook 消费**——它自动把流注册进 `wsStatusStore`（侧栏徽标/断线横幅/限流提示接线）并在 unmount 时 destroy+注销。需要自定义缓冲/批处理的流（`useTagExplorerStream`、`EventLogTerminal`、`AlertStreamProvider`）直接用 `CoreCWebSocket`，自行调用 `registerStream` 上报状态。流式数据必须有界：图表窗口封顶、rAF 批处理、缓冲/列表/快照封顶。
+WebSocket 经 `api/websocket.ts`（退避+抖动+重连上限+环形缓冲限流）。**默认经 `useCoreCWebSocket` hook 消费**——它自动把流注册进 `wsStatusStore`（侧栏徽标/断线横幅/限流提示接线）并在 unmount 时 destroy+注销。需要自定义缓冲/批处理的流（`useTagExplorerStream`、`AlertStreamProvider`）直接用 `CoreCWebSocket`，自行调用 `registerStream` 上报状态；`EventLogTerminal` 仅终端内显示状态。流式数据必须有界：图表窗口封顶、rAF 批处理、缓冲/列表/快照封顶。
 
 ## 路由与性能
 全路由懒加载（`App.tsx`）；`vite.config.ts` manualChunks 充分拆分。大列表用 `@tanstack/react-virtual` 虚拟化 + `memo` 行 + `useDeferredValue` 搜索（参考 `TagExplorerPage`）。未虚拟化的列表/dialog 需封顶 `.slice`。
@@ -29,7 +29,7 @@ WebSocket 经 `api/websocket.ts`（退避+抖动+重连上限 10+环形缓冲限
 Conventional Commits；单一职责；重构与行为变更不混提；提交直接落 `main`（CI 全门禁约束）。
 
 ## 测试
-- 框架：Vitest 5 + jsdom（全局，`src/test/setup.ts`）；组件测试用 @testing-library/react + jest-dom。
+- 框架：Vitest + jsdom（全局，`src/test/setup.ts`）；组件测试用 @testing-library/react + jest-dom。
 - **⚠️ cleanup 必须手动**：`vitest.config.ts` 未设 `globals: true`，导致 @testing-library/react 的自动 cleanup 静默失效。**所有渲染组件/Context/hook 的测试文件必须在 `afterEach` 中显式调用 `cleanup()`**：
   ```ts
   import { cleanup } from '@testing-library/react'

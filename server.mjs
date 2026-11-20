@@ -1,12 +1,13 @@
 // CoreC-Dashboard production server: static files + same-origin reverse proxy.
 //
 // - Serves static files from DIST with SPA history-fallback.
-// - Reverse-proxies /corec-api/* → http://127.0.0.1:9090/* (strips the prefix),
-//   so the browser only needs to reach this one port. Eliminates CSP, CORS,
-//   and port-blocking issues — the browser talks same-origin, the server
-//   forwards to CoreC over localhost.
+// - Reverse-proxies /corec-api/* → CoreC target (argv[4], default
+//   http://127.0.0.1:9090), stripping the prefix; the same-origin proxy
+//   avoids cross-origin fetches from the browser to the backend.
+// - /corec-proxy/* (X-CoreC-Target header) and /corec-ws (target query
+//   param) proxy dynamically to client-specified backend targets.
 // - Forwards WebSocket upgrade requests (/corec-api/logs, /alerts/stream,
-//   /tags/stream, …) so real-time streams work through the same proxy.
+//   /tags/stream, …) through the same proxy.
 //
 // Usage: node server.mjs [port] [distDir] [corecTarget]
 
@@ -22,7 +23,6 @@ const PROXY_PREFIX = '/corec-api'
 const DYNAMIC_PROXY_PREFIX = '/corec-proxy'
 const DYNAMIC_WS_PREFIX = '/corec-ws'
 
-// Parse COREC target into host/port
 let corecUrl
 try {
   corecUrl = new URL(COREC)
@@ -65,20 +65,17 @@ function safeStaticPath(urlPath) {
   return clean
 }
 
-/** Strip /corec-api prefix from the URL, keeping the query string. */
 function stripProxyPrefix(url) {
   if (url.startsWith(`${PROXY_PREFIX}/`)) return url.slice(PROXY_PREFIX.length) // keeps leading /
   return '/' // bare /corec-api or /corec-api with no slash
 }
 
-/** Build forwarded headers — keep everything except host (rewrite to CoreC). */
 function forwardedHeaders(req) {
   const fwdHeaders = { ...req.headers }
-  fwdHeaders.host = corecUrl.host // CoreC expects its own host
+  fwdHeaders.host = corecUrl.host
   return fwdHeaders
 }
 
-/** Reverse-proxy a normal HTTP request to CoreC, stripping the /corec-api prefix. */
 function proxyToCoreC(req, res) {
   const targetPath = stripProxyPrefix(req.url)
   const fwdHeaders = forwardedHeaders(req)
@@ -92,7 +89,6 @@ function proxyToCoreC(req, res) {
       headers: fwdHeaders,
     },
     (proxyRes) => {
-      // Forward status + headers back to the browser.
       res.writeHead(proxyRes.statusCode, proxyRes.headers)
       proxyRes.pipe(res, { end: true })
     },
@@ -112,26 +108,15 @@ function proxyToCoreC(req, res) {
     }
   })
 
-  // Stream request body to CoreC (handles large PUT /configs payloads).
   req.pipe(proxyReq)
 }
 
 /**
- * Forward WebSocket upgrade requests to CoreC.
- *
- * Without this handler, Node's HTTP server receives the browser's
- * ws://host/corec-api/logs upgrade request but has no 'upgrade' listener,
- * so the socket is silently destroyed. The Dashboard's CoreCWebSocket class
- * then retries 10× and gives up — but the DiagnosticsPage banner
- * "[CoreC Stream] 已连接到事件日志总线..." was printed statically before the
- * connection attempt, so the user sees a frozen "connected" message with no
- * log lines ever arriving.
- *
- * This handler relays the 101 Switching Protocols handshake and pipes the
- * raw TCP socket bidirectionally so WebSocket frames pass through unchanged.
+ * Forward WebSocket upgrade requests to CoreC: relays the 101 Switching
+ * Protocols handshake and pipes the raw TCP socket bidirectionally so
+ * WebSocket frames pass through unchanged.
  */
 function proxyUpgradeToCoreC(req, socket, head) {
-  // Only proxy /corec-api/* upgrades; destroy everything else.
   if (req.url !== PROXY_PREFIX && !req.url.startsWith(`${PROXY_PREFIX}/`)) {
     socket.destroy()
     return
@@ -148,9 +133,7 @@ function proxyUpgradeToCoreC(req, socket, head) {
     headers: fwdHeaders,
   })
 
-  // CoreC responds with 101 → relay the handshake to the browser and pipe.
   proxyReq.on('upgrade', (proxyRes, proxySocket, proxyHead) => {
-    // Reconstruct the 101 response line + headers for the browser.
     const headLines = [
       'HTTP/1.1 101 Switching Protocols',
       ...Object.entries(proxyRes.headers).map(([k, v]) => `${k}: ${v}`),
@@ -173,7 +156,6 @@ function proxyUpgradeToCoreC(req, socket, head) {
     proxySocket.pipe(socket)
     socket.pipe(proxySocket)
 
-    // Clean up on either side closing or erroring.
     const cleanup = () => {
       proxySocket.destroy()
       socket.destroy()
@@ -190,7 +172,7 @@ function proxyUpgradeToCoreC(req, socket, head) {
   // leaves the header in place — forwarding it verbatim would make the
   // browser expect chunk framing that the piped (de-chunked) body lacks.
   // Buffer the small rejection body and re-emit with a correct length.
-  // Content-Encoding is intentionally preserved: http.request does NOT
+  // Content-Encoding is preserved: http.request does NOT
   // auto-decompress, so the body is still encoded and the header is truthful.
   proxyReq.on('response', (proxyRes) => {
     const chunks = []
@@ -222,16 +204,11 @@ function proxyUpgradeToCoreC(req, socket, head) {
   proxyReq.end()
 }
 
-// ---------------------------------------------------------------------------
-// Dynamic per-instance proxy.
-//
-// The browser sends same-origin requests to /corec-proxy/* with an
-// X-CoreC-Target header containing the instance's baseUrl. The server
-// validates the target and proxies the request, so the browser never
-// connects directly to a backend — enabling CSP connect-src 'self'.
-// ---------------------------------------------------------------------------
+// Dynamic per-instance proxy: the browser sends same-origin requests to
+// /corec-proxy/* with an X-CoreC-Target header containing the instance's
+// baseUrl. The server validates the target and proxies the request, making
+// API requests same-origin (avoiding cross-origin fetches to the backend).
 
-/** Validate a target URL: must be http/https with a hostname. */
 function parseTarget(raw) {
   if (!raw) return null
   try {
@@ -244,13 +221,11 @@ function parseTarget(raw) {
   }
 }
 
-/** Strip the /corec-proxy prefix, keeping the path + query string. */
 function stripDynamicProxyPrefix(url) {
   if (url.startsWith(`${DYNAMIC_PROXY_PREFIX}/`)) return url.slice(DYNAMIC_PROXY_PREFIX.length)
   return '/'
 }
 
-/** Dynamic HTTP proxy: reads X-CoreC-Target header, proxies to that backend. */
 function proxyDynamic(req, res) {
   const target = parseTarget(req.headers['x-corec-target'])
   if (!target) {
@@ -260,7 +235,6 @@ function proxyDynamic(req, res) {
   }
 
   const targetPath = stripDynamicProxyPrefix(req.url)
-  // Build forwarded headers: drop the target header, keep everything else.
   const fwdHeaders = { ...req.headers }
   delete fwdHeaders['x-corec-target']
   fwdHeaders.host = target.host
@@ -292,12 +266,11 @@ function proxyDynamic(req, res) {
 }
 
 /**
- * Dynamic WebSocket proxy: reads `target` query param (ws/wss URL),
- * proxies the upgrade to that backend. The browser connects same-origin
- * to ws://host/corec-ws?target=ws://backend/path&token=secret.
+ * Dynamic WebSocket proxy: the browser connects same-origin to
+ * ws://host/corec-ws?target=<backend>; the bearer travels via the
+ * Sec-WebSocket-Protocol header, which is forwarded to the backend.
  */
 function proxyDynamicUpgrade(req, socket, head) {
-  // Parse target from query string.
   const urlObj = new URL(req.url, 'http://placeholder')
   const rawTarget = urlObj.searchParams.get('target')
   if (!rawTarget) {
@@ -313,18 +286,15 @@ function proxyDynamicUpgrade(req, socket, head) {
     return
   }
 
-  // Reconstruct the target path with query string. The browser sets `token`
-  // and stream params (interval, tag, etc.) on the proxy URL — NOT inside the
-  // `target` param. We must forward them to the backend so WS auth and stream
-  // configuration work. Build the final path from the target's own search
-  // params plus all proxy-level params except `target`.
+  // Stream params (interval, tag, etc.) sit on the proxy URL — NOT inside
+  // the `target` param — and must reach the backend. Final path = target's
+  // own search params plus all proxy-level params except `target`.
   const targetUrl = new URL(rawTarget)
   const finalUrl = new URL(targetUrl.pathname, 'http://placeholder')
-  // Copy the target's own search params (if any).
   for (const [k, v] of targetUrl.searchParams) {
     finalUrl.searchParams.set(k, v)
   }
-  // Forward proxy-level params (token, interval, tag, etc.) — skip `target`.
+  // Forward proxy-level stream params (interval, tag, etc.) — skip `target`.
   for (const [k, v] of urlObj.searchParams) {
     if (k !== 'target') {
       finalUrl.searchParams.set(k, v)
@@ -395,7 +365,6 @@ function proxyDynamicUpgrade(req, socket, head) {
   proxyReq.end()
 }
 
-/** Serve static file or SPA fallback. */
 const CACHE_IMMUTABLE = 'public, max-age=31536000, immutable'
 const CACHE_HTML = 'no-cache'
 const CACHE_SHORT = 'public, max-age=3600'
@@ -427,13 +396,11 @@ function sendStatic(req, res, data, ext, cacheControl) {
 }
 
 async function serveStatic(req, res) {
-  // 安全响应头
   res.setHeader('X-Content-Type-Options', 'nosniff')
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin')
   res.setHeader('X-Frame-Options', 'DENY')
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
-  // 注：不加 HSTS（Strict-Transport-Security）——部署经 HTTP 自定义域（见 deploy.yml），
-  //     HSTS 会强制 HTTPS 触发 Mixed Content。改 HTTPS 部署时再加。
+  // 未设 HSTS（部署经 HTTP 自定义域，见 deploy.yml）。
   const p = safeStaticPath(req.url)
   if (!p) {
     res.writeHead(403)

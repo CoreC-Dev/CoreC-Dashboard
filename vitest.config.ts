@@ -25,8 +25,6 @@ export default defineConfig({
         'src/types/**',
       ],
       thresholds: {
-        // Measured on the full suite: 80.2 lines / 71.2 funcs / 66.3 branches
-        // / 78.5 statements. Keep a small margin for platform variance.
         lines: 78,
         functions: 69,
         branches: 64,

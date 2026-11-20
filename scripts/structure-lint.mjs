@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // structure-lint.mjs —— 架构结构测试（分层依赖方向）
 // 扫描 src/ 所有 .ts/.tsx 的 import，断言分层依赖单向，禁止跨层/跨域直连。
-// 已知技术债作为显式豁免（登记时写明理由与移除条件）；新违规即失败。
+// 已登记豁免须写明理由与移除条件；新违规即失败。
 // 用法：node scripts/structure-lint.mjs   退出码 0=通过 1=失败
 
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
@@ -12,7 +12,6 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const root = resolve(__dirname, '..')
 const src = resolve(root, 'src')
 
-// --- 递归收集源文件 ---
 function walk(dir, acc = []) {
   for (const e of readdirSync(dir, { withFileTypes: true })) {
     if (e.isDirectory()) walk(resolve(dir, e.name), acc)
@@ -24,7 +23,6 @@ function walk(dir, acc = []) {
 }
 const files = walk(src)
 
-// --- 层判定 ---
 function layerOf(absPath) {
   const rel = relative(src, absPath).replace(/\\/g, '/')
   if (rel.startsWith('test/')) return 'test'
@@ -44,7 +42,6 @@ function layerOf(absPath) {
   return 'other'
 }
 
-// --- import 提取 ---
 const importRe = /(?:import|export)[^'"]*?from\s*['"]([^'"]+)['"]/g
 const dynamicRe = /\bimport\s*\(\s*['"]([^'"]+)['"]\s*\)/g
 
@@ -59,7 +56,6 @@ function importsOf(absPath) {
   return out
 }
 
-// --- 解析 import 路径 → 绝对路径（或 null=外部/未解析） ---
 function resolveImport(importer, spec) {
   if (spec.startsWith('@/')) {
     return tryResolve(resolve(src, spec.slice(2)))
@@ -77,7 +73,7 @@ function tryResolve(base) {
   return null
 }
 
-// --- 依赖规则：importer 层 → 禁止的 importee 层集合 ---
+// 依赖规则：importer 层 → 禁止的 importee 层集合
 const FORBIDDEN = {
   types: [
     'lib',
@@ -91,14 +87,8 @@ const FORBIDDEN = {
     'i18n',
   ],
   lib: ['stores', 'api', 'hooks', 'contexts', 'components', 'components-ui', 'features', 'i18n'],
-  // Explicit by design: 'stores' is NOT in the api ban list.
-  // AGENTS.md's directory map places react-query/WS hooks in api/hooks
-  // ("api/ — HTTP client、WebSocket、endpoints、react-query hooks"),
-  // and data-layer hooks legitimately consume the connection + WS-status
-  // stores. The api ban targets the HTTP client and endpoints (which
-  // must not import stores); the hooks sub-layer is the sanctioned
-  // bridge. WSStatus lives in types/models.ts, so stores never needs
-  // a type-only back-edge into api/websocket.
+  // api 禁表不含 stores：api/hooks 子层可引用 connection/wsStatus store；
+  // HTTP client/endpoints 仍禁。WSStatus 类型在 types/models.ts。
   api: ['contexts', 'components', 'components-ui', 'features'],
   stores: ['hooks', 'contexts', 'components', 'components-ui', 'features'],
   hooks: ['components', 'components-ui', 'features'],
@@ -119,8 +109,8 @@ function isForbidden(importerLayer, importeeLayer) {
   return banned.includes(importeeLayer)
 }
 
-// --- 已登记豁免（已知技术债；登记时写明移除条件） ---
-// 每条：importer 子串 + importee 子串 + 豁免标识（td 字段）
+// 已登记豁免（登记时写明移除条件）
+// 每条：importer 子串 + importee 子串 + 豁免标识
 const EXEMPTIONS = []
 
 function isExempt(importerRel, importeeRel) {
@@ -129,7 +119,6 @@ function isExempt(importerRel, importeeRel) {
   )
 }
 
-// --- 执行 ---
 const violations = []
 const usedExemptions = new Set()
 
@@ -153,12 +142,10 @@ for (const importer of files) {
   }
 }
 
-// --- 报告 ---
 const unusedExemptions = EXEMPTIONS.filter((e) => !usedExemptions.has(e.td))
 
-// --- Detail pages must single-source field metadata from the registry
-//     adapter (no local *_FIELDS arrays). The rule targets the
-//     EditConfigSection modules and follows the code it governs. ---
+// Detail pages must single-source field metadata from the registry adapter
+// (no local *_FIELDS arrays); applies to the EditConfigSection modules.
 const SINGLE_SOURCE_FILES = [
   'features/admin/driverDetail/EditConfigSection.tsx',
   'features/admin/transportDetail/EditConfigSection.tsx',
@@ -171,7 +158,6 @@ for (const rel of SINGLE_SOURCE_FILES) {
   if (!/from ['"]@\/lib\/registryAdapter['"]/.test(text)) {
     singleSourceViolations.push(`${rel}: must import @/lib/registryAdapter (single source)`)
   }
-  // Local field-metadata arrays are the duplication this rule targets.
   for (const m of text.matchAll(/const\s+(\w*_FIELDS)\s*:\s*readonly\s+\w*EditField\[\]/g)) {
     singleSourceViolations.push(`${rel}: defines local field array ${m[1]} (use registry adapter)`)
   }
@@ -200,7 +186,7 @@ if (violations.length === 0 && singleSourceViolations.length === 0) {
     console.error(`  - ${v}`)
   }
   console.error(
-    `\n修复指引：将共享逻辑下沉到更底层（lib/api/hooks/stores/components），或在 EXEMPTIONS 登记已知技术债。`,
+    `\n修复指引：将共享逻辑下沉到更底层（lib/api/hooks/stores/components），或在 EXEMPTIONS 登记豁免。`,
   )
   process.exit(1)
 }

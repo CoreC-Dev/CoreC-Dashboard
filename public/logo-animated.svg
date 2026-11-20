@@ -49,19 +49,15 @@
     </style>
   </defs>
 
-  <!-- Hexagon -->
   <polygon points="64,10 111,37 111,91 64,118 17,91 17,37"
            fill="url(#hexGrad)"/>
 
-  <!-- Inner hexagon ring -->
   <polygon points="64,24 99,44 99,84 64,104 29,84 29,44"
            fill="none" stroke="#ffffff" stroke-width="2" stroke-opacity="0.22"/>
 
-  <!-- Core ripple waves -->
   <circle class="ripple ripple-1" cx="64" cy="64" r="7"/>
   <circle class="ripple ripple-2" cx="64" cy="64" r="7"/>
 
-  <!-- Data flow lines with arrows: top→BR→BL→top -->
   <line class="flow" x1="68.4" y1="46.9" x2="80.6" y2="69.1"
         stroke="#ffffff" stroke-width="2.5" stroke-opacity="0.6"
         marker-end="url(#arrow)"/>
@@ -72,12 +68,10 @@
         stroke="#ffffff" stroke-width="2.5" stroke-opacity="0.6"
         marker-end="url(#arrow)"/>
 
-  <!-- Three nodes -->
   <circle class="node node-1" cx="64" cy="39" r="8" fill="#ffffff"/>
   <circle class="node node-2" cx="85" cy="77" r="8" fill="#ffffff"/>
   <circle class="node node-3" cx="43" cy="77" r="8" fill="#ffffff"/>
 
-  <!-- Center core -->
   <circle cx="64" cy="64" r="5.5" fill="#ffffff" fill-opacity="0.92"/>
   <circle cx="64" cy="64" r="2.5" fill="#2d6b5a"/>
 </svg>

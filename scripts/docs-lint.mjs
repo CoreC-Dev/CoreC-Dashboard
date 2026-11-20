@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // docs-lint.mjs — 文档防腐 linter（CI 接入）
-// 校验：docs/index.md 链接可解析 + AGENTS.md 必填节 + 行数上限 + 索引完备性
+// 校验：docs/index.md 与 AGENTS.md 链接可解析 + AGENTS/ARCHITECTURE 必填节 + AGENTS 行数上限 + docs/ 索引完备性
 // 用法：node scripts/docs-lint.mjs   退出码 0=通过 1=失败
 
 import { existsSync, readFileSync } from 'node:fs'
@@ -31,9 +31,9 @@ function checkLinks(mdFile) {
   let m
   while ((m = linkRe.exec(text)) !== null) {
     let target = m[2]
-    if (target.startsWith('http')) continue // 外链不校验
-    if (target.startsWith('#')) continue // 锚点不校验
-    target = target.split('#')[0] // 去锚点
+    if (target.startsWith('http')) continue
+    if (target.startsWith('#')) continue
+    target = target.split('#')[0]
     if (!target) continue
     const abs = normalize(resolve(root, base, target))
     if (!existsSync(abs)) errors.push(`死链(${mdFile}): [${m[1]}](${m[2]})`)
@@ -59,7 +59,6 @@ function checkLineCount(file, max) {
   if (lines > max) errors.push(`${file} 行数 ${lines} > ${max}`)
 }
 
-// --- 执行 ---
 checkFile('AGENTS.md')
 checkFile('ARCHITECTURE.md')
 checkFile('docs/index.md')
@@ -75,28 +74,23 @@ checkSections('AGENTS.md', [
   '## 常用命令',
   '## 工作方式',
 ])
-checkSections('ARCHITECTURE.md', [
-  '## 技术栈',
-  '## 领域地图',
-  '## 分层与依赖方向',
-  '## 已验证的健康不变量',
-])
+checkSections('ARCHITECTURE.md', ['## 技术栈', '## 领域地图', '## 分层与依赖方向', '## 分层不变量'])
 
 checkLineCount('AGENTS.md', 200)
 
-// 4. docs/ 下 .md（除 .scratch）应被 index.md 提及
+// 4. docs/ 下 .md 应被 index.md 提及
 import { readdirSync } from 'node:fs'
 
 function walk(dir, acc = []) {
   for (const e of readdirSync(resolve(root, dir), { withFileTypes: true })) {
     const p = `${dir}/${e.name}`
     if (e.isDirectory()) {
-      if (!p.includes('.scratch')) walk(p, acc)
+      walk(p, acc)
     } else if (e.name.endsWith('.md')) acc.push(p)
   }
   return acc
 }
-const allDocs = walk('docs').filter((p) => !p.includes('.scratch') && p !== 'docs/index.md')
+const allDocs = walk('docs').filter((p) => p !== 'docs/index.md')
 const indexText = existsSync(resolve(root, 'docs/index.md')) ? read('docs/index.md') : ''
 for (const d of allDocs) {
   // 提及形式可能是 d 或 ../d 或去掉 docs/ 前缀
@@ -110,7 +104,6 @@ for (const d of allDocs) {
   }
 }
 
-// --- 报告 ---
 if (errors.length === 0) {
   console.log('✅ docs-lint 通过：链接可解析、必填节齐全、索引完备、AGENTS.md 行数达标。')
   process.exit(0)

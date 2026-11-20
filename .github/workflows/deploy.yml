@@ -1,10 +1,10 @@
 # Build and deploy CoreC-Dashboard to GitHub Pages on every push to main.
 #
-# CI 门禁（ci.yml）先行：lint/typecheck/结构测试/linter/any/build/test/coverage 全过才部署。
+# CI 门禁（ci.yml）先行：lint/typecheck/docs-lint/结构测试/自定义 linter/any 棘轮/build/test/coverage 全过才部署。
 # Architecture: the Dashboard is a static SPA. On GitHub Pages (no server.mjs),
 # it connects DIRECTLY to the remote CoreC backend (proxyMode auto-detects: 404
 # on /corec-proxy/ → direct mode, CSP connect-src *). On server.mjs deployments,
-# it routes through the same-origin proxy (ADR-004, strict CSP).
+# it routes through the same-origin proxy.
 #
 # Custom domain (HTTP):
 #   1. Add your domain to repo Settings → Pages → Custom domain.
@@ -27,7 +27,6 @@ permissions:
   pages: write
   id-token: write
 
-# Allow only one deployment at a time; cancel in-flight runs.
 concurrency:
   group: pages
   cancel-in-progress: true

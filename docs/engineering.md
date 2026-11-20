@@ -15,7 +15,7 @@ npm run dev      # Vite dev server（HMR）
 ```bash
 npm run build    # tsc -b && vite build → dist/
 ```
-`vite.config.ts` 已配 manualChunks（recharts/d3、react、query、radix、lightweight-charts、xterm、js-yaml、zod、i18n、rhf、monaco 分包）+ 全路由懒加载。
+`vite.config.ts` 已配 manualChunks 按 vendor 库分包（清单见 vite.config.ts）+ 全路由懒加载。
 
 ## 测试
 ```bash
@@ -44,8 +44,8 @@ node server.mjs <port> <dist-dir> <corec-url>
 - **server.mjs 自托管**：同源代理形态，浏览器只访问单端口（见上节"生产运行"）。
 
 ## 调试
-- 连接问题：看 `ConnectionContext` 探测日志（浏览器 console）+ CoreC 后端可达性。
-- WS 不连：`api/websocket.ts` 退避/重连上限 10；检查 token + CoreC WS 端点 + 防火墙。
+- 连接问题：看实例卡片/连接横幅的探测状态（unauthorized/unreachable 区分）+ CoreC 后端可达性。
+- WS 不连：`api/websocket.ts` 退避/重连上限；检查 token + CoreC WS 端点 + 防火墙。
 - 配置不生效：`configStore` working/saved/dirty 状态 + `configSchema.validateConfig` 错误路径。
 - 生产空白页：检查 Monaco 自托管资源（`dist/monaco/min/vs` 是否随构建产出）+ CSP 控制台违规。
 
@@ -53,7 +53,7 @@ node server.mjs <port> <dist-dir> <corec-url>
 | 症状 | 先查 |
 |---|---|
 | 实例连不上 | ConnectionContext 探测 + CoreC `/` 可达 + Bearer 密钥 |
-| Config Center 空白 | Monaco 加载（网络/CSP）+ `useHomepageProbe` |
+| Config Center 空白 | Monaco 加载（网络/CSP）+ `useConfigCenter` |
 | WS 数据不更新 | `CoreCWebSocket` 状态 + 限流是否丢消息 + 重连是否到上限 |
 | 配置 apply 失败 | `validateFullConfig` 错误 + `updateConfig.mutate` onError |
 | 导出文件无密钥 | 默认脱敏；需含密钥则勾选 opt-in |

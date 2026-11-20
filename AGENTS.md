@@ -9,10 +9,10 @@ CoreC-Dashboard —— 面向 IIoT CoreC 后端的 React 单页前端：多实�
 
 ## 硬性约束（不可违反）
 - 分层依赖单向：`types ← lib ← api ← stores ← hooks/contexts ← components ← features ← App`，禁止反向与跨层
-- `types/` 不得导入 `@/lib`、`@/stores`、`@/api`；`lib/` 不得导入 `@/components`、`@/features`、`@/stores`、`@/api`
+- 各层禁边以 `scripts/structure-lint.mjs` FORBIDDEN 表为准（`types`/`lib` 不引 `i18n`；`api/hooks` 例外可引 `stores`）
 - `features/*` 之间禁止直接互引（跨域仅经 `api/hooks`、`stores`、`components`、`lib` 共享）
 - 边界处必须解析数据形状（zod / 显式校验），禁止信任外部输入（导入 JSON、后端响应、用户粘贴 YAML）
-- 违反以上约束会被自定义 linter（`scripts/custom-lint.mjs` 等）与结构测试（`scripts/structure-lint.mjs`）拦截
+- 分层/跨域约束由 `scripts/structure-lint.mjs` 拦截；文件大小/console.log/相对导入由 `scripts/custom-lint.mjs` 拦截。zod 边界解析为约定，无机械门禁
 
 ## 目录地图
 ```
@@ -20,11 +20,11 @@ src/
   types/      领域类型与配置 schema（zod）
   lib/        纯函数：常量、工具、YAML、校验、连接摘要、模板
   api/        HTTP client、WebSocket、endpoints、react-query hooks
-  stores/     Zustand：config / instance / config-history
+  stores/     Zustand 本地状态
   hooks/      通用 hooks（useDebouncedValue、useConfigValidation…）
   contexts/   ConnectionContext（连接探测与全局状态）
-  components/ ui/（Radix 原语）+ layout + admin + charts 共享组件
-  features/   admin / monitor / home / settings —— 按业务域切分
+  components/ 共享 UI（ui 原语 + 按域共享组件）
+  features/   admin / monitor / home / settings / assistant —— 按业务域切分
   i18n/       i18next 配置与语言资源
 ```
 
@@ -49,7 +49,7 @@ src/
 ## 注释与文档
 
 - 注释与文档只写当前为真、能在代码中验证、且不随实现漂移的内容。
-- 保留已固化的协议与标准、安全与并发硬约束、编译期分层约束、跨仓机械约束，以及门禁要求的每包一处 `// Package` 包注释。
+- 保留已固化的协议与标准、安全与并发硬约束、编译期分层约束、跨仓机械约束。
 - 不写日期、版本、阶段、批次、审计编号、提交号、进度、状态、待办标记、计划与路线图。
 - 不写决策记录、选型、权衡、理由与「为什么这么做」。
 - 不写会因代码变动而反复更新的引用：文件与行号、复制自代码的阈值/计数/版本号。

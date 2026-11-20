@@ -9,7 +9,6 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
 
-/** Grab a free TCP port (bind :0, read, close). */
 async function freePort() {
   return new Promise((resolvePort, reject) => {
     const probe = netServer()
@@ -57,7 +56,6 @@ test('serves the SPA index and static assets, 404s unknown API paths', async (t)
 
   const base = `http://127.0.0.1:${port}`
 
-  // Static asset.
   const asset = await fetch(`${base}/asset.txt`)
   assert.equal(asset.status, 200)
   assert.equal(await asset.text(), 'hello-static')
@@ -72,11 +70,10 @@ test('serves the SPA index and static assets, 404s unknown API paths', async (t)
   const proxied = await fetch(`${base}/corec-api/healthz/live`)
   assert.ok([502, 504, 500].includes(proxied.status), `expected proxy error, got ${proxied.status}`)
 
-  // Path traversal is rejected (safeStaticPath): encoded ../ stays a 404
-  // and never resolves outside dist.
+  // Path traversal is rejected (safeStaticPath): encoded ../ is rejected
+  // with 403 and never resolves outside dist.
   const traversal = await fetch(`${base}/%2e%2e%2f%2e%2e%2fetc%2fpasswd`)
-  // 403 = safeStaticPath explicitly rejects the encoded traversal (better
-  // than a bare 404); 404/400 are acceptable rejections too.
+  // 404/400 are acceptable rejections too.
   assert.ok([403, 404, 400].includes(traversal.status), `traversal status ${traversal.status}`)
   const body = await traversal.text()
   assert.ok(!body.includes('root:'), 'traversal must not serve system files')

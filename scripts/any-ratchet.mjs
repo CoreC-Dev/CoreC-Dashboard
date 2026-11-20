@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // any-ratchet.mjs —— noExplicitAny 二级守卫
-// biome.json 已将 noExplicitAny 提为 error（主门禁）。本脚本为冗余二级守卫，
-// 准确统计非注释代码中的 explicit any，BASELINE=0；任一新增即失败。
+// biome noExplicitAny=error 为主门禁；本脚本统计非注释代码中的 explicit any，
+// BASELINE=0；任一新增即失败。
 // 用法：node scripts/any-ratchet.mjs   退出码 0=通过 1=失败
 
 import { readdirSync, readFileSync } from 'node:fs'
@@ -11,7 +11,7 @@ import { fileURLToPath } from 'node:url'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const root = resolve(__dirname, '..')
 const src = resolve(root, 'src')
-const BASELINE = 0 // biome noExplicitAny=error 已为主门禁；本守卫基线 0
+const BASELINE = 0
 
 function walk(dir, acc = []) {
   for (const e of readdirSync(dir, { withFileTypes: true })) {
@@ -46,7 +46,7 @@ for (const f of walk(src)) {
 }
 
 if (count <= BASELINE) {
-  console.log(`✅ any-ratchet 通过：${count} 处 any ≤ 基线 ${BASELINE}（存量清理后已下调基线）`)
+  console.log(`✅ any-ratchet 通过：${count} 处 any ≤ 基线 ${BASELINE}`)
   process.exit(0)
 } else {
   console.error(
@@ -54,6 +54,6 @@ if (count <= BASELINE) {
   )
   console.error('  示例：')
   for (const h of hits) console.error(`    - ${h}`)
-  console.error('  修复：用具体类型替换 any，或下调 BASELINE（仅当有意接受更多 any 时）。')
+  console.error('  修复：用具体类型替换 any，或上调 BASELINE（仅当有意接受更多 any 时）。')
   process.exit(1)
 }
