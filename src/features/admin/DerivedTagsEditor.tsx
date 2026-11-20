@@ -8,9 +8,7 @@
  * Fields: name, expr, type, group, interval, unit, on-missing, stale-guard.
  *
  * Integration: CRUD via configStore.upsertDerivedTag/removeDerivedTag.
- * Each tag is an inline form row — no wizard needed since the field set
- * is small and static (unlike drivers/transports with per-type dynamic
- * fields).
+ * Each tag is an inline form row.
  *
  * Hot-reload: derived-tags are hot-updatable via PUT /configs (no restart
  * required — the engine re-evaluates expressions at the configured interval).
@@ -57,7 +55,6 @@ export const DerivedTagsEditor: React.FC = () => {
 
   const [editing, setEditing] = useState<DerivedTagConfig | null>(null)
   const [isNew, setIsNew] = useState(false)
-  // Deleting a derived tag asked nothing — it just vanished.
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
 
   const tags = workingConfig?.['derived-tags'] ?? []
@@ -150,7 +147,6 @@ export const DerivedTagsEditor: React.FC = () => {
           </div>
         )}
 
-        {/* Tag list */}
         {tags.length > 0 && (
           <div className="space-y-2">
             {tags.map((tg) => (
@@ -185,8 +181,6 @@ export const DerivedTagsEditor: React.FC = () => {
                   </div>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
-                  {/* Pencil for edit — the Calculator read as
-                       "compute", not "edit", unlike every other editor. */}
                   <button
                     type="button"
                     onClick={() => startEdit(tg.name)}
@@ -211,7 +205,6 @@ export const DerivedTagsEditor: React.FC = () => {
           </div>
         )}
 
-        {/* Inline edit/create form */}
         {editing && (
           <div className="space-y-3 rounded-lg border border-primary/30 bg-primary/5 p-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -266,8 +259,7 @@ export const DerivedTagsEditor: React.FC = () => {
                   className="h-8 text-xs font-mono"
                 />
                 <p className="text-xs text-muted-foreground">{t('derivedTag.exprHelp')}</p>
-                {/* Live expression validation — a broken expr used to
-                     surface only at apply time (transform validator reused). */}
+                {/* Live expression validation (transform validator reused). */}
                 <ExprValidationMessages
                   result={validateTransformExpression(editing.expr)}
                   variant="prefix"
@@ -364,7 +356,6 @@ export const DerivedTagsEditor: React.FC = () => {
           </div>
         )}
 
-        {/* Delete confirmation — same gate as every other entity. */}
         <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
           <AlertDialogContent>
             <AlertDialogHeader>

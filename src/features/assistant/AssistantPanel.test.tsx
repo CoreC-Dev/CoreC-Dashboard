@@ -14,9 +14,8 @@ configure({ asyncUtilTimeout: 4000 })
 const t = (key: string) => i18n.t(key)
 
 /**
- * Seeds the store the way the app does: through setProviders, which also writes
- * localStorage. Persisting the raw keys instead would exercise a path the UI
- * never uses and leave the in-memory store stale.
+ * Seeds the store the way the app does: through setProviders, which also
+ * writes localStorage.
  */
 function loadStore(providers: { name: string; baseUrl: string; model: string }[]) {
   localStorage.clear()

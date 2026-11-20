@@ -48,7 +48,6 @@ export const DriversPage: React.FC = () => {
   const { data: rawYaml } = useConfigRaw()
   const parsedConfig = useParsedConfig(rawYaml)
 
-  // Config editing state
   const workingConfig = useConfigStore((s) => s.workingConfig)
   const savedConfig = useConfigStore((s) => s.savedConfig)
   const dirty = useConfigStore((s) => s.dirty)
@@ -140,9 +139,7 @@ export const DriversPage: React.FC = () => {
     return rulesDependingOnDriver({ driver, ...sources })
   }, [deleteTarget, workingConfig, savedConfig])
 
-  // The same driver appears in both zones with no way to tell
-  // which card is "running" and which is "my unapplied edit". Badges:
-  // working driver differs from the saved one (or is missing there) →
+  // Badges: working driver differs from the saved one (or is missing there) →
   // "pending changes"; runtime list contains the name → "live", else
   // "configured, not running". Same-name cards cross-link by anchor.
   const runtimeDriverNames = useMemo(() => new Set(drivers.map((d) => d.name)), [drivers])
@@ -202,10 +199,8 @@ export const DriversPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Config seed failed/loading: explain why Create is disabled */}
       <SeedBlockedBanner />
 
-      {/* Config editing banner — shows when there are unsaved config changes */}
       <UnsavedChangesBanner
         dirty={dirty}
         unsavedChangesLabel={t('drivers.unsavedChanges')}
@@ -215,10 +210,8 @@ export const DriversPage: React.FC = () => {
         onDiscard={() => useConfigStore.getState().revert()}
       />
 
-      {/* Live validation errors */}
       <ValidationBanner />
 
-      {/* Config-managed drivers section (from working config) */}
       {configDrivers.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center gap-2 flex-wrap">
@@ -251,7 +244,6 @@ export const DriversPage: React.FC = () => {
         </div>
       )}
 
-      {/* Runtime status section */}
       <div className="space-y-3">
         <div className="flex items-center gap-2">
           <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
@@ -285,8 +277,6 @@ export const DriversPage: React.FC = () => {
               </Button>
             </Card>
           ) : drivers.length === 0 ? (
-            // The empty state points at the page's own Create
-            // action instead of telling the operator to go edit YAML.
             <Card className="col-span-full p-8 text-center space-y-3 border-dashed">
               <p className="text-xs text-muted-foreground">{t('drivers.empty')}</p>
               <div>
@@ -430,15 +420,12 @@ export const DriversPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Driver Detail Drawer / Dialog */}
       {selectedDriver && (
         <DriverDetailDialog driver={selectedDriver} onClose={() => setSelectedDriver(null)} />
       )}
 
-      {/* Create/Edit Driver Wizard */}
       <DriverWizard open={wizardOpen} onOpenChange={setWizardOpen} existingDriver={editingDriver} />
 
-      {/* Delete Confirmation — lists rules that lose their data source */}
       <DeleteEntityConfirm
         open={!!deleteTarget}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
@@ -469,7 +456,6 @@ export const DriversPage: React.FC = () => {
         )}
       </DeleteEntityConfirm>
 
-      {/* Apply Config Confirmation */}
       <ConfigApplyConfirmationDialog {...applyDialogProps} />
     </div>
   )

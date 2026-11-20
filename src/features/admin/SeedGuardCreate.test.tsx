@@ -25,10 +25,7 @@ vi.mock('@/api/endpoints', () => ({
   getConfigs: vi.fn().mockResolvedValue({}),
 }))
 
-// These pages render heavy card grids and the driver wizard; under
-// full-suite load on a 2-core box (parallel agent workstreams) they can
-// exceed the 5s default. 15s mirrors the BatchWritePanel suite-timeout
-// precedent.
+// Suite timeout raised above the 5s default for heavy render load.
 vi.setConfig({ testTimeout: 15_000 })
 
 const SERVER_YAML = ['global:', '  log-level: info', 'drivers: []', ''].join('\n')

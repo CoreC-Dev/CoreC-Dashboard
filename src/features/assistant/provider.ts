@@ -1,15 +1,12 @@
 /**
  * features/assistant/provider.ts - the OpenAI-compatible chat client.
  *
- * Why a hand-written client and not a vendor SDK: the assistant must reach
- * ANY OpenAI-compatible endpoint (vLLM, LiteLLM, one-api, a cloud vendor's
- * compatible gateway), and the wire format it needs is one endpoint plus SSE
- * deltas. An SDK would add a dependency, a second set of error types, and a
- * retry policy we do not control, to save ~150 lines.
+ * Works with any OpenAI-compatible endpoint (vLLM, LiteLLM, one-api, a cloud
+ * vendor's compatible gateway) via one chat/completions endpoint plus SSE
+ * deltas.
  *
- * Retries are deliberately absent: a chat completion is not idempotent and a
- * tool-calling turn may already have burned tokens. The caller shows the error
- * and the operator decides to send again.
+ * No automatic retries; errors are shown to the operator, who decides to send
+ * again.
  */
 import type { AssistantMessage, AssistantProvider, ToolCall } from '@/types/assistant'
 
@@ -74,8 +71,7 @@ function endpoint(baseUrl: string): string {
 
 function headers(p: AssistantProvider): Headers {
   const h = new Headers({ 'Content-Type': 'application/json', Accept: 'text/event-stream' })
-  // Local gateways often have no auth; only send the header when a key exists
-  // so we do not trip strict gateways on an empty "Bearer ".
+  // Only send the Authorization header when a key exists.
   if (p.apiKey) h.set('Authorization', `Bearer ${p.apiKey}`)
   for (const [k, v] of Object.entries(p.headers ?? {})) h.set(k, v)
   return h

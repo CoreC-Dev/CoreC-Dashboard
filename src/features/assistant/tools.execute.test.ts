@@ -3,9 +3,7 @@
 // control plane, and what it hands back to the model.
 //
 // tools.test.ts checks the REGISTRY (which verbs exist, read vs write). This
-// file checks the VERBS themselves. The distinction is not academic: the
-// registry tests were green while tools.ts sat at 8% line coverage, because
-// nothing in them ever called execute().
+// file checks the VERBS themselves by calling execute().
 //
 // The seam is apiRequest from @/api/client. Below it is the dashboard's own HTTP
 // client, which has its own tests; above it is the tool, which is what is under
@@ -87,10 +85,7 @@ describe('tool execution: reads', () => {
     for (let i = 0; i < 60; i++) snapshot[`t${i}`] = { value: i }
     apiRequestMock.mockResolvedValue({ tags: snapshot })
     const res = await spec('list_tags').execute({})
-    // 60 matched, 50 returned. Both are reported, under names that say which is
-    // which: a bare `count` beside a truncated `tags` reads as tags.length, and a
-    // model that believes it holds all 60 answers questions about the other 10
-    // with "not in cache" instead of "not shown".
+    // matched counts the filter hits; returned counts the tags in this object.
     expect(body(res).matched).toBe(60)
     expect(body(res).returned).toBe(50)
     expect(Object.keys(body(res).tags as object)).toHaveLength(50)
@@ -104,11 +99,8 @@ describe('tool execution: reads', () => {
   })
 
   it('list_tags reports returned == tags.length, and matched == returned under the cap', async () => {
-    // Both counts are derivable from the payload, so asserting them protects
-    // nothing on its own. Their job is to stay equal to it: `returned` is the only
-    // one of the two that cannot be re-derived from `tags` alone in the truncated
-    // case (it equals the cap by argument, not by observation), which is exactly
-    // the case where a drifting count would do the most damage.
+    // Counts must stay consistent with the payload: returned == tags.length,
+    // matched == returned under the cap.
     const snapshot: Record<string, unknown> = {}
     for (let i = 0; i < 7; i++) snapshot[`t${i}`] = { value: i }
     apiRequestMock.mockResolvedValue({ tags: snapshot })
@@ -158,12 +150,8 @@ describe('tool execution: reads', () => {
   })
 
   it('list_alerts counts the filtered set, and keeps the engine-wide total apart', async () => {
-    // Three alerts on the engine, one of them on driver b. The engine answers
-    // active_count: 3 -- it has no idea a driver filter is coming, and it is
-    // correct: three alerts ARE active. Repeating that number beside the
-    // one-element `alerts` array would say "b has 3 active alerts" when b has
-    // one. Both numbers are true; they are true about different sets, and only
-    // the names can tell the reader which is which.
+    // active_count/unacked_count describe the filtered set; total_active/
+    // total_acked keep the engine-wide figures.
     apiRequestMock.mockResolvedValue({
       alerts: [
         {
@@ -284,15 +272,11 @@ describe('tool execution: writes', () => {
 
 describe('tool execution: refusals reach the model intact', () => {
   it('a read-only rejection arrives as the engine worded it, not "failed"', async () => {
-    // This string is the whole point: a model that reads "failed" retries or
-    // apologizes, a model that reads this explains the write protection to the
-    // operator. run() must not wrap it.
+    // The engine's refusal wording must reach the model verbatim; run() must
+    // not wrap it.
     const engineSaid = 'tag "sp" is read-only (protect: read-only)'
-    // Constructed the way apiRequest constructs it, not the way that is
-    // convenient: the TRANSPORT summary is .message, the engine's sentence is
-    // the response body. The earlier version passed only .message, which let a
-    // reasonOf that read .message alone look correct here while discarding the
-    // engine's words on every real request.
+    // Constructed the way apiRequest constructs it: the transport summary is
+    // .message, the engine's sentence is the response body.
     apiRequestMock.mockRejectedValue(
       new ApiErrorCtor(
         400,
@@ -347,12 +331,7 @@ describe('tool execution: refusals reach the model intact', () => {
     // the shape a real large config has.
     apiRequestMock.mockResolvedValue(`# ${'x'.repeat(70 * 1024)}\nglobal: {}\n`)
     const res = await spec('get_configs').execute({})
-    // The previous form required res.content.length > 64 * 1024 -- it asserted
-    // that the result BREACH the cap, on the theory that anything under the cap
-    // meant no clipping had happened. But a hard limit the clipped output
-    // exceeds by construction is not a hard limit, and the 80-byte notice this
-    // test was bending over backward to allow was the very thing breaking every
-    // cut. "Clipped" means: shorter than the input, and no longer than the cap
+    // "Clipped" means: shorter than the input, and no longer than the cap
     // once the notice is counted.
     expect(new TextEncoder().encode(res.content).length).toBeLessThanOrEqual(64 * 1024)
     expect(res.content.length).toBeLessThan(70 * 1024)

@@ -177,10 +177,8 @@ describe('GlobalSettingsPage import dialog', () => {
   })
 })
 
-// The settings-page import used to be a bare textarea while the
-// homepage offered drag & drop + file browse for the same operation; both
-// entry points now render the one shared dialog, so the full affordance set
-// must be reachable from here too.
+// Both entry points render the one shared import dialog; the full affordance
+// set must be reachable from the settings page too.
 describe('GlobalSettingsPage shared import UI', () => {
   it('offers the drag & drop + file browse + paste set on the settings page', () => {
     renderPage()

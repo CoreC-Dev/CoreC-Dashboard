@@ -194,8 +194,8 @@ describe('AlertsPage — notification permission honesty', () => {
 
     renderPage()
 
-    // Audit copy (en): the toggle must admit the channel is dead instead
-    // of a comforting "Notifications On" that never delivers.
+    // The toggle must show the blocked state when the browser denies
+    // notifications.
     const button = screen.getByRole('button', {
       name: /Notifications blocked by the browser/,
     })

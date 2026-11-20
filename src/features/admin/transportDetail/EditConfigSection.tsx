@@ -1,9 +1,3 @@
-// Transport quick-edit form + its private helpers: field metadata comes
-// from the settings registry (single source of truth) via
-// registryToEditFields; the curated key sets select which
-// fields appear in the quick-edit form (advanced/dynamic fields — TLS certs,
-// command forwarding, fallback dynamic-select, connect-retry tuning — are
-// edited via the wizard, not this form).
 import { dump } from 'js-yaml'
 import type React from 'react'
 import { useCallback, useMemo, useState } from 'react'
@@ -25,8 +19,8 @@ import type { TransportStatus } from '@/types/models'
 // registry (single source of truth) via the
 // registryToEditFields adapter. The set of fields shown is a curated
 // presentation choice (quick-edit form): advanced/dynamic fields (TLS certs,
-// command forwarding, fallback dynamic-select, connect-retry tuning) are edited
-// via the wizard, not this form.
+// command-forward-topic/secret, fallback dynamic-select, connect-retry tuning)
+// are edited via the wizard, not this form.
 
 // Curated field keys exposed by the quick-edit form. The registry is the single
 // source of metadata (label/placeholder/options/type/group/boolean); this list
@@ -87,8 +81,6 @@ const NOTIFY_EDIT_KEYS = new Set([
   'buffer-size',
 ])
 
-// `headers` is a map field not yet modeled by the registry (SettingsField has no
-// map/object type); retained as an explicit supplement.
 const HEADERS_SUPPLEMENT: RegistryEditField = {
   key: 'headers',
   labelKey: 'transports.editConfig.headers',
@@ -98,8 +90,7 @@ const HEADERS_SUPPLEMENT: RegistryEditField = {
 }
 
 /** Resolve the curated edit fields for a transport type from the settings
- *  registry, preserving registry order. `headers` (http only) is appended as a
- *  supplement since the registry does not yet model map fields. */
+ *  registry, preserving registry order. */
 function getTransportFields(type: string): readonly RegistryEditField[] {
   const lower = type.toLowerCase()
   const isMqtt = lower.includes('mqtt')
@@ -254,11 +245,10 @@ export const TransportEditConfigSection: React.FC<{ transport: TransportStatus }
     failureKey: 'transports.editConfig.reloadFailed',
   })
 
-  // The reload button no longer PUTs directly — it opens the SAME
-  // ConfigApplyConfirmationDialog the list pages use (YAML diff + change
-  // summary + engine-suspend warning). The PUT only fires from the dialog's
-  // explicit confirm, and the dialog stays open showing the verbatim error
-  // when the reload fails.
+  // The reload button opens the ConfigApplyConfirmationDialog the list pages
+  // use (YAML diff + change summary + engine-suspend warning). The PUT only
+  // fires from the dialog's explicit confirm, and the dialog stays open
+  // showing the verbatim error when the reload fails.
   const editWithGate: EntityEditConfigState = {
     ...edit,
     handleReload: async () => {

@@ -186,8 +186,7 @@ describe('TopologyPage — the error banner names what failed', () => {
 
     renderPage()
 
-    // Both failures are named, joined for the active locale — no more
-    // anonymous "Error" banner that hid WHICH query died.
+    // Both failures are named, joined for the active locale.
     expect(await screen.findByText('Failed to load: runtime stats and rules')).toBeTruthy()
   })
 })

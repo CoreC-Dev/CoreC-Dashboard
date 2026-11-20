@@ -1,12 +1,8 @@
 /**
  * features/assistant/tools.ts - the assistant's tool surface.
  *
- * The names, arguments, read/write classification and error semantics are a
- * deliberate COPY of CoreC's cmd/corec-mcp/tools.go. The assistant is just
- * another client of the same control plane; inventing a second vocabulary
- * would mean the same operation is called one thing in the UI and another in
- * Claude Desktop, and the two would drift. If the MCP tool list changes,
- * change this file in the same change.
+ * Tool names, arguments and read/write classification mirror CoreC's
+ * cmd/corec-mcp/tools.go; changes must be synced in both repos.
  *
  * Execution is not reimplemented either: every tool calls the existing
  * @/api/endpoints wrapper, so the engine-side guarantees (per-tag write
@@ -35,12 +31,6 @@ import type { AssistantToolSpec, ToolResult } from '@/features/assistant/types'
 import { clip } from '@/lib/clipText'
 import type { WriteCommand } from '@/types/models'
 
-/**
- * Ceiling for one tool payload handed to the model. A large /tags snapshot or
- * a full /configs/raw document can exceed a comfortable context on its own;
- * truncate and SAY SO rather than letting the model reason confidently from
- * half a document.
- */
 /** Points listed per call; more is a flood, and the UI has filters for it. */
 const MAX_LISTED_TAGS = 50
 
@@ -51,13 +41,7 @@ const MAX_LISTED_TAGS = 50
  * Requests"); the engine's sentence is in .body, and for a refused write that
  * sentence is the whole answer: "is read-only (protect: read-only)" says the
  * point is guarded, "accepts a write every 200ms (retry in 187ms)" says back off
- * and by how much. Both come back as a 4xx whose status line is identical, so a
- * model that only ever sees the status has to guess which happened -- and the
- * guess it makes is "retry", which is exactly wrong for a read-only point.
- *
- * extractApiError is what the rest of this repo already uses to read that
- * body (WriteControlPage, useAutoLoadConfig); this module having been the one
- * place that read .message instead was the drift, not the fix.
+ * and by how much. Both come back as a 4xx whose status line is identical.
  */
 function reasonOf(err: unknown): string {
   if (err instanceof ApiError) {
@@ -87,11 +71,8 @@ function argStr(args: Record<string, unknown>, key: string): string {
 /**
  * filterPoints narrows a /tags snapshot to the names a query asked for.
  *
- * `exact` is corec-mcp's read_tag folded into list_tags: that verb returns ONE
- * point, while a substring filter is the only thing this tool had, and
- * "filter=sp" would hand back sp, sp1, sp_2 and speed alike. Exact mode returns
- * just the named point, and an empty list on a miss -- a wrong neighbour is
- * worse than nothing when the caller is about to read or write it.
+ * `exact` covers corec-mcp's read_tag: it returns just the named point, and an
+ * empty list on a miss.
  *
  * Empty needle = no filter (the whole snapshot), in both modes.
  */
@@ -130,7 +111,7 @@ const readTools: AssistantToolSpec[] = [
   {
     name: 'driver_status',
     description:
-      "Report one driver's status, including whether collection is paused and its scheduler health.",
+      "Report one driver's status: connection state, last read/error, tag count and error/reconnect counters.",
     schema: {
       type: 'object',
       properties: { name: { type: 'string', description: 'driver name' } },
@@ -191,13 +172,6 @@ const readTools: AssistantToolSpec[] = [
         const matches = filterPoints(Object.entries(res.tags), needle, args.exact === true)
         const capped = matches.slice(0, MAX_LISTED_TAGS)
         const tags = Object.fromEntries(capped)
-        // Counts are named for what they bound. A bare `count` next to a
-        // truncated `tags` object reads as "the length of tags" -- the obvious
-        // meaning of the word in a JSON body -- and the one case where it
-        // differs is exactly the case where reading it wrong matters: 300
-        // matched, 50 sent, and a model that believes it was given 300 answers
-        // "how many points have no value in cache" with "none" when it has
-        // seen one sixth of the map.
         //   matched  is how many the filter hit
         //   returned is how many are in this object, so the two can be compared
         const out = { tags, matched: matches.length, returned: capped.length }
@@ -235,23 +209,8 @@ const readTools: AssistantToolSpec[] = [
             acked: a.acked,
             last_fired: a.last_fired,
           }))
-        // The counts are re-derived from what is being returned, not copied from
-        // the engine. CoreC's /alerts reports active_count over ALL drivers, so
-        // passing it through beside a driver-filtered `alerts` array says "300
-        // active" and shows three: the number is true about a set the caller did
-        // not ask about and cannot see. A filtered answer has to be counted over
-        // the filtered set.
-        //
-        // total_active keeps the engine-wide figure, under a name that says so, so
-        // the caller can still see that plc1's 3 are part of 300 and go filter the
-        // rest rather than concluding the plant is quiet.
-        //
-        // The engine-wide acked_count gets the same treatment as *_total, NOT the
-        // name acked_count: the server's acked_count counts acknowledgements across
-        // /alerts as a whole, and handing back a different acked_count computed
-        // over the filtered set would give one key two meanings depending on who
-        // answered -- the same ambiguity, moved rather than removed. Each entry
-        // already carries `acked`, so per-set acknowledgement needs no field.
+        // active_count/unacked_count are counted over the filtered set;
+        // total_active/total_acked keep the engine-wide figures from /alerts.
         const active = alerts.length
         const acked = alerts.filter((a) => a.acked).length
         return {
@@ -410,9 +369,8 @@ const writeTools: AssistantToolSpec[] = [
 /**
  * assistantTools returns the tools the model is shown.
  *
- * Write tools are omitted entirely unless allowWrite: the listing is the
- * authorization, matching corec-mcp's read-only default. A model that cannot
- * see pause_driver cannot be talked into calling it.
+ * Write tools are omitted entirely unless allowWrite, matching corec-mcp's
+ * read-only default.
  */
 export function assistantTools(allowWrite: boolean): AssistantToolSpec[] {
   return allowWrite ? [...readTools, ...writeTools] : [...readTools]

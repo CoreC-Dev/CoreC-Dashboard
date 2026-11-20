@@ -1,8 +1,6 @@
 // @vitest-environment jsdom
-// Regression: deleting a derived tag must confirm (it used to vanish
-// instantly), the row edit button is a Pencil (Calculator read as
-// "compute"), and the expression field validates live — a broken expr used
-// to surface only at apply time.
+// Regression: deleting a derived tag must confirm, the row edit button is a
+// Pencil, and the expression field validates live.
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { act } from 'react'
 import { MemoryRouter } from 'react-router-dom'
@@ -96,8 +94,7 @@ describe('DerivedTagsEditor — delete confirm, pencil icon, live expr validatio
 
     await screen.findByText('efficiency')
     const editButton = screen.getByRole('button', { name: 'Edit' })
-    // Pencil icon (not the old Calculator) — lucide renders an <svg> whose
-    // class names carry the icon.
+    // lucide renders an <svg> whose class names carry the icon.
     expect(editButton.querySelector('svg')?.getAttribute('class')).toContain('lucide-pencil')
 
     await act(async () => {

@@ -34,10 +34,6 @@ import { ConnStateLabel, QualityLabel } from '@/lib/constants'
 import { rulesDependingOnDriver } from '@/lib/ruleDependencies'
 import { formatNumber } from '@/lib/utils'
 
-// ─── Driver detail page ────────────────────────────────────────────────
-// The quick-edit form + its helpers live in ./driverDetail/
-// (split by concern to keep this page under the 500-line gate).
-
 export const DriverDetailPage: React.FC = () => {
   const { t } = useTranslation()
   const { name, id } = useParams<{ name: string; id: string }>()
@@ -113,9 +109,8 @@ export const DriverDetailPage: React.FC = () => {
   const st = ConnStateLabel[driver.state] ?? ConnStateLabel[0]
   // Unknown drivers return {"tags": null} (not 404); treat null/empty as "no tags".
   const tags = tagsData?.tags ? Object.values(tagsData.tags) : []
-  // The truncated-tag note points at the real Tag Explorer (the
-  // monitor route), pre-filtered to this driver — the old copy named a page
-  // that had no link or button anywhere on this page.
+  // The truncated-tag note points at the Tag Explorer (monitor route),
+  // pre-filtered to this driver.
   const tagExplorerTo = id
     ? `/corec/${id}/monitor/tags?driver=${encodeURIComponent(driver.name)}`
     : null
@@ -138,7 +133,6 @@ export const DriverDetailPage: React.FC = () => {
         </Button>
       </div>
 
-      {/* Header */}
       <Card className="bg-card">
         <CardHeader className="flex-row items-start justify-between space-y-0">
           <div className="flex items-center gap-3">
@@ -182,7 +176,6 @@ export const DriverDetailPage: React.FC = () => {
         </CardHeader>
       </Card>
 
-      {/* Error / Reconnect / Read stat cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard
           label={t('drivers.totalErrors')}
@@ -204,7 +197,6 @@ export const DriverDetailPage: React.FC = () => {
         />
       </div>
 
-      {/* Connection & runtime parameters */}
       <Card className="bg-card">
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-sm font-semibold">
@@ -266,7 +258,6 @@ export const DriverDetailPage: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Connection Info (read-only, from current config) */}
       <Card className="bg-card">
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-sm font-semibold">
@@ -297,11 +288,9 @@ export const DriverDetailPage: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Rules consuming this driver's data — the detail page is the
-           natural "where does this driver's data go?" surface, and the only
-           structural link between a rule and a driver is its match DSL, so
-           the scan reuses the dependency scanner over the SAVED config
-           (this page renders server state, not the working draft). */}
+      {/* Rules consuming this driver's data — the scan reuses the dependency
+           scanner (match DSL) over the saved config; this page renders server
+           state, not the working draft. */}
       <Card className="bg-card">
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-sm font-semibold">
@@ -335,7 +324,6 @@ export const DriverDetailPage: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Current YAML snippet (read-only, collapsible) */}
       <Card className="bg-card">
         <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
           <div className="flex items-center gap-2">
@@ -371,10 +359,8 @@ export const DriverDetailPage: React.FC = () => {
         )}
       </Card>
 
-      {/* Edit Configuration (hot-reload via PUT /configs) */}
       <DriverEditConfigSection driver={driver} key={driver.name} />
 
-      {/* Tag values table */}
       <Card className="bg-card">
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-sm font-semibold">

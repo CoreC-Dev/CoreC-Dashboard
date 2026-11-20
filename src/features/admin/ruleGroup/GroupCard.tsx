@@ -52,8 +52,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
   const [addingRule, setAddingRule] = useState(false)
   const [editingRule, setEditingRule] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
-  // Sub-rule deletion asks too — the group delete had a confirm while
-  // the row delete (the easier one to mis-click) vanished instantly.
+  // Sub-rule deletion asks for confirmation too.
   const [deleteRuleName, setDeleteRuleName] = useState<string | null>(null)
 
   const ruleNames = rules.map((r) => r.name)
@@ -72,7 +71,6 @@ export const GroupCard: React.FC<GroupCardProps> = ({
 
   return (
     <div className="rounded-lg border border-border overflow-hidden">
-      {/* Header */}
       <div className="flex items-center gap-2 p-3 hover:bg-muted/20 transition-colors">
         <button
           type="button"
@@ -133,7 +131,6 @@ export const GroupCard: React.FC<GroupCardProps> = ({
         </div>
       </div>
 
-      {/* Expanded content */}
       {expanded && (
         <div className="border-t border-border/40 p-3 space-y-2 bg-muted/10">
           {rules.length === 0 && !addingRule && (
@@ -142,7 +139,6 @@ export const GroupCard: React.FC<GroupCardProps> = ({
             </div>
           )}
 
-          {/* Rule rows */}
           {rules.map((rl) => (
             <div key={rl.name}>
               {editingRule === rl.name ? (
@@ -207,7 +203,6 @@ export const GroupCard: React.FC<GroupCardProps> = ({
             </div>
           ))}
 
-          {/* Add rule form */}
           {addingRule && (
             <InlineRuleEditor
               rule={{ name: '', match: '', action: 'forward', priority: 100 }}
@@ -220,7 +215,6 @@ export const GroupCard: React.FC<GroupCardProps> = ({
             />
           )}
 
-          {/* Add rule button */}
           {!addingRule && (
             <Button
               variant="ghost"

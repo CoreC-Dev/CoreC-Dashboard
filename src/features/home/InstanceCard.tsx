@@ -62,10 +62,8 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
 
   const stats = instance.lastKnownInfo?.stats
 
-  // A background re-probe of an instance that already has a verdict
-  // (connected, or failed) must not flash the card back to a yellow
-  // "connecting" dot — every card used to blink yellow together every 15s,
-  // and a dead instance alternated yellow/red forever. The connecting state
+  // A background re-probe of an instance that already has a verdict must not
+  // flash the card back to a yellow "connecting" dot. The connecting state
   // (yellow dot + radar ping) is reserved for the very first probe, before
   // any result exists.
   const status: 'connected' | 'error' | 'connecting' | 'unknown' =
@@ -84,11 +82,8 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
     unknown: 'bg-status-idle',
   }[status]
 
-  // The four colors carried no text, no tooltip and no aria-label —
-  // indistinguishable for a color-blind operator and unlabelled for screen
-  // readers. The dot itself gets a label in every state; error/unknown
-  // additionally render the word next to it (a colored dot alone cannot
-  // say "error" — the message below spells out the reason).
+  // The dot carries a label (title + aria-label) in every state; error/unknown
+  // additionally render the word next to it.
   const statusLabel = {
     connected: t('common.connected'),
     error: t('common.error'),
@@ -120,7 +115,6 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
         className="group relative rounded-3xl squircle border border-border bg-card hover:border-primary/40 card-hover overflow-hidden flex flex-col"
         style={accentColor ? { borderTopColor: accentColor, borderTopWidth: '3px' } : undefined}
       >
-        {/* Header: status dot + name */}
         <div className="p-4 pb-2">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-2 min-w-0">
@@ -163,10 +157,6 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                {/* The store has had reorderInstances since the first
-                     commit but no UI ever called it — with several instances
-                     the operator simply could not reorder them. The minimal
-                     remedy: move up/down items on the card's own menu. */}
                 <DropdownMenuItem onClick={() => handleMove(-1)} disabled={position <= 0}>
                   <ArrowUp className="w-3.5 h-3.5 mr-2" />
                   {t('instances.moveUp')}
@@ -195,9 +185,7 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
           </div>
         </div>
 
-        {/* Body */}
         <div className="px-4 pb-3 space-y-2 flex-1">
-          {/* URL */}
           <div
             className="font-mono text-xs text-muted-foreground break-all"
             title={instance.baseUrl}
@@ -215,7 +203,6 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
             </div>
           )}
 
-          {/* Version + status + uptime */}
           {instance.lastKnownInfo?.version && !probeError && (
             <div className="flex items-center gap-1.5 text-xs flex-wrap">
               <span className="px-1.5 py-0.5 rounded bg-muted font-mono">
@@ -229,10 +216,8 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
             </div>
           )}
 
-          {/* Key metrics grid — only when stats available */}
           {stats && !probeError && (
             <div className="grid grid-cols-2 gap-2 pt-1">
-              {/* Points per second */}
               <div className="rounded-lg bg-muted/50 px-2.5 py-2">
                 <div className="flex items-center gap-1 text-xs text-muted-foreground">
                   <Activity className="w-3.5 h-3.5" />
@@ -243,7 +228,6 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
                   <span className="text-xs text-muted-foreground ml-1">pts/s</span>
                 </div>
               </div>
-              {/* Total reads */}
               <div className="rounded-lg bg-muted/50 px-2.5 py-2">
                 <div className="flex items-center gap-1 text-xs text-muted-foreground">
                   <Cpu className="w-3.5 h-3.5" />
@@ -253,7 +237,6 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
                   {formatCompact(stats.total_read)}
                 </div>
               </div>
-              {/* Total publishes */}
               <div className="rounded-lg bg-muted/50 px-2.5 py-2">
                 <div className="flex items-center gap-1 text-xs text-muted-foreground">
                   <Send className="w-3.5 h-3.5" />
@@ -263,7 +246,6 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
                   {formatCompact(stats.total_publish)}
                 </div>
               </div>
-              {/* Total dropped — highlight in amber/rose when > 0 */}
               <div className="rounded-lg bg-muted/50 px-2.5 py-2">
                 <div className="flex items-center gap-1 text-xs text-muted-foreground">
                   <Ban className="w-3.5 h-3.5" />
@@ -280,11 +262,8 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
             </div>
           )}
 
-          {/* Topology flow: inputs → rules → outputs (extracted component;
-              renders nothing when the stats carry no topology) */}
           {!probeError && <InstanceCardTopology stats={stats} />}
 
-          {/* Summary line: tags · errors */}
           {stats && !probeError && (
             <div className="flex items-center gap-2 text-xs text-muted-foreground pt-1">
               {stats.tag_count !== undefined && (
@@ -302,14 +281,12 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
             </div>
           )}
 
-          {/* Last connected */}
           {instance.lastConnectedAt && !probeError && !stats && (
             <div className="text-xs text-muted-foreground/70">
               {formatRelativeTime(instance.lastConnectedAt, t)}
             </div>
           )}
 
-          {/* User tags */}
           {instance.tags && instance.tags.length > 0 && (
             <div className="flex flex-wrap gap-1.5 pt-1">
               {instance.tags.map((tag) => (
@@ -324,7 +301,6 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
           )}
         </div>
 
-        {/* Footer: action buttons */}
         <div className="px-4 pb-4 flex items-center gap-2">
           <Button size="sm" className="h-8 flex-1" onClick={handleEnter}>
             <Play className="w-3.5 h-3.5 mr-1.5" />
@@ -340,11 +316,9 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
             <Pencil className="w-3.5 h-3.5" />
           </Button>
           {status === 'error' && (
-            /* On a failed card the refresh icon RE-PROBES (same immediate
-               path as a save) — never navigates into the instance. It
-               announces itself as "retry connection" and spins while the
-               re-probe is in flight (the card keeps its red
-               verdict until a new one lands). */
+            /* On a failed card the refresh icon re-probes immediately
+               ("retry connection") and spins while the re-probe is in flight;
+               it never navigates into the instance. */
             <Button
               size="sm"
               variant="outline"
@@ -360,10 +334,8 @@ export const InstanceCard = memo(function InstanceCard({ instance, onEdit }: Ins
         </div>
       </div>
 
-      {/* Delete confirmation — An irreversible action gets an
-           AlertDialog (no accidental dismissal on outside click), a
-           destructive-styled confirm button, and confirm copy that differs
-           from the menu item that opened it. */}
+      {/* Delete confirmation — AlertDialog so an outside click cannot
+           accidentally dismiss it. */}
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <AlertDialogContent className="sm:max-w-[400px]">
           <AlertDialogHeader>

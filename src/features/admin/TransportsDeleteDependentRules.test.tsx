@@ -1,9 +1,7 @@
 // @vitest-environment jsdom
 // Regression: the transport delete scan must warn about rules that
 // reference the transport as a target — including rules that exist only in
-// the working config (created, not yet applied). The scan used to read the
-// saved config only, so a freshly-created pending rule silently became a
-// dangling target at apply time.
+// the working config (created, not yet applied).
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { act } from 'react'

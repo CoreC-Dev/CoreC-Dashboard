@@ -1,7 +1,6 @@
 // @vitest-environment jsdom
 // Regression: a failing step gate must say WHICH required fields are
-// still empty — "Missing required: Host" — instead of the generic
-// "Please fix the errors before continuing".
+// still empty — "Missing required: Host".
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { act } from 'react'
@@ -54,8 +53,8 @@ describe('wizard gate reasons', () => {
     // Clear the name (create mode starts empty) and empty the first
     // registry field (host) — the wizard pre-fills registry defaults, so
     // wipe it to force a missing-required state. Selected positionally:
-    // the registry placeholders are owned by lib/settingsRegistry* and in
-    // sibling-churn, so exact placeholder strings are fragile here.
+    // placeholder text follows lib/settingsRegistry*, so exact placeholder
+    // strings are fragile here.
     const textboxes = screen.getAllByRole('textbox')
     const nameInput = textboxes[0]!
     const hostInput = textboxes[1]!
@@ -159,7 +158,7 @@ describe('wizard gate reasons', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Next' }))
     })
     // Empty the broker (registry default is pre-filled) — positional
-    // selector, same rationale as the driver test above.
+    // selector, as in the driver test.
     await act(async () => {
       fireEvent.change(screen.getAllByRole('textbox')[1]!, {
         target: { value: '' },

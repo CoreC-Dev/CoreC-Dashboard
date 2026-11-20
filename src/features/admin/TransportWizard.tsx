@@ -2,8 +2,7 @@
  * TransportWizard
  *
  * Multi-step wizard for creating or editing a transport configuration.
- * Steps (the header used to claim a 5-step flow with an Advanced
- * step that the wizard never had — the steps array below is the truth):
+ * Steps:
  * Step 1 — Transport Type: choose protocol (mqtt, http, or notify)
  * Step 2 — Connection: transport name + broker URL / HTTP endpoint settings
  * Step 3 — Publishing: batch-size, flush-interval, retry-count, buffer-size, fallback
@@ -11,9 +10,6 @@
  *
  * Edit mode: when `existingTransport` is provided, the form is pre-filled
  * and the type step is locked.
- *
- * Decision-independent: works under both backend paths because it only
- * interacts with configStore.
  */
 import { Bell, Network, Zap } from 'lucide-react'
 import type React from 'react'
@@ -39,8 +35,6 @@ import { isTransportDraftDirty } from '@/lib/wizardDirty'
 import { missingRequiredSettingLabels } from '@/lib/wizardGate'
 import { useConfigStore } from '@/stores/configStore'
 import type { TransportConfig, TransportType } from '@/types/config'
-
-// ─── Transport type metadata ──────────────────────────────────────────
 
 interface TransportTypeMeta {
   type: TransportType
@@ -70,8 +64,6 @@ const TRANSPORT_TYPE_META: TransportTypeMeta[] = [
   },
 ]
 
-// ─── Component ───────────────────────────────────────────────────────
-
 export interface TransportWizardProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -92,7 +84,6 @@ export const TransportWizard: React.FC<TransportWizardProps> = ({
   const transportNames = useTransportNames()
   const isEdit = !!existingTransport
 
-  // ─── Form state ──────────────────────────────────────────────────
   const [selectedType, setSelectedType] = useState<TransportType | null>(
     (existingTransport?.type as TransportType) ?? null,
   )
@@ -146,7 +137,7 @@ export const TransportWizard: React.FC<TransportWizardProps> = ({
     }
   }
 
-  // ─── Build transport config (shared by preview/validation/save) ──
+  // Shared by preview/validation/save.
   const buildTransportConfig = useCallback(
     (name: string, type: TransportType): TransportConfig => ({
       name,
@@ -169,14 +160,12 @@ export const TransportWizard: React.FC<TransportWizardProps> = ({
     [settings, toplevel],
   )
 
-  // ─── Preview YAML ────────────────────────────────────────────────
   const previewYaml = useMemo(() => {
     if (!selectedType) return ''
     const config = buildTransportConfig(transportName || '<transport-name>', selectedType)
     return dumpConfigYaml({ transports: [config] })
   }, [selectedType, transportName, buildTransportConfig])
 
-  // ─── Context validation ──────────────────────────────────────────
   const contextValidation = useMemo(() => {
     if (!selectedType || !transportName.trim()) return null
     const config = buildTransportConfig(transportName.trim(), selectedType)
@@ -185,11 +174,9 @@ export const TransportWizard: React.FC<TransportWizardProps> = ({
 
   const hasContextErrors = contextValidation !== null && !contextValidation.valid
 
-  // ─── Step validation gates ───────────────────────────────────────
   const step0Valid = selectedType !== null
 
-  // A concrete reason instead of the generic "fix the errors
-  // first" — the hint names the exact missing fields.
+  // The hint names the exact missing fields.
   const formatMissing = (fields: string[]): string =>
     new Intl.ListFormat(i18nInst.resolvedLanguage ?? 'en', { type: 'conjunction' }).format(fields)
   const step1Gate = (): boolean | { ok: false; reason: string } => {
@@ -205,7 +192,6 @@ export const TransportWizard: React.FC<TransportWizardProps> = ({
     return { ok: false, reason: t('wizard.missingRequired', { fields: formatMissing(missing) }) }
   }
 
-  // ─── Save ────────────────────────────────────────────────────────
   const handleFinish = () => {
     if (!selectedType || !transportName.trim()) return
     const transport = buildTransportConfig(transportName.trim(), selectedType)
@@ -230,7 +216,6 @@ export const TransportWizard: React.FC<TransportWizardProps> = ({
     return tl
   }, [existingTransport])
 
-  // ─── Build wizard steps ──────────────────────────────────────────
   const steps: WizardStep[] = [
     {
       id: 'type',
@@ -327,10 +312,8 @@ export const TransportWizard: React.FC<TransportWizardProps> = ({
             </div>
           )}
 
-          {/* Unlike the driver wizard there is no connection test
-               here — POST /transports/{name}/test needs the instance to be
-               REGISTERED, which only happens after save & apply. Say where
-               the probe lives instead of leaving the gap unexplained. */}
+          {/* POST /transports/{name}/test needs a registered instance,
+               which only exists after save & apply. */}
           <p className="text-xs text-muted-foreground">{t('transportWizard.testAfterSave')}</p>
         </div>
       ),

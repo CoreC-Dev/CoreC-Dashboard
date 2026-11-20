@@ -5,8 +5,7 @@ import { probeOneInstance, useHomepageProbe } from '@/features/home/useHomepageP
 import { useInstanceStore } from '@/stores/instanceStore'
 import type { CoreCInstance } from '@/types/models'
 
-// Load-tolerant async-assertion timeout: the runner is shared with parallel
-// agents on a 2-core host, and RTL waitFor's 1s default flakes under contention.
+// Relaxed async-assertion timeout for heavy render load.
 configure({ asyncUtilTimeout: 4000 })
 
 // Mock fetch — each test configures the responses it expects.

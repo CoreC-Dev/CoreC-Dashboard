@@ -49,7 +49,6 @@ export const GlobalSettingsPage: React.FC = () => {
 
   return (
     <div className="min-h-dvh bg-background text-foreground">
-      {/* Top bar */}
       <header className="h-14 border-b border-border bg-card px-4 flex items-center justify-between sticky top-0 z-30">
         <div className="flex items-center space-x-3">
           <Button
@@ -68,14 +67,12 @@ export const GlobalSettingsPage: React.FC = () => {
       </header>
 
       <main className="max-w-2xl mx-auto p-4 md:p-8 space-y-5">
-        {/* Appearance */}
         <section className="rounded-3xl squircle border border-border bg-card p-6 space-y-4">
           <div className="flex items-center gap-2">
             <Palette className="w-4 h-4 text-muted-foreground" />
             <h2 className="font-semibold">{t('settings.preferences')}</h2>
           </div>
 
-          {/* Theme */}
           <div className="space-y-2">
             <Label>{t('settings.themeMode')}</Label>
             <Select value={theme} onValueChange={(v) => setTheme(v as ThemeMode)}>
@@ -94,7 +91,6 @@ export const GlobalSettingsPage: React.FC = () => {
             <p className="text-xs text-muted-foreground">{t('settings.themeModeDesc')}</p>
           </div>
 
-          {/* Language */}
           <div className="space-y-2">
             <Label>{t('settings.interfaceLanguage')}</Label>
             <Select
@@ -113,7 +109,6 @@ export const GlobalSettingsPage: React.FC = () => {
           </div>
         </section>
 
-        {/* Data Management */}
         <section className="rounded-3xl squircle border border-border bg-card p-6 space-y-4">
           <div className="flex items-center gap-2">
             <Globe className="w-4 h-4 text-muted-foreground" />
@@ -184,16 +179,12 @@ export const GlobalSettingsPage: React.FC = () => {
         </section>
       </main>
 
-      {/* Import dialog — The settings page used to offer only a bare
-           textarea while the homepage had drag & drop + file browse for the
-           exact same operation. One shared component now serves both. */}
+      {/* Import dialog — one shared component for the homepage and the
+           settings page. */}
       <InstanceImportDialog open={importOpen} onOpenChange={setImportOpen} />
 
-      {/* Clear all dialog — The most destructive action in the app used
-           a plain Dialog (a stray outside click dismisses/defuses it) and its
-           confirm button repeated the trigger's exact wording. Aligned with
-           the admin domain's AlertDialog discipline: cannot be dismissed by
-           accident, and the confirm key states the consequence. */}
+      {/* Clear all dialog — AlertDialog so a stray outside click cannot
+           dismiss it; the confirm key states the consequence. */}
       <AlertDialog open={clearOpen} onOpenChange={setClearOpen}>
         <AlertDialogContent className="sm:max-w-[400px]">
           <AlertDialogHeader>

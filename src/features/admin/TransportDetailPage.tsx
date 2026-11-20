@@ -27,18 +27,14 @@ import { extractTransportYaml, getTransportConnectionFields } from '@/lib/connec
 import { ConnStateLabel } from '@/lib/constants'
 import { formatNumber } from '@/lib/utils'
 
-// ─── Transport detail page ────────────────────────────────────────────
-// The quick-edit form + its helpers live in ./transportDetail/
-// (split by concern to keep this page under the 500-line gate).
-
 export const TransportDetailPage: React.FC = () => {
   const { t } = useTranslation()
   const { name, id } = useParams<{ name: string; id: string }>()
   const adminBase = id ? `/corec/${id}/admin` : '/admin'
   const { data: transport, isLoading, error, refetch, isFetching } = useTransport(name ?? '')
-  // Full config YAML (GET /configs/raw). The /transports endpoint returns only
-  // runtime status + counters, so connection params & the YAML snippet are read
-  // from here. React Query dedupes this with the fetch inside TransportEditConfigSection.
+  // Full config YAML (GET /configs/raw): connection params & the YAML snippet
+  // are read from here; status.endpoint only gives the compact connection
+  // target. React Query dedupes this with the fetch inside TransportEditConfigSection.
   const { data: rawYaml, isLoading: configLoading } = useConfigRaw()
   const [yamlOpen, setYamlOpen] = useState(false)
 
@@ -109,7 +105,6 @@ export const TransportDetailPage: React.FC = () => {
         </Button>
       </div>
 
-      {/* Header */}
       <Card className="bg-card">
         <CardHeader className="flex-row items-start justify-between space-y-0">
           <div className="flex items-center gap-3">
@@ -134,7 +129,6 @@ export const TransportDetailPage: React.FC = () => {
            be registered (config saved & applied). */}
       <TransportTestSender name={transport.name} />
 
-      {/* Publishing stat cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label={t('transports.published')}
@@ -162,11 +156,9 @@ export const TransportDetailPage: React.FC = () => {
         />
       </div>
 
-      {/* Dropped_commands was a bare number with no meaning — the
-           counter card above says WHAT, this note says SO WHAT: dropped is
-           unrecoverable, and the retry-exhausted commands it counts are
-           reviewable (and manually replayable) in the write-control page's
-           dead-letter queue. */}
+      {/* dropped_commands counts ingress channel-full drops (not retry
+           exhaustion); details via GET /write/failed?source=ingress, and
+           entries can be manually replayed. */}
       {transport.dropped_commands > 0 && (
         <Card className="border-status-warning/40 bg-status-warning/5">
           <CardHeader className="pb-2">
@@ -187,7 +179,6 @@ export const TransportDetailPage: React.FC = () => {
         </Card>
       )}
 
-      {/* Queue depth indicator */}
       <Card className={`bg-card ${queueActive ? 'border-status-warning/40' : ''}`}>
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center justify-between text-sm font-semibold">
@@ -243,7 +234,6 @@ export const TransportDetailPage: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Connection & publishing parameters */}
       <Card className="bg-card">
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-sm font-semibold">
@@ -300,7 +290,6 @@ export const TransportDetailPage: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Connection Info (read-only, from /configs/raw) */}
       <Card className="bg-card">
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-sm font-semibold">
@@ -337,7 +326,6 @@ export const TransportDetailPage: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Current YAML config snippet (collapsible, collapsed by default) */}
       <Card className="bg-card">
         <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="flex items-center gap-2 text-sm font-semibold">
@@ -372,7 +360,6 @@ export const TransportDetailPage: React.FC = () => {
         )}
       </Card>
 
-      {/* Edit Configuration (hot-reload via PUT /configs) */}
       <TransportEditConfigSection transport={transport} key={transport.name} />
     </div>
   )

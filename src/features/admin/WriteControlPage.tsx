@@ -88,8 +88,7 @@ export const WriteControlPage: React.FC = () => {
   const drivers = driversData?.drivers || []
   const deadLetters = deadLettersData?.failed_writes || []
 
-  // Build a map of driver name → configured tags (name + type) from the
-  // parsed config so the Tag field can be a dropdown instead of free text.
+  // Map of driver name → configured tags (name + type) from the parsed config.
   const driverTags = useMemo(() => {
     const map = new Map<string, { name: string; type: string }[]>()
     if (!parsedConfig?.drivers) return map

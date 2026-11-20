@@ -5,8 +5,8 @@
  * Rule groups are named collections of sub-rules that can be referenced
  * from regular rules via `match: "SUB-RULE:group-name"`.
  *
- * Each group is its own sub-engine (rule/engine.go:SetSubRules). Circular
- * SUB-RULE references are detected by CoreC at load time.
+ * Each group is its own sub-engine; CoreC detects circular SUB-RULE
+ * references at load time.
  *
  * UI structure:
  * - List of groups as expandable accordion items
@@ -17,9 +17,6 @@
  *
  * Integration: CRUD via configStore.upsertRuleGroup/removeRuleGroup.
  * Hot-reload: rule-groups require engine restart.
- *
- * The inline editor and group card moved
- * to./ruleGroup/ — this file is the page-level composition only.
  */
 import { AlertTriangle, FolderTree, Plus } from 'lucide-react'
 import type React from 'react'
@@ -214,7 +211,6 @@ export const RuleGroupEditor: React.FC = () => {
           </div>
         )}
 
-        {/* Create new group */}
         {showCreate && (
           <div className="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 p-3">
             <Label className="text-xs font-medium shrink-0">{t('ruleGroup.groupName')}</Label>
@@ -255,7 +251,6 @@ export const RuleGroupEditor: React.FC = () => {
           </div>
         )}
 
-        {/* Group cards */}
         {groupEntries.map(([name, rules]) => (
           <GroupCard
             key={name}
@@ -270,14 +265,12 @@ export const RuleGroupEditor: React.FC = () => {
           />
         ))}
 
-        {/* Usage hint */}
         {groupEntries.length > 0 && (
           <div className="rounded-md border border-status-queued/20 bg-status-queued/5 p-2.5 text-xs text-muted-foreground">
             {t('ruleGroup.usageHint')}
           </div>
         )}
 
-        {/* Rename confirmation when SUB-RULE references would break */}
         <AlertDialog open={!!pendingRename} onOpenChange={(o) => !o && setPendingRename(null)}>
           <AlertDialogContent>
             <AlertDialogHeader>

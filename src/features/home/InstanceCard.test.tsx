@@ -10,8 +10,7 @@ import i18n from '@/i18n'
 import { useInstanceStore } from '@/stores/instanceStore'
 import type { CoreCInstance } from '@/types/models'
 
-// Load-tolerant async-assertion timeout: the runner is shared with parallel
-// agents on a 2-core host, and RTL waitFor's 1s default flakes under contention.
+// Relaxed async-assertion timeout for heavy render load.
 configure({ asyncUtilTimeout: 4000 })
 
 const t = (key: string, opts?: Record<string, unknown>) => i18n.t(key, opts)
@@ -115,10 +114,8 @@ describe('InstanceCard probe-error rendering', () => {
   })
 })
 
-// The 15s background re-probe used to flip EVERY card to a yellow
-// "connecting" dot (dead instances alternated yellow/red forever). A probe
-// in flight must not disturb a card that already has a verdict; the yellow
-// radar state is reserved for the very first probe.
+// A probe in flight must not disturb a card that already has a verdict; the
+// yellow radar state is reserved for the very first probe.
 describe('InstanceCard background re-probe stability', () => {
   it('keeps the green dot while re-probing an already-connected instance', () => {
     useInstanceStore.setState({
@@ -160,10 +157,8 @@ describe('InstanceCard background re-probe stability', () => {
   })
 })
 
-// The refresh icon on a failed card used to NAVIGATE INTO the
-// instance (the opposite of retrying) and had no accessible label at all.
-// It must now re-probe, announce itself as "retry connection", and spin
-// while the re-probe is in flight.
+// The refresh icon on a failed card re-probes, announces itself as "retry
+// connection", and spins while the re-probe is in flight.
 describe('InstanceCard error-state retry', { timeout: 15_000 }, () => {
   it('retries the probe from a failed card and records the fresh verdict', async () => {
     useInstanceStore.setState({ probeErrors: { 'inst-1': 'unreachable' } })
@@ -171,7 +166,7 @@ describe('InstanceCard error-state retry', { timeout: 15_000 }, () => {
     expect(container.querySelector('.bg-status-error')).not.toBeNull()
 
     const retry = screen.getByRole('button', { name: t('instances.retryConnection') })
-    // Accessible name + hover hint both present (it had neither).
+    // Accessible name + hover hint both present.
     expect(retry).toHaveAttribute('title', t('instances.retryConnection'))
     expect(retry).not.toHaveAttribute('aria-label', 'common.refresh')
 
@@ -209,10 +204,8 @@ describe('InstanceCard error-state retry', { timeout: 15_000 }, () => {
   })
 })
 
-// The colored status dot carried no text, tooltip or aria-label:
-// color-blind operators could not tell the states apart and screen readers
-// announced nothing. The dot must label itself in every state, and the
-// error/unknown states must also render the word as a badge next to it.
+// The dot must label itself in every state, and the error/unknown states
+// must also render the word as a badge next to it.
 describe('InstanceCard status dot labeling', () => {
   function statusDot(container: HTMLElement): HTMLElement {
     const dot = container.querySelector('span[role="img"]')
@@ -254,8 +247,7 @@ describe('InstanceCard status dot labeling', () => {
     const dot = statusDot(container)
     expect(dot).toHaveAttribute('title', t('common.connected'))
     expect(dot).toHaveAttribute('aria-label', t('common.connected'))
-    // Healthy and mid-probe states rely on the label alone (audit: a badge
-    // on every card would be noise).
+    // Healthy and mid-probe states rely on the label alone.
     expect(screen.queryByText(t('common.error'))).not.toBeInTheDocument()
     expect(screen.queryByText(t('common.unknown'))).not.toBeInTheDocument()
   })
@@ -271,9 +263,7 @@ describe('InstanceCard status dot labeling', () => {
   })
 })
 
-// The store has had reorderInstances since the first commit but no
-// UI ever called it: an operator with several instances could not reorder
-// them at all. The card menu now offers move up/down wired to that action.
+// The card menu offers move up/down wired to the store's reorderInstances.
 describe('InstanceCard reorder menu', { timeout: 15_000 }, () => {
   const secondInstance: CoreCInstance = {
     ...baseInstance,
@@ -362,7 +352,6 @@ describe('InstanceCard delete confirmation', { timeout: 15_000 }, () => {
     fireEvent.click(trigger)
     const item = await waitFor(() => screen.getByText(t('common.delete')))
     fireEvent.click(item)
-    // AlertDialog — NOT the old dismissible Dialog (role differs).
     return screen.findByRole('alertdialog')
   }
 

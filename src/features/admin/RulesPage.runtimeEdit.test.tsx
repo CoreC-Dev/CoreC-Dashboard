@@ -12,9 +12,7 @@ import i18n from '@/i18n'
 import { useConfigStore } from '@/stores/configStore'
 import { useConnectionStore } from '@/stores/connectionStore'
 
-// The page + wizard render heavy grids; under full-suite load on a 2-core
-// box they can exceed the 5s default. 15s mirrors the BatchWritePanel
-// suite-timeout precedent.
+// Suite timeout raised above the 5s default for heavy render load.
 vi.setConfig({ testTimeout: 15_000 })
 
 // vi.mock factories are hoisted above const initializers — build the YAML

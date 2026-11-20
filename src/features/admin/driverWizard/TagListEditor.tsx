@@ -1,5 +1,4 @@
-// Tag list editor (inline adapter for the wizard): wraps TagListField's
-// logic with plain state instead of a useForm form.
+// Tag list editor (inline adapter for the wizard): plain-state tag rows.
 
 import { ChevronDown, Plus, Trash2 } from 'lucide-react'
 import type React from 'react'

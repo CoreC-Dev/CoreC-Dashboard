@@ -31,11 +31,7 @@ import { useInstanceStore } from '@/stores/instanceStore'
 import { THEME_I18N_KEYS, THEME_VARIANTS, useThemeStore } from '@/stores/themeStore'
 import type { CoreCInstance } from '@/types/models'
 
-/**
- * The whole UI previously had zero outbound help links — an operator
- * stuck on "what do I put in this form?" had nowhere to click. Both the
- * header help button and the empty-state hint link point here.
- */
+/** Link target for the header help button and the empty-state hint. */
 const HELP_URL = 'https://github.com/CoreC-Dev/CoreC-Dashboard'
 
 export const InstancePanel: React.FC = () => {
@@ -44,8 +40,7 @@ export const InstancePanel: React.FC = () => {
   const addInstance = useInstanceStore((s) => s.addInstance)
   const updateInstance = useInstanceStore((s) => s.updateInstance)
   const [searchParams, setSearchParams] = useSearchParams()
-  // Surfaced as a banner when localStorage writes fail (quota /
-  // private mode) so the data-loss risk is not discovered the hard way.
+  // Surfaced as a banner when localStorage writes fail (quota / private mode).
   const persistFailed = useInstanceStore((s) => s.persistFailed)
 
   // Probe all instances in parallel every 15s — simultaneous multi-instance monitoring
@@ -110,10 +105,8 @@ export const InstancePanel: React.FC = () => {
     setLocale(nextLang)
   }
 
-  // The toggle used to display the CURRENT language ("中" while the
-  // UI was already Chinese) with no title or aria-label — an operator could
-  // not tell what a click would do. It now shows the language a click will
-  // switch TO, and announces the same in its accessible name.
+  // The toggle shows the language a click will switch TO, and announces the
+  // same in its accessible name.
   const isZh = i18n.language.startsWith('zh')
   const languageToggleLabel = isZh ? 'EN' : '中'
   const languageToggleTitle = t('common.switchToLanguage', {
@@ -122,7 +115,6 @@ export const InstancePanel: React.FC = () => {
 
   return (
     <div className="min-h-dvh bg-background text-foreground relative">
-      {/* Subtle decorative gradient orb */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden="true">
         <div
           className="absolute -top-40 -right-40 w-[600px] h-[600px] rounded-full opacity-[0.03]"
@@ -130,7 +122,6 @@ export const InstancePanel: React.FC = () => {
         />
       </div>
 
-      {/* Top bar — brand bar with logo */}
       <header className="h-14 border-b border-border bg-card/80 backdrop-blur-md px-4 flex items-center justify-between sticky top-0 z-30">
         <div className="flex items-center space-x-2.5">
           <img src="/logo-animated.svg" alt="CoreC" className="w-8 h-8 shrink-0" />
@@ -202,8 +193,6 @@ export const InstancePanel: React.FC = () => {
               <Settings className="w-4 h-4" />
             </Link>
           </Button>
-          {/* An outbound help entry — the audit found the entire UI had
-               none, leaving first-time operators with a form and no docs. */}
           <Button
             variant="ghost"
             size="icon"
@@ -219,10 +208,8 @@ export const InstancePanel: React.FC = () => {
         </div>
       </header>
 
-      {/* Content */}
       <main className="max-w-[1400px] mx-auto p-4 md:p-8">
-        {/* LocalStorage writes failed (quota/private mode) — without
-             this warning the list silently evaporates on the next refresh. */}
+        {/* localStorage writes failed (quota/private mode) */}
         {persistFailed && (
           <div
             role="alert"
@@ -232,15 +219,12 @@ export const InstancePanel: React.FC = () => {
           </div>
         )}
         {instances.length === 0 ? (
-          /* Empty state */
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <img src="/logo-animated.svg" alt="CoreC" className="w-32 h-32 mb-4" />
             <h2 className="text-xl font-semibold mb-2">{t('instances.emptyTitle')}</h2>
             <p className="text-sm text-muted-foreground mb-2 max-w-md">
               {t('instances.emptyDesc')}
             </p>
-            {/* The first-run question ("what even is an API key?") gets
-                 an actionable link instead of a dead end. */}
             <a
               href={HELP_URL}
               target="_blank"
@@ -262,7 +246,6 @@ export const InstancePanel: React.FC = () => {
           </div>
         ) : (
           <>
-            {/* Header row */}
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h1 className="text-2xl font-bold tracking-tight">{t('instances.myInstances')}</h1>
@@ -286,7 +269,6 @@ export const InstancePanel: React.FC = () => {
               </div>
             </div>
 
-            {/* Card grid — responsive: 1 col mobile, 2 col tablet, 3-4 col desktop */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 card-stagger">
               {instances.map((instance) => (
                 <div key={instance.id} className="card-enter">
@@ -294,7 +276,6 @@ export const InstancePanel: React.FC = () => {
                 </div>
               ))}
 
-              {/* Add new card */}
               <button
                 type="button"
                 onClick={handleAdd}
@@ -318,9 +299,8 @@ export const InstancePanel: React.FC = () => {
         onSubmit={handleSubmit}
       />
 
-      {/* Import dialog — One shared component (drag & drop + file
-           browse + paste) for the homepage AND the settings page; the two
-           entry points used to offer different UI for the same operation. */}
+      {/* Import dialog — one shared component (drag & drop + file browse +
+           paste) for the homepage and the settings page. */}
       <InstanceImportDialog open={importOpen} onOpenChange={setImportOpen} />
       <InstanceExportDialog open={exportOpen} onOpenChange={setExportOpen} />
     </div>

@@ -8,11 +8,9 @@ import type { ToolResult } from '@/types/assistant'
 
 export type { AssistantMessage, AssistantProvider, ToolCall, ToolResult } from '@/types/assistant'
 
-/** Read-class tool: no state change on the device or the config. */
-/** Write-class tool: changes the device (write/pause/resume/ack). */
+/** 'read': no state change on the device or config; 'write': needs human confirmation (enforced by runtime). */
 export type ToolClass = 'read' | 'write'
 
-/** One tool the assistant may invoke. */
 export interface AssistantToolSpec {
   /** Same name as CoreC's MCP tool (`list_drivers`, `write_tag`, …). */
   name: string
@@ -20,7 +18,7 @@ export interface AssistantToolSpec {
   description: string
   /** JSON Schema for the arguments object. */
   schema: Record<string, unknown>
-  /** Whether the call needs human confirmation before it runs. */
+  /** Read/write classification; runtime requires confirmation for 'write'. */
   toolClass: ToolClass
   /** Executes the call. Throws on failure; the caller turns it into a toolError. */
   execute: (args: Record<string, unknown>) => Promise<ToolResult>

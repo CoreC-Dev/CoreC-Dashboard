@@ -44,8 +44,7 @@ import { useConfigCenter } from '@/hooks/useConfigCenter'
  * hot reload, and a diff preview against the last submission.
  *
  * This file is a thin composition root: all stateful logic lives in
- * `useConfigCenter` and the presentational pieces in `ConfigCenterParts`
- * (001 refactor — no behavior changes).
+ * `useConfigCenter` and the presentational pieces in `ConfigCenterParts`.
  */
 export const ConfigCenterPage: React.FC = () => {
   const { t } = useTranslation()
@@ -120,11 +119,8 @@ export const ConfigCenterPage: React.FC = () => {
         </div>
 
         <div className="flex items-center space-x-2 flex-wrap">
-          {/* Mode Switcher — routed through requestModeSwitch so a divergent
-               form/YAML state triggers the keep-one-side bridge. */}
           <ModeSwitcher mode={mode} onSetMode={requestModeSwitch} />
 
-          {/* YAML ↔ Form bridge buttons */}
           <YamlFormBridgeButtons
             mode={mode}
             onImport={handleImportYamlToForm}
@@ -132,10 +128,8 @@ export const ConfigCenterPage: React.FC = () => {
             configWorkingExists={configWorkingExists}
           />
 
-          {/* File upload / download — available in both modes */}
           <FileTransferButtons onUpload={handleFileUpload} onDownload={handleFileDownload} />
 
-          {/* Config templates — pre-built presets */}
           <TemplatePicker
             open={templatePickerOpen}
             onToggle={() => setTemplatePickerOpen((v) => !v)}
@@ -223,9 +217,8 @@ export const ConfigCenterPage: React.FC = () => {
         </div>
       )}
 
-      {/* Dirty + validation banners — hoisted out of the mode branches
-           so pending FORM edits stay visible while the operator
-           works in YAML view. */}
+      {/* Dirty + validation banners — pending form edits stay visible while
+           working in YAML view. */}
       <UnsavedChangesBanner
         dirty={configDirty}
         unsavedChangesLabel={
@@ -242,7 +235,6 @@ export const ConfigCenterPage: React.FC = () => {
 
       {mode === 'form' ? (
         <div className="space-y-5">
-          {/* Runtime Parameter Patch Card */}
           <RuntimeParamsCard
             currentLogLevel={currentLogLevel}
             onLogLevelChange={handleLogLevelChange}
@@ -254,7 +246,6 @@ export const ConfigCenterPage: React.FC = () => {
               switching levels (e.g. debug) flow into the terminal instantly. */}
           <EventLogTerminal height="h-64" />
 
-          {/* Current Configuration (synced from GET /configs overview) */}
           <ActiveSummaryCard
             configData={configData}
             isLoadingConfigs={isLoadingConfigs}
@@ -264,27 +255,20 @@ export const ConfigCenterPage: React.FC = () => {
             onRetry={() => refetch()}
           />
 
-          {/* Structured global config editor */}
           <GlobalConfigEditor />
 
-          {/* Structured node config editor */}
           <NodeConfigEditor />
 
-          {/* Rule providers editor */}
           <RuleProviderEditor />
 
-          {/* Rule groups editor */}
           <RuleGroupEditor />
 
-          {/* Derived tags editor */}
           <DerivedTagsEditor />
 
-          {/* Apply confirmation for configStore edits */}
           <ConfigApplyConfirmationDialog {...applyDialogProps} />
         </div>
       ) : (
         <div className="space-y-5">
-          {/* Changes Preview — diff against the saved server config */}
           <DiffPreview
             lastSubmittedYaml={diffBaselineYaml}
             diffOpen={diffOpen}
@@ -293,7 +277,6 @@ export const ConfigCenterPage: React.FC = () => {
             hasDiffChanges={hasDiffChanges}
           />
 
-          {/* YAML Monaco Editor */}
           <YamlEditorCard yamlContent={yamlContent} onYamlChange={setYamlContent} />
         </div>
       )}
@@ -304,7 +287,6 @@ export const ConfigCenterPage: React.FC = () => {
           server on every reload, not only on Dashboard submissions. */}
       <ConfigBackupsPanel />
 
-      {/* Change History — persisted snapshots of every PUT /configs submission */}
       <ChangeHistoryCard history={history} onRestore={handleRestore} />
 
       {/* YAML-mode apply confirmation — safety gate before PUT /configs

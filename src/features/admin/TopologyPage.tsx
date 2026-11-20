@@ -58,9 +58,8 @@ export const TopologyPage: React.FC = () => {
   // config is edited via PUT /configs.
   const config = useParsedConfig(rawYaml)
 
-  // Prefer the status `endpoint` field the backend now reports; fall back
-  // to parsing the raw YAML for older backends. This keeps the topology
-  // page working without re-implementing config semantics in the frontend.
+  // Prefer the status `endpoint` field; fall back to parsing the raw YAML
+  // when it is absent.
   const driverConnSummaries = useMemo(() => {
     const m = new Map<string, string>()
     for (const d of drivers) m.set(d.name, d.endpoint ?? getDriverConnectionSummary(config, d.name))
@@ -73,7 +72,7 @@ export const TopologyPage: React.FC = () => {
     return m
   }, [config, transports])
 
-  // Name WHAT failed — five queries hid behind one generic "错误".
+  // Name what failed, per query.
   const failedQueries = useMemo(() => {
     const f: string[] = []
     if (serverInfoError) f.push(t('topology.errServerInfo'))
@@ -86,8 +85,7 @@ export const TopologyPage: React.FC = () => {
   }, [serverInfoError, driversError, transportsError, statsError, rulesError, t])
 
   // Hover a driver row → highlight the runtime rules whose match DSL
-  // consumes it and the transports those rules target — the first time the
-  // page shows WHERE a driver's data actually goes.
+  // consumes it and the transports those rules target.
   const [hoveredDriver, setHoveredDriver] = useState<string | null>(null)
   const relatedRuleNames = useMemo(() => {
     if (!hoveredDriver) return new Set<string>()

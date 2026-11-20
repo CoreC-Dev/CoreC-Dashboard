@@ -46,7 +46,6 @@ export const RulesPage: React.FC = () => {
 
   const rules = data?.rules || []
 
-  // Config editing state (configStore)
   const workingConfig = useConfigStore((s) => s.workingConfig)
   const dirty = useConfigStore((s) => s.dirty)
   const resetToEmpty = useConfigStore((s) => s.resetToEmpty)
@@ -95,8 +94,7 @@ export const RulesPage: React.FC = () => {
   const filteredConfigRules = filterEntities(configRules, searchQuery)
 
   // The runtime table gets the same search affordance as the config
-  // section (name/match/target) plus a clickable priority sort — hundreds of
-  // live rules otherwise need Ctrl+F to find one tag's rule.
+  // section (name/match/target) plus a clickable priority sort.
   const [runtimeSearch, setRuntimeSearch] = useState('')
   const [runtimeSortDesc, setRuntimeSortDesc] = useState(false)
   const filteredRuntimeRules = filterEntities(
@@ -109,9 +107,7 @@ export const RulesPage: React.FC = () => {
     : filteredRuntimeRules
 
   // Track the specific rules being toggled so only those rows' switches are
-  // disabled while mutations are in flight (not every switch on the page).
-  // Uses a Set so multiple rules can toggle concurrently without one's
-  // Per-row toggle in-flight tracking + error surface.
+  // disabled while mutations are in flight; a Set allows concurrent toggles.
   const { togglingNames, toggleError, handleToggle, clearToggleError } = useRuleToggle()
   const [testRule, setTestRule] = useState<RuleStat | null>(null)
 
@@ -121,12 +117,9 @@ export const RulesPage: React.FC = () => {
   const openTest = (rule: RuleStat) => setTestRule(rule)
   const closeTest = () => setTestRule(null)
 
-  // The runtime row's Edit opens the SAME RuleWizard the config
-  // section uses, so a rule has ONE editor with ONE (delayed-apply)
-  // semantics — the wizard writes into the working config and the change
-  // only reaches the engine through the shared apply-confirmation dialog.
-  // The old RuleEditDialog fired PUT /configs directly (and with a
-  // rules-only payload, which REPLACED the whole config).
+  // The runtime row's Edit opens the same RuleWizard the config section
+  // uses: the wizard writes into the working config and the change only
+  // reaches the engine through the shared apply-confirmation dialog.
   const openRuntimeRuleInWizard = (rule: RuleStat) => {
     const inWorking = findRule(rule.name)
     if (inWorking) {
@@ -215,10 +208,8 @@ export const RulesPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Config seed failed/loading: explain why Create is disabled */}
       <SeedBlockedBanner />
 
-      {/* Unsaved changes banner */}
       <UnsavedChangesBanner
         dirty={dirty}
         unsavedChangesLabel={t('rules.unsavedChanges')}
@@ -228,10 +219,8 @@ export const RulesPage: React.FC = () => {
         onDiscard={() => useConfigStore.getState().revert()}
       />
 
-      {/* Live validation errors */}
       <ValidationBanner />
 
-      {/* Config-managed rules section */}
       {configRules.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center gap-2 flex-wrap">
@@ -309,7 +298,6 @@ export const RulesPage: React.FC = () => {
         </div>
       )}
 
-      {/* Runtime rules section */}
       <div className="space-y-3">
         <div className="flex items-center gap-2">
           <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
@@ -374,11 +362,8 @@ export const RulesPage: React.FC = () => {
 
       <RuleTestDialog rule={testRule} onClose={closeTest} key={testRule?.name ?? 'none'} />
 
-      {/* Rule create/edit wizard — the SINGLE rule editor for both the
-           config section and the runtime section. */}
       <RuleWizard open={wizardOpen} onOpenChange={setWizardOpen} existingRule={editingRule} />
 
-      {/* Delete confirmation */}
       <DeleteEntityConfirm
         open={deleteTarget !== null}
         onOpenChange={(o) => !o && setDeleteTarget(null)}
@@ -387,7 +372,6 @@ export const RulesPage: React.FC = () => {
         onConfirm={confirmDeleteRule}
       />
 
-      {/* Apply changes confirmation */}
       <ConfigApplyConfirmationDialog {...applyDialogProps} />
     </div>
   )

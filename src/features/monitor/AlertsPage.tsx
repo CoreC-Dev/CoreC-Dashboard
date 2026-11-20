@@ -81,13 +81,11 @@ export const AlertsPage: React.FC = () => {
     return () => setViewing(false)
   }, [setViewing])
 
-  // The notification preference is worthless when the browser has it
-  // hard-denied (no prompt will ever appear), so the toggle must say so
-  // instead of a comforting "on" that never delivers.
+  // When the browser has notifications hard-denied, the toggle shows the
+  // blocked state instead of "on".
   const notifBlocked =
     notifEnabled && typeof Notification !== 'undefined' && Notification.permission === 'denied'
 
-  // Live feed filters
   const [logFilter, setLogFilter] = useState('')
   const [logLevel, setLogLevel] = useState<'all' | 'warning' | 'error'>('all')
 
@@ -113,7 +111,6 @@ export const AlertsPage: React.FC = () => {
 
   return (
     <div className="space-y-5">
-      {/* Greeting */}
       <div>
         <h1 className="text-2xl font-bold tracking-tight">{t('nav.alerts')}</h1>
         <p className="text-sm text-muted-foreground mt-1">
@@ -123,7 +120,6 @@ export const AlertsPage: React.FC = () => {
         </p>
       </div>
 
-      {/* Top Banner */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 card-stagger">
         <Card className="border-border bg-card card-enter">
           <CardHeader className="p-4 pb-2">
@@ -280,7 +276,6 @@ export const AlertsPage: React.FC = () => {
         onRefresh={() => refetch()}
       />
 
-      {/* Live Warning / Error Feed */}
       <Card className="border-border bg-card card-enter">
         <CardHeader className="p-4 flex flex-row items-start justify-between gap-2">
           <div>
@@ -345,7 +340,6 @@ export const AlertsPage: React.FC = () => {
           </div>
         </CardHeader>
         <CardContent className="p-4 pt-0">
-          {/* Feed filters */}
           <div className="flex flex-col sm:flex-row items-center gap-2 mb-3">
             <div className="relative flex-1 w-full">
               <Search className="w-4 h-4 absolute left-3 top-2.5 text-muted-foreground" />

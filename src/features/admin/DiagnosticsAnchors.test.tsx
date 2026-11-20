@@ -140,8 +140,8 @@ describe('diagnostics page IA', () => {
       </QueryClientProvider>,
     )
     await screen.findByTestId('section-anchor-nav')
-    // The write-history deep link (WriteControlPage's "view write history")
-    // scrolled the page to the writes section, not the top.
+    // The write-history deep link scrolls the page to the writes section,
+    // not the top.
     expect(Element.prototype.scrollIntoView).toHaveBeenCalledWith(
       expect.objectContaining({ behavior: 'smooth' }),
     )

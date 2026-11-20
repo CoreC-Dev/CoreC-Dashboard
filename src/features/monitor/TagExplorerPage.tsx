@@ -65,9 +65,8 @@ export const TagExplorerPage: React.FC = () => {
   })
 
   // Low-frequency snapshot poll — backend-added tags appear within a
-  // minute without the hidden "manual refresh" knowledge; removed tags
-  // leave the table on the same cadence. useTags itself stays unpolled
-  // (api/hooks is off-limits by design); the page owns this interval.
+  // minute; removed tags leave the table on the same cadence. useTags stays
+  // unpolled; the page owns this interval.
   useEffect(() => {
     const iv = setInterval(() => {
       void refetch()
@@ -101,7 +100,6 @@ export const TagExplorerPage: React.FC = () => {
   const deferredTagMap = useDeferredValue(tagMap)
   const tagsList = useMemo(() => Object.values(deferredTagMap), [deferredTagMap])
 
-  // Extract unique non-empty group names for the group filter dropdown.
   const uniqueGroups = useMemo(() => {
     const groups = new Set<string>()
     for (const pt of tagsList) {
@@ -173,12 +171,7 @@ export const TagExplorerPage: React.FC = () => {
         setTrendSamples([])
       }
     },
-    [
-      discardPendingTrend,
-      setTrendSamples, // setTrendTag updates the internal ref synchronously so the WS
-      // onmessage callback sees the new tag on the very next message.
-      setTrendTag,
-    ],
+    [discardPendingTrend, setTrendSamples, setTrendTag],
   )
 
   const closeTrend = useCallback(() => {
@@ -192,8 +185,8 @@ export const TagExplorerPage: React.FC = () => {
   }, [discardPendingTrend, setTrendTag, setTrendSamples])
 
   const handleRefresh = () => {
-    // A plain refetch is enough — every new snapshot object
-    // reconciles the live map (the seed-once guard is gone).
+    // A plain refetch is enough — every new snapshot object reconciles the
+    // live map.
     refetch()
   }
 
@@ -239,7 +232,6 @@ export const TagExplorerPage: React.FC = () => {
   return (
     <div className={trendTag ? 'flex flex-col md:flex-row gap-4 md:items-stretch' : 'space-y-5'}>
       <div className={trendTag ? 'flex-1 min-w-0 space-y-4' : 'space-y-5'}>
-        {/* Greeting */}
         <div>
           <h1 className="text-2xl font-bold tracking-tight">{t('nav.tags')}</h1>
           <p className="text-sm text-muted-foreground mt-1">
@@ -265,8 +257,6 @@ export const TagExplorerPage: React.FC = () => {
           onRefresh={handleRefresh}
         />
 
-        {/* Backend-added tags surface within a snapshot cycle — the
-         * operator no longer needs the hidden "manual refresh" knowledge. */}
         {discoveryNotice !== null && (
           <div
             role="status"
@@ -302,7 +292,6 @@ export const TagExplorerPage: React.FC = () => {
        */}
       {trendTag && (
         <>
-          {/* Mobile backdrop — tap to close the bottom sheet. */}
           <div
             className="md:hidden fixed inset-0 z-40 bg-black/30"
             onClick={closeTrend}

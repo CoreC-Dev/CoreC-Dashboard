@@ -248,8 +248,7 @@ describe('DashboardPage — sample-rate honesty', () => {
     try {
       renderPage()
 
-      // 12.4 pts/s must stay 12.4 — the old pipeline rounded inside
-      // CountUpNumber before the one-decimal format ever saw the value.
+      // 12.4 pts/s must stay 12.4 (one-decimal format, no pre-rounding).
       expect(await screen.findByText('12.4')).toBeTruthy()
     } finally {
       vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: false }))

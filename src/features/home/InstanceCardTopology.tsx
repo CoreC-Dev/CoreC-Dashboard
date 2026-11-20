@@ -8,9 +8,7 @@ type InstanceStats = NonNullable<NonNullable<CoreCInstance['lastKnownInfo']>['st
 
 /**
  * The inputs → rules → outputs flow rendered from the last known stats.
- * Own module so InstanceCard stays under the 500-line gate: pure presentation,
- * memoized on the stats snapshot so probe updates that don't change this
- * card's stats don't recompute the derived arrays. Renders nothing when
+ * Pure presentation, memoized on the stats snapshot. Renders nothing when
  * the stats carry no topology.
  */
 export const InstanceCardTopology = memo(function InstanceCardTopology({
@@ -27,7 +25,6 @@ export const InstanceCardTopology = memo(function InstanceCardTopology({
 
   return (
     <div className="space-y-1.5">
-      {/* Inputs (drivers + incoming transports) */}
       {allInputs.length > 0 && (
         <div className="rounded-lg bg-muted/30 px-2.5 py-2 space-y-1.5">
           {allInputs.map((item) => (
@@ -58,14 +55,12 @@ export const InstanceCardTopology = memo(function InstanceCardTopology({
         </div>
       )}
 
-      {/* Arrow down */}
       {allInputs.length > 0 && ruleList.length > 0 && (
         <div className="flex justify-center">
           <ArrowDown className="w-3.5 h-3.5 text-muted-foreground/50" />
         </div>
       )}
 
-      {/* Rules */}
       {ruleList.length > 0 && (
         <div className="rounded-lg bg-muted/30 px-2.5 py-2 space-y-1.5">
           {ruleList.map((rule) => (
@@ -91,14 +86,12 @@ export const InstanceCardTopology = memo(function InstanceCardTopology({
         </div>
       )}
 
-      {/* Arrow down */}
       {ruleList.length > 0 && allOutputs.length > 0 && (
         <div className="flex justify-center">
           <ArrowDown className="w-3.5 h-3.5 text-muted-foreground/50" />
         </div>
       )}
 
-      {/* Outputs */}
       {allOutputs.length > 0 && (
         <div className="rounded-lg bg-muted/30 px-2.5 py-2 space-y-1.5">
           {allOutputs.map((item) => (

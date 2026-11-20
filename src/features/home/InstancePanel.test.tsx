@@ -20,8 +20,7 @@ import i18n from '@/i18n'
 import { useInstanceStore } from '@/stores/instanceStore'
 import type { CoreCInstance } from '@/types/models'
 
-// Load-tolerant async-assertion timeout: the runner is shared with parallel
-// agents on a 2-core host, and RTL waitFor's 1s default flakes under contention.
+// Relaxed async-assertion timeout for heavy render load.
 configure({ asyncUtilTimeout: 4000 })
 
 const t = (key: string, opts?: Record<string, unknown>) => i18n.t(key, opts)
@@ -120,14 +119,13 @@ beforeEach(() => {
 
 // Restore real timers after every test: the import tests run under
 // fake timers, and a leaked fake clock freezes waitFor's polling for every
-// subsequent test in the file (observed with the deep-link suite).
+// subsequent test in the file.
 afterEach(() => {
   cleanup()
   vi.useRealTimers()
 })
 
-// Suite timeout raised from the 5s default (same rationale as
-// InstanceDialog.test.tsx: heavy full-panel renders on a loaded runner).
+// Suite timeout raised above the 5s default for heavy render load.
 describe('InstancePanel — immediate probe after save', { timeout: 15_000 }, () => {
   it('probes a newly added instance right away instead of waiting 15s', async () => {
     // Empty state — one add button, and the mount probe has nothing to do.
@@ -453,9 +451,8 @@ describe('InstancePanel — ?edit deep link', { timeout: 15_000 }, () => {
   })
 })
 
-// The header language toggle displayed the CURRENT language ("中"
-// on a Chinese UI) with no title/aria-label: nobody could tell what a click
-// would do. It must offer the language it will switch TO, labeled properly.
+// The header language toggle must offer the language it will switch TO,
+// labeled properly.
 describe('InstancePanel — language toggle', () => {
   afterEach(async () => {
     // Leave the suite in the language the other describes assert against.

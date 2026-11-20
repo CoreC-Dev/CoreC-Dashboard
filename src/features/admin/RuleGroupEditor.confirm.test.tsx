@@ -1,10 +1,8 @@
 // @vitest-environment jsdom
-// Regression: deleting a sub-rule inside a rule group must pass the
-// same confirmation gate the group delete already had — the row delete used
-// to vanish the sub-rule instantly.
+// Regression: deleting a sub-rule inside a rule group must pass the same
+// confirmation gate as the group delete.
 // Regression: renaming a group must surface the SUB-RULE references
-// that would break and offer to rewrite them (default on) — the rename used
-// to leave dead references everywhere silently.
+// that would break and offer to rewrite them (default on).
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { act } from 'react'
 import { MemoryRouter } from 'react-router-dom'
@@ -100,7 +98,7 @@ describe('RuleGroupEditor — sub-rule delete confirmation', () => {
   })
 })
 
-// ─── Rename vs SUB-RULE references ──────────────────────────────
+// Rename vs SUB-RULE references.
 
 /** Working config where group-a is referenced from a top-level rule and
  *  from another group's sub-rule. */

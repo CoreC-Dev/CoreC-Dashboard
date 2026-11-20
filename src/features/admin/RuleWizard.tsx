@@ -13,10 +13,8 @@
  *              transform→ transform config (expression + tag-rename)
  *   Step 4 — Preview & Save: YAML preview → configStore.upsertRule
  *
- * The wizard implements the rule logic the user requested:
- * "corec的配置是很复杂且有逻辑在里面的，Dashboard也需要有逻辑"
- * — the action type determines which fields are required and which
- *   steps are shown, mirroring CoreC's rule validation.
+ * The action type determines which fields are required and which steps are
+ * shown, mirroring CoreC's rule validation.
  *
  * Match DSL reference (from CoreC rule/expr.go):
  *   Fields: driver, device, group, tag, quality, type, value
@@ -57,10 +55,7 @@ import { isRuleDraftDirty } from '@/lib/wizardDirty'
 import { useConfigStore } from '@/stores/configStore'
 import type { RuleAction, RuleConfig } from '@/types/config'
 
-// ─── Component ───────────────────────────────────────────────────────
-
-// The target step's no-transports dead end — links out instead
-// of forcing a cancel that eats the already-typed match expression.
+// The target step's no-transports notice — links out to transport creation.
 const NoTransportsNotice: React.FC<{ to: string }> = ({ to }) => {
   const { t } = useTranslation()
   return (
@@ -96,7 +91,6 @@ export const RuleWizard: React.FC<RuleWizardProps> = ({
   const { id } = useParams<{ id: string }>()
   const adminBase = id ? `/corec/${id}/admin` : '/admin'
 
-  // ─── Form state ──────────────────────────────────────────────────
   const [ruleName, setRuleName] = useState(existingRule?.name ?? '')
   const [match, setMatch] = useState(existingRule?.match ?? 'ALL')
   const [priority, setPriority] = useState(existingRule?.priority ?? 100)
@@ -128,11 +122,9 @@ export const RuleWizard: React.FC<RuleWizardProps> = ({
     setCurrentStep(0)
   })
 
-  // ─── Determine which steps to show based on action ───────────────
   const actionMeta = ACTION_META.find((m) => m.action === action)!
   const needsTargetStep = actionMeta.needsTarget !== 'none'
 
-  // ─── Build a RuleConfig from current state ──────────────────────
   const buildRule = useCallback(
     (name: string, trim = false): RuleConfig => {
       const v = (s: string) => (trim ? s.trim() : s)
@@ -157,12 +149,10 @@ export const RuleWizard: React.FC<RuleWizardProps> = ({
     [match, action, priority, target, targets, transformExpr, tagRename, continueFlag],
   )
 
-  // ─── Preview YAML ────────────────────────────────────────────────
   const previewYaml = useMemo(() => {
     return dumpConfigYaml({ rules: [buildRule(ruleName || '<rule-name>')] })
   }, [buildRule, ruleName])
 
-  // ─── Context validation ──────────────────────────────────────────
   // Merges the rule into working config to catch cross-entity issues
   // (e.g., forward target references nonexistent transport).
   const contextValidation = useMemo(() => {
@@ -172,7 +162,6 @@ export const RuleWizard: React.FC<RuleWizardProps> = ({
 
   const hasContextErrors = contextValidation !== null && !contextValidation.valid
 
-  // ─── Step validation gates ───────────────────────────────────────
   const step0Valid = useMemo(() => {
     if (!ruleName.trim()) return false
     if (!isEdit && !isRuleNameUnique(ruleName.trim())) return false
@@ -187,7 +176,6 @@ export const RuleWizard: React.FC<RuleWizardProps> = ({
     return true // drop, alert
   }, [actionMeta, target, targets, transformExpr])
 
-  // ─── Save ────────────────────────────────────────────────────────
   const handleFinish = () => {
     if (!ruleName.trim() || !match.trim()) return
     const ok = upsertRule(buildRule(ruleName.trim(), true))
@@ -197,12 +185,10 @@ export const RuleWizard: React.FC<RuleWizardProps> = ({
     }
   }
 
-  // ─── Toggle a target in the mirror multi-select ──────────────────
   const toggleTarget = (name: string) => {
     setTargets((prev) => (prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name]))
   }
 
-  // ─── Build steps dynamically ─────────────────────────────────────
   const steps: WizardStep[] = [
     {
       id: 'basics',
@@ -328,7 +314,7 @@ export const RuleWizard: React.FC<RuleWizardProps> = ({
     },
   ]
 
-  // Conditionally add the target step (step 2) when needed
+  // Conditionally add the target step when needed
   if (needsTargetStep) {
     steps.push({
       id: 'target',

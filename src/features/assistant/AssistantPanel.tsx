@@ -2,13 +2,10 @@
  * features/assistant/AssistantPanel.tsx - the chat surface.
  *
  * Mounted by AppShell, i.e. only inside a /corec/:id/* scope where an active
- * connection exists (apiRequest reads it). A bare-homepage chat box would find
- * getActiveConnection() null and every tool call would throw "No active CoreC
- * instance".
+ * connection exists (apiRequest reads it).
  *
- * Layout: an inline rail on desktop, a floating button + sheet on mobile
- * (Radix Dialog, focus-trapped for a11y) so narrow screens keep their content
- * area instead of splitting it.
+ * Layout: a floating button opens a right-side Sheet (Radix Dialog,
+ * focus-trapped for a11y); the same form factor on desktop and mobile.
  *
  * Presentation only: the turn loop, the step budget and the write confirmation
  * live in useAssistant/runtime, so this file cannot widen what the assistant is
@@ -180,7 +177,7 @@ const Conversation: React.FC<{
   )
 }
 
-/** No-provider placeholder, with the same bus. */
+/** No-provider placeholder, reusing the same header as Conversation. */
 const NoProvider: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
   const { t } = useTranslation()
   return (
@@ -203,8 +200,7 @@ const NoProvider: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
 
 /**
  * AssistantPanel is the mount point AppShell uses. It owns the open/close
- * affordance and picks the form factor; the conversation itself does not know
- * whether it is in a rail or a sheet.
+ * affordance and renders the conversation inside a Sheet.
  */
 export const AssistantPanel: React.FC = () => {
   const { t } = useTranslation()
@@ -213,9 +209,8 @@ export const AssistantPanel: React.FC = () => {
 
   return (
     <>
-      {/* Closed-state entry point: a floating round button on the right edge,
-          present on both form factors so the conversation is reachable from
-          every instance route (mobile included). */}
+      {/* Closed-state entry point: a floating round button on the right edge
+          (md+), opening the Sheet. */}
       <Button
         variant="outline"
         onClick={() => setOpen(true)}

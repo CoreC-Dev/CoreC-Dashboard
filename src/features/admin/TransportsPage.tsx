@@ -46,7 +46,6 @@ export const TransportsPage: React.FC = () => {
   // Wrapped in try/catch so a malformed YAML never crashes the whole list page.
   const parsedConfig = useParsedConfig(rawYaml)
 
-  // Config editing state
   const workingConfig = useConfigStore((s) => s.workingConfig)
   const dirty = useConfigStore((s) => s.dirty)
   const resetToEmpty = useConfigStore((s) => s.resetToEmpty)
@@ -103,9 +102,7 @@ export const TransportsPage: React.FC = () => {
   // the operator is warned before removing a dependency. A rule depends on
   // a transport if its `target` matches (forward/alert) or its `targets`
   // array includes the transport name (mirror).
-  // The scan covers the working ∪ saved rule sets — a rule created
-  // seconds ago (not yet applied) is exactly the dependency the operator
-  // would be surprised to break at apply time.
+  // The scan covers the working ∪ saved rule sets.
   const dependentRules = deleteTarget
     ? unionRulesForDependencyScan(workingConfig, parsedConfig).rules.filter(
         (r) => r.target === deleteTarget || (r.targets ?? []).includes(deleteTarget),
@@ -155,10 +152,8 @@ export const TransportsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Config seed failed/loading: explain why Create is disabled */}
       <SeedBlockedBanner />
 
-      {/* Unsaved changes banner */}
       <UnsavedChangesBanner
         dirty={dirty}
         unsavedChangesLabel={t('transports.unsavedChanges')}
@@ -168,10 +163,8 @@ export const TransportsPage: React.FC = () => {
         onDiscard={() => useConfigStore.getState().revert()}
       />
 
-      {/* Live validation errors */}
       <ValidationBanner />
 
-      {/* Config-managed transports section */}
       {configTransports.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center gap-2 flex-wrap">
@@ -254,7 +247,6 @@ export const TransportsPage: React.FC = () => {
         </div>
       )}
 
-      {/* Runtime status section */}
       <div className="space-y-3">
         <div className="flex items-center gap-2">
           <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
@@ -395,14 +387,12 @@ export const TransportsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Create/Edit Transport Wizard */}
       <TransportWizard
         open={wizardOpen}
         onOpenChange={setWizardOpen}
         existingTransport={editingTransport}
       />
 
-      {/* Delete Confirmation — lists dependent rules (dependent-rules scan surface) */}
       <DeleteEntityConfirm
         open={!!deleteTarget}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
@@ -433,7 +423,6 @@ export const TransportsPage: React.FC = () => {
         )}
       </DeleteEntityConfirm>
 
-      {/* Apply Config Confirmation */}
       <ConfigApplyConfirmationDialog {...applyDialogProps} />
     </div>
   )

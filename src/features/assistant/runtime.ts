@@ -5,15 +5,12 @@
  * the model answers in prose, the step budget runs out, or the operator
  * cancels.
  *
- * Two guards are non-negotiable and are why this file exists rather than
- * calling the provider from a component:
+ * Two guards:
  *
- *  - Step budget. A model that keeps calling tools can burn an operator's
- *    quota indefinitely. MAX_STEPS ends the turn and the transcript says the
- *    assistant stopped calling tools, rather than pretending it finished.
+ *  - Step budget. MAX_STEPS ends the turn and the transcript says the
+ *    assistant stopped calling tools.
  *  - Write confirmation. Every write-class tool asks before it runs. A refusal
- *    is reported to the model truthfully ("the operator declined"), so it does
- *    not retry in a loop or claim success.
+ *    is reported to the model truthfully ("the operator declined").
  */
 import { type ChatTurn, type OutboundTool, streamChat } from '@/features/assistant/provider'
 import type {
@@ -35,8 +32,7 @@ export interface TurnCallbacks {
   onDelta: (text: string) => void
   /**
    * Asks a human to approve a write-class call and resolves true/false.
-   * Must not resolve without an explicit answer: a silent default here is
-   * how an unattended write happens.
+   * Must not resolve without an explicit answer.
    */
   confirm: (req: ConfirmRequest) => Promise<boolean>
 }
@@ -77,8 +73,7 @@ function parseArgs(raw: string): Record<string, unknown> {
  * `tools` must already be the authorization-filtered set (see
  * assistantTools(allowWrite)); this function will not introduce a tool the
  * caller did not hand it. It still refuses to run a write-class tool without
- * going through cb.confirm, so a mis-wired caller degrades to "asks every time"
- * rather than "writes silently".
+ * going through cb.confirm.
  */
 export async function runTurn(
   provider: AssistantProvider,
@@ -130,8 +125,6 @@ export async function runTurn(
       } else if (spec.toolClass === 'write') {
         const approved = await cb.confirm({ tool: spec, args })
         if (!approved) {
-          // Report the refusal in the operator's terms so the model cannot
-          // paraphrase it into success.
           result = {
             content: JSON.stringify({ refused: true, reason: 'the operator declined this write' }),
             failed: true,

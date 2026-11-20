@@ -22,7 +22,7 @@ export const DriverDetailDialog: React.FC<{
   const { t } = useTranslation()
   const { data: tagsData, isLoading } = useDriverTags(driver.name)
   const tags = tagsData?.tags ? Object.values(tagsData.tags) : []
-  // Cap rendered tags to prevent DOM overload (001, aligns with DriverDetailPage).
+  // Cap rendered tags to prevent DOM overload (aligns with DriverDetailPage).
   const MAX_TAGS = 200
   const visibleTags = tags.slice(0, MAX_TAGS)
 

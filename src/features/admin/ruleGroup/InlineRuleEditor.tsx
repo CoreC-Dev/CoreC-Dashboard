@@ -5,7 +5,7 @@
  * Structured editor for the `rule-groups` section of CoreCConfig:
  * rule groups are named collections of sub-rules referenced from
  * regular rules via `match: "SUB-RULE:group-name"`; each group is its
- * own sub-engine (rule/engine.go:SetSubRules).
+ * own sub-engine. CoreC detects circular SUB-RULE references at load time.
  */
 import type React from 'react'
 import { useState } from 'react'

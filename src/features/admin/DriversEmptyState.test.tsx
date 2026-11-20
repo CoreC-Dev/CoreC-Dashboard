@@ -1,7 +1,6 @@
 // @vitest-environment jsdom
-// Regression: the runtime empty state used to send the operator to
-// edit YAML while the page's own Create button sat unused in the corner.
-// The empty card now carries the honest copy and a working Create button.
+// Regression: the runtime empty card carries the copy and a working Create
+// button.
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { act } from 'react'

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 //
-// 单次工具结果硬上限 64 KiB：超出截断，并在内容里写明"已截断 N 字符，请加过滤条件重查"
+// 单次工具结果硬上限 64 KiB（UTF-8 字节）：超出截断并附英文 notice 报告丢弃字节数
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('@/api/client', async (importOriginal) => {
@@ -76,8 +76,7 @@ describe('tool result byte cap', () => {
       expect(m, `${label}: notice missing: ...${out.slice(-80)}`).not.toBeNull()
 
       // The notice is self-consistent: the withheld count plus what survived
-      // equals the input. If clip ever reports the wrong number, a model
-      // deciding "I have seen 99% of this" is deciding from a lie.
+      // equals the input.
       const withheld = Number(m?.[1] ?? -1)
       expect(withheld).toBeGreaterThan(0)
       expect(bytes(out) + withheld).toBeGreaterThanOrEqual(bytes(input))

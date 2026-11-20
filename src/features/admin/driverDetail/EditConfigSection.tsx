@@ -39,8 +39,7 @@ function driverConfigValueToString(src: unknown): string {
 /** Build a driver entry ({ name, type, settings, ...top-level }) from the edit
  *  form values. Fields tagged `group: 'settings'` go inside `settings`; fields
  *  tagged `group: 'top'` (e.g. tags-file, tags-interval) are placed as
- *  top-level siblings — matching configSchema + the wizard (bug fix: the
- *  previous local arrays wrote tags-file inside `settings`). */
+ *  top-level siblings — matching configSchema + the wizard. */
 function buildDriverEntry(
   driver: DriverStatus,
   fields: readonly RegistryEditField[],
@@ -136,11 +135,10 @@ export const DriverEditConfigSection: React.FC<{ driver: DriverStatus }> = ({ dr
     failureKey: 'drivers.editConfig.reloadFailed',
   })
 
-  // The reload button no longer PUTs directly — it opens the SAME
-  // ConfigApplyConfirmationDialog the list pages use (YAML diff + change
-  // summary + engine-suspend warning). The PUT only fires from the dialog's
-  // explicit confirm, and the dialog stays open showing the verbatim error
-  // when the reload fails.
+  // The reload button opens the ConfigApplyConfirmationDialog the list pages
+  // use (YAML diff + change summary + engine-suspend warning). The PUT only
+  // fires from the dialog's explicit confirm, and the dialog stays open
+  // showing the verbatim error when the reload fails.
   const editWithGate: EntityEditConfigState = {
     ...edit,
     handleReload: async () => {

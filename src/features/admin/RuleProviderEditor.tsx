@@ -8,9 +8,7 @@
  * Fields: name, type (currently only "file"), path, interval (hot-reload).
  *
  * Integration: CRUD via configStore.upsertRuleProvider/removeRuleProvider.
- * Each provider is a simple inline form row — no wizard needed since the
- * field set is small and static (unlike drivers/transports with per-type
- * dynamic fields).
+ * Each provider is an inline form row.
  *
  * Hot-reload: rule-providers require engine restart (the provider list
  * itself is not hot-updatable, but the file content IS hot-reloaded at
@@ -136,7 +134,6 @@ export const RuleProviderEditor: React.FC = () => {
           </div>
         )}
 
-        {/* Provider list */}
         {providers.length > 0 && (
           <div className="space-y-2">
             {providers.map((p) => (
@@ -182,7 +179,6 @@ export const RuleProviderEditor: React.FC = () => {
                 </div>
               </div>
             ))}
-            {/* RULE-SET reference hints */}
             <div className="flex flex-wrap gap-1 pt-1">
               <span className="text-xs text-muted-foreground self-center">
                 {t('ruleProvider.ruleSetRef')}:
@@ -202,7 +198,6 @@ export const RuleProviderEditor: React.FC = () => {
           </div>
         )}
 
-        {/* Inline edit/create form */}
         {editing && (
           <div className="space-y-3 rounded-lg border border-primary/30 bg-primary/5 p-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

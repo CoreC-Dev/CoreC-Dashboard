@@ -9,9 +9,9 @@ import type { CoreCInstance } from '@/types/models'
 /**
  * Homepage probe — periodically checks ALL instances in parallel.
  *
- * For each instance, fetches GET / (server info) + GET /stats (engine stats)
- * + GET /tags (tag count) and stores the results in lastKnownInfo so the
- * InstanceCard can display live metrics.
+ * For each instance, fetches GET /, /stats, /tags, /rules and /configs/raw in
+ * parallel and stores the results in lastKnownInfo so the InstanceCard can
+ * display live metrics.
  *
  * /stats lives inside CoreC's Bearer auth group (hub/route/router.go)
  * while GET / is public — a 401 on /stats with a healthy GET / means the
@@ -204,10 +204,10 @@ async function probeInstance(
     }
   }
 
-  // GET /configs/raw — parse and derive compact connection-target summaries
-  // (host:port / broker / url / webhook-addr) for each driver/transport so the
-  // topology rows on the homepage card can show the address. The runtime
-  // /stats + /drivers endpoints do not expose connection parameters.
+  // GET /configs/raw — compact connection-target summaries per driver/transport
+  // for the homepage topology rows. /stats has no connection parameters; the
+  // driver/transport status.endpoint field can serve as a summary, while full
+  // parameters are read from /configs/raw.
   if (rawCfgRes.status === 'fulfilled' && rawCfgRes.value.ok && result.stats) {
     try {
       const rawText = await rawCfgRes.value.text()
@@ -338,12 +338,10 @@ export interface ConnectionTestResult {
 }
 
 /**
- * One-shot connection test for the add/edit dialog: an operator had
- * no way to verify address + key before saving, and a wrong key was only
- * discovered after entering the instance. Runs the exact same probe as the
- * homepage (authenticated /stats included, so a bad key reports
- * 'unauthorized' rather than a false pass) but records nothing in the
- * store — it is a pure preview of what the card would show.
+ * One-shot connection test for the add/edit dialog. Runs the exact same probe
+ * as the homepage (authenticated /stats included, so a bad key reports
+ * 'unauthorized') but records nothing in the store — a pure preview of what
+ * the card would show.
  */
 export async function testInstanceConnection(
   data: Pick<CoreCInstance, 'baseUrl' | 'secret'> & { useProxy?: CoreCInstance['useProxy'] },

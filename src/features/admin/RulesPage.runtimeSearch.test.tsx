@@ -1,7 +1,6 @@
 // @vitest-environment jsdom
 // Regression: the runtime rules table is searchable (name/match/
-// target) and its priority header toggles the sort direction — finding one
-// tag's rule among hundreds used to need browser Ctrl+F.
+// target) and its priority header toggles the sort direction.
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { act } from 'react'

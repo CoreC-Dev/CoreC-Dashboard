@@ -91,9 +91,8 @@ export const InstanceDialog: React.FC<InstanceDialogProps> = ({
   const [showSecret, setShowSecret] = useState(false)
 
   // Memoize the resolver so it's only recreated when the translation function
-  // changes (i.e., on language switch), not on every render. This ensures
-  // validation error messages update on language switch (FF-1) and avoids
-  // unnecessary allocations.
+  // changes (i.e., on language switch), not on every render. Validation error
+  // messages update on language switch.
   const resolver = useMemo(() => zodResolver(instanceSchema(t)), [t])
 
   const form = useForm<InstanceFormData>({
@@ -225,12 +224,9 @@ export const InstanceDialog: React.FC<InstanceDialogProps> = ({
                         placeholder="********"
                         className="pr-10"
                         {...field}
-                        // Opt the API-key field out of browser/manager
-                        // login heuristics — without these, password managers
-                        // offer to save/fill the CoreC key as if it were this
-                        // site's login password. The explicit name overrides
-                        // the form's internal field name in the DOM only
-                        // (react-hook-form does not read it back).
+                        // Opt the API-key field out of password-manager
+                        // login heuristics; the explicit name overrides the
+                        // form's internal field name in the DOM only.
                         name="corec-api-secret"
                         autoComplete="off"
                         data-1p-ignore
@@ -247,11 +243,10 @@ export const InstanceDialog: React.FC<InstanceDialogProps> = ({
                       </button>
                     </div>
                   </FormControl>
-                  {/* Where the key comes from — the #1 cold-start blocker. */}
+                  {/* Where the key comes from. */}
                   <FormDescription>{t('instances.secretHint')}</FormDescription>
-                  {/* Honest disclosure that the key lands in localStorage
-                       in plain text — the operator deserves to know before
-                       saving a production key on a shared machine. */}
+                  {/* 披露密钥存储位置：默认 sessionStorage（本标签页），
+                      勾选记住密钥才写 localStorage。 */}
                   <FormDescription>{t('instances.secretStorageNote')}</FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -276,8 +271,7 @@ export const InstanceDialog: React.FC<InstanceDialogProps> = ({
                       <SelectItem value="direct">{t('instances.proxyModeDirect')}</SelectItem>
                     </SelectContent>
                   </Select>
-                  {/* The three modes were bare labels before — the hint
-                       explains what each one does and when to pick it. */}
+                  {/* Hint explains what each mode does and when to pick it. */}
                   <FormDescription>{t('instances.proxyModeHint')}</FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -350,8 +344,7 @@ export const InstanceDialog: React.FC<InstanceDialogProps> = ({
               )}
             />
 
-            {/* One-shot test verdict — visible right above the actions
-                 so the operator can fix the fields and re-test before saving. */}
+            {/* One-shot test verdict. */}
             {testResult.status === 'testing' && (
               <p className="text-sm text-muted-foreground flex items-center gap-1.5">
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -370,9 +363,8 @@ export const InstanceDialog: React.FC<InstanceDialogProps> = ({
             )}
 
             <DialogFooter>
-              {/* Verify address + key BEFORE saving; runs the same
-                   authenticated probe as the homepage card, so a bad key
-                   reports the exact 401 copy the card would show. */}
+              {/* Verify address + key before saving; runs the same
+                   authenticated probe as the homepage card. */}
               <Button
                 type="button"
                 variant="outline"

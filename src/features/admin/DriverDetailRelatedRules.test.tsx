@@ -1,9 +1,8 @@
 // @vitest-environment jsdom
 // Regression: the driver detail page lists the rules that consume
 // the driver's data (match-DSL scan over the saved config) with a link per
-// rule — the "which rules break if I touch this driver?" question used to
-// require opening every rule on the rules page. Also pins the
-// truncated-tag-count note as a real deep link into the pre-filtered Tag Explorer.
+// rule. Also pins the truncated-tag-count note as a real deep link into the
+// pre-filtered Tag Explorer.
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'

@@ -1,14 +1,13 @@
 import type { CoreCInstance } from '@/types/models'
 
 /**
- * Topology display model for the homepage InstanceCard (extracted from the
- * component so the card file stays under the 500-line God-file gate).
+ * Topology display model for the homepage InstanceCard.
  *
  * Derives the input rows (drivers + incoming/bidirectional transports),
  * output rows (outgoing/bidirectional transports) and the rule list from a
  * probe's stats snapshot, classifying each transport as input/output using
  * its published/received counters with a name heuristic for the ambiguous
- * both-zero case — identical logic to the original in-component memo.
+ * both-zero case.
  */
 
 type InstanceStats = NonNullable<NonNullable<CoreCInstance['lastKnownInfo']>['stats']>

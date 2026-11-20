@@ -2,12 +2,7 @@ import type React from 'react'
 import { Skeleton } from '@/components/ui/skeleton'
 import i18n from '@/i18n'
 
-/**
- * First-load placeholder that mirrors the real dashboard layout. A spinner
- * in the middle of an empty page tells the operator "something is loading";
- * this keeps the eventual card grid in place so the page settles instead of
- * jumping when the first stats snapshot lands.
- */
+/** First-load placeholder that mirrors the final dashboard layout. */
 export const DashboardSkeleton: React.FC = () => (
   <div className="space-y-6" role="status" aria-busy="true" aria-label={i18n.t('common.loading')}>
     <div className="space-y-2">

@@ -1,10 +1,9 @@
 /**
  * features/assistant/useAssistant.ts - the chat box's state machine.
  *
- * Kept out of the component so the transcript rules (what a refusal looks
- * like, what truncation means) live in one testable place rather than inside
- * JSX. The component renders this state; it never decides whether a call was
- * allowed.
+ * Owns the transcript rules (what a refusal looks like, what truncation
+ * means). The component renders this state; it never decides whether a call
+ * was allowed.
  */
 import { useCallback, useRef, useState } from 'react'
 import { runTurn } from '@/features/assistant/runtime'
@@ -162,9 +161,8 @@ export function useAssistant(provider: AssistantProvider | null, allowWrite: boo
 }
 
 /**
- * summarizePayload produces the one-line card text for a tool answer. It is
- * intentionally lossy: the card is an index into the transcript, and the model
- * already holds the full payload.
+ * summarizePayload produces the one-line card text for a tool answer; the
+ * full payload stays in the model transcript.
  */
 function summarizePayload(content: string): string {
   const flat = content.replace(/\s+/g, ' ').trim()

@@ -12,7 +12,7 @@ import { useConnectionStore } from '@/stores/connectionStore'
 
 // Mock only the API layer (no real network). Stores are REAL — the test
 // validates that useConfigStore selectors don't create new references on
-// every getSnapshot call (the #185 "Maximum update depth exceeded" bug).
+// every getSnapshot call (infinite re-render regression).
 vi.mock('@/api/endpoints', () => ({
   getTransports: vi.fn().mockResolvedValue({
     transports: [
@@ -137,8 +137,8 @@ function wrap(el: React.ReactElement) {
 
 // Force English so content assertions are readable and deterministic,
 // independent of the localStorage-backed default locale (zh-CN).
-// Mark the connection as connected via the REAL connection store (kept real to
-// preserve the #185 selector-stability regression check) so useConnectedQuery
+// Mark the connection as connected via the REAL connection store (kept real
+// for the selector-stability regression check) so useConnectedQuery
 // enables the mocked transports/rules queries instead of staying idle.
 beforeAll(async () => {
   useConnectionStore.getState().setConnected(true)
@@ -151,9 +151,7 @@ afterEach(() => {
   cleanup()
 })
 
-// These pages render heavy card grids; under full-suite load on a 2-core
-// box (parallel agent workstreams) they can exceed the 5s default. 15s
-// mirrors the BatchWritePanel suite-timeout precedent.
+// Suite timeout raised above the 5s default for heavy render load.
 vi.setConfig({ testTimeout: 15_000 })
 
 describe('render smoke (#185 regression)', () => {

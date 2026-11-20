@@ -27,15 +27,14 @@ import { ConnStateLabel } from '@/lib/constants'
 import { formatNumber, formatUptime } from '@/lib/utils'
 
 /**
- * Monitor dashboard — fixed 5-row layout per ARCHITECTURE_RESTRUCTURE.md.
+ * Monitor dashboard — fixed 5-row layout.
  *
- * Row 1: KPI indicators (6 small cards: status, uptime, reads, publishes, dropped, pts/sec)
+ * Row 1: 6 KPI cards (status, pts/sec, drivers, transports, reads, dropped;
+ *        uptime/pub/errors are sub-lines inside the cards)
  * Row 2: Real-time charts (traffic + memory, side by side)
  * Row 3: Driver matrix (compact cards)
  * Row 4: Transport matrix (compact cards)
  * Row 5: Dead letters (failed writes) + current error-event count
- *
- * No customizable layout — fixed design for out-of-the-box best experience.
  *
  * Degradation contract: a failed stats poll keeps the last good
  * snapshot rendered with a stale-data banner + manual retry; only a
@@ -68,11 +67,8 @@ export const DashboardPage: React.FC = () => {
     [transports],
   )
 
-  // Online-ratio coloring: 100% green, 1–99% amber, 0% red. The old
-  // hardcoded `text-status-running` kept "0% online" green, so a full
-  // driver/transport outage was invisible during a night-shift page scan.
-  // With no drivers/transports configured the honest color is muted "N/A",
-  // not a green percentage.
+  // Online-ratio coloring: 100% green, 1–99% amber, 0% red. With no
+  // drivers/transports configured the color is muted "N/A".
   const ONLINE_TONE_CLASS = {
     full: 'text-status-running',
     partial: 'text-status-warning',
@@ -108,11 +104,9 @@ export const DashboardPage: React.FC = () => {
           ? t('dashboard.allDisconnected')
           : t('dashboard.notAvailable', { defaultValue: 'N/A' })
 
-  // Engine status dot — reflect the actual stats.status instead of a hardcoded
-  // green. An ABSENT status is not "running" — rendering "don't know"
-  // as a green dot was the audit's complaint. Only an actual running/ok
-  // goes green; error-like states are red; anything else — including an
-  // empty/missing status — is amber "Unknown" (common.unknown).
+  // Engine status dot — reflects the actual stats.status. Only an actual
+  // running/ok goes green; error-like states are red; anything else —
+  // including an empty/missing status — is amber "Unknown" (common.unknown).
   const statusLower = stats?.status?.toLowerCase() ?? ''
   const isStatusHealthy = statusLower !== '' && (statusLower === 'running' || statusLower === 'ok')
   const isStatusError =
@@ -136,11 +130,8 @@ export const DashboardPage: React.FC = () => {
     return <DashboardSkeleton />
   }
 
-  // Error fallback — only when the FIRST load fails and there is no data to
-  // show at all. A failed background poll no longer collapses the whole
-  // page: the last good snapshot stays rendered and the banner below tells
-  // the operator exactly how old it is, with a manual retry that doesn't wait
-  // for the 5s poll to recover on its own.
+  // Error fallback — only when the first load fails and there is no data to
+  // show at all (degradation contract above).
   const statsStale = statsError && !!stats
   if (statsError && !stats) {
     return (
@@ -155,7 +146,6 @@ export const DashboardPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Page header — title on the left, live refresh on the right */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">{t('nav.dashboard')}</h1>
@@ -177,9 +167,8 @@ export const DashboardPage: React.FC = () => {
         </Button>
       </div>
 
-      {/* Stale-snapshot banner — a failed refresh keeps the rendered
-       * data and says so, instead of collapsing the page into one red line.
-       * Auto-dismisses when the next poll succeeds. */}
+      {/* Stale-snapshot banner — a failed refresh keeps the rendered data
+       * and says so. Auto-dismisses when the next poll succeeds. */}
       {statsStale && (
         <div
           role="status"
@@ -209,9 +198,7 @@ export const DashboardPage: React.FC = () => {
         </div>
       )}
 
-      {/* Row 1 — KPI indicators */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 card-stagger">
-        {/* Engine Status */}
         <div className="min-w-0 overflow-hidden rounded-3xl squircle border border-border bg-card p-4 card-quiet card-enter">
           <div className="flex items-start justify-between gap-2">
             <span className="text-xs font-medium text-muted-foreground">
@@ -234,7 +221,6 @@ export const DashboardPage: React.FC = () => {
             <span className="tnum">{formatUptime(stats?.uptime || 0)}</span>
           </div>
         </div>
-        {/* Sample Rate */}
         <div className="min-w-0 overflow-hidden rounded-3xl squircle border border-border bg-card p-4 card-quiet card-enter">
           <div className="flex items-start justify-between gap-2">
             <span className="text-xs font-medium text-muted-foreground">
@@ -255,7 +241,6 @@ export const DashboardPage: React.FC = () => {
             {t('dashboard.pointsPerSecond', { defaultValue: 'points / second' })}
           </div>
         </div>
-        {/* Drivers */}
         <div className="min-w-0 overflow-hidden rounded-3xl squircle border border-border bg-card p-4 card-quiet card-enter">
           <div className="flex items-start justify-between gap-2">
             <span className="text-xs font-medium text-muted-foreground">
@@ -275,7 +260,6 @@ export const DashboardPage: React.FC = () => {
           </div>
           <div className={`mt-2 text-xs font-medium ${driverToneClass}`}>{driverStatusLabel}</div>
         </div>
-        {/* Transports */}
         <div className="min-w-0 overflow-hidden rounded-3xl squircle border border-border bg-card p-4 card-quiet card-enter">
           <div className="flex items-start justify-between gap-2">
             <span className="text-xs font-medium text-muted-foreground">
@@ -297,7 +281,6 @@ export const DashboardPage: React.FC = () => {
             {transportStatusLabel}
           </div>
         </div>
-        {/* Total Read */}
         <div className="min-w-0 overflow-hidden rounded-3xl squircle border border-border bg-card p-4 card-quiet card-enter">
           <div className="flex items-start justify-between gap-2">
             <span className="text-xs font-medium text-muted-foreground">
@@ -321,7 +304,6 @@ export const DashboardPage: React.FC = () => {
             {t('dashboard.pub', { defaultValue: 'Pub' })}: {formatNumber(stats?.total_publish || 0)}
           </div>
         </div>
-        {/* Dropped */}
         <div className="min-w-0 overflow-hidden rounded-3xl squircle border border-border bg-card p-4 card-quiet card-enter">
           <div className="flex items-start justify-between gap-2">
             <span className="text-xs font-medium text-muted-foreground">
@@ -345,10 +327,8 @@ export const DashboardPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Row 2 — Real-time charts */}
       <DashboardCharts />
 
-      {/* Row 3 — Driver matrix */}
       <Card className="border-border bg-card">
         <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0 px-5 pb-3 pt-4">
           <div className="flex min-w-0 items-center gap-2">
@@ -411,7 +391,6 @@ export const DashboardPage: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Row 4 — Transport matrix */}
       <Card className="border-border bg-card">
         <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0 px-5 pb-3 pt-4">
           <div className="flex min-w-0 items-center gap-2">
@@ -474,7 +453,6 @@ export const DashboardPage: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Row 5 — Dead letters (failed writes) + current error-event lure */}
       <DashboardDeadLetterCard deadLetters={deadLetters} alertsLink={alertsLink} />
     </div>
   )

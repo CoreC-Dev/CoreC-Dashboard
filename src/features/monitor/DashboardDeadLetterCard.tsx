@@ -49,10 +49,6 @@ export const DashboardDeadLetterCard: React.FC<DashboardDeadLetterCardProps> = (
             </Link>
           )}
         </CardTitle>
-        {/* The row-5 header link says what it does — "View All" dead
-         * letters/failed writes on the alerts page — instead of borrowing
-         * dashboard.manage ("Manage"), which reads as a third config
-         * "Manage" link and misleads about the destination. */}
         <Link
           to={alertsLink}
           className="text-xs text-primary hover:underline flex items-center space-x-0.5"

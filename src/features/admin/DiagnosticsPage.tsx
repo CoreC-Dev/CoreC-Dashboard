@@ -141,7 +141,7 @@ export const DiagnosticsPage: React.FC = () => {
   // Auto-refresh toggle — when off, refetchInterval is disabled (false).
   const [autoRefresh, setAutoRefresh] = useState(true)
 
-  // Metrics via TanStack Query — replaces manual setInterval polling.
+  // Metrics via TanStack Query.
   const {
     data: metricsRaw,
     refetch,
@@ -205,12 +205,8 @@ export const DiagnosticsPage: React.FC = () => {
         <p className="text-sm text-muted-foreground mt-1">{t('diagnostics.subtitle')}</p>
       </div>
 
-      {/* Jump chips — the page's own table of contents, so the
-           operator reaches "health" or "write history" without scrolling
-           past everything else. */}
       <SectionAnchorNav sections={ANCHOR_SECTIONS} />
 
-      {/* Instance version + liveness/readiness probes (public endpoints) */}
       <section id="diagnostics-health" className="scroll-mt-24">
         <InstanceHealthBar />
       </section>
@@ -221,15 +217,12 @@ export const DiagnosticsPage: React.FC = () => {
         <RealtimeStreamsPanel />
       </section>
 
-      {/* Real-time xterm.js Terminal */}
       <section id="diagnostics-terminal" className="scroll-mt-24">
         <EventLogTerminal />
       </section>
 
       {/* Prometheus metrics: runtime tiles + latency histograms + the
-          per-driver/per-transport counter tables, one jump target.
-          space-y-5 keeps the cards inside this section on the page-wide
-          rhythm — without it they stack flush against each other. */}
+          per-driver/per-transport counter tables, one jump target. */}
       <section id="diagnostics-metrics" className="scroll-mt-24 space-y-5">
         <Card className="border-border bg-card">
           <CardHeader className="p-4 flex flex-row items-center justify-between">
@@ -310,7 +303,6 @@ export const DiagnosticsPage: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Latency & Data Age Histograms */}
         <Card className="border-border bg-card">
           <CardHeader className="p-4 pb-2">
             <CardTitle className="text-sm font-semibold">
@@ -385,12 +377,10 @@ export const DiagnosticsPage: React.FC = () => {
         />
       </section>
 
-      {/* Write Operation History (audit trail of every tag write) */}
       <section id="diagnostics-writes" className="scroll-mt-24">
         <WriteHistoryTable />
       </section>
 
-      {/* Advanced debugging (pprof) — collapsed by default */}
       <PprofDownloads />
     </div>
   )

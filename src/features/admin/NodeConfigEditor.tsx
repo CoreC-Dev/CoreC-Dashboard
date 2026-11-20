@@ -4,10 +4,9 @@
  * Structured form editor for the `node` section of CoreCConfig.
  * Covers: id, role, subscribe[], topic-prefix.
  *
- * This addresses the user's request: "corec的配置是很复杂且有逻辑在里面的，
- * Dashboard也需要有逻辑" — the node config has conditional logic:
+ * The node config has conditional logic:
  *
- *   - When `id` is empty → auto-discovery is disabled (backward compat).
+ *   - When `id` is empty → auto-discovery is disabled.
  *     The role/subscribe/topic-prefix fields are hidden with an info banner.
  *   - When `id` is set → auto-discovery enabled. Role becomes relevant:
  *       collector  → has drivers, publishes data, no upstream (subscribe hidden)
@@ -36,8 +35,6 @@ import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/cn'
 import { useConfigStore } from '@/stores/configStore'
 import type { NodeConfig } from '@/types/config'
-
-// ─── Role metadata ────────────────────────────────────────────────────
 
 interface RoleMeta {
   role: string
@@ -73,8 +70,7 @@ const ROLE_META: RoleMeta[] = [
   },
 ]
 
-// ─── Subscribe list editor (multi-value string array) ────────────────
-
+// Subscribe list editor (multi-value string array).
 interface SubscribeEditorProps {
   value: string[]
   onChange: (val: string[]) => void
@@ -148,8 +144,6 @@ const SubscribeEditor: React.FC<SubscribeEditorProps> = ({ value, onChange }) =>
   )
 }
 
-// ─── Main component ──────────────────────────────────────────────────
-
 export const NodeConfigEditor: React.FC = () => {
   const { t } = useTranslation()
   const workingConfig = useConfigStore((s) => s.workingConfig)
@@ -219,7 +213,6 @@ export const NodeConfigEditor: React.FC = () => {
 
       {expanded && (
         <CardContent className="p-4 pt-0 space-y-4">
-          {/* ─── Node ID (toggle for auto-discovery) ─────────────── */}
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <Label className="text-xs font-medium">{t('nodeConfig.nodeId')}</Label>
@@ -235,7 +228,6 @@ export const NodeConfigEditor: React.FC = () => {
             </p>
           </div>
 
-          {/* ─── Auto-discovery disabled banner ─────────────────── */}
           {!hasNodeId && (
             <div className="flex items-start gap-2 rounded-lg border border-status-queued/30 bg-status-queued/10 p-3 text-xs text-status-queued dark:text-status-queued">
               <Info className="w-4 h-4 shrink-0 mt-0.5" />
@@ -246,10 +238,8 @@ export const NodeConfigEditor: React.FC = () => {
             </div>
           )}
 
-          {/* ─── Role + Subscribe + Topic-prefix (only when id set) ─ */}
           {hasNodeId && (
             <div className="space-y-3 p-3 rounded-lg bg-muted/30 border border-border">
-              {/* Role selector */}
               <div className="space-y-2">
                 <Label className="text-xs font-medium">{t('nodeConfig.role')}</Label>
                 <div className="grid grid-cols-2 gap-2">
@@ -284,7 +274,6 @@ export const NodeConfigEditor: React.FC = () => {
                 </div>
               </div>
 
-              {/* Subscribe (conditional on role) */}
               {showSubscribe && (
                 <div className="space-y-1.5 pt-2 border-t border-border/40">
                   <Label className="text-xs font-medium">{t('nodeConfig.subscribe')}</Label>
@@ -300,7 +289,6 @@ export const NodeConfigEditor: React.FC = () => {
                 </div>
               )}
 
-              {/* Topic prefix */}
               <div className="space-y-1 pt-2 border-t border-border/40">
                 <Label className="text-xs font-medium">{t('nodeConfig.topicPrefix')}</Label>
                 <Input
@@ -316,7 +304,6 @@ export const NodeConfigEditor: React.FC = () => {
             </div>
           )}
 
-          {/* ─── Topic format preview ───────────────────────────── */}
           {hasNodeId && (
             <div className="rounded-md border border-border bg-muted/20 p-3">
               <div className="text-xs text-muted-foreground uppercase font-semibold mb-1">

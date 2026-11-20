@@ -2,11 +2,10 @@
  * DriverWizard
  *
  * Multi-step wizard for creating or editing a driver configuration.
- * Implements the wizard-style interaction the user requested:
  *   Step 1 — Driver Type: choose protocol (modbus-tcp/rtu/tls/s7/opcua/...)
  *   Step 2 — Connection: driver name + connection settings (from registry)
- *   Step 3 — Tags: tag list editor (TagListField)
- *   Step 4 — Advanced: tags-file, tags-interval, reconnect backoff
+ *   Step 3 — Tags: TagListEditor
+ *   Step 4 — Advanced: tags-file, tags-interval
  *   Step 5 — Preview & Save: YAML preview + validation → configStore.upsertDriver
  *
  * The wizard is a Dialog (modal) triggered from DriversPage. On finish,
@@ -17,9 +16,6 @@
  * Edit mode: when `existingDriver` is provided, the form is pre-filled
  * with that driver's values and the type step is locked (changing type
  * would require a full recreate).
- *
- * Decision-independent: works under both backend paths because it only
- * interacts with configStore, not the API directly.
  */
 import type React from 'react'
 import { useMemo, useState } from 'react'
@@ -43,10 +39,6 @@ import { missingRequiredSettingLabels } from '@/lib/wizardGate'
 import { useConfigStore } from '@/stores/configStore'
 import type { DriverConfig, DriverType } from '@/types/config'
 
-// ─── Driver type metadata for the selection grid ─────────────────────
-
-// ─── Component ───────────────────────────────────────────────────────
-
 export interface DriverWizardProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -68,11 +60,7 @@ export const DriverWizard: React.FC<DriverWizardProps> = ({
   const workingConfig = useConfigStore((s) => s.workingConfig)
   const isEdit = !!existingDriver
 
-  // ─── Form state ──────────────────────────────────────────────────
-  // We use a plain useForm (not zodResolver) because the per-type settings
-  // validation is conditional and complex — the Wizard's canProceed gates
-  // handle step-level validation, and the final configStore + configSchema
-  // validateFullConfig handles the full check.
+  // 表单为受控 useState；步骤校验在 canProceed 门，整体校验在 configSchema.validateFullConfig。
   const [selectedType, setSelectedType] = useState<DriverType | null>(
     (existingDriver?.type as DriverType) ?? null,
   )
@@ -94,7 +82,6 @@ export const DriverWizard: React.FC<DriverWizardProps> = ({
     setCurrentStep(0)
   })
 
-  // ─── Registry lookup ─────────────────────────────────────────────
   const registry = useMemo(
     () => (selectedType ? getDriverFieldRegistry(selectedType) : undefined),
     [selectedType],
@@ -109,7 +96,6 @@ export const DriverWizard: React.FC<DriverWizardProps> = ({
     }
   }
 
-  // ─── Preview YAML ────────────────────────────────────────────────
   const previewYaml = useMemo(() => {
     if (!selectedType) return ''
     const config: DriverConfig = {
@@ -123,7 +109,6 @@ export const DriverWizard: React.FC<DriverWizardProps> = ({
     return dumpConfigYaml({ drivers: [config] })
   }, [selectedType, driverName, settings, tags, tagsFile, tagsInterval])
 
-  // ─── Context validation ──────────────────────────────────────────
   // Validates the driver merged into the full working config to catch
   // cross-entity issues (duplicate names, missing transports, etc.).
   const contextValidation = useMemo(() => {
@@ -141,13 +126,9 @@ export const DriverWizard: React.FC<DriverWizardProps> = ({
 
   const hasContextErrors = contextValidation !== null && !contextValidation.valid
 
-  // ─── Step validation gates ───────────────────────────────────────
-
   const step0Valid = selectedType !== null
 
-  // A concrete reason instead of the generic "fix the errors
-  // first" — the hint names the exact missing fields ("Missing
-  // required: Host, Port"), locale-aware via Intl.ListFormat.
+  // The hint names the exact missing fields, locale-aware via Intl.ListFormat.
   const formatMissing = (fields: string[]): string =>
     new Intl.ListFormat(i18nInst.resolvedLanguage ?? 'en', { type: 'conjunction' }).format(fields)
   const step1Gate = (): boolean | { ok: false; reason: string } => {
@@ -165,8 +146,6 @@ export const DriverWizard: React.FC<DriverWizardProps> = ({
 
   const step2Valid = tags.length > 0 || !!tagsFile.trim()
 
-  // ─── Save ────────────────────────────────────────────────────────
-
   const handleFinish = () => {
     if (!selectedType || !driverName.trim()) return
     const driver: DriverConfig = {
@@ -183,8 +162,6 @@ export const DriverWizard: React.FC<DriverWizardProps> = ({
       onSaved?.()
     }
   }
-
-  // ─── Build wizard steps ──────────────────────────────────────────
 
   const steps: WizardStep[] = [
     {
