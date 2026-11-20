@@ -322,6 +322,43 @@ describe('coreCConfigSchema — transport validation', () => {
   })
 })
 
+// notify email `to` mirrors the server's optStringList: a list of strings
+// OR a comma-separated string (transport/notify/settings.go).
+describe('coreCConfigSchema — notify email recipients', () => {
+  const withEmailTo = (to: unknown) => ({
+    ...validConfig,
+    transports: [
+      {
+        name: 'mail',
+        type: 'notify',
+        settings: {
+          channel: 'email',
+          'smtp-host': 'smtp.example.com',
+          from: 'corec@example.com',
+          to,
+        },
+      },
+      validConfig.transports[1],
+    ],
+  })
+
+  it('accepts a non-empty recipient array', () => {
+    expect(coreCConfigSchema.safeParse(withEmailTo(['a@x.com'])).success).toBe(true)
+  })
+
+  it('accepts a comma-separated recipient string', () => {
+    expect(coreCConfigSchema.safeParse(withEmailTo('a@x.com,b@y.com')).success).toBe(true)
+  })
+
+  it('rejects an empty array, an empty or whitespace-only string, and a missing to', () => {
+    for (const to of [[], '', '   ', undefined]) {
+      const res = coreCConfigSchema.safeParse(withEmailTo(to))
+      expect(res.success).toBe(false)
+      expect(failIssues(res)).toContain('to (recipient list) is required')
+    }
+  })
+})
+
 describe('coreCConfigSchema — rule validation', () => {
   it('rejects unknown action', () => {
     const res = coreCConfigSchema.safeParse({

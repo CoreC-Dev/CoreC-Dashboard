@@ -231,7 +231,11 @@ const transportConfigSchema = z
             }
           }
           const to = s.to
-          if (!Array.isArray(to) || to.length === 0) {
+          // Server optStringList accepts a non-empty list or a non-empty
+          // comma-separated string.
+          const ok =
+            (Array.isArray(to) && to.length > 0) || (typeof to === 'string' && to.trim() !== '')
+          if (!ok) {
             ctx.addIssue({
               code: 'custom',
               path: ['settings', 'to'],
