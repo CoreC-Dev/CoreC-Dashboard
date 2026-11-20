@@ -3,7 +3,6 @@
 /*
  * AIOT-Hub design system — soft, rounded, card-based aesthetic.
  * Lime-green accent, system font stack, large radii, soft layered shadows.
- * Ported from aiot-dashboard (github.com/lsy1291455142/aiot-dashboard).
  */
 @theme inline {
   --color-background: hsl(var(--background));
@@ -56,22 +55,14 @@
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
 
-  /* UI chrome (labels, table cells, toolbar controls) reads better at 13px
-   * than 12px; `text-xs` was the single most-used size in the app. */
+  /* UI chrome (labels, table cells, toolbar controls) uses 13px. */
   --text-xs: 0.8125rem;
   --text-xs--line-height: 1.3;
 }
 
 /*
- * Card corner curvature.
- *
- * The visual preview (and the look the product owner prefers) uses plain
- * circular corners. A continuous "squircle" curve at the SAME 24px radius
- * reads noticeably tighter — the corner appears smaller even though the
- * radius token is identical. Keeping `corner-shape: round` makes the class
- * a stable hook for callers/tests while matching the preview's larger, softer
- * corner. Radius continues to come from the rounded-* utility, so layout and
- * hit-testing are unchanged.
+ * Card corner curvature: plain circular corners (corner-shape: round).
+ * Radius comes from the rounded-* utility; layout and hit-testing unchanged.
  */
 @utility squircle {
   corner-shape: round;
@@ -479,7 +470,7 @@ p {
   box-shadow: 0 1px 2px hsl(164 41% 12% / 0.2), 0 10px 24px -10px hsl(var(--primary) / 0.6);
 }
 
-/* ===== Smooth UX animations ===== */
+/* Smooth UX animations */
 
 /* Easing tokens — spring adds subtle bounce, smooth is current, snap is fast */
 :root {
@@ -671,9 +662,8 @@ p {
   animation: banner-enter 0.3s var(--ease-spring) both;
 }
 
-/* Skeleton shimmer — a transform-driven highlight sweep. Animating
-   background-position (the old implementation) repaints the whole block on
-   every frame; translating a pseudo-element stays on the compositor. */
+/* Skeleton shimmer — a transform-driven highlight sweep on a pseudo-element,
+   composited without repainting the block. */
 @keyframes skeleton-sweep {
   from {
     transform: translateX(-100%);

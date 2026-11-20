@@ -121,7 +121,7 @@ describe('AlertsPage — shared feed rendering', () => {
 
   it('renders the event age relatively and dims old feed entries', () => {
     // Freeze the clock so the event timestamp and the expected hover title
-    // derive from the same instant (second-boundary flake, A-domain report).
+    // derive from the same instant (avoids second-boundary flake).
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-03-15T08:00:00Z'))
     try {
