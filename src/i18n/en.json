@@ -622,7 +622,7 @@
     "dropped": "Dropped Commands",
     "droppedCommands": "Dropped Commands",
     "droppedCardTitle": "{{count}} command(s) dropped",
-    "droppedCardDesc": "Dropped commands cannot be recovered (e.g. the write channel was down and retries were exhausted). Commands that exhausted their retries are archived in the Write Control page's dead-letter queue for review and manual replay.",
+    "droppedCardDesc": "Counts commands dropped when the transport's ingress command channel was full — not retry exhaustion. These entries live in the transport's ingress dead-letter store, queried via GET /write/failed?source=ingress; the Write Control page's default queue (engine source) does not show them. Inspect and manually replay them from the ingress queue.",
     "viewDeadLetters": "View dead letters",
     "testPoint": "Send test point",
     "testPointSent": "Test point sent: {{message}}",

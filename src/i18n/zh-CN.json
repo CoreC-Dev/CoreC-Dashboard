@@ -622,7 +622,7 @@
     "dropped": "丢弃指令",
     "droppedCommands": "丢弃指令",
     "droppedCardTitle": "已丢弃 {{count}} 条指令",
-    "droppedCardDesc": "被丢弃的指令无法恢复（如写入通道断开且重试耗尽）。重试耗尽的指令会归档到写入控制页的死信队列，供排查与手动重新下发。",
+    "droppedCardDesc": "统计的是传输 ingress 指令通道满时被丢弃的指令，而非重试耗尽。这些明细存于传输的 ingress 死信存储，经 GET /write/failed?source=ingress 查询；写入控制页默认队列（engine 源）看不到它们。请在 ingress 队列中排查并手动重新下发。",
     "viewDeadLetters": "查看死信队列",
     "testPoint": "发送测试点",
     "testPointSent": "测试点已发送：{{message}}",
