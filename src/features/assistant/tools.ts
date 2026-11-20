@@ -234,7 +234,7 @@ const readTools: AssistantToolSpec[] = [
     execute: () =>
       run(async () => {
         const raw = await getConfigsRaw()
-        return { content: raw, summary: `${raw.split('\\n').length} line(s) of YAML` }
+        return { content: raw, summary: `${raw.split('\n').length} line(s) of YAML` }
       }),
   },
   {

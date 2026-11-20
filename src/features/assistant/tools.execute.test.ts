@@ -214,6 +214,14 @@ describe('tool execution: reads', () => {
     expect(res.content.startsWith('"')).toBe(false)
   })
 
+  it('get_configs counts lines on real newlines, not a literal backslash-n', async () => {
+    // 3 newlines → 4 split parts; the literal '\n' bug always counted 1.
+    apiRequestMock.mockResolvedValue('global:\n  engine:\n    workers: 4\n')
+    const res = await spec('get_configs').execute({})
+    expect(res.failed).toBeUndefined()
+    expect(res.summary).toBe('4 line(s) of YAML')
+  })
+
   it('validate_configs refuses an empty payload without asking the server', async () => {
     const res = await spec('validate_configs').execute({})
     expect(res.failed).toBe(true)
