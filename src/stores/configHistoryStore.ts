@@ -1,15 +1,8 @@
 /**
- * Config change-history store (Zustand).
- *
- * A module-level singleton so that ANY config-modifying flow — not just the
- * ConfigCenterPage — can record a snapshot by calling `addSnapshot`.  Because
- * the state lives in a store rather than component-local `useState`, the
- * ChangeHistoryCard in ConfigCenterPage updates reactively even when the
- * snapshot was recorded by a different page (e.g. DriverDetailPage edit,
- * RulesPage inline edit, or an entity-list apply dialog).
- *
- * Snapshots are persisted to localStorage (capped to 10 entries) so the
- * operator can review and restore recent configurations across page reloads.
+ * Config change-history store: any config-modifying flow records a snapshot
+ * via `addSnapshot`; ChangeHistoryCard in ConfigCenterPage updates
+ * reactively across pages. Snapshots persist to localStorage, capped to
+ * MAX_HISTORY_SNAPSHOTS entries.
  */
 import { create } from 'zustand'
 

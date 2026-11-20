@@ -9,10 +9,7 @@ import { useState } from 'react'
  * entity being edited, reset the step index, etc.). The guard also tracks
  * the falling edge so re-opening triggers reset again.
  *
- * Like the inline pattern it replaces, `resetFn` is invoked during render
- * (a "derive during render" update) — this is intentional and React-safe:
- * the setState calls inside `resetFn` schedule a re-render, and the
- * `setLastOpen(true)` guard prevents re-entry.
+ * resetFn runs during render; setLastOpen guards re-entry.
  */
 export function useResetOnOpen(open: boolean, resetFn: () => void): void {
   const [lastOpen, setLastOpen] = useState(open)

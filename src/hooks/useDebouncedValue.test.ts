@@ -23,7 +23,7 @@ describe('useDebouncedValue', () => {
       initialProps: { val: 'a' },
     })
     act(() => {
-      result.current // touch
+      result.current
     })
     vi.advanceTimersByTime(100)
     expect(result.current).toBe('a')

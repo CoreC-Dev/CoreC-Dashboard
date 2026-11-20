@@ -5,10 +5,6 @@
  * validation) and settingsRegistry (field metadata). These hooks are
  * consumed by wizard pages and the ConfigApplyConfirmationDialog to
  * show validation errors and dynamic option lists reactively.
- *
- * Decision-independent: they read from the local configStore, which works
- * identically under backend path A (loaded from GET /configs/raw) and
- * path B (loaded from uploaded YAML).
  */
 import { useMemo } from 'react'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
@@ -17,16 +13,14 @@ import { useConfigStore } from '@/stores/configStore'
 
 /**
  * Runs `validateFullConfig` on the configStore's workingConfig and
- * returns the result. Recomputes only when the workingConfig reference
- * changes (Zustand returns a new object on every mutation, so this is
- * naturally reactive).
+ * returns the result.
  *
  * Returns `{ valid: true }` when there's no working config loaded.
  */
 export function useConfigValidation(): ConfigValidationResult & { hasConfig: boolean } {
   const workingConfig = useConfigStore((s) => s.workingConfig)
   // Debounce validation to avoid running full zod validateFullConfig on every
-  // keystroke in form mode. Mirrors the YAML diff debounce pattern.
+  // keystroke in form mode.
   const debouncedConfig = useDebouncedValue(workingConfig, 200)
 
   return useMemo(() => {

@@ -1,17 +1,16 @@
 /**
- * Template & file loading for the Config Center — extracted from
- * useConfigCenter (custom-lint 500-line God-file limit).
+ * Template & file loading for the Config Center.
  *
  * Owns the "replace both sides wholesale" entry points:
  * - template picker open state + loading a pre-built template,
- * -.yaml/.yml file upload into the editor and the configStore,
+ * - .yaml/.yml file upload into the editor and the configStore,
  * - the discard confirmation: a template/file load REPLACES all
  * pending edits, so when either side is dirty the operator must confirm
  * through the shared DiscardChangesDialog before anything is replaced.
  *
  * The caller (useConfigCenter) keeps owning the editor content and the
  * pending-edits predicate; the page consumes everything through
- * useConfigCenter's return value, so this split is invisible to the UI.
+ * useConfigCenter's return value.
  */
 import { type ChangeEvent, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -62,9 +61,8 @@ export function useConfigCenterLoads(options: ConfigCenterLoadsOptions) {
     reader.readAsText(file)
   }
 
-  // "Upload YAML file" — An upload REPLACES both sides wholesale, so
-  // when unapplied edits exist the operator must confirm the discard first
-  // (DiscardChangesDialog, same gate as the banner's Discard button).
+  // An upload REPLACES both sides wholesale; when unapplied edits exist
+  // the operator confirms the discard first (DiscardChangesDialog).
   const handleFileUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -110,7 +108,6 @@ export function useConfigCenterLoads(options: ConfigCenterLoadsOptions) {
     applyTemplate(template)
   }
 
-  // Confirm/cancel the pending template/file load (DiscardChangesDialog).
   const confirmPendingLoad = () => {
     const file = pendingFile
     const template = pendingTemplate

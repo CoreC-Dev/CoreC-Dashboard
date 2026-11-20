@@ -4,29 +4,10 @@ import { useConfigRaw } from '@/api/hooks'
 import { isSeedBlocked, useConfigStore } from '@/stores/configStore'
 
 /**
- * Auto-load the live server config into configStore on first mount.
- *
- * Without this, the store is only seeded inside `useConfigCenter` (Config
- * Center page).  When an operator lands on a different admin page first
- * (e.g. Drivers — the default redirect), `workingConfig` is null and the
- * first "Create" calls `resetToEmpty()`, which would discard `global.api`
- * from the server's minimal config.  The subsequent Apply would then PUT a
- * config with no `global` section — silently shutting down the control plane.
- *
- * This hook is mounted at the `AppShell` level so it runs regardless of which
- * admin page is visited first.  It delegates to `configStore.seedFromServer`,
- * which is a no-op once both `workingConfig` and `savedConfig` are set.
- *
- * The hook is also isError-aware (P0).  When the fetch fails (backend
- * just restarted, transient 401, timeout) it records the failure in the
- * store (`seedStatus: 'failed'`), which blocks the destructive paths —
- * `resetToEmpty` refuses to start an empty config and `useApplyConfig`
- * refuses to PUT — until a retry succeeds.  Skipping seeding on error
- * would let the first "Create" wipe the control plane on Apply.
- *
- * Returns the shared seed status so any admin page can render the failure
- * banner (「服务器配置加载失败，创建/应用已禁用以保护运行中的配置」)
- * with a Retry button, and disable Create/Apply buttons proactively.
+ * Auto-seed configStore from GET /configs/raw on admin mount (AppShell's
+ * AdminConfigSeed), regardless of which admin page is visited first.
+ * Fetch/parse failure records seedStatus 'failed', blocking resetToEmpty
+ * and apply until retry. Exposes seedStatus/seedError/seedBlocked/retry.
  */
 export function useAutoLoadConfig() {
   const rawConfigQuery = useConfigRaw()

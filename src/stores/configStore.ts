@@ -1,28 +1,16 @@
 /**
- * Config Working-Copy Store
- *
- * The architectural backbone for all configuration editing in the Dashboard.
- * Holds a local working copy of the full CoreCConfig and provides entity
- * CRUD actions that delegate to the pure helpers in configYaml.ts.
- *
- * This store is decision-independent — it works identically under both
- * backend paths:
- * - Path A (GET /configs/raw): the server's raw YAML is fed straight to
- * loadFromYaml(); user edits locally; saveConfig() PUTs the YAML back.
- * - Path B (pure frontend): loadFromYaml() parses an uploaded YAML or
- * the user starts from scratch; edits locally; saveConfig() PUTs.
+ * Config Working-Copy Store: workingConfig/savedConfig/dirty + entity CRUD
+ * (delegates to lib/configYaml). YAML enters via loadFromYaml (upload/paste)
+ * or seedFromServer (GET /configs/raw); the apply hooks PUT the YAML back
+ * via useUpdateConfig.
  *
  * Dirty tracking: `savedConfig` is the last successfully applied snapshot.
  * `workingConfig` is what the user is editing. `dirty` = they differ.
  * `revert()` discards working changes back to the last saved state.
  *
- * Safety: because PUT /configs is a full hot-reload (non-atomic, suspends
- * the engine), the UI must never auto-save. All saves are explicit user
- * actions with a confirmation dialog showing the YAML diff.
- *
- * (split into configCrudSlice + configGetterSlice + pure helpers
- * in lib/configHelpers.ts. This file retains the state shell, loading, section
- * updates, and save/revert.)
+ * PUT /configs is a full hot-reload (non-atomic, suspends the engine):
+ * the UI never auto-saves; all saves are explicit user actions with a
+ * confirmation dialog showing the YAML diff.
  */
 import { create } from 'zustand'
 import { configEqual, setNestedPath } from '@/lib/configHelpers'
@@ -38,7 +26,6 @@ import type {
   TransportConfig,
 } from '@/types/config'
 
-/** Read a dotted-path value from a plain object (null/undefined-safe). */
 function readPath(root: unknown, path: string): unknown {
   return path.split('.').reduce<unknown>((acc, key) => {
     if (acc && typeof acc === 'object' && !Array.isArray(acc)) {
@@ -51,8 +38,7 @@ function readPath(root: unknown, path: string): unknown {
 /**
  * True when "Create" (resetToEmpty) or "Apply" would risk wiping a server
  * config we have never seen: the auto-seed fetch has not succeeded AND no
- * saved baseline exists (AppShell's own comment warns that
- * applying without seeding "silently shuts down the control plane").
+ * saved baseline exists.
  *
  * Consumers can use it as a stable boolean Zustand selector:
  * const blocked = useConfigStore((s) => isSeedBlocked(s))
@@ -73,15 +59,13 @@ export interface ConfigStoreState {
   /** Status of the auto-seed from GET /configs/raw. The
    * store owns it so every "Create"/"Apply" entry — on any admin page —
    * can consult one shared truth about whether the server config was
-   * ever loaded. 'idle' = auto-load not started (pure path-B / tests). */
+   * ever loaded. 'idle' = auto-load not started (user-supplied YAML / tests). */
   seedStatus: 'idle' | 'loading' | 'ready' | 'failed'
   /** Why the auto-seed failed (fetch error or parse error). Diagnostic raw
    *  string; user-facing copy is i18n'd at the display sites. */
   seedError: string | null
 
-  // ─── Loading ──────────────────────────────────────────────────────
-
-  /** Load config from a YAML string (path B: uploaded file or pasted YAML).
+  /** Load config from a YAML string (uploaded file or pasted YAML).
    *  Returns the error message on failure, or null on success — so callers
    *  can react to the result synchronously without reading store.getState(). */
   loadFromYaml: (yaml: string) => string | null
@@ -93,12 +77,9 @@ export interface ConfigStoreState {
    *  silently dropped on the next Apply. No-op if both are already set. */
   seedFromServer: (yaml: string) => string | null
   /** Start a new empty config, preserving the global section (api.listen/secret)
-   * from savedConfig when available so infrastructure settings are not lost.
-   * Returns false (no state change) when the server config has not been
-   * loaded and no baseline exists — starting from scratch then would let
-   * the next Apply PUT a config that wipes the running control plane
-   *. Callers that open editors on "Create" should treat false as
-   * "do not proceed". */
+   * from savedConfig when available. Returns false (no state change) when
+   * the server config has not been loaded and no baseline exists. Callers
+   * that open editors on "Create" should treat false as "do not proceed". */
   resetToEmpty: () => boolean
   /** Record that the GET /configs/raw auto-seed fetch is in flight. */
   markSeedLoading: () => void
@@ -108,7 +89,7 @@ export interface ConfigStoreState {
    *  retry succeeds (or a config is loaded manually, which sets a baseline). */
   markSeedFailed: (error: string) => void
 
-  // ─── Entity CRUD (delegate to configYaml.ts pure helpers) ─────────
+  // Entity CRUD delegates to configYaml.ts pure helpers.
 
   upsertDriver: (driver: DriverConfig) => boolean
   removeDriver: (name: string) => void
@@ -123,8 +104,6 @@ export interface ConfigStoreState {
   upsertDerivedTag: (tag: DerivedTagConfig) => boolean
   removeDerivedTag: (name: string) => void
 
-  // ─── Section updates ──────────────────────────────────────────────
-
   /** Update a single field inside the global section (shallow path: 'log-level', 'api.listen', etc.). */
   updateGlobalField: (path: string, value: unknown) => void
   /** Update a single field inside the node section. */
@@ -132,10 +111,8 @@ export interface ConfigStoreState {
   /** Record a zero-downtime global patch (e.g. PATCH /configs log-level):
    * the live SERVER config changed, so the saved baseline adopts the new
    * value. The working copy mirrors it ONLY when the user has no unapplied
-   * edit at that path — a pending edit always wins and stays dirty (* the old flow clobbered the whole working config from the server). */
+   * edit at that path — a pending edit always wins and stays dirty. */
   applyGlobalPatch: (path: string, value: unknown) => void
-
-  // ─── Save / revert ────────────────────────────────────────────────
 
   /** Mark the current workingConfig as saved (call after successful PUT).
    *  Only correct when the PUT payload WAS the working config (list-page
@@ -154,7 +131,7 @@ export interface ConfigStoreState {
   /** Reset the store to its initial empty state (clears working + saved config, dirty, error). */
   reset: () => void
 
-  // ─── Derived getters (not reactive; call on demand) ───────────────
+  // Derived getters are not reactive; call on demand.
 
   /** Dump the working config to a YAML string for PUT /configs. */
   getWorkingYaml: () => string | null
@@ -189,8 +166,6 @@ export const useConfigStore = create<ConfigStoreState>((set, get) => {
     error: null,
     seedStatus: 'idle',
     seedError: null,
-
-    // ─── Loading ──────────────────────────────────────────────────────
 
     loadFromYaml: (yaml: string) => {
       try {
@@ -264,8 +239,6 @@ export const useConfigStore = create<ConfigStoreState>((set, get) => {
     markSeedReady: () => set({ seedStatus: 'ready', seedError: null }),
     markSeedFailed: (error: string) => set({ seedStatus: 'failed', seedError: error }),
 
-    // ─── Section updates ──────────────────────────────────────────────
-
     updateGlobalField: (path: string, value: unknown) => {
       const { workingConfig } = get()
       if (!workingConfig) return
@@ -318,19 +291,15 @@ export const useConfigStore = create<ConfigStoreState>((set, get) => {
       })
     },
 
-    // ─── Save / revert ────────────────────────────────────────────────
-
     markSaved: () => {
       const { workingConfig } = get()
       set({ savedConfig: workingConfig ? structuredClone(workingConfig) : null, dirty: false })
     },
 
     // A YAML-mode hot reload PUTs the editor text, which can differ
-    // from the configStore working config (the form side). The old code
-    // called markSaved(), which snapped the baseline to the working config —
-    // marking form edits that were never sent as "saved" and dismissing the
-    // unsaved-changes banner. Instead: baseline = what the server actually
-    // accepted; the form side keeps its unapplied edits pending.
+    // from the configStore working config (the form side). Baseline =
+    // what the server actually accepted; the form side keeps its
+    // unapplied edits pending.
     markSavedFromYaml: (yaml: string) => {
       try {
         const applied = parseConfigYaml(yaml)
@@ -371,8 +340,6 @@ export const useConfigStore = create<ConfigStoreState>((set, get) => {
     reset: () => {
       set({ workingConfig: null, savedConfig: null, dirty: false, error: null })
     },
-
-    // ─── Entity CRUD + Derived getters (from slices) ──────────────────
 
     ...createCrudSlice(set, get),
     ...createGetterSlice(set, get),

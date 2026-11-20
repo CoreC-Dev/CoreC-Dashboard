@@ -46,13 +46,11 @@ function getSystemTheme(): 'dark' | 'light' {
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
 }
 
-/** Determine whether a theme mode is dark. */
 function isDarkTheme(theme: ThemeMode): boolean {
   if (theme === 'system') return getSystemTheme() === 'dark'
   return DARK_VARIANTS.includes(theme)
 }
 
-/** Apply theme to the DOM: set data-theme attribute and .dark class. */
 function applyThemeToDOM(theme: ThemeMode) {
   if (typeof document === 'undefined') return
   const root = document.documentElement
@@ -81,7 +79,6 @@ const validTheme =
 applyThemeToDOM(validTheme)
 
 export const useThemeStore = create<ThemeState>((set, get) => {
-  // Listen for system changes
   if (typeof window !== 'undefined') {
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
       if (get().theme === 'system') {

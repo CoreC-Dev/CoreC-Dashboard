@@ -1,18 +1,8 @@
 // @vitest-environment jsdom
 /**
- * useConfigCenter — regression coverage.
- *
- * Scenario under test (P0): the Config Center keeps two
- * manually bridged states — the structured form side (configStore working
- * config) and the raw YAML editor string. The operator edits the form,
- * switches to YAML, edits different lines there, and hot-reloads. The old
- * code called markSaved() after the PUT, which marked the form edits that
- * were never sent as "saved", dismissed the unsaved-changes banner, and let
- * the edits silently evaporate. The fix records the applied YAML as the
- * saved baseline while keeping divergent form edits pending.
- *
- * Also covers the mode-switch bridge and the hot-reload acknowledgement
- * guard that make the evaporation path structurally unreachable.
+ * useConfigCenter — coverage: applied YAML becomes the saved baseline
+ * while divergent form edits stay pending; mode-switch bridge;
+ * hot-reload acknowledgement guard.
  */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react'
@@ -144,9 +134,7 @@ function putPayloads(): string[] {
   return calls.length > 0 ? calls : all.map((c) => String((c[1] as RequestInit)?.body ?? ''))
 }
 
-// Module-level test provider (biome 2.6 noComponentHookFactories: a
-// component defined inside a function remounts its subtree on every
-// parent render — in tests that would silently reset hook state).
+// Module-level test provider.
 function TestProviders({ client, children }: { client: QueryClient; children: React.ReactNode }) {
   return (
     <QueryClientProvider client={client}>
@@ -162,9 +150,7 @@ function createWrapper() {
       mutations: { retry: false },
     },
   })
-  // Anonymous bound arrow (biome 2.6 noComponentHookFactories): the
-  // named component lives at module level; this arrow only injects the
-  // per-test client.
+  // Anonymous bound arrow; the named component lives at module level.
   return ({ children }: { children: React.ReactNode }) => (
     <TestProviders client={qc}>{children}</TestProviders>
   )
@@ -447,7 +433,7 @@ describe('useConfigCenter — persistent validation warnings', () => {
     await act(async () => {
       await result.current.handleDryRunValidate()
     })
-    // The result must NOT ride the 4.5s auto-dismiss strip.
+    // The result must NOT ride the auto-dismissing status strip.
     expect(result.current.statusMsg).toBeNull()
     expect(result.current.dryRunResult).toEqual({
       outcome: 'valid-with-warnings',
@@ -631,9 +617,6 @@ describe('useConfigCenter — template/file load confirmation', () => {
     expect(result.current.yamlContent).not.toBe(SERVER_YAML)
   })
 
-  // Regression: the placeholder rename (change-me-please →
-  // REPLACE_ME_WITH_A_STRONG_SECRET) silently broke the secret
-  // regeneration — the loaded template kept the placeholder verbatim.
   it('loading a template regenerates the placeholder secret', async () => {
     const { result } = await mountSeeded()
     await settleDebounce()

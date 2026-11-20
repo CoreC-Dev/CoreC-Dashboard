@@ -9,8 +9,7 @@ import { useToggleRule } from '@/api/hooks'
  * toggle mutation so the switch is disabled during the request, and surfaces
  * toggle errors.
  *
- * Rules are addressed by name (stable across config reloads) rather than
- * index, which can shift when the rule list changes.
+ * Rules are addressed by name (stable across config reloads).
  */
 export function useRuleToggle() {
   const { t } = useTranslation()
@@ -24,8 +23,8 @@ export function useRuleToggle() {
     try {
       await toggleMutation.mutateAsync({ name, disabled: !currentDisabled })
     } catch (err) {
-      // Catch prevents unhandled rejection; the switch reverts via the next
-      // poll. Surface the error so the operator knows why.
+      // Catch prevents unhandled rejection; the switch keeps the cached
+      // server state (no optimistic flip). Surface the error.
       setToggleError(err instanceof Error ? err.message : t('rules.toggleFailed'))
     } finally {
       setTogglingNames((prev) => {

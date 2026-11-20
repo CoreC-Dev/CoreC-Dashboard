@@ -23,7 +23,7 @@ import type { CoreCConfig } from '@/types/config'
  * YAML, so the apply merge keeps the server's stored value.
  */
 interface UseEntityEditConfigOptions<TField extends { key: string; kind?: string }> {
-  /** Entity name (used for React Query keys, not internally). */
+  /** Entity name (informational; unused by the hook). */
   entityName: string
   /** Editable fields for this entity type. */
   fields: readonly TField[]
@@ -52,12 +52,7 @@ export interface EntityEditConfigState {
   setOpen: React.Dispatch<React.SetStateAction<boolean>>
   values: Record<string, string>
   setField: (key: string, v: string) => void
-  /**
-   * Password-kind fields that have a stored (server-side) value. The form
-   * value is masked to '' for these; the card uses the set to show
-   * the "saved — leave blank to keep" placeholder instead of echoing the
-   * secret.
-   */
+  /** Password-kind fields that have a stored (server-side) value. */
   secretSavedKeys: ReadonlySet<string>
   previewYaml: string
   applyYaml: string
@@ -96,7 +91,6 @@ export function useEntityEditConfig<TField extends { key: string; kind?: string 
   // Last failed reload's message, kept separately so the confirmation dialog
   // can render it in place (applyError slot) while statusMsg feeds the card.
   const [reloadError, setReloadError] = useState<string | null>(null)
-  // Password-kind keys that carry a stored value (stored-secret masking).
   const [secretSavedKeys, setSecretSavedKeys] = useState<ReadonlySet<string>>(() => new Set())
 
   // Pre-fill form from the existing server config.

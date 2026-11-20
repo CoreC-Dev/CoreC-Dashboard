@@ -17,15 +17,11 @@ import { pushToast } from '@/stores/toastStore'
  * page-specific functions and renders `<ConfigApplyConfirmationDialog
  * {...dialogProps} />`.
  *
- * Server-side validation (honesty fix): onConfirm
- * first dry-runs the working YAML through POST /configs/validate — the
- * ConfigApplyConfirmationDialog header claims "Path A validates
- * via POST /configs/validate first (if available)", so it must actually
- * do that: a { valid: false } response blocks the PUT with the server
- * message in the dialog; warnings (e.g. idle-mode hints) are appended to
- * the dialog's warning block; a 404/501 (endpoint unavailable on older
- * backends) skips the check and proceeds, exactly as "if available"
- * promises; any other transport error blocks the apply conservatively.
+ * onConfirm dry-runs the working YAML via POST /configs/validate:
+ * a { valid: false } response blocks the PUT with the server message in
+ * the dialog; warnings (e.g. idle-mode hints) append to the dialog's
+ * warning block; a 404/501 (endpoint unavailable) skips the check and
+ * proceeds; any other transport error blocks the apply.
  *
  * OnConfirm also refuses to PUT while the server config has never
  * been loaded (auto-seed in flight or failed and no saved baseline) —
@@ -132,7 +128,7 @@ export function useApplyConfig(options: UseApplyConfigOptions) {
         onError: (err) => {
           setServerValidating(false)
           if (err instanceof ApiError && (err.status === 404 || err.status === 501)) {
-            // Endpoint unavailable on older backends — "if available".
+            // Endpoint unavailable on older backends — proceed without the check.
             putYaml(yaml)
             return
           }

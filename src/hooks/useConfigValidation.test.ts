@@ -202,8 +202,8 @@ describe('validateFullConfig — integration with configStore', () => {
     expect(validateFullConfig(cfg).valid).toBe(true)
 
     // Remove the only transport → the rule still targets 'tp1', so the
-    // rule-target-ref check produces a hard error (the transport-presence
-    // check is now a non-blocking warning, not the error caught here).
+    // rule-target-ref check produces a hard error; transport-presence is
+    // a non-blocking warning.
     useConfigStore.getState().removeTransport('tp1')
     const cfg2 = useConfigStore.getState().workingConfig!
     const result = validateFullConfig(cfg2)

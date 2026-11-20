@@ -1,14 +1,9 @@
 /**
- * Config change-history management hook.
+ * Config change-history management hook: thin wrapper around the Zustand
+ * configHistoryStore, shared by every config-modifying flow. The store
+ * persists snapshots to localStorage, capped to MAX_HISTORY_SNAPSHOTS.
  *
- * Thin wrapper around the Zustand configHistoryStore so that every
- * config-modifying flow (ConfigCenterPage, entity-list apply, entity-detail
- * edit, RulesPage inline edit) shares a single reactive history.  The store
- * persists snapshots to localStorage (capped to 10 entries) so the operator
- * can review and restore recent configurations.
- *
- * ConfigSnapshot is re-exported from the store for backward compatibility
- * with existing imports (e.g. ConfigCenterYaml.tsx).
+ * ConfigSnapshot re-exported from the store.
  */
 import { useConfigHistoryStore } from '@/stores/configHistoryStore'
 

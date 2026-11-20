@@ -48,9 +48,7 @@ afterEach(() => {
   putCalls.length = 0
 })
 
-// Module-level test provider (biome 2.6 noComponentHookFactories: a
-// component defined inside a function remounts its subtree on every
-// parent render — in tests that would silently reset hook state).
+// Module-level test provider.
 function TestProviders({ client, children }: { client: QueryClient; children: React.ReactNode }) {
   return <QueryClientProvider client={client}>{children}</QueryClientProvider>
 }
@@ -59,9 +57,7 @@ function createWrapper() {
   const qc = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   })
-  // Anonymous bound arrow (biome 2.6 noComponentHookFactories): the
-  // named component lives at module level; this arrow only injects the
-  // per-test client.
+  // Anonymous bound arrow; the named component lives at module level.
   return ({ children }: { children: React.ReactNode }) => (
     <TestProviders client={qc}>{children}</TestProviders>
   )
@@ -110,7 +106,7 @@ function mountApplyConfig() {
 describe('useApplyConfig — seed guard', () => {
   it('refuses to PUT while the server config failed to load', async () => {
     // Simulate a working config the user built without any server baseline
-    // (e.g. seed failed and they clicked Create before the guard existed).
+    // (seed failed).
     useConfigStore.setState({
       workingConfig: { global: { 'log-level': 'info' } },
       dirty: true,

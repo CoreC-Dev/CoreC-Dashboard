@@ -1,6 +1,5 @@
 /**
- * YAML-mode apply flow for the Config Center — extracted from
- * useConfigCenter (custom-lint 500-line God-file limit).
+ * YAML-mode apply flow for the Config Center.
  *
  * Owns everything specific to applying the RAW YAML editor content:
  * - the YAML-mode apply confirmation dialog state (open/error),
@@ -8,15 +7,15 @@
  * does not include the form side's unapplied edits, the operator must
  * explicitly acknowledge that those edits are NOT part of this apply,
  * - the mode-switch bridge: switching Form/YAML views with diverged
- * content asks which side to keep instead of silently carrying both,
+ * content asks which side to keep,
  * - the confirmed apply itself: PUT /configs → snapshot → record the
- * APPLIED YAML as the saved baseline (markSavedFromYaml) so divergent
- * form edits stay pending instead of being marked saved — the P0 case,
+ * APPLIED YAML as the saved baseline (markSavedFromYaml); divergent
+ * form edits stay pending,
  * - the seed guard: no PUT while the server config is unknown.
  *
  * The caller (useConfigCenter) keeps owning yamlContent/mode state and
  * passes accessors in; the page consumes everything through
- * useConfigCenter's return value, so this split is invisible to the UI.
+ * useConfigCenter's return value.
  */
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -69,7 +68,6 @@ export function useYamlApplyFlow(options: YamlApplyFlowOptions) {
   const [bridgeTarget, setBridgeTarget] = useState<ConfigMode | null>(null)
   const [applyGuardOpen, setApplyGuardOpen] = useState(false)
 
-  // ── Form ↔ YAML divergence detection ──────────────────────
   // The form view edits configStore.workingConfig; the YAML view edits the
   // raw `yamlContent` string — two manually bridged states. Evaluated on
   // demand (mode switch / hot reload click), never per keystroke.
@@ -77,7 +75,7 @@ export function useYamlApplyFlow(options: YamlApplyFlowOptions) {
     yamlDiffersFromConfig(yamlContent, useConfigStore.getState().workingConfig)
 
   // ModeSwitcher entry point. Switching views with diverged content
-  // no longer silently keeps both stale states; the user picks a side.
+  // asks the user to pick a side.
   const requestModeSwitch = (next: ConfigMode) => {
     if (next === mode) return
     if (yamlDiffersFromForm()) setBridgeTarget(next)
@@ -139,7 +137,6 @@ export function useYamlApplyFlow(options: YamlApplyFlowOptions) {
 
   const applyGuardCancel = () => setApplyGuardOpen(false)
 
-  // Confirmed YAML-mode apply: called by the dialog's onConfirm.
   const handleYamlApplyConfirm = async () => {
     // Belt-and-braces: the entry guard above should have blocked this
     // path already, but the confirm handler must never PUT against an
@@ -150,11 +147,10 @@ export function useYamlApplyFlow(options: YamlApplyFlowOptions) {
     }
     options.setStatusMsg(null)
     setYamlApplyError(null)
-    // Server-side dry-run before the destructive PUT (same gate the
-    // ConfigApplyConfirmationDialog header promises for the form flow):
+    // Server-side dry-run before the destructive PUT:
     // { valid: false } blocks the PUT with the server message; warnings
-    // surface in the dialog; 404/501 (endpoint unavailable) proceeds —
-    // "if available" — and any other transport error blocks.
+    // surface in the dialog; 404/501 (endpoint unavailable) proceeds,
+    // and any other transport error blocks.
     setServerValidating(true)
     try {
       const res = await validateConfig.mutateAsync(yamlContent)
@@ -177,9 +173,7 @@ export function useYamlApplyFlow(options: YamlApplyFlowOptions) {
       addSnapshot(yamlContent)
       setYamlApplyOpen(false)
       // Record what the SERVER actually accepted as the saved baseline.
-      // The old markSaved() snapped the baseline to the working config,
-      // marking never-sent form edits as "saved" and dismissing the
-      // unsaved-changes banner. Divergent edits stay pending (dirty).
+      // Divergent edits stay pending (dirty).
       const syncErr = markSavedFromYaml(yamlContent)
       if (syncErr) {
         options.setStatusMsg({
@@ -201,13 +195,11 @@ export function useYamlApplyFlow(options: YamlApplyFlowOptions) {
     // True while the server dry-run or the PUT itself is in flight — the
     // page passes this to the dialog's `applying` prop.
     yamlApplying: serverValidating || updateMutation.isPending,
-    // apply dialog
     yamlApplyOpen,
     setYamlApplyOpen,
     yamlApplyError,
     yamlApplyWarnings: yamlApplyWarnings ?? undefined,
     handleYamlApplyConfirm,
-    // form↔YAML divergence bridge + guard
     requestModeSwitch,
     bridgeTarget,
     bridgeImport,

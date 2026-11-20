@@ -9,11 +9,8 @@ import { useCoreCWebSocket, type WSStatus } from '@/api/hooks'
  * TrafficChart and MemoryChart. One hook owns the pattern; each chart
  * keeps only its domain logic (which frames fields map to which lines).
  *
- * Rationale for the chart-local status mirror: the chart freezes
- * honestly when its socket drops — data may render, but it is
- * stale. downOnce mirrors wsStatusStore's semantics: once the socket
- * involuntarily left 'open', the chart is paused until it reopens.
- * The store wiring itself lives inside useCoreCWebSocket.
+ * downOnce mirrors wsStatusStore: after an involuntary drop the chart is
+ * disconnected until reopen. Store wiring lives in useCoreCWebSocket.
  */
 export function useLiveChartStream<TFrame, TPoint>(
   path: string,

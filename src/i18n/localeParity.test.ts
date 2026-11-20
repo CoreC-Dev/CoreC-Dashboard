@@ -12,14 +12,9 @@ const localeFiles = import.meta.glob('./*.json', {
 }) as Record<string, () => Promise<string>>
 
 /**
- * Locale parity invariant (UX-wave D suggestion): the two locale files
- * must expose EXACTLY the same key set. The parallel-edit waves showed
- * how easily one side drifts (keys added to zh only, duplicate keys from
- * index races) — this test makes any drift a hard failure.
- *
- * Note: value parity (identical interpolation placeholders) is also
- * checked: a key with {{count}} in zh but no placeholder in en would
- * silently render the raw template in one language.
+ * Locale parity invariant: zh-CN and en must expose the same key set and
+ * placeholders (a key with {{count}} in zh but no placeholder in en would
+ * render the raw template in one language).
  */
 
 type Flat = Record<string, string>
@@ -69,13 +64,10 @@ describe('locale parity invariant', () => {
   })
 
   it('no adjacent duplicate key lines in the raw locale files', async () => {
-    // JSON.parse silently keeps the LAST duplicate key — the parallel-edit
-    // race committed `dashboard.refreshFailed` twice to both files before
-    // it was caught. Parsed objects cannot reveal this (duplicates
-    // collapse), so the raw source text must be scanned. The check is
-    // deliberately narrow: only ADJACENT identical key lines are failures
-    // (that is the exact shape the race produced); same-named keys in
-    // different namespaces legitimately repeat far apart.
+    // JSON.parse silently keeps the LAST duplicate key, so parsed objects
+    // cannot reveal duplicates — scan the raw source text instead. The
+    // check is narrow: only ADJACENT identical key lines fail; same-named
+    // keys in different namespaces legitimately repeat far apart.
     for (const name of ['./zh-CN.json', './en.json']) {
       const raw = await localeFiles[name]()
       const lines = raw.split('\n').map((l) => l.trim())

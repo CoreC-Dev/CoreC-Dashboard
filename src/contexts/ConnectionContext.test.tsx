@@ -2,8 +2,7 @@
 // ConnectionProvider probe lifecycle: success, failure-kind
 // classification (unauthorized vs unreachable vs timeout), instance-
 // not-found, unmount cleanup (AbortError), reconnect(), global 401
-// interception with the re-enter-key overlay, and the 15s periodic
-// re-probe.
+// interception with the re-enter-key overlay, and the periodic re-probe.
 //
 // The probe hits the authenticated /stats endpoint through the real
 // apiRequest, so tests mock global fetch and dispatch on URL:
@@ -24,8 +23,7 @@ import { useConnectionStore } from '@/stores/connectionStore'
 import { useInstanceStore } from '@/stores/instanceStore'
 import type { CoreCInstance } from '@/types/models'
 
-// Load-tolerant async-assertion timeout: the runner is shared with parallel
-// agents on a 2-core host, and RTL waitFor's 1s default flakes under contention.
+// Load-tolerant async-assertion timeout.
 configure({ asyncUtilTimeout: 4000 })
 
 // Mock the active-connection singleton: setActiveConnection becomes a no-op
@@ -146,9 +144,7 @@ afterEach(() => {
   vi.useRealTimers()
 })
 
-// Module-level: a component defined inside the test function would
-// remount (destroying hook state) on every render — biome 2.6's
-// noComponentHookFactories.
+// Module-level test provider.
 function FailingQueryChild() {
   useQuery({
     queryKey: ['will-401'],
@@ -177,7 +173,7 @@ describe('ConnectionProvider', () => {
     expect(useInstanceStore.getState().probeErrors['inst-1']).toBeNull()
 
     // The probe is authenticated — the Bearer token travels with the
-    // verdict request, so a wrong key can no longer pass as "connected".
+    // verdict request.
     const [, init] = statsCall()
     expect(new Headers(init?.headers).get('Authorization')).toBe('Bearer secret-1')
   })
@@ -425,7 +421,7 @@ describe('ConnectionProvider — periodic re-probe', () => {
     })
     expect(statsCallCount()).toBe(1)
 
-    // 15s later the interval fires a second probe…
+    // After one probe interval the timer fires a second probe…
     await act(async () => {
       await vi.advanceTimersByTimeAsync(15_000)
     })

@@ -122,7 +122,7 @@ drivers:
 
   it('resetToEmpty starts a fresh empty config marked dirty', () => {
     // Default seedStatus 'idle' (auto-load not started) must not block the
-    // pure path-B flow where the user deliberately starts from scratch.
+    // flow where the user deliberately starts from scratch.
     useConfigStore.getState().resetToEmpty()
     const s = useConfigStore.getState()
     expect(s.workingConfig).toEqual({})
@@ -583,7 +583,7 @@ describe('configStore — field-level updates', () => {
 })
 
 describe('configStore — markSavedFromYaml (evaporation regression)', () => {
-  // The audit's evaporation scenario: the operator edits the FORM (engine
+  // Form edit + divergent YAML apply: the operator edits the FORM (engine
   // workers), switches to YAML, edits the YAML differently (log level), and
   // hot-reloads. The applied YAML must become the saved baseline, while the
   // form edit stays pending — never silently marked as saved.

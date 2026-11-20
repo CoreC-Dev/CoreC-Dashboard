@@ -1,10 +1,6 @@
 /**
- * stores/assistantStore.ts - provider settings + the
- * write switch, shared by the panel and the settings section.
- *
- * A module-level Zustand store rather than component state: the settings page
- * edits the provider while the panel consumes it, and they are not nested
- * (the panel is mounted in AppShell, the form in the settings route).
+ * assistantStore — provider settings + the write switch, shared by the
+ * panel (AppShell) and the settings route.
  */
 import { useMemo } from 'react'
 import { create } from 'zustand'
@@ -20,9 +16,9 @@ interface AssistantSettingsState {
   providers: AssistantProvider[]
   selected: string | null
   /**
-   * Write-class tools are off until the operator turns them on here. Default
-   * false mirrors corec-mcp's read-only default; it is NOT persisted with the
-   * providers so a reload never silently re-arms writes.
+   * Write-class tools are off until the operator turns them on here.
+   * Default false, like corec-mcp's read-only default; not persisted
+   * with the providers.
    */
   allowWrite: boolean
   setProviders: (list: AssistantProvider[], selected: string | null) => void

@@ -32,7 +32,7 @@ const DEFAULT_VALUE_ONLY_KEYS = [
 ] as const
 
 describe('i18n packs — defaultValue-only keys', () => {
-  it('every audit-named key resolves in both language packs', () => {
+  it('every defaultValue-only key resolves in both language packs', () => {
     const zh = new Set(flatKeys(zhCN))
     const enKeys = new Set(flatKeys(en))
     for (const key of DEFAULT_VALUE_ONLY_KEYS) {

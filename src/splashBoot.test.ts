@@ -1,8 +1,6 @@
 // @vitest-environment jsdom
-// Static splash: main.tsx awaits the proxy-mode probe (up to
-// ~3s on a cold start) before createRoot, and index.html's #root used to be
-// empty during that whole window — a dead-white screen with no hint whether
-// the app is loading or broken. The splash must:
+// Static splash: main.tsx awaits the proxy-mode probe before createRoot;
+// the splash covers that window. It must:
 //  1. Live INSIDE #root, where createRoot().render() clears it on mount (the
 //     clearing behavior itself is pinned by this suite against the real
 //     react-dom, not assumed).

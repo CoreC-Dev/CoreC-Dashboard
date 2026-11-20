@@ -190,7 +190,7 @@ describe('reportDropped — rate-limit hint window', () => {
       useWsStatusStore.getState().touchStream('a') // still-delivered frame → store write
       expect(deriveRateLimited(store().streams)).toBe(true)
 
-      // Advance past BOTH the 3s hint window and the 1s touch throttle.
+      // Advance past BOTH the rate-limit hint window and the touch throttle.
       vi.advanceTimersByTime(1001)
       useWsStatusStore.getState().touchStream('a') // window lapsed → hint clears
       expect(deriveRateLimited(store().streams)).toBe(false)

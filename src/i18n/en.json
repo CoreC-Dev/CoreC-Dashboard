@@ -48,7 +48,7 @@
     "secretToken": "API Secret (Bearer Token)",
     "secretMin": "Secret must be at least 8 characters",
     "secretHint": "Find it in CoreC's config.yaml under global.api.secret. If it's set to ${COREC_API_SECRET}, use that environment variable's value.",
-    "secretStorageNote": "The key is stored in plain text in this browser's local storage. Avoid saving production keys on shared computers.",
+    "secretStorageNote": "The key is kept only in this tab by default (sessionStorage, plain text); it is written to localStorage only when \"Remember secrets\" is checked. Avoid saving production keys on shared computers.",
     "showSecret": "Show secret",
     "hideSecret": "Hide secret",
     "color": "Color Label",
@@ -370,7 +370,7 @@
     "submit": "Next: confirm write",
     "confirmWarning": "Warning: This action writes directly to PLC coils/registers. Ensure operational safety!",
     "deadLetterTitle": "Failed writes (retries exhausted)",
-    "deadLetterDesc": "Commands that exhausted write-retry-count (default 3) are held here for operator audit and manual replay",
+    "deadLetterDesc": "Commands that exhausted write-retry-count are held here for operator audit and manual replay",
     "searchDeadLetters": "Search dead letters (tag/error)…",
     "driverFilterAll": "Driver: all",
     "noMatchingDeadLetters": "No matching dead letters",
@@ -393,9 +393,9 @@
     "concurrencyRetries": "Concurrency & Retries",
     "concurrencyRetriesDesc": "CoreC Control Plane Safety Specs",
     "commandConcurrency": "Command Concurrency",
-    "commandConcurrencyDesc": "Controlled via internal counting semaphore (default 16 concurrency), preventing slow or disconnected PLCs from exhausting core goroutines.",
+    "commandConcurrencyDesc": "Bounded by an internal counting semaphore, preventing slow or disconnected PLCs from exhausting core goroutines.",
     "writeRetryCount": "Write-Retry-Count",
-    "writeRetryCountDesc": "Failed writes automatically retry up to 3 times before failing closed into Dead Letter Queue for operator review.",
+    "writeRetryCountDesc": "Failed writes retry with backoff, then fail closed into Dead Letter Queue for operator review.",
     "attemptsExhausted": "Retries exhausted: {{count}}",
     "confirmWriteTitle": "Confirm Write Command",
     "confirmWriteDesc": "This command writes directly to the PLC. Verify every field below before confirming.",
@@ -510,7 +510,7 @@
   },
   "writeHistory": {
     "title": "Write Operation History",
-    "desc": "Every tag write recorded by CoreC — forward API writes and reverse stream commands (newest first, up to 1000 entries)",
+    "desc": "Every tag write recorded by CoreC — forward API writes and reverse stream commands (newest first, bounded history)",
     "source": "Source",
     "sourceApi": "API",
     "sourceCommand": "Command",
@@ -1164,7 +1164,7 @@
     "streamBannerDisconnected": "⚠ Live stream disconnected — data may be stale (last update {{time}}). Reconnecting…",
     "streamBannerRejected": "Live stream gave up after 10 failed attempts. Check your network and reload the page.",
     "streamRetry": "Reconnect",
-    "streamRateLimited": "⚠ Live data exceeds the 500 msg/s UI protection cap — some updates are being dropped to keep the interface responsive"
+    "streamRateLimited": "⚠ Live data exceeds the UI protection rate cap — some updates are being dropped to keep the interface responsive"
   },
   "error": {
     "boundary": {
@@ -1313,14 +1313,14 @@
     "deadLetterPathHelp": "Persist the write dead-letter queue (GET /write/failed) to this append-only JSONL file and replay it at startup. Empty = in-memory only.",
     "alertActiveWindow": "Alert Active Window",
     "alertActiveWindowHelp": "How long an alert stays active after its last fire before it is cleared to history. Default: 15m.",
-    "pprofAddrHelp": "Run pprof on a separate HTTP server at this address (e.g. 127.0.0.1:6060). No authentication — bind to loopback or private interface only. Empty = pprof on main API port."
+    "pprofAddrHelp": "Run pprof on a separate HTTP server at this address (e.g. 127.0.0.1:6060). No authentication — loopback only (127.0.0.1/::1/localhost); other addresses are refused at startup. Empty = pprof on main API port."
   },
   "nodeConfig": {
     "title": "Node Configuration",
     "desc": "Configure this node's identity and role in the topology. Auto-discovery is enabled when node ID is set.",
     "restartRequired": "Restart required",
     "nodeId": "Node ID",
-    "nodeIdHelp": "Unique identifier for this node in the topology. When empty, auto-discovery is disabled and the node operates standalone (backward compatible). When set, the node broadcasts heartbeats and auto-generates topics.",
+    "nodeIdHelp": "Unique identifier for this node in the topology. When empty, auto-discovery is disabled and the node operates standalone. When set, the node broadcasts heartbeats and auto-generates topics.",
     "autoDiscoveryDisabled": "Auto-discovery Disabled",
     "autoDiscoveryDisabledDesc": "Node ID is not set. The engine operates in standalone mode without topology features. Set a node ID to enable auto-discovery, role-based routing, and auto-generated topics.",
     "role": "Node Role",
@@ -1441,7 +1441,7 @@
       "baseUrlHelp": "OpenAI-compatible prefix ending in /v1, e.g. http://10.0.0.7:8000/v1 (vLLM) or https://api.example.com/v1.",
       "apiKey": "API key",
       "apiKeyOptional": "optional for a local gateway",
-      "secretNotice": "The provider key is stored in this browser's localStorage, in plain text, exactly like your CoreC API keys. Anyone who can run script in this browser can read it.",
+      "secretNotice": "The provider key is stored in this browser's localStorage, in plain text. Anyone who can run script in this browser can read it.",
       "empty": "No provider yet. Add one to enable the assistant.",
       "save": "Save",
       "select": "Use this provider",

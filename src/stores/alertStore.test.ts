@@ -169,8 +169,6 @@ describe('resetTransient — instance-switch hygiene', () => {
   })
 })
 
-// --- First-class rule alerts ---
-
 const mkAlert = (key: string, first: string, over: Partial<Alert> = {}): Alert => ({
   key,
   rule: key.split('|')[0],

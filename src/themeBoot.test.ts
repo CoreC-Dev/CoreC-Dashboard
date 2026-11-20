@@ -14,8 +14,7 @@
 // relative import ('../index.html?raw') trips the custom-lint
 // no-relative-imports rule. import.meta.glob threads the needle: the glob
 // path is a string argument (not an import statement) and vite/client types
-// the call itself. The sha256 uses WebCrypto (globalThis.crypto), which the
-// DOM lib types and Node 18+ provides.
+// the call itself. The sha256 uses node:crypto (jsdom's crypto lacks SubtleCrypto).
 // @ts-expect-error — node builtin; the app tsconfig intentionally omits node types.
 import { createHash } from 'node:crypto'
 import { describe, expect, it } from 'vitest'

@@ -43,17 +43,14 @@ export const toLineData = (samples: TrendSample[]) =>
  *
  * Creates the chart once per tag selection (and again on theme change, since
  * the canvas reads CSS variables at creation time), then pushes buffered
- * samples into the series whenever they change. Extracted verbatim from
- * TagExplorerPage — no behavior change.
+ * samples into the series whenever they change.
  */
 export function useTrendChart({
   trendTag,
   trendSamples,
 }: UseTrendChartOptions): UseTrendChartResult {
-  // Track the resolved theme so the lightweight-charts canvas re-creates
-  // when the user toggles light/dark. The chart reads CSS custom properties
-  // via getComputedStyle at creation time; without this dependency, a theme
-  // switch leaves the chart with stale colors until a full page refresh.
+  // resolvedTheme recreates the chart: canvas colors are resolved from CSS
+  // vars at creation time.
   const resolvedTheme = useThemeStore((s) => s.resolvedTheme)
 
   const chartContainerRef = useRef<HTMLDivElement>(null)
@@ -61,12 +58,7 @@ export function useTrendChart({
   const seriesRef = useRef<ISeriesApi<'Line'> | null>(null)
 
   // Create the trend chart once per tag selection. Data is pushed in by the
-  // separate [trendSamples] effect below so the chart isn't rebuilt on every
-  // sample (which would flicker).
-  // resolvedTheme is in the dep array because lightweight-charts renders to a
-  // <canvas> that reads CSS variables at creation time; toggling the theme
-  // changes those variables, so we must recreate the chart. The linter can't
-  // trace this indirect dependency through getComputedStyle.
+  // separate [trendSamples] effect below.
   // biome-ignore lint/correctness/useExhaustiveDependencies: resolvedTheme triggers chart recreation via CSS variable reads
   useEffect(() => {
     if (!trendTag || !isNumericType(trendTag.type)) return
@@ -115,7 +107,6 @@ export function useTrendChart({
   }, [trendTag, resolvedTheme])
 
   // Push buffered samples into the chart series whenever they change.
-  // Whitespace samples (no value) break the line across pause gaps.
   useEffect(() => {
     if (!seriesRef.current) return
     seriesRef.current.setData(toLineData(trendSamples))

@@ -1,12 +1,10 @@
 import { create } from 'zustand'
 
 /**
- * Lightweight connection-state mirror for api/hooks to read `isConnected`
- * without importing from contexts/ (breaks the api↔contexts cycle).
- *
- * The ConnectionProvider owns the source of truth (local useState + probe
- * effect) and syncs `isConnected` here. Only one provider is mounted at a
- * time (per-instance route), so a global store is safe.
+ * Connection-state mirror: api/hooks read `isConnected` here; api must not
+ * import contexts (structure-lint). The ConnectionProvider owns the source
+ * of truth (local useState + probe effect) and syncs `isConnected` here;
+ * one provider is mounted at a time (per-instance route).
  */
 interface ConnectionState {
   isConnected: boolean

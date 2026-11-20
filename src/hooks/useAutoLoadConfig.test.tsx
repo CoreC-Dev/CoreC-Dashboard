@@ -2,12 +2,9 @@
 /**
  * useAutoLoadConfig — seed-guard coverage.
  *
- * The AppShell-level hook must be isError-aware: when GET /configs/raw
- * fails (backend just restarted, transient 401, timeout) the store flips
- * to seedStatus 'failed', which blocks the destructive paths
- * (resetToEmpty / useApplyConfig onConfirm) until a retry succeeds.
- * The old behavior silently skipped seeding, so the first "Create" →
- * "Apply" wiped the running control plane.
+ * When GET /configs/raw fails the store flips to seedStatus 'failed',
+ * which blocks resetToEmpty / useApplyConfig onConfirm until a retry
+ * succeeds.
  */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react'
@@ -65,9 +62,9 @@ afterEach(() => {
   fetchMock.mockReset()
 })
 
-// Module-level test provider (biome 2.6 noComponentHookFactories: a
-// component defined inside a function remounts its subtree on every
-// parent render — in tests that would silently reset hook state).
+// Module-level test provider (biome noComponentHookFactories: a component
+// defined inside a function remounts its subtree on every parent render —
+// in tests that would silently reset hook state).
 function TestProviders({ client, children }: { client: QueryClient; children: React.ReactNode }) {
   return <QueryClientProvider client={client}>{children}</QueryClientProvider>
 }
@@ -78,9 +75,7 @@ function createWrapper() {
       queries: { retry: false, refetchInterval: false, staleTime: Infinity },
     },
   })
-  // Anonymous bound arrow (biome 2.6 noComponentHookFactories): the
-  // named component lives at module level; this arrow only injects the
-  // per-test client.
+  // Anonymous bound arrow; the named component lives at module level.
   return ({ children }: { children: React.ReactNode }) => (
     <TestProviders client={qc}>{children}</TestProviders>
   )

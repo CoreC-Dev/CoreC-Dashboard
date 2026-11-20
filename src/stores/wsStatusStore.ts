@@ -9,8 +9,8 @@ import type { WSStatus } from '@/types/models'
  * manual CoreCWebSocket consumers — /tags/stream and the global /logs alert
  * provider — call registerStream themselves) reports its WSStatus here and
  * detaches on unmount. The store derives:
- *  - an aggregate health for the AppShell "实时流" badge (bound to REAL
- *    socket state instead of the one-shot HTTP probe), and
+ *  - an aggregate health for the AppShell "实时流" badge (bound to real
+ *    socket state), and
  *  - a page-level banner state for the monitor pages (disconnected /
  *    rejected / rate-limited).
  *
@@ -26,7 +26,7 @@ export interface WsStreamState {
   lastActivityAt: number
   /** true once this stream left 'open' involuntarily (closed/error/rejected). */
   downOnce: boolean
-  /** frames dropped by the 500 msg/s limiter in the last reported window. */
+  /** frames dropped by the CoreCWebSocket rate limiter in the last reported window. */
   recentDropped: number
   /** epoch ms of the last drop report (drives the rate-limit hint window). */
   lastDropAt: number
@@ -59,7 +59,6 @@ interface WsStatusStore {
 /** Reconnect handles keyed by stream id — not reactive UI state. */
 const reconnectHandles = new Map<string, ReconnectHandle>()
 
-/** Module-sequence generator for unique per-mount stream ids. */
 let streamSeq = 0
 export function makeStreamId(label: string): string {
   streamSeq += 1
@@ -125,9 +124,7 @@ export const useWsStatusStore = create<WsStatusStore>((set, get) => ({
   touchStream: (id) => {
     const now = Date.now()
     const entry = get().streams[id]
-    // Throttle: the /tags/stream handler calls this per message (up to
-    // ~500/s); one store write per second per stream is plenty for a
-    // "last update {{time}}" banner.
+    // Per-message calls are throttled to one store write per second per stream.
     if (!entry || now - entry.lastActivityAt < 1000) return
     set((state) => {
       const prev = state.streams[id]
@@ -163,7 +160,6 @@ export const useWsStatusStore = create<WsStatusStore>((set, get) => ({
   },
 }))
 
-// ─── Derived selectors ──────────────────────────────────────────────────────
 // NOTE: components subscribe via these helpers. They MUST return a value that
 // is stable for a given `streams` object reference (React's
 // useSyncExternalStore compares snapshots with Object.is) — deriveAggregate
@@ -213,12 +209,12 @@ export function deriveBanner(streams: Record<string, WsStreamState>): WsBannerIn
   return result
 }
 
-/** Window during which the >500 msg/s drop hint stays visible. */
+/** Window during which the rate-limiter drop hint stays visible. */
 const RATE_LIMIT_HINT_MS = 3000
 
 let rateCache: { streams: Record<string, WsStreamState>; result: boolean } | null = null
 
-/** True while a stream reported limiter drops recently (≤3s ago). */
+/** True while a stream reported limiter drops within RATE_LIMIT_HINT_MS. */
 export function deriveRateLimited(streams: Record<string, WsStreamState>): boolean {
   if (rateCache && rateCache.streams === streams) return rateCache.result
   const now = Date.now()

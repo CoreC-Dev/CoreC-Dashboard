@@ -48,7 +48,7 @@
     "secretToken": "API 密钥 (Bearer Token)",
     "secretMin": "密钥至少需要 8 个字符",
     "secretHint": "在 CoreC 服务端的 config.yaml 里：global.api.secret。若配置为 ${COREC_API_SECRET} 形式，填对应环境变量的值。",
-    "secretStorageNote": "密钥将以明文保存在此浏览器的本地存储中，请勿在公用电脑上保存生产密钥。",
+    "secretStorageNote": "密钥默认仅保存在本标签页（sessionStorage，明文）；勾选「记住密钥」后才写入 localStorage。公用电脑请勿保存生产密钥。",
     "showSecret": "显示密钥",
     "hideSecret": "隐藏密钥",
     "color": "颜色标识",
@@ -370,7 +370,7 @@
     "submit": "下一步：确认写入",
     "confirmWarning": "注意：控制指令将直接写入现场 PLC 物理寄存器/线圈，请确保操作安全！",
     "deadLetterTitle": "失败下发指令（重试耗尽）",
-    "deadLetterDesc": "达到最大重试次数 (默认 3 次) 仍失败的控制指令，在此归档供排查与手动重新下发",
+    "deadLetterDesc": "达到最大重试次数仍失败的控制指令，在此归档供排查与手动重新下发",
     "searchDeadLetters": "搜索死信（测点/错误）…",
     "driverFilterAll": "驱动: 全部",
     "noMatchingDeadLetters": "没有匹配的死信",
@@ -393,9 +393,9 @@
     "concurrencyRetries": "并发与重试",
     "concurrencyRetriesDesc": "CoreC 控制面安全规格",
     "commandConcurrency": "指令并发",
-    "commandConcurrencyDesc": "通过内部计数信号量控制 (默认 16 并发)，防止响应缓慢或断连的 PLC 耗尽核心协程。",
+    "commandConcurrencyDesc": "通过内部计数信号量限制，防止响应缓慢或断连的 PLC 耗尽核心协程。",
     "writeRetryCount": "写入重试次数",
-    "writeRetryCountDesc": "写入失败后自动重试最多 3 次，仍未成功则转入死信队列供运维人员审查。",
+    "writeRetryCountDesc": "写入失败后按退避自动重试，仍未成功则转入死信队列供运维人员审查。",
     "attemptsExhausted": "重试耗尽: {{count}}",
     "confirmWriteTitle": "确认写入指令",
     "confirmWriteDesc": "此指令将直接写入 PLC。请在确认前仔细核对下方所有字段。",
@@ -412,7 +412,7 @@
     "errOutOfRange": "值 {{n}} 超出 {{dt}} 的范围（有效范围：{{min}} 到 {{max}}）",
     "clearAll": "全部清除",
     "clearAllConfirm": "确定要清除所有死信吗？",
-    "clearAllDesc": "仅在本页隐藏这些条目（后端暂不提供删除接口）。其他会话仍会显示；服务器上的死信记录不受影响。",
+    "clearAllDesc": "仅在本页隐藏这些条目（后端不提供删除接口）。其他会话仍会显示；服务器上的死信记录不受影响。",
     "confirm": "确认",
     "cancel": "取消",
     "deadLettersCleared": "死信已清除",
@@ -510,7 +510,7 @@
   },
   "writeHistory": {
     "title": "写操作历史",
-    "desc": "CoreC 记录的每一次测点写入 — 正向 API 写入与反向流命令（最新在前，最多 1000 条）",
+    "desc": "CoreC 记录的每一次测点写入 — 正向 API 写入与反向流命令（最新在前，历史上限有界）",
     "source": "来源",
     "sourceApi": "API",
     "sourceCommand": "命令",
@@ -1164,7 +1164,7 @@
     "streamBannerDisconnected": "⚠ 实时流已断开，数据可能已停止更新（上次更新 {{time}}），正在重连…",
     "streamBannerRejected": "实时流重连 10 次失败，已停止重连。请检查网络后刷新页面。",
     "streamRetry": "重新连接",
-    "streamRateLimited": "⚠ 实时数据超过 500 条/秒的界面保护上限，部分更新已被丢弃以保持界面流畅"
+    "streamRateLimited": "⚠ 实时数据超过界面保护速率上限，部分更新已被丢弃以保持界面流畅"
   },
   "error": {
     "boundary": {
@@ -1313,14 +1313,14 @@
     "deadLetterPathHelp": "把写死信队列（GET /write/failed）持久化到该追加式 JSONL 文件，启动时回放。留空 = 仅内存。",
     "alertActiveWindow": "告警活动窗口",
     "alertActiveWindowHelp": "告警最后一次触发后保持活动的时间，超过窗口即清除并进入历史。默认 15 分钟。",
-    "pprofAddrHelp": "在此地址上运行独立的 pprof HTTP 服务器（如 127.0.0.1:6060）。无需认证 — 请仅绑定到本地回环或私有网络接口。留空 = pprof 运行在主 API 端口上。"
+    "pprofAddrHelp": "在此地址上运行独立的 pprof HTTP 服务器（如 127.0.0.1:6060）。无认证——仅绑定回环（127.0.0.1/::1/localhost），其它地址拒绝启动。留空 = pprof 运行在主 API 端口上。"
   },
   "nodeConfig": {
     "title": "节点配置",
     "desc": "配置此节点在拓扑中的身份和角色。设置节点 ID 后启用自动发现。",
     "restartRequired": "需重启",
     "nodeId": "节点 ID",
-    "nodeIdHelp": "此节点在拓扑中的唯一标识。为空时禁用自动发现，节点独立运行（向后兼容）。设置后节点广播心跳并自动生成主题。",
+    "nodeIdHelp": "此节点在拓扑中的唯一标识。为空时禁用自动发现，节点独立运行。设置后节点广播心跳并自动生成主题。",
     "autoDiscoveryDisabled": "自动发现已禁用",
     "autoDiscoveryDisabledDesc": "未设置节点 ID。引擎在独立模式下运行，无拓扑功能。设置节点 ID 以启用自动发现、基于角色的路由和自动生成主题。",
     "role": "节点角色",
@@ -1441,7 +1441,7 @@
       "baseUrlHelp": "以 /v1 结尾的 OpenAI 兼容前缀，例如 http://10.0.0.7:8000/v1（vLLM）或 https://api.example.com/v1。",
       "apiKey": "API 密钥",
       "apiKeyOptional": "本地网关可不填",
-      "secretNotice": "提供方密钥以明文保存在本浏览器的 localStorage 中，与你的 CoreC API 密钥一致。凡能在此浏览器执行脚本者都可读取它。",
+      "secretNotice": "提供方密钥以明文保存在本浏览器 localStorage，凡能执行脚本者均可读取。",
       "empty": "还没有提供方。添加一个即可启用助手。",
       "save": "保存",
       "select": "使用此提供方",

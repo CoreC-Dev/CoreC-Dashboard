@@ -59,8 +59,8 @@ let notifyAuthExpired: (() => void) | null = null
 const PROBE_INTERVAL_MS = 15_000
 
 /**
- * Classify a probe/transport failure into the store's probe-error kind
- *: a 401 from the authenticated endpoint means the API key is
+ * Classify a probe/transport failure into the store's probe-error kind:
+ * a 401 from the authenticated endpoint means the API key is
  * wrong; an abort means the probe timed out; anything else (DNS/CORS/
  * connection refused/5xx) means the instance is unreachable.
  */
@@ -179,7 +179,7 @@ const AuthExpiredOverlay: React.FC<{
  * 1. Looks up the instance by ID from the instance store.
  * 2. Sets the module-level active connection (so apiRequest / WebSocket work).
  * 3. Probes the connection with an authenticated GET /stats (verifies the
- * address AND the API key) on mount and every 15s, tracking
+ * address AND the API key) on mount and every PROBE_INTERVAL_MS, tracking
  * isConnected / isConnecting / error.
  * 4. Provides a per-instance QueryClient so caches are isolated per instance;
  * its QueryCache/MutationCache report 401s back to the provider, which
@@ -206,8 +206,7 @@ export const ConnectionProvider: React.FC<{
   // the provider then renders the re-enter-key overlay instead of the app.
   const [authExpired, setAuthExpired] = useState(false)
 
-  // Mirror isConnected to the connection store so api/hooks can read it
-  // without importing this context (breaks api↔contexts cycle).
+  // Mirror isConnected to the connection store (api/hooks read it there).
   const setConnected = useConnectionStore((s) => s.setConnected)
   useEffect(() => {
     setConnected(isConnected)
@@ -232,9 +231,6 @@ export const ConnectionProvider: React.FC<{
   // leak into the new one. Track the last-reset instanceId at module scope so
   // leaving and returning to the same instance preserves in-progress edits
   // (the provider unmounts/remounts on navigation, but the store is module-level).
-  // No biome-ignore needed: the only reactive value read here is instanceId
-  // itself (lastResetInstanceId and useConfigStore are module-level), so the
-  // [instanceId] dep list is exhaustive.
   useEffect(() => {
     if (lastResetInstanceId !== instanceId) {
       useConfigStore.getState().reset()
@@ -242,7 +238,6 @@ export const ConnectionProvider: React.FC<{
     }
   }, [instanceId])
 
-  // Set the active connection whenever the instance changes.
   useEffect(() => {
     if (instance) {
       setActiveConnection({
@@ -273,18 +268,15 @@ export const ConnectionProvider: React.FC<{
     }
   }, [instanceId, setProbeResult])
 
-  // Re-probe on the same 15s cadence as the homepage probe so a
-  // backend that goes down — or a key that stops being accepted — flips
-  // the in-instance indicator within one interval instead of keeping the
-  // green dot lit forever. Each nonce bump aborts and restarts the probe
-  // effect below; a healthy connection does not flicker (the verdict only
-  // changes when a probe actually fails).
+  // Re-probe on PROBE_INTERVAL_MS, aligned with the homepage probe. Each
+  // nonce bump aborts and restarts the probe effect below; a healthy
+  // connection does not flicker (the verdict only changes when a probe
+  // actually fails).
   useEffect(() => {
     const intervalId = setInterval(() => setProbeNonce((n) => n + 1), PROBE_INTERVAL_MS)
     return () => clearInterval(intervalId)
   }, [])
 
-  // Probe the connection.
   // Use primitive deps (id, baseUrl, secret) instead of the full instance object
   // to avoid re-running the probe when setProbeResult updates the store and
   // creates a new instance object reference (which would cancel the in-flight
@@ -324,8 +316,7 @@ export const ConnectionProvider: React.FC<{
           setIsConnected(false)
           setIsConnecting(false)
           setError(t(PROBE_ERROR_I18N_KEYS[kind]))
-          // A rejected key gets the full-screen re-enter-key path
-          // rather than a bare error line with no way to fix it.
+          // A rejected key gets the full-screen re-enter-key path.
           setAuthExpired(kind === 'unauthorized')
           setProbeResult(instanceId, false, undefined, kind)
           return

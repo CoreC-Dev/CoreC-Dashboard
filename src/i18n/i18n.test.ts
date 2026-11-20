@@ -1,7 +1,5 @@
 // @vitest-environment jsdom
-// <html lang> must follow the active locale: a zh-CN default in
-// index.html never updates on language switch, so screen readers kept
-// reading English content with a Chinese voice engine (and vice versa).
+// <html lang> must follow the active locale.
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import i18n, { setLocale } from '@/i18n'
 

@@ -18,10 +18,8 @@ interface ToastState {
 let seq = 0
 
 /**
- * Global transient feedback. Page-local OperationResult strips remain the
- * place for form validation; this store is for outcomes that must be seen
- * wherever the operator currently is (writes, config apply, reconnects).
- * Capped at 3 so a burst of failures cannot bury the UI.
+ * Global transient feedback (writes, config apply, reconnects).
+ * Bounded queue: at most 3 toasts.
  */
 export const useToastStore = create<ToastState>((set) => ({
   toasts: [],

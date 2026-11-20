@@ -28,8 +28,7 @@ interface UseTagWriteResult {
  * Write-command dialog state for TagExplorerPage.
  *
  * Owns the target tag, input value, and error state, and performs the
- * industrial-safety validation + typed parse + mutation. Extracted verbatim
- * from TagExplorerPage — no behavior change.
+ * industrial-safety validation + typed parse + mutation.
  */
 export function useTagWrite(): UseTagWriteResult {
   const { t } = useTranslation()
@@ -54,11 +53,10 @@ export function useTagWrite(): UseTagWriteResult {
     if (!selectedTagForWrite) return
     setWriteError(null)
 
-    // Industrial safety: validate the raw input against the tag's data type
-    // BEFORE parsing or writing. This catches empty input (Number("") => 0),
-    // non-numeric strings (NaN serializes to null in JSON), out-of-range
-    // values, and ambiguous bool input — all of which previously wrote a
-    // silently-coerced value to a physical actuator.
+    // Validate the raw input against the tag's data type BEFORE parsing or
+    // writing: empty input (Number("") => 0), non-numeric strings (NaN
+    // serializes to null in JSON), out-of-range values and ambiguous bool
+    // input are rejected.
     const validationError = validateValue(writeValue, selectedTagForWrite.type, t)
     if (validationError) {
       setWriteError(validationError)
@@ -67,9 +65,7 @@ export function useTagWrite(): UseTagWriteResult {
 
     let parsedVal: string | number | boolean = writeValue
     if (selectedTagForWrite.type === 'bool') {
-      // Trim to match validateValue's behavior (writeValidation.ts trims
-      // before checking). Without this, "  true  " passes validation but
-      // coerces to false — a validation↔coercion inconsistency.
+      // Trim to match validateValue's behavior (it trims before checking).
       const v = writeValue.trim().toLowerCase()
       parsedVal = v === 'true' || v === '1'
     } else if (isNumericType(selectedTagForWrite.type)) {

@@ -10,7 +10,7 @@ import {
 
 import type { CoreCInstance } from '@/types/models'
 
-// Re-export for backward compat (canonical location is types/models.ts).
+// Re-export of types/models.ts CoreCInstance.
 export type { CoreCInstance }
 
 /**
@@ -49,18 +49,12 @@ function rejectProtoKeys(obj: unknown): void {
   }
 }
 
-/**
- * Probe failure kinds: an invalid API key and an unreachable server
- * lead the operator down completely different repair paths (fix the secret
- * vs fix the address/network), so probes must record which one happened.
- */
+/** Probe failure kinds recorded per instance in probeErrors. */
 export type ProbeErrorKind = 'unauthorized' | 'unreachable' | 'timeout'
 
 /**
- * i18n keys for rendering each probe failure kind. Kept next to the kind
- * vocabulary (this store owns `probeErrors`) so the kind→copy mapping has a
- * single source of truth; components translate at render time so the text
- * follows language switches.
+ * i18n keys for rendering each probe failure kind; components translate
+ * at render time.
  */
 export const PROBE_ERROR_I18N_KEYS: Record<ProbeErrorKind, string> = {
   unauthorized: 'instances.probeUnauthorized',
@@ -68,13 +62,7 @@ export const PROBE_ERROR_I18N_KEYS: Record<ProbeErrorKind, string> = {
   timeout: 'instances.probeTimeout',
 }
 
-/**
- * Outcome of an importInstances call: the previously single
- * "skipped" counter conflated two very different stories ("this entry is
- * a duplicate" vs "this entry is not a valid instance at all") and parse
- * failures were reported as "added 0, skipped 0" — both lies. The counts
- * are now distinct so the UI can tell the operator what actually happened.
- */
+/** Outcome of an importInstances call. */
 export interface ImportResult {
   /** Entries successfully added. */
   added: number
@@ -121,11 +109,9 @@ interface InstanceState {
 
 const STORAGE_KEY = 'corec_instances'
 /**
- * Secrets live in sessionStorage by default: they survive reloads in this
- * tab but not browser restarts, and the long-lived localStorage copy is
- * removed. Operators who need cross-session convenience opt in with
- * rememberSecrets, which writes them to localStorage (readable by any XSS
- * on this origin — the UI states that trade-off).
+ * Secrets default to sessionStorage (survive reload, not browser restart).
+ * rememberSecrets opt-in additionally writes localStorage — readable by
+ * any XSS on this origin.
  */
 const SECRETS_STORAGE_KEY = 'corec_instance_secrets'
 const REMEMBER_SECRETS_KEY = 'corec_remember_secrets'
@@ -154,7 +140,7 @@ function loadInstances(): CoreCInstance[] {
     if (raw) {
       const parsed = JSON.parse(raw)
       if (Array.isArray(parsed)) {
-        // Merge secrets from the localStorage secret map back into instances.
+        // Merge secrets from the secret map (sessionStorage authoritative) back into instances.
         const secrets = loadSecrets()
         return parsed.map((inst: CoreCInstance) => ({
           ...inst,
@@ -169,9 +155,8 @@ function loadInstances(): CoreCInstance[] {
 }
 
 /**
- * Load the id→secret map. sessionStorage is authoritative; a legacy
- * localStorage copy is migrated into it and then removed unless the
- * operator has opted into remembering secrets.
+ * Load the id→secret map: sessionStorage authoritative; a localStorage
+ * copy is merged in, kept only with rememberSecrets, else removed.
  */
 function loadSecrets(): Record<string, string> {
   const fromSession = parseSecretMap(safeSessionRead(SECRETS_STORAGE_KEY))
@@ -187,9 +172,9 @@ function loadSecrets(): Record<string, string> {
 }
 
 /**
- * Persist metadata + secrets to localStorage. Returns false when either
- * write failed so callers can flag `persistFailed` and the UI can
- * warn about the data being lost on refresh.
+ * Persist metadata to localStorage and secrets to sessionStorage
+ * (localStorage copy only with rememberSecrets opt-in);
+ * false = a write failed → callers flag `persistFailed`.
  */
 function persistInstances(instances: CoreCInstance[]): boolean {
   // Store non-sensitive metadata in localStorage (persistent).
@@ -307,8 +292,7 @@ export const useInstanceStore = create<InstanceState>((set, get) => ({
       if (!Array.isArray(raw)) throw new Error('Not an array')
       rejectProtoKeys(raw)
     } catch {
-      // The payload itself is unusable: report it as such instead
-      // of "added 0, skipped 0" — which reads as a mysterious non-event.
+      // The payload itself is unusable.
       return { added: 0, skipped: 0, invalid: 0, parseError: true }
     }
 
