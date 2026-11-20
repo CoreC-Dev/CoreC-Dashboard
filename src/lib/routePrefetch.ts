@@ -1,21 +1,12 @@
 /**
- * Nav-hover route warming.
- *
- * The sidebar knows the destination before the click, so the matching lazy
- * chunk is fetched on hover. The module import map shares the same chunks
- * as App.tsx.
+ * Nav-hover route warming. The import map is registered by the App layer
+ * (registerRouteLoaders); this module owns only the dedup/test-guard logic.
  */
-const loaders: Record<string, () => Promise<unknown>> = {
-  '/monitor/dashboard': () => import('@/features/monitor/DashboardPage'),
-  '/monitor/tags': () => import('@/features/monitor/TagExplorerPage'),
-  '/monitor/alerts': () => import('@/features/monitor/AlertsPage'),
-  '/admin/drivers': () => import('@/features/admin/DriversPage'),
-  '/admin/transports': () => import('@/features/admin/TransportsPage'),
-  '/admin/rules': () => import('@/features/admin/RulesPage'),
-  '/admin/write': () => import('@/features/admin/WriteControlPage'),
-  '/admin/config': () => import('@/features/admin/ConfigCenterPage'),
-  '/admin/topology': () => import('@/features/admin/TopologyPage'),
-  '/admin/diagnostics': () => import('@/features/admin/DiagnosticsPage'),
+let loaders: Record<string, () => Promise<unknown>> = {}
+
+/** Install the route-suffix → lazy-chunk loader map (App layer owns the feature imports). */
+export function registerRouteLoaders(map: Record<string, () => Promise<unknown>>): void {
+  loaders = map
 }
 
 const warmed = new Set<string>()

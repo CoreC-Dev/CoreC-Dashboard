@@ -11,7 +11,6 @@ import { StreamStatusBanner } from '@/components/layout/StreamStatusBanner'
 import { TopProgressBar } from '@/components/layout/TopProgressBar'
 import { useSidebarState } from '@/components/layout/useSidebarState'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
-import { AssistantPanel } from '@/features/assistant/AssistantPanel'
 import { cn } from '@/lib/cn'
 import { deriveAggregate, useWsStatusStore } from '@/stores/wsStatusStore'
 
@@ -150,9 +149,6 @@ export const AppShell: React.FC = () => {
         mainArea
       )}
 
-      {/* AI assistant — instance-scoped; mounted once outside both layout
-           branches so mobile and desktop share one implementation. */}
-      <AssistantPanel />
       <CommandPalette />
     </div>
   )

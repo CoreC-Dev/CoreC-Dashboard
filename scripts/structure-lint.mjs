@@ -97,7 +97,7 @@ const FORBIDDEN = {
   components: ['features'],
 }
 
-function isForbidden(importerLayer, importeeLayer) {
+export function isForbidden(importerLayer, importeeLayer) {
   // 跨 feature 直连
   if (importerLayer.startsWith('features:') && importeeLayer.startsWith('features:')) {
     return importerLayer !== importeeLayer
@@ -106,6 +106,8 @@ function isForbidden(importerLayer, importeeLayer) {
   if (!banned) return false
   // features:X 禁止 importee 'features'（无域前缀，兜底）
   if (importerLayer.startsWith('features:') && importeeLayer === 'features') return true
+  // 'features' 禁边同样覆盖带域前缀的 features:X 层
+  if (banned.includes('features') && importeeLayer.startsWith('features:')) return true
   return banned.includes(importeeLayer)
 }
 
@@ -119,74 +121,80 @@ function isExempt(importerRel, importeeRel) {
   )
 }
 
-const violations = []
-const usedExemptions = new Set()
+function main() {
+  const violations = []
+  const usedExemptions = new Set()
 
-for (const importer of files) {
-  const importerLayer = layerOf(importer)
-  if (importerLayer === 'test' || importerLayer === 'app' || importerLayer === 'other') continue
-  for (const spec of importsOf(importer)) {
-    const importee = resolveImport(importer, spec)
-    if (!importee) continue
-    const importeeLayer = layerOf(importee)
-    if (importeeLayer === 'test' || importeeLayer === 'app' || importeeLayer === 'other') continue
-    if (!isForbidden(importerLayer, importeeLayer)) continue
-    const importerRel = relative(src, importer).replace(/\\/g, '/')
-    const importeeRel = relative(src, importee).replace(/\\/g, '/')
-    const ex = isExempt(importerRel, importeeRel)
-    if (ex) {
-      usedExemptions.add(ex.td)
-    } else {
-      violations.push({ importerRel, importeeRel, importerLayer, importeeLayer, spec })
+  for (const importer of files) {
+    const importerLayer = layerOf(importer)
+    if (importerLayer === 'test' || importerLayer === 'app' || importerLayer === 'other') continue
+    for (const spec of importsOf(importer)) {
+      const importee = resolveImport(importer, spec)
+      if (!importee) continue
+      const importeeLayer = layerOf(importee)
+      if (importeeLayer === 'test' || importeeLayer === 'app' || importeeLayer === 'other') continue
+      if (!isForbidden(importerLayer, importeeLayer)) continue
+      const importerRel = relative(src, importer).replace(/\\/g, '/')
+      const importeeRel = relative(src, importee).replace(/\\/g, '/')
+      const ex = isExempt(importerRel, importeeRel)
+      if (ex) {
+        usedExemptions.add(ex.td)
+      } else {
+        violations.push({ importerRel, importeeRel, importerLayer, importeeLayer, spec })
+      }
     }
   }
-}
 
-const unusedExemptions = EXEMPTIONS.filter((e) => !usedExemptions.has(e.td))
+  const unusedExemptions = EXEMPTIONS.filter((e) => !usedExemptions.has(e.td))
 
-// Detail pages must single-source field metadata from the registry adapter
-// (no local *_FIELDS arrays); applies to the EditConfigSection modules.
-const SINGLE_SOURCE_FILES = [
-  'features/admin/driverDetail/EditConfigSection.tsx',
-  'features/admin/transportDetail/EditConfigSection.tsx',
-]
-const singleSourceViolations = []
-for (const rel of SINGLE_SOURCE_FILES) {
-  const abs = resolve(src, rel)
-  if (!existsSync(abs)) continue
-  const text = readFileSync(abs, 'utf8')
-  if (!/from ['"]@\/lib\/registryAdapter['"]/.test(text)) {
-    singleSourceViolations.push(`${rel}: must import @/lib/registryAdapter (single source)`)
+  // Detail pages must single-source field metadata from the registry adapter
+  // (no local *_FIELDS arrays); applies to the EditConfigSection modules.
+  const SINGLE_SOURCE_FILES = [
+    'features/admin/driverDetail/EditConfigSection.tsx',
+    'features/admin/transportDetail/EditConfigSection.tsx',
+  ]
+  const singleSourceViolations = []
+  for (const rel of SINGLE_SOURCE_FILES) {
+    const abs = resolve(src, rel)
+    if (!existsSync(abs)) continue
+    const text = readFileSync(abs, 'utf8')
+    if (!/from ['"]@\/lib\/registryAdapter['"]/.test(text)) {
+      singleSourceViolations.push(`${rel}: must import @/lib/registryAdapter (single source)`)
+    }
+    for (const m of text.matchAll(/const\s+(\w*_FIELDS)\s*:\s*readonly\s+\w*EditField\[\]/g)) {
+      singleSourceViolations.push(
+        `${rel}: defines local field array ${m[1]} (use registry adapter)`,
+      )
+    }
   }
-  for (const m of text.matchAll(/const\s+(\w*_FIELDS)\s*:\s*readonly\s+\w*EditField\[\]/g)) {
-    singleSourceViolations.push(`${rel}: defines local field array ${m[1]} (use registry adapter)`)
-  }
-}
 
-if (violations.length === 0 && singleSourceViolations.length === 0) {
-  console.log(`✅ structure-lint 通过：分层依赖方向合规。`)
-  if (usedExemptions.size > 0) {
-    console.log(`   已登记豁免（修复后移除）：${[...usedExemptions].sort().join(', ')}`)
-  }
-  if (unusedExemptions.length > 0) {
-    console.log(
-      `   ℹ️  豁免已修复可移除：${unusedExemptions.map((e) => e.td).join(', ')}（从 EXEMPTIONS 删除以收紧门禁）`,
-    )
-  }
-  process.exit(0)
-} else {
-  console.error(`❌ structure-lint 失败：${violations.length} 处违规分层依赖：`)
-  for (const v of violations.slice(0, 30)) {
+  if (violations.length === 0 && singleSourceViolations.length === 0) {
+    console.log(`✅ structure-lint 通过：分层依赖方向合规。`)
+    if (usedExemptions.size > 0) {
+      console.log(`   已登记豁免（修复后移除）：${[...usedExemptions].sort().join(', ')}`)
+    }
+    if (unusedExemptions.length > 0) {
+      console.log(
+        `   ℹ️  豁免已修复可移除：${unusedExemptions.map((e) => e.td).join(', ')}（从 EXEMPTIONS 删除以收紧门禁）`,
+      )
+    }
+    process.exit(0)
+  } else {
+    console.error(`❌ structure-lint 失败：${violations.length} 处违规分层依赖：`)
+    for (const v of violations.slice(0, 30)) {
+      console.error(
+        `  - ${v.importerRel} [${v.importerLayer}] → ${v.importeeRel} [${v.importeeLayer}]  (import '${v.spec}')`,
+      )
+    }
+    if (violations.length > 30) console.error(`  ... 还有 ${violations.length - 30} 处`)
+    for (const v of singleSourceViolations) {
+      console.error(`  - ${v}`)
+    }
     console.error(
-      `  - ${v.importerRel} [${v.importerLayer}] → ${v.importeeRel} [${v.importeeLayer}]  (import '${v.spec}')`,
+      `\n修复指引：将共享逻辑下沉到更底层（lib/api/hooks/stores/components），或在 EXEMPTIONS 登记豁免。`,
     )
+    process.exit(1)
   }
-  if (violations.length > 30) console.error(`  ... 还有 ${violations.length - 30} 处`)
-  for (const v of singleSourceViolations) {
-    console.error(`  - ${v}`)
-  }
-  console.error(
-    `\n修复指引：将共享逻辑下沉到更底层（lib/api/hooks/stores/components），或在 EXEMPTIONS 登记豁免。`,
-  )
-  process.exit(1)
 }
+
+if (import.meta.main) main()

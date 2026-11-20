@@ -1,7 +1,7 @@
 /**
  * features/assistant/AssistantPanel.tsx - the chat surface.
  *
- * Mounted by AppShell, i.e. only inside a /corec/:id/* scope where an active
+ * Mounted by the App layer inside a /corec/:id/* scope where an active
  * connection exists (apiRequest reads it).
  *
  * Layout: a floating button opens a right-side Sheet (Radix Dialog,
@@ -199,8 +199,8 @@ const NoProvider: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
 }
 
 /**
- * AssistantPanel is the mount point AppShell uses. It owns the open/close
- * affordance and renders the conversation inside a Sheet.
+ * AssistantPanel owns the open/close affordance and renders the conversation
+ * inside a Sheet.
  */
 export const AssistantPanel: React.FC = () => {
   const { t } = useTranslation()
@@ -209,13 +209,13 @@ export const AssistantPanel: React.FC = () => {
 
   return (
     <>
-      {/* Closed-state entry point: a floating round button on the right edge
-          (md+), opening the Sheet. */}
+      {/* Closed-state entry point: a floating round button on the right edge,
+          opening the Sheet. */}
       <Button
         variant="outline"
         onClick={() => setOpen(true)}
         aria-label={t('assistant.open')}
-        className="hidden md:flex fixed right-3 top-1/2 z-30 items-center gap-1 rounded-full px-3 py-2 shadow-lg"
+        className="flex fixed right-3 top-1/2 z-30 items-center gap-1 rounded-full px-3 py-2 shadow-lg"
       >
         <Bot className="w-4 h-4" />
       </Button>

@@ -7,7 +7,9 @@ import { ConnectionGate } from '@/components/layout/ConnectionGate'
 import { Toaster } from '@/components/layout/Toaster'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ConnectionProvider } from '@/contexts/ConnectionContext'
+import { AssistantPanel } from '@/features/assistant/AssistantPanel'
 import i18n from '@/i18n'
+import { registerRouteLoaders } from '@/lib/routePrefetch'
 import { useInstanceStore } from '@/stores/instanceStore'
 
 // Route-level code splitting: each page is a separate chunk, loaded on
@@ -54,6 +56,20 @@ const TopologyPage = lazy(() =>
 const DiagnosticsPage = lazy(() =>
   import('@/features/admin/DiagnosticsPage').then((m) => ({ default: m.DiagnosticsPage })),
 )
+
+// Nav-hover warming loads the same lazy chunks as the routes below.
+registerRouteLoaders({
+  '/monitor/dashboard': () => import('@/features/monitor/DashboardPage'),
+  '/monitor/tags': () => import('@/features/monitor/TagExplorerPage'),
+  '/monitor/alerts': () => import('@/features/monitor/AlertsPage'),
+  '/admin/drivers': () => import('@/features/admin/DriversPage'),
+  '/admin/transports': () => import('@/features/admin/TransportsPage'),
+  '/admin/rules': () => import('@/features/admin/RulesPage'),
+  '/admin/write': () => import('@/features/admin/WriteControlPage'),
+  '/admin/config': () => import('@/features/admin/ConfigCenterPage'),
+  '/admin/topology': () => import('@/features/admin/TopologyPage'),
+  '/admin/diagnostics': () => import('@/features/admin/DiagnosticsPage'),
+})
 
 // Minimal Suspense fallback while a lazy chunk loads.
 const LoadingFallback: React.FC = () => (
@@ -127,6 +143,7 @@ export const App: React.FC = () => {
               <InstanceGuard>
                 <ConnectionGate>
                   <AppShell />
+                  <AssistantPanel />
                 </ConnectionGate>
               </InstanceGuard>
             }
@@ -165,6 +182,7 @@ export const App: React.FC = () => {
               <InstanceGuard>
                 <ConnectionGate>
                   <AppShell />
+                  <AssistantPanel />
                 </ConnectionGate>
               </InstanceGuard>
             }
