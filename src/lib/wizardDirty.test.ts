@@ -76,6 +76,21 @@ describe('isDriverDraftDirty', () => {
     expect(isDriverDraftDirty({ ...base, driverName: 'renamed' })).toBe(true)
     expect(isDriverDraftDirty({ ...base, tagsFile: './other.yaml' })).toBe(true)
   })
+
+  it('edit mode: settings with different key order but identical content are not dirty', () => {
+    const base: DriverDraftInput = {
+      currentStep: 3,
+      isEdit: true,
+      existing: EXISTING_DRIVER,
+      selectedType: 'modbus-tcp',
+      driverName: 'plc1',
+      settings: { port: 502, host: '192.168.1.100' },
+      tags: [{ address: '40001', type: 'float32', name: 'temp' }],
+      tagsFile: './tags.yaml',
+      tagsInterval: '',
+    }
+    expect(isDriverDraftDirty(base)).toBe(false)
+  })
 })
 
 describe('isTransportDraftDirty', () => {
@@ -94,6 +109,26 @@ describe('isTransportDraftDirty', () => {
     expect(isTransportDraftDirty({ ...base, toplevel: { 'batch-size': 99 } })).toBe(true)
     expect(isTransportDraftDirty({ ...base, settings: { broker: 'tcp://other:1883' } })).toBe(true)
     expect(isTransportDraftDirty({ ...base, transportName: 'renamed' })).toBe(true)
+  })
+
+  it('edit mode: reordered settings/toplevel keys with identical content are not dirty', () => {
+    const existing: TransportConfig = {
+      ...EXISTING_TRANSPORT,
+      settings: { broker: 'tcp://broker:1883', qos: 1, nested: { a: 1, b: 2 } },
+      'batch-size': 10,
+      'retry-count': 3,
+    }
+    const base: TransportDraftInput = {
+      currentStep: 2,
+      isEdit: true,
+      existing,
+      selectedType: 'mqtt',
+      transportName: 'mqtt-out',
+      settings: { nested: { b: 2, a: 1 }, qos: 1, broker: 'tcp://broker:1883' },
+      toplevel: { 'retry-count': 3, 'batch-size': 10 },
+      existingToplevel: { 'batch-size': 10, 'retry-count': 3 },
+    }
+    expect(isTransportDraftDirty(base)).toBe(false)
   })
 
   it('create mode: untouched is clean, chosen type is dirty', () => {

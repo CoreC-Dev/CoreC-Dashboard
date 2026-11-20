@@ -16,11 +16,11 @@
  * Pure functions so they are unit-testable without rendering the wizards;
  * the wizards simply forward their current state.
  */
+import { jsonDeepEqual } from '@/lib/configHelpers'
 import type { DriverConfig, RuleAction, TransportConfig } from '@/types/config'
 
-/** 浅比较：JSON.stringify 逐字相等（键序敏感，仅适用于 wizard 草稿这类
- *  键序稳定的小对象）。 */
-const sameJson = (a: unknown, b: unknown): boolean => JSON.stringify(a) === JSON.stringify(b)
+/** 键序无关的递归深比较（JSON 值语义相等即视为同一草稿）。 */
+const sameJson = (a: unknown, b: unknown): boolean => jsonDeepEqual(a, b)
 
 export interface DriverDraftInput {
   /** Zero-based wizard step the user is on. */
