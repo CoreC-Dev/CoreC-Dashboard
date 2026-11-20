@@ -267,7 +267,6 @@ export const EngineSection: React.FC<{
         <FieldRow
           label={t('globalConfig.engineStaleThreshold')}
           help={t('globalConfig.engineStaleThresholdHelp')}
-          restartRequired
         >
           <Input
             value={(engine['stale-threshold'] as string) ?? ''}

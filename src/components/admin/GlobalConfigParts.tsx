@@ -96,11 +96,7 @@ export const LoggingSection: React.FC<{
           </Select>
         </FieldRow>
 
-        <FieldRow
-          label={t('globalConfig.logFormat')}
-          help={t('globalConfig.logFormatHelp')}
-          restartRequired
-        >
+        <FieldRow label={t('globalConfig.logFormat')} help={t('globalConfig.logFormatHelp')}>
           <Select
             value={(global['log-format'] as string) || 'text'}
             onValueChange={(v) => update('log-format', v)}
