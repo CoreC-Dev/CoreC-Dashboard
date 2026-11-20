@@ -79,10 +79,7 @@ AlertDialogDescription.displayName = AlertDialogPrimitive.Description.displayNam
 
 /**
  * Lossy confirmations (discard changes, delete, clear…) pass
- * `variant="destructive"` instead of hand-writing bg-destructive classes
- * — one spelling for the red confirm across the app, and it can never
- * silently regress to the default (primary-colored) "OK" look that made
- * habit-clicking the right button discard unsaved work.
+ * `variant="destructive"` — one spelling for the red confirm across the app.
  */
 const AlertDialogAction = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Action>,

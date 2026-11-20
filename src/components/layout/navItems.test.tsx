@@ -1,9 +1,7 @@
 // @vitest-environment jsdom
-// navItems: the admin section used to be a flat 7-item pile —
-// "edit the config" (drivers/transports/rules/config) and "watch it run"
-// (write/topology/diagnostics) mixed together, and in the collapsed rail
-// they were seven bare icons with nothing to anchor a visual search. The
-// section now splits into two labeled sub-groups; this pins the split, the
+// navItems: the admin section splits into two labeled sub-groups —
+// configuration management (drivers/transports/rules/config) and operations
+// & diagnostics (write/topology/diagnostics). This pins the split, the
 // base-prefixed paths, and that the labels actually render.
 import { cleanup, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'

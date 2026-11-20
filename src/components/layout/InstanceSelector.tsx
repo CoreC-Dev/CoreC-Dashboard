@@ -25,15 +25,12 @@ const DOT_CLASS: Record<InstanceDotStatus, string> = {
 }
 
 /**
- * Where an instance switch lands. The old onValueChange always jumped
- * to the section root ("monitor/dashboard" / "admin/drivers"), throwing the
- * operator back to the overview from wherever they actually were — switching
- * from the alerts page or the config center lost the page context. The
- * target keeps the current section AND page segment: switching from
- * /corec/a/monitor/alerts lands on /corec/b/monitor/alerts. Deeper segments
- * are entity-scoped (drivers/:name belongs to the OLD instance) and drop to
- * the section's list page; paths outside the instance tree default to the
- * monitor section root (the index route redirects to the dashboard).
+ * Where an instance switch lands. The target keeps the current section AND
+ * page segment: switching from /corec/a/monitor/alerts lands on
+ * /corec/b/monitor/alerts. Deeper segments are entity-scoped
+ * (drivers/:name belongs to the previous instance) and drop to the section's
+ * list page; paths outside the instance tree default to the monitor section
+ * root (the index route redirects to the dashboard).
  */
 export function switchInstanceTarget(pathname: string, targetId: string): string {
   const m = /^\/corec\/[^/]+\/(monitor|admin)(?:\/([^/]+))?/.exec(pathname)
@@ -47,12 +44,9 @@ export function switchInstanceTarget(pathname: string, targetId: string): string
  * preserving the current page (see switchInstanceTarget).
  * Renders nothing when there is no active instance.
  *
- * The dropdown dots mirror the homepage card's live verdict: the old
- * dot went green from lastConnectedAt alone ("was ever connected"), so an
- * instance the 15s homepage probe had just reported dead still showed green
- * in the sidebar. The dot now reads the same live signals the card does —
+ * The dropdown dots mirror the homepage card's live verdict:
  * probeErrors for the verdict, probing for the first-probe connecting state,
- * lastConnectedAt for a past success — so the sidebar and the homepage agree.
+ * lastConnectedAt for a past success — sidebar and homepage agree.
  */
 export const InstanceSelector: React.FC<InstanceSelectorProps> = ({ eff }) => {
   const { t } = useTranslation()
@@ -60,19 +54,9 @@ export const InstanceSelector: React.FC<InstanceSelectorProps> = ({ eff }) => {
   const location = useLocation()
   const { instance, isConnected, isConnecting } = useConnection()
   // Select the raw store slices (stable refs between updates) and project
-  // to the fields this switcher needs via useMemo.
-  //
-  // The previous code wrapped a `.map(...)` selector in useShallow. That loops:
-  // zustand v5's useStore has no equalityFn arg — it uses
-  // React.useSyncExternalStore with Object.is — and useShallow only compares
-  // array elements by reference. So every getSnapshot() returned a brand-new
-  // array of brand-new objects → React saw a changed snapshot every render →
-  // "Maximum update depth exceeded" (#185) on every instance-scoped route
-  // (SidebarNav → InstanceSelector). Returning the stable s.instances ref from
-  // the selector and projecting in useMemo breaks the loop. (this
-  // re-renders on any instances/probing/probeErrors change rather than only
-  // the projected fields; on instance routes the store changes at most once
-  // per probe tick, so the cost is nil.)
+  // to the fields this switcher needs via useMemo — a `.map(...)` selector
+  // would return a fresh array every getSnapshot() and trigger a render loop
+  // under zustand v5's Object.is snapshot comparison.
   const allInstances = useInstanceStore((s) => s.instances)
   const probing = useInstanceStore((s) => s.probing)
   const probeErrors = useInstanceStore((s) => s.probeErrors)

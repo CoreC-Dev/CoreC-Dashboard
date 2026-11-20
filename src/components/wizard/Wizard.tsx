@@ -2,18 +2,18 @@
  * Generic multi-step Wizard component.
  *
  * Underpins the driver/transport/rule creation wizards. Design:
- *   - Controlled by parent via `value` (current step index) and `onValueChange`.
+ *   - Controlled via current/onNext/onPrevious.
  *   - Each step declares an optional `canProceed` gate (zod validation result,
  *     required-field check, etc.); the Next button is disabled when the gate
  *     fails and an inline hint is shown.
- *   - A `renderPreview` slot lets any step surface the accumulated YAML
+ *   - A `previewNode` slot lets any step surface the accumulated YAML
  *     at any time (the last step is typically a dedicated preview+apply step).
  *   - Progress is shown as a header bar with step titles + current indicator.
  *   - Keyboard accessible: Back/Next are real buttons; step headers are
  *     buttons when `allowJumpBack` is enabled (click to revisit earlier steps).
  *
  * This component is presentation only — it knows nothing about CoreC config.
- * Config-specific step content lives in features/admin/{drivers,transports,rules}.
+ * Config-specific step content lives in features/admin（DriverWizard/TransportWizard/RuleWizard 等）.
  */
 import { Check, ChevronLeft, ChevronRight } from 'lucide-react'
 import type React from 'react'
@@ -156,9 +156,8 @@ const Wizard: React.FC<WizardProps> = ({
     <DialogContent
       className={cn('max-w-3xl max-h-[90vh] flex flex-col', className)}
       onEscapeKeyDown={(e) => {
-        // Always funnel Esc through onCancel (WizardDialog's guarded close
-        // path) instead of letting Radix dismiss the dialog directly — a
-        // dirty draft must first pass the discard confirmation.
+        // Esc goes through onCancel (WizardDialog's guarded close path):
+        // a dirty draft must first pass the discard confirmation.
         // Closing is blocked entirely mid-apply (non-atomic hot-reload).
         e.preventDefault()
         if (!finishing) onCancel?.()

@@ -103,7 +103,7 @@ const TrafficLiveColumn: React.FC = () => {
         })
         return
       }
-      // Totals frame (legacy mode): diff against the previous frame.
+      // Totals frame (?mode=totals): diff against the previous frame.
       const prev = prevTotalsRef.current
       prevTotalsRef.current = parsed.data
       if (!prev) return // first frame: baseline only, no rate yet
@@ -200,12 +200,9 @@ const MemoryLiveColumn: React.FC = () => {
  * RealtimeStreamsPanel — compact /traffic + /memory live tiles for the
  * Diagnostics page.
  *
- * Both streams are pushed by CoreC on a 1s ticker; traffic counters are
- * cumulative and diffed client-side into per-second rates, memory frames
- * are shown as-is (alloc / sys / goroutines). Deliberately restrained:
- * one card, two columns, no charts — the Prometheus metrics card below
- * remains the deep-dive surface. Sockets are created on mount and
- * destroyed on unmount by useCoreCWebSocket.
+ * /traffic 默认推送服务端差分速率帧（read_rate/publish_rate/dropped_rate），直接渲染；
+ * legacy ?mode=totals 累计帧才客户端差分。/memory 帧原样展示。1s ticker（wsPushInterval）。
+ * Sockets are created on mount and destroyed on unmount by useCoreCWebSocket.
  */
 export const RealtimeStreamsPanel: React.FC = () => {
   const { t } = useTranslation()

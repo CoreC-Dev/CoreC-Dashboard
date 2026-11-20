@@ -37,8 +37,6 @@ import { filterWriteDeadLetters } from '@/lib/deadLetterFilter'
 import { DATA_TYPES } from '@/types/config'
 import type { DeadLetterEntry } from '@/types/models'
 
-// ─── TagCombobox ────────────────────────────────────────────
-
 interface TagComboboxProps {
   value: string
   onChange: (v: string) => void
@@ -101,8 +99,6 @@ export const TagCombobox: React.FC<TagComboboxProps> = ({
     </div>
   )
 }
-
-// ─── WriteForm ───────────────────────────────────────────────
 
 interface WriteFormProps {
   drivers: { name: string; type: string }[]
@@ -272,8 +268,6 @@ export const WriteForm: React.FC<WriteFormProps> = ({
     </Card>
   )
 }
-
-// ─── DeadLetterTable ────────────────────────────────────────
 
 interface DeadLetterTableProps {
   visibleDeadLetters: DeadLetterEntry[]

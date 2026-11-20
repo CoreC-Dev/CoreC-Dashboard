@@ -1,9 +1,8 @@
 // @vitest-environment jsdom
 // Regression: the runtime row's Test dialog evaluates through
 // POST /rules/preview (the same scratch engine as the wizard's
-// Playground) instead of the deleted client-side rough matcher — the
-// two "test" affordances can no longer disagree, compile errors arrive
-// verbatim, and a stale verdict hides when the sample point changes.
+// Playground) — compile errors arrive verbatim, and a stale verdict
+// hides when the sample point changes.
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'

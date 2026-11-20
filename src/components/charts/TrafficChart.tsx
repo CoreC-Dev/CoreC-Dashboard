@@ -20,9 +20,8 @@ import type { TrafficFrame } from '@/types/models'
  *
  * The /traffic stream pushes server-side diffed
  * rates (`read_rate/publish_rate/dropped_rate`), so the chart appends
- * frames directly — no client baseline dance, no negative spike on
- * restart-to-zero, and the first frame already carries the engine's
- * 60s windowed rate instead of dead air.
+ * frames directly; the first frame already carries the engine's
+ * 60s windowed rate.
  */
 // memo'd so a parent re-render (e.g. DashboardPage polling useStats) doesn't
 // re-render this chart unless its (empty) props change. The chart drives its
@@ -158,8 +157,7 @@ export const TrafficChart = memo(function TrafficChart() {
             />
           </AreaChart>
         </ResponsiveContainer>
-        {/* "waiting for data" on first load, "updates paused" after a
-         * drop — instead of silent empty axes / a silent freeze. */}
+        {/* "waiting for data" on first load, "updates paused" after a drop. */}
         <ChartStatusOverlay disconnected={disconnected} empty={shown.length === 0} />
       </div>
     </>

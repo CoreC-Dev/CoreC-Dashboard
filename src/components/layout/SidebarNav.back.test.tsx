@@ -1,9 +1,6 @@
 // @vitest-environment jsdom
-// SidebarNav — bottom function area: the old "Disconnect"
-// button only called navigate('/'), byte-identical to the back button above
-// it, while its label promised a distinct action — a lying, duplicated
-// escape. It was merged away: one button remains, labeled with the same
-// "Back to instances" copy every other escape in the app uses.
+// SidebarNav — bottom function area: one back button, labeled with the
+// "Back to instances" copy every escape in the app uses.
 import { cleanup, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -92,9 +89,9 @@ describe('SidebarNav bottom area', () => {
   it('offers exactly one escape to the instance list, no duplicate "Disconnect"', () => {
     renderNav(false)
 
-    // One honest button — same copy as ConnectionGate's dead-end fix.
+    // One back button — same copy as ConnectionGate's failure screen.
     expect(screen.getAllByRole('button', { name: 'Back to instances' })).toHaveLength(1)
-    // The lying duplicate is gone.
+    // No "Disconnect" duplicate.
     expect(screen.queryByRole('button', { name: 'Disconnect' })).toBeNull()
     expect(screen.queryByLabelText('Disconnect')).toBeNull()
   })
@@ -108,10 +105,9 @@ describe('SidebarNav bottom area', () => {
   })
 
   it('the dead disconnect keys are gone from both language packs', async () => {
-    // Removing the button leaves connection.disconnect/aria.disconnect with
-    // zero consumers — dead keys are deleted, and both packs must stay in
-    // lockstep (the parity test enforces the set equality; this pins the
-    // specific keys the audit named).
+    // connection.disconnect/aria.disconnect must have zero consumers —
+    // dead keys are deleted, and both packs must stay in lockstep (the
+    // parity test enforces the set equality; this pins the specific keys).
     const zh = (await import('@/i18n/zh-CN.json')).default as Record<string, unknown>
     const en = (await import('@/i18n/en.json')).default as Record<string, unknown>
 

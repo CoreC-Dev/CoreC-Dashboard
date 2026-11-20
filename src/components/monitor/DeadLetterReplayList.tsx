@@ -82,8 +82,8 @@ interface DeadLetterReplayListProps {
  * The Alerts page's dead-letter card: the failed-write queue with per-entry
  * retry and BATCH replay.
  *
- * Batch replay is a PLC write — a dangerous operation — so it follows the
- * repo's write-control confirmation pattern: selecting entries only stages
+ * Batch replay is a PLC write and follows the repo's write-control
+ * confirmation pattern: selecting entries only stages
  * them; one confirmation dialog per batch lists every command that will be
  * re-sent, and only its destructive confirm fires the writes. Commands are
  * re-dispatched one by one through the existing POST /write mutation, and

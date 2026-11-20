@@ -313,7 +313,7 @@ export const ServerActionButtons: React.FC<{
   const { t } = useTranslation()
   return (
     <>
-      {/* Path A — Load from Server: fetch the live redacted config (secrets
+      {/* Load from Server: fetch the live redacted config (secrets
           masked as ***) into the editor. Available in both modes so the
           operator can backfill the server's real config before editing. */}
       <Button
@@ -327,7 +327,7 @@ export const ServerActionButtons: React.FC<{
       >
         <CloudDownload className="w-3.5 h-3.5" />
       </Button>
-      {/* Path A — Dry-run Validate (YAML mode only, since the payload is
+      {/* Dry-run Validate (YAML mode only, since the payload is
           the editor's YAML text). Validates on the server WITHOUT applying. */}
       {mode === 'yaml' && (
         <Button

@@ -162,8 +162,8 @@ describe('DriverConnectionTest', () => {
     })
     expect(await screen.findByText('Connected in 12 ms')).toBeTruthy()
 
-    // Editing the host invalidates the green check — it described the OLD
-    // inputs and must not mislead about the new ones.
+    // Editing the host invalidates the green check — it described the
+    // previous inputs and must not mislead about the new ones.
     rerenderEl(<DriverConnectionTest type="modbus-tcp" settings={{ host: '10.0.0.6' }} />)
     expect(screen.queryByText('Connected in 12 ms')).toBeNull()
   })

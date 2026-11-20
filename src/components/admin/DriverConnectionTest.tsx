@@ -17,7 +17,7 @@
  *    hidden as stale, so a green check can never mislead about edited
  *    parameters;
  *  - a 200 {ok:false} shows the server's error text (e.g. "connection
- *    refused", "driver test timed out after 5s") plus an actionable hint.
+ *    refused", "driver test timed out") plus an actionable hint.
  */
 import { AlertCircle, CheckCircle2, Loader2, PlugZap, XCircle } from 'lucide-react'
 import type React from 'react'

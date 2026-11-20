@@ -148,8 +148,7 @@ export function TagToolbar({
             </SelectContent>
           </Select>
 
-          {/* Quality Filter — the problem-point hunt: bad/uncertain
-           * quality tags no longer hide among hundreds of rows. */}
+          {/* Quality filter — narrow the table to bad/uncertain quality tags. */}
           <Select
             value={selectedQuality}
             onValueChange={(v) => onQualityChange(v as QualityFilter)}

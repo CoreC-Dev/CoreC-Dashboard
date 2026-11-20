@@ -12,8 +12,7 @@ interface CountUpNumberProps {
  * using an ease-out cubic curve. Respects prefers-reduced-motion.
  *
  * Animation logic inlined — components/ui must not import from hooks/
- * (layer rule), and this animation has no other consumers to share a
- * hook with.
+ * (layer rule).
  */
 export const CountUpNumber = memo(function CountUpNumber({
   value,

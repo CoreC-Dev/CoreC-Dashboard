@@ -38,10 +38,9 @@ export const TagRow = memo(function TagRow({
   const [flashDir, setFlashDir] = useState<'up' | 'down' | 'none'>('none')
 
   // Replay a 1s tint flash whenever this row receives a fresh WS update.
-  // The tint is NEUTRAL primary for BOTH directions — a falling tank
-  // level flashing red read as an alarm in an industrial UI, and red must
-  // stay reserved for bad quality/errors. The value's direction is shown
-  // by the in-row ▲/▼ arrow instead. WAAPI animates only opacity — the
+  // The tint is NEUTRAL primary for BOTH directions — red stays reserved
+  // for bad quality/errors. The value's direction is shown
+  // by the in-row ▲/▼ arrow. WAAPI animates only opacity — the
   // tint comes from the overlay class.
   // biome-ignore lint/correctness/useExhaustiveDependencies: point.value is coupled to flashTick (WS updates drive both); recompute only on flashTick.
   useEffect(() => {
@@ -62,8 +61,7 @@ export const TagRow = memo(function TagRow({
     )
     lastValueRef.current = num
     // The value + arrow still update on every frame; only the tint replay is
-    // throttled. At 60 WS flushes/s, one WAAPI animation per row per frame
-    // meant thousands of animation objects per second across visible rows.
+    // throttled (one WAAPI animation per row per throttle window).
     const now = performance.now()
     if (now - lastFlashAtRef.current < 250) return
     lastFlashAtRef.current = now
@@ -111,8 +109,7 @@ export const TagRow = memo(function TagRow({
       >
         {point.driver}
       </td>
-      {/* The composite key already contained device — surface it so two
-       * same-name tags on different sub-devices are no longer indistinguishable. */}
+      {/* Device column — distinguishes same-name tags on different sub-devices. */}
       <td
         className="px-4 py-2.5 shrink-0 min-w-0 truncate font-mono text-muted-foreground"
         style={{ width: COLS.device }}

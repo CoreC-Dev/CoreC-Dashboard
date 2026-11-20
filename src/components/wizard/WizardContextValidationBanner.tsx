@@ -8,11 +8,7 @@
  * amber so the operator sees the core would run in idle mode without the
  * warning blocking the wizard's Finish button.
  *
- * Extracted verbatim from the three wizards — all three used the same JSX
- * and the same `driverWizard.validationErrors` i18n key.
- *
- * The prop type is defined inline (mirroring ConfigValidationResult) to
- * avoid an import cycle with the config-schema module.
+ * The prop type is defined inline (mirroring ConfigValidationResult).
  */
 import { AlertCircle, AlertTriangle, CheckCircle2 } from 'lucide-react'
 import type React from 'react'
@@ -26,7 +22,7 @@ interface ContextValidationError {
 interface ContextValidation {
   valid: boolean
   errors: ContextValidationError[]
-  /** Non-blocking warnings (idle-mode hints). Optional for backward compat. */
+  /** Non-blocking warnings (idle-mode hints). */
   warnings?: ContextValidationError[]
 }
 

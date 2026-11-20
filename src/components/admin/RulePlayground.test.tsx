@@ -83,10 +83,7 @@ afterEach(() => {
 
 // Suite timeout raised from the 5s default: each test renders two Radix
 // Selects, which is expensive under jsdom (first test pays the environment
-// warm-up: 1.2–3.3s in isolation). In the full 40-file suite on this loaded
-// 2-core runner, two tests intermittently exceeded the 5s default while
-// passing 10/10 in isolation (twice) — same conditions as the InstanceDialog
-// flake recorded in 1da217b.
+// warm-up), and full-suite runs on a loaded runner can exceed the default.
 describe('RulePlayground', { timeout: 15_000 }, () => {
   it('renders collapsed and expands the sample point form with defaults', async () => {
     renderWithClient(<RulePlayground match="value > 90" defaults={DEFAULTS} />)
@@ -266,7 +263,7 @@ describe('RulePlayground', { timeout: 15_000 }, () => {
     })
     expect(await screen.findByText('Matched')).toBeTruthy()
 
-    // The verdict described the OLD expression — editing it must hide it.
+    // The verdict described the previous expression — editing it must hide it.
     rerenderEl(<RulePlayground match="value > 99" defaults={DEFAULTS} />)
     expect(screen.queryByText('Matched')).toBeNull()
   })

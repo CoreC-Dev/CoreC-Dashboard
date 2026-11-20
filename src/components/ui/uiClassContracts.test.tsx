@@ -1,7 +1,6 @@
 // @vitest-environment jsdom
 // Paint-level UI contracts that jsdom cannot compute: the class strings that
-// carry the design tokens. Kept in one file so a class-token change has a
-// single update point instead of one file per component.
+// carry the design tokens.
 import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import { Card } from '@/components/ui/card'
@@ -34,11 +33,9 @@ describe('Card continuous corners', () => {
 })
 
 describe('DialogContent viewport clamp', () => {
-  // A tall dialog (the seven-field instance form) used to extend past a
-  // short/landscape viewport with no scroll container, leaving the footer
-  // buttons unreachable. The content element must clamp to the viewport and
-  // scroll its own overflow; overflow-y-auto only shows a scrollbar when
-  // content actually overflows, so short dialogs are unaffected.
+  // The content element must clamp to the viewport and scroll its own
+  // overflow; overflow-y-auto only shows a scrollbar when content actually
+  // overflows, so short dialogs are unaffected.
   it('clamps its height to the viewport and scrolls overflow', () => {
     render(
       <Dialog open onOpenChange={() => {}}>

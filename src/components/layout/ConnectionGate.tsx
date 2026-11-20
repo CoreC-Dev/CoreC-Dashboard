@@ -10,11 +10,8 @@
  * collapsed "technical details" fold so it stays available without being
  * the headline.
  *
- * The failure screen used to be a dead end — one red line and Retry,
- * no shell, no way back, so an operator with a bad API key was stuck unless
- * they knew to hit the browser back button. It now carries the instance
- * name, a retry, "edit this instance" (homepage edit dialog via?edit=),
- * and "back to instances".
+ * The failure screen carries the instance name, a retry, "edit this
+ * instance" (homepage edit dialog via?edit=), and "back to instances".
  */
 import type React from 'react'
 import { useTranslation } from 'react-i18next'

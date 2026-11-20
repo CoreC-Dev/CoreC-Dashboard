@@ -44,8 +44,7 @@ export const PprofDownloads: React.FC = () => {
     const baseUrl = conn?.baseUrl ?? ''
     const secret = conn?.secret ?? ''
     const cleanBase = baseUrl.trim().replace(/\/+$/, '')
-    // Route through the same-origin proxy — the browser must not connect
-    // to the backend directly (CSP connect-src 'self').
+    // pprof 下载经同源代理，避免浏览器直连后端（CSP 见 index.html，当前 connect-src *）。
     const url = `/corec-proxy/debug/pprof/${profile}`
     setPprofLoading(profile)
     setPprofError(null)

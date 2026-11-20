@@ -11,7 +11,8 @@ import { TableSkeleton } from '@/components/ui/page-skeleton'
 /**
  * WriteHistoryTable — the write operation audit trail (GET /write/history):
  * every tag write recorded by CoreC, forward REST API writes and reverse
- * stream ("command") writes alike, newest-first (server caps at 1000).
+ * stream ("command") writes alike, newest-first (server cap:
+ * writeAuditCapacity).
  *
  * Failed entries expand their error text as a full-width sub-row, styled
  * like the dead-letter/AlertsPage failure rows (bg-status-error/5) so the
@@ -25,8 +26,7 @@ const MAX_VISIBLE_ROWS = 100
 export const WriteHistoryTable: React.FC = () => {
   const { t } = useTranslation()
   // Server-side truncation: pass limit=MAX_VISIBLE_ROWS so the compliance
-  // history arrives already capped — pulling the full 1000-entry history
-  // every 15s just to slice it client-side wastes the refetch.
+  // history arrives already capped.
   const { data, isLoading, isError, error, isFetching, refetch } = useWriteHistory({
     limit: MAX_VISIBLE_ROWS,
   })

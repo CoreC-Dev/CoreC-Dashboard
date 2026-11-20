@@ -25,7 +25,7 @@ export type RailItem = {
   badge?: 'alerts'
 }
 
-/** A labeled sub-group of rail items (21 splits the admin section). */
+/** A labeled sub-group of rail items. */
 export type NavGroup = {
   labelKey: string
   items: RailItem[]
@@ -41,13 +41,10 @@ export function buildMonitorItems(base: string): RailItem[] {
 }
 
 /**
- * Admin-section nav items as two labeled sub-groups: the flat
- * 7-item pile mixed "edit the config" with "watch it run", and in the
- * collapsed rail they were seven bare icons with nothing to anchor a visual
- * search. Configuration management (drivers/transports/rules/config) and
- * operations & diagnostics (write/topology/diagnostics) now carry their own
- * small section labels — the group copy lives in the packs so the renderer
- * stays dumb.
+ * Admin-section nav items as two labeled sub-groups: configuration
+ * management (drivers/transports/rules/config) and operations & diagnostics
+ * (write/topology/diagnostics), each with its own small section label —
+ * the group copy lives in the packs so the renderer stays dumb.
  */
 export function buildAdminGroups(base: string): NavGroup[] {
   return [

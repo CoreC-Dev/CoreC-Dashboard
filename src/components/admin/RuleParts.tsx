@@ -26,8 +26,6 @@ import { useConfigStore } from '@/stores/configStore'
 import { DATA_TYPES, type DataType } from '@/types/config'
 import type { RuleStat } from '@/types/models'
 
-// ─── Shared helpers ─────────────────────────────────────────
-
 /** Targets serialize as `null` (not `[]`) when empty; prefer the multi-target
  *  list when present, otherwise fall back to the single `target` field. */
 export const getTargetDisplay = (rule: RuleStat): string => {
@@ -39,9 +37,8 @@ export const getTargetDisplay = (rule: RuleStat): string => {
 
 /**
  * Form-side shape of the sample data point for the runtime row's Test
- * dialog. Once evaluated by a rough client-side matcher; now the
- * dialog POSTs to /rules/preview — the same scratch engine the wizard's
- * Playground uses — so the two "test" affordances can no longer disagree.
+ * dialog. The dialog POSTs to /rules/preview — the same scratch engine the
+ * wizard's Playground uses.
  */
 export interface TestSamplePoint {
   driver: string
@@ -111,8 +108,6 @@ const LabeledSelect: React.FC<{
   </div>
 )
 
-// ─── ActionBadge ────────────────────────────────────────────
-
 const ACTION_BADGE_META: Record<string, { cls: string; key: string }> = {
   alert: {
     cls: 'border-status-warning/30 bg-status-warning/10 text-status-warning',
@@ -156,8 +151,6 @@ export const ContinueBadge: React.FC = () => {
   )
 }
 
-// ─── RuleTestDialog ─────────────────────────────────────────
-
 interface RuleTestDialogProps {
   /** The runtime rule under test; null keeps the dialog closed. */
   rule: RuleStat | null
@@ -167,8 +160,7 @@ interface RuleTestDialogProps {
 export const RuleTestDialog: React.FC<RuleTestDialogProps> = ({ rule, onClose }) => {
   const { t } = useTranslation()
   // The verdict comes from the SERVER's scratch engine
-  // (POST /rules/preview) — the same engine the wizard's Playground
-  // uses — so this dialog and the Playground can never disagree again.
+  // (POST /rules/preview) — the same engine the wizard's Playground uses.
   const { mutate, isPending, data, error } = useRulesPreview()
 
   const [dp, setDp] = useState<TestSamplePoint>(INITIAL_TEST_DP)
@@ -189,8 +181,7 @@ export const RuleTestDialog: React.FC<RuleTestDialogProps> = ({ rule, onClose })
   )
 
   // Config-driven dropdowns: surface already-configured drivers and their
-  // tags/groups so the operator can pick from a list instead of retyping
-  // names that exist in the config file.
+  // tags/groups for selection.
   const workingConfig = useConfigStore((s) => s.workingConfig)
   const configDrivers = workingConfig?.drivers ?? []
   const driverNames = configDrivers.map((d) => d.name).filter(Boolean)
@@ -360,8 +351,7 @@ export const RuleTestDialog: React.FC<RuleTestDialogProps> = ({ rule, onClose })
                       ? t('ruleWizard.playgroundUnsupported')
                       : t('ruleWizard.playgroundFailed')}
                   </div>
-                  {/* Verbatim on purpose: the backend returns compile/eval
-                      errors unmasked so the author sees expr's own message. */}
+                  {/* Backend compile/eval errors are shown verbatim. */}
                   <p className="break-all font-mono text-muted-foreground">{data.error}</p>
                 </div>
               )}

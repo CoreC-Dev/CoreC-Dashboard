@@ -5,9 +5,8 @@
  * used by both DriverWizard and TransportWizard (the transport variant
  * adds the transports-select branch gated on `transportNames`).
  *
- * The wizard manages state with useState (not useForm) because the dynamic
- * per-type field set makes a static zod schema impractical. This grid
- * renders fields directly bound to the settings state.
+ * The wizard manages state with useState; this grid renders fields
+ * directly bound to the settings state.
  */
 
 import type { TFunction } from 'i18next'
@@ -34,8 +33,8 @@ import type { SettingsField } from '@/lib/settingsRegistry'
  * slip is caught immediately, not in production copy.
  *
  * Detection uses t()'s own missing-key behavior (i18next returns the key
- * unchanged) rather than i18n.exists() — consumers may render with the
- * react-i18next default (uninitialized) instance, which has no exists().
+ * unchanged); consumers may render with the react-i18next default
+ * (uninitialized) instance, which has no exists().
  */
 function translateFieldHelp(t: TFunction, key: string): string {
   const translated = t(key)

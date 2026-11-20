@@ -17,15 +17,12 @@ interface DiscardChangesDialogProps {
 }
 
 /**
- * Confirmation dialog for discarding unsaved config edits. Wraps the
- * previously-misleading "Cancel" banner button (which silently called
- * `revert()`) in an explicit AlertDialog so users don't accidentally lose
- * in-progress work. Shared by Drivers/Transports/Rules/ConfigCenter pages.
+ * Confirmation dialog for discarding unsaved config edits: the "Cancel"
+ * banner button opens an explicit AlertDialog before `revert()` runs.
+ * Shared by Drivers/Transports/Rules/ConfigCenter pages.
  *
- * The confirm is a lossy action but used to render as the default
- * primary (lime) button — visually identical to a plain "OK", so
- * habit-clicking the right button discarded the draft. It now uses the
- * destructive variant, the same red family as every delete-class confirm.
+ * The confirm is a lossy action and uses the destructive variant, the same
+ * red family as every delete-class confirm.
  */
 export const DiscardChangesDialog: React.FC<DiscardChangesDialogProps> = ({
   open,

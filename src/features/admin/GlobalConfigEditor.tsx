@@ -9,10 +9,9 @@
  * (ConfigCenterPage) handles the Apply/Revert flow via PUT /configs.
  *
  * Hot-reload semantics (from CoreC config.go):
- *   - log-level: hot-updatable (also via PATCH /configs)
- *   - log-format: requires restart
+ *   - log-level / log-format / engine.stale-threshold：可经 PATCH /configs 热更
  *   - api.*: requires restart (listen address, TLS, timeouts)
- *   - engine.*: requires restart (workers, bus size, thresholds)
+ *   - 其余 engine.*: requires restart (workers, bus size, thresholds)
  *   - buffer.*: requires restart (buffer path, max-size)
  *
  * Fields requiring restart are marked with a warning badge.

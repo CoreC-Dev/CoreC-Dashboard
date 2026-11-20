@@ -82,8 +82,8 @@ describe('TagRow — device column', () => {
 describe('TagRow — honest timestamps', () => {
   // Pin the clock: the point timestamp and the expected title are both
   // derived from Date.now(); without freezing it, a second boundary between
-  // the two evaluations flipped the assertion ~1/1177 runs (A-domain
-  // flake report). Frozen now ⇒ both sides compute the same instant.
+  // the two evaluations flips the assertion. Frozen now ⇒ both sides compute
+  // the same instant.
   beforeEach(() => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-03-15T08:00:00Z'))
@@ -237,8 +237,8 @@ describe('TagRow — direction is information, not an alarm color', () => {
       </table>,
     )
 
-    // Bad quality still reads red (QualityLabel color), the ▼ arrow reads
-    // primary — the two semantics no longer share a palette.
+    // Bad quality reads red (QualityLabel color); the ▼ arrow reads
+    // primary — direction and quality use separate palettes.
     expect(screen.getByText('▼').className).toContain('text-primary')
   })
 })

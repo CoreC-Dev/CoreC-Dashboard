@@ -28,8 +28,7 @@ interface TagTableProps {
   onClearFilters: () => void
 }
 
-/** Virtualized tag data table with sticky sort header + loading/error states.
- *  Extracted verbatim from TagExplorerPage — same classes & i18n keys. */
+/** Virtualized tag data table with sticky sort header + loading/error states. */
 export function TagTable({
   filteredTags,
   flashTick,

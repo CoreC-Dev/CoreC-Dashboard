@@ -20,8 +20,6 @@ import { Textarea } from '@/components/ui/textarea'
 import type { GlobalConfig } from '@/types/config'
 import { ON_BAD_QUALITY_POLICIES } from '@/types/config'
 
-// ─── ApiSection ─────────────────────────────────────────────────────
-
 export const ApiSection: React.FC<{
   api: NonNullable<GlobalConfig['api']>
   update: (path: string, value: unknown) => void
@@ -205,8 +203,6 @@ export const ApiSection: React.FC<{
     </div>
   )
 }
-
-// ─── EngineSection ──────────────────────────────────────────────────
 
 export const EngineSection: React.FC<{
   engine: NonNullable<GlobalConfig['engine']>

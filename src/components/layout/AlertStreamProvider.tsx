@@ -10,8 +10,7 @@ import { logEventSchema } from '@/types/api'
 import type { AlertEvent, LogEvent } from '@/types/models'
 
 /**
- * Shows a browser notification iff the user has granted permission
- * (unchanged from the old AlertsPage notify helper).
+ * Shows a browser notification iff the user has granted permission.
  */
 function showNotification(title: string, body: string): void {
   try {
@@ -28,23 +27,21 @@ function showNotification(title: string, body: string): void {
  *
  * Mounted once by AppShell (inside ConnectionProvider/ConnectionGate, so it
  * only runs against a connected instance), it keeps the warn/error stream
- * alive on EVERY route of the instance — the old subscription lived inside
- * AlertsPage, so leaving the alerts page made sounds, browser
- * notifications, and the sidebar badge all go deaf.
+ * alive on EVERY route of the instance.
  *
  * It owns no context: state lands in alertStore (bounded feed + unread
- * count + DLQ count) and the socket's connection status in wsStatusStore
- * (wired like every other stream: status sink, activity touch, drop
- * reports, reconnect handle for the banner's rejected-retry button).
+ * count + DLQ count); the socket's connection status goes to wsStatusStore
+ * (registerStream 上报状态、touchStream 更新活跃时间、reportDropped 上报限流
+ * 丢弃计数；reconnect handle 供 banner 的 rejected 重试按钮).
  *
- * Renders nothing — it is a behavior-only provider. The one /logs socket
- * it owns is the only alert subscription in the app: AlertsPage reads the
- * feed from the store instead of subscribing again (dedupe).
+ * Renders nothing — it is a behavior-only provider. AppShell 级全局 /logs
+ * 订阅（供告警 feed/徽标）；EventLogTerminal 在诊断/配置页另开 /logs。
+ * AlertsPage reads the feed from the store instead of subscribing again.
  */
 export const AlertStreamProvider: React.FC = () => {
   const { t } = useTranslation()
   // Latest translations for the WS callback without resubscribing on
-  // language change (same ref pattern the old AlertsPage effect used).
+  // language change.
   const tRef = useRef(t)
   tRef.current = t
 
@@ -75,9 +72,7 @@ export const AlertStreamProvider: React.FC = () => {
     statusStore.attachReconnect(streamId, () => ws?.reconnect())
 
     // rAF batching — a log storm can emit hundreds of events per second;
-    // buffering + one flush per frame keeps store writes (and re-renders
-    // of every alertStore subscriber) to ≤60/s (same discipline as the
-    // old page-local buffer).
+    // 按 rAF 节流 store 写入（每帧至多一次），避免 alertStore 订阅者高频重渲染。
     const pending: LogEvent[] = []
     let rafId: number | null = null
     const flush = () => {
@@ -89,7 +84,7 @@ export const AlertStreamProvider: React.FC = () => {
       const { soundEnabled, warningSoundEnabled, notificationsEnabled } = useAlertStore.getState()
       for (const evt of batch) {
         // level >= 8 are errors — audible + visual alerts when enabled
-        // (per-event, not per-batch: same behavior the page had).
+        // (per-event, not per-batch).
         if (evt.level >= 8) {
           if (soundEnabled) playAlertBeep()
           if (notificationsEnabled) {

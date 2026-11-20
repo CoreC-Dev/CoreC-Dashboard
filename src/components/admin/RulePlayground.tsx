@@ -5,8 +5,7 @@
  * The backend compiles the current match expression in a SCRATCH rule
  * engine and evaluates it against one sample data point — the active
  * rule set is never touched — so the author can validate syntax and
- * semantics BEFORE saving, instead of discovering a compile error only
- * when production data flows through a saved rule.
+ * semantics BEFORE saving.
  *
  * UI contract (hub/route/rules_preview.go + docs/api/rules.md):
  *  - collapsible mini form for the sample point (driver/tag/value/
@@ -15,8 +14,7 @@
  *  - 200 {matched} renders a plain ✓/✗ — a miss is a result, not an
  *    error;
  *  - 400 compile/eval errors (and the 501 unsupported-engine body) are
- *    shown VERBATIM next to the editor — the backend returns them
- *    unmasked for exactly this purpose;
+ *    shown VERBATIM next to the editor;
  *  - the run button is disabled while a preview is in flight and when
  *    the match expression is empty (the backend rejects "" with 400);
  *  - once the match or the sample point changes after a run, the
@@ -261,8 +259,7 @@ export const RulePlayground: React.FC<RulePlaygroundProps> = ({ match, defaults 
                       ? t('ruleWizard.playgroundUnsupported')
                       : t('ruleWizard.playgroundFailed')}
                   </div>
-                  {/* Verbatim on purpose: the backend returns compile/eval
-                      errors unmasked so the author sees expr's own message. */}
+                  {/* Backend compile/eval errors are shown verbatim. */}
                   <p className="font-mono break-all text-muted-foreground">{data.error}</p>
                 </div>
               )}

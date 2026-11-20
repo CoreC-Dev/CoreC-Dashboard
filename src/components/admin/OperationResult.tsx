@@ -1,14 +1,10 @@
 /**
  * OperationResult — the shared transient feedback strip.
  *
- * The "apply config & hot-reload" outcome used to be a page-local,
- * never-clearing text line, spelled three different ways on three pages.
- * This is the ONE strip: success green / error red, an optional context
- * label naming WHICH operation produced it, a 5s auto-fade, and a manual
- * close — so a glance is enough to tell what happened and it does not
- * squat on the page forever.
+ * Success green / error red, an optional context label naming WHICH
+ * operation produced it, a 5s auto-fade, and a manual close.
  *
- * Dismissal is deliberately local: the strip hides itself after the fade
+ * Dismissal is local: the strip hides itself after the fade
  * or on close, keyed on the status OBJECT's identity — every producer
  * (useEntityEditConfig, useStatusMessage consumers…) sets a fresh object
  * per operation, so repeating the operation re-shows the strip while
@@ -41,7 +37,6 @@ interface OperationResultProps {
   onDismiss?: () => void
 }
 
-/** The audit's copy: "5s 自动淡出可手关". */
 const DEFAULT_AUTO_DISMISS_MS = 5000
 
 export const OperationResult: React.FC<OperationResultProps> = ({

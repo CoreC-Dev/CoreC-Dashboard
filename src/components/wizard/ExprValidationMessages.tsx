@@ -2,16 +2,14 @@
  * ExprValidationMessages
  *
  * Shared renderer for expression-validation result messages (errors +
- * warnings) — one component instead of 4 duplicated inline blocks in
- * RuleWizard and RuleGroupEditor.
+ * warnings), used by RuleWizard and RuleGroupEditor.
  *
  * Two visual variants — the two call sites differ only in icon vs. text prefix
  * and text size:
  *   - 'icon'   (RuleWizard): AlertCircle icon, text-xs, flex row.
  *   - 'prefix' (RuleGroupEditor): ⚠ text prefix, text-xs.
  *
- * Returns null when the result is valid with no warnings, matching the
- * original inline IIFE guards.
+ * Returns null when the result is valid with no warnings.
  */
 import { AlertCircle } from 'lucide-react'
 import type React from 'react'

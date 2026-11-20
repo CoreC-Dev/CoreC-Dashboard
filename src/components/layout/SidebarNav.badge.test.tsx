@@ -2,7 +2,7 @@
 // SidebarNav — the "告警事件" nav badge: a red unread count fed
 // by the instance-level alert provider's store. Unread error events take
 // precedence; a non-empty dead-letter queue is the fallback signal. The
-// audit's aria copy — "{{count}} unread alerts" — must reach screen readers
+// aria copy — "{{count}} unread alerts" — must reach screen readers
 // through the pill's aria-label.
 import { cleanup, render, screen } from '@testing-library/react'
 import { act } from 'react'

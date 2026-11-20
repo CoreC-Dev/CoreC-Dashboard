@@ -23,8 +23,7 @@ interface TagWriteDialogProps {
   onSubmit: (e: React.FormEvent) => void
 }
 
-/** Write-command confirmation dialog with industrial-safety validation.
- *  Extracted verbatim from TagExplorerPage — same classes & i18n keys. */
+/** Write-command confirmation dialog with industrial-safety validation. */
 export function TagWriteDialog({
   selectedTagForWrite,
   writeValue,

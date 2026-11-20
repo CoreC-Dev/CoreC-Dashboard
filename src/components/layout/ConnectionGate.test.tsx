@@ -4,9 +4,9 @@
 //  - the visible verdict is the context's TRANSLATED kind (the context
 //    classifies probe failures and resolves pack keys); raw technical detail
 //    (the probed endpoint) is demoted to a collapsed fold, not the headline.
-//  - the screen must not be a dead end — retry, "edit this instance"
-//    (homepage edit dialog via ?edit=<id>), and "back to instances" are all
-//    reachable; the headline names the instance.
+//  - retry, "edit this instance" (homepage edit dialog via ?edit=<id>),
+//    and "back to instances" are all reachable; the headline names
+//    the instance.
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'

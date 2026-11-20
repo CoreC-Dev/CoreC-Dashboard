@@ -107,13 +107,11 @@ export const Param: React.FC<{ label: string; children: React.ReactNode }> = ({
   </div>
 )
 
-// --- Shared collapsible "edit configuration" card shell ---
-// Both DriverDetailPage and TransportDetailPage render a structurally identical
-// collapsible form: a toggle header (Sliders + chevron + title), an Input/Select
-// field grid, a YAML preview <pre>, a status-message block and a Reload button.
-// Only the i18n strings, the field-id prefix and the field/value/yaml payloads
-// differ, so those are passed in as props. The field-rendering, status block and
-// reload button JSX live here once and are byte-identical to the originals.
+// Shared collapsible "edit configuration" card shell for DriverDetailPage
+// and TransportDetailPage: a toggle header (Sliders + chevron + title), an
+// Input/Select field grid, a YAML preview <pre>, a status-message block and
+// a Reload button. The i18n strings, the field-id prefix and the
+// field/value/yaml payloads are passed in as props.
 
 export interface EditField {
   key: string
@@ -135,7 +133,7 @@ export interface EntityEditConfigLabels {
   /**
    * Placeholder shown for a password field that has a STORED value while
    * the form value is masked to '' — e.g. "Saved — leave blank
-   * to keep". Shown instead of the field's generic placeholder.
+   * to keep".
    */
   savedSecretPlaceholder: string
   /** Aria/title label for the password reveal toggle (masked → shown). */

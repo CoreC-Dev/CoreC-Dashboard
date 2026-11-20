@@ -33,9 +33,7 @@ const DialogContent = React.forwardRef<
         ref={ref}
         className={cn(
           'fixed left-[50%] top-[50%] z-50 grid w-[calc(100%-1.5rem)] sm:w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border border-border bg-card p-5 sm:p-6 shadow-[var(--shadow-panel)] squircle dialog-motion sm:rounded-3xl',
-          // A tall dialog (the seven-field instance form) overflowed
-          // the viewport on short/landscape screens — the bottom buttons were
-          // unreachable. Clamp the height to the viewport and scroll instead;
+          // Clamp the height to the viewport and scroll the overflow;
           // overflow-y-auto only shows a scrollbar when content overflows.
           'max-h-[calc(100vh-2rem)] overflow-y-auto',
           className,

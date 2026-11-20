@@ -15,8 +15,6 @@ import { Switch } from '@/components/ui/switch'
 import type { GlobalConfig } from '@/types/config'
 import { LOG_FORMATS, LOG_LEVELS } from '@/types/config'
 
-// ─── FieldRow wrapper ───────────────────────────────────────────────
-
 interface FieldRowProps {
   label: string
   help?: string
@@ -48,8 +46,6 @@ export const FieldRow: React.FC<FieldRowProps> = ({
   )
 }
 
-// ─── Section header ─────────────────────────────────────────────────
-
 export const SectionHeader: React.FC<{
   icon: React.ReactNode
   labelKey: string
@@ -69,8 +65,6 @@ export const sectionGridCls =
   'grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-lg bg-muted/30 border border-border'
 export const detailsGridCls =
   'grid grid-cols-2 sm:grid-cols-3 gap-3 p-3 mt-2 rounded-lg bg-muted/20 border border-border/30'
-
-// ─── LoggingSection ─────────────────────────────────────────────────
 
 export const LoggingSection: React.FC<{
   global: GlobalConfig
@@ -127,8 +121,6 @@ export const LoggingSection: React.FC<{
     </div>
   )
 }
-
-// ─── BufferSection ──────────────────────────────────────────────────
 
 export const BufferSection: React.FC<{
   buffer: NonNullable<GlobalConfig['buffer']>

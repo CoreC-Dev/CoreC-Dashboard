@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 // TrafficChart — the chart must say whether it is waiting for its
-// first frame or frozen after a disconnect, instead of silent empty axes /
-// a silent freeze. useCoreCWebSocket is mocked so tests can drive the
-// onMessage/onStatus callbacks the real socket would invoke. i18n English.
+// first frame or frozen after a disconnect. useCoreCWebSocket is mocked so
+// tests can drive the onMessage/onStatus callbacks the real socket would
+// invoke. i18n English.
 import { act, cleanup, render, screen } from '@testing-library/react'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { TrafficChart } from '@/components/charts/TrafficChart'

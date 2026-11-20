@@ -51,8 +51,7 @@ function exportCsv(tag: string, samples: TrendSample[], mergedNote: string) {
   URL.revokeObjectURL(url)
 }
 
-/** Right-column live trend chart + tag detail panel.
- *  Extracted verbatim from TagExplorerPage — same classes & i18n keys. */
+/** Right-column live trend chart + tag detail panel. */
 export function TagTrendPanel({
   trendTag,
   trendLivePoint,

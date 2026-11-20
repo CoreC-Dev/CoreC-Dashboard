@@ -1,9 +1,7 @@
 // @vitest-environment jsdom
-// DiscardChangesDialog: discarding unsaved edits is a lossy
-// action, but the confirm used to render as the default primary (lime)
-// button — visually identical to a plain "OK", so habit-clicking the
-// right button dropped the draft. The confirm must be destructive-styled,
-// the same red family as every delete-class confirm.
+// DiscardChangesDialog: discarding unsaved edits is a lossy action.
+// The confirm must be destructive-styled, the same red family as every
+// delete-class confirm.
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { DiscardChangesDialog } from '@/components/wizard/DiscardChangesDialog'

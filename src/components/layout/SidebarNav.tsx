@@ -26,9 +26,9 @@ interface SidebarNavProps {
  * Data source is the instance-level alert provider's store: unread error
  * events win; with none unread, a non-empty dead-letter queue is the
  * fallback signal ("deadLetters>0 或收到 error 级事件时显示红色计数").
- * The aria label uses the audit's copy — "{{count}} unread alerts" — and
- * participates in the nav link's accessible name, so screen readers hear
- * the count, not just "Alerts & Events".
+ * The aria label — "{{count}} unread alerts" — participates in the nav
+ * link's accessible name, so screen readers hear the count, not just
+ * "Alerts & Events".
  */
 const AlertsNavBadge: React.FC = () => {
   const { t } = useTranslation()
@@ -60,14 +60,10 @@ const AlertsNavBadge: React.FC = () => {
  * list, instance switcher, language toggle, theme selector). Shared by the
  * mobile sheet and the desktop aside.
  *
- * The old bottom-area "Disconnect" button was removed — it only
- * called navigate('/'), byte-identical to "Back to instances" above it,
- * while its label promised a distinct action. Leaving the instance route
- * tree already tears the connection down for real: ConnectionProvider's
- * unmount cleanups clear the active connection, evict the per-instance
- * QueryClient and stop the probe, and every WebSocket unmounts with it.
- * One honest button remains, labeled like every other escape in the app
- * ("Back to instances" — the same copy as ConnectionGate's failure screen).
+ * Leaving the instance route tree tears the connection down:
+ * ConnectionProvider's unmount cleanups clear the active connection, evict
+ * the per-instance QueryClient and stop the probe, and every WebSocket
+ * unmounts with it.
  */
 export const SidebarNav: React.FC<SidebarNavProps> = ({ collapsed, setCollapsed, isMobile }) => {
   const { t, i18n: i18nInst } = useTranslation()
@@ -123,15 +119,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ collapsed, setCollapsed,
               : 'w-full h-11 rounded-lg flex items-center px-2.5 gap-2.5',
             isActive
               ? 'text-background'
-              : // No hover translation on purpose. The nav container clips
-                // at its right edge (overflow-x-hidden), so the old 2px
-                // rightward nudge pushed collapsed circles — and expanded
-                // rows — 2px under the clip: the icon read as off-center
-                // inside the circle and the circle's right edge looked cut
-                // off. The icon keeps its centered scale-up instead
-                // (group-hover:scale-110 below), which scales around the
-                // circle's center and can never leave it.
-                'text-muted-foreground hover:text-foreground hover:bg-muted',
+              : 'text-muted-foreground hover:text-foreground hover:bg-muted',
           )
         }
         title={eff ? t(item.labelKey) : undefined}
@@ -155,9 +143,8 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ collapsed, setCollapsed,
   }
 
   // Sub-group label inside a section — one size smaller than the
-  // section label so the hierarchy reads at a glance. In the collapsed
-  // rail the text would not fit, so a hairline divider keeps the halves
-  // separable instead of a wall of bare icons.
+  // section label. In the collapsed rail a hairline divider separates
+  // the halves.
   const renderSubgroupLabel = (label: string) => {
     if (eff) {
       return <div aria-hidden className="w-6 h-px bg-border/70 my-1.5 shrink-0" />
@@ -191,7 +178,6 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ collapsed, setCollapsed,
           label shows on hover (title) and for screen readers (aria). */}
       <StreamStatusBadge />
 
-      {/* ===== Centered navigation area — white bubble card ===== */}
       <div
         className={cn(
           'flex flex-col relative',
@@ -253,7 +239,6 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ collapsed, setCollapsed,
         )}
       </div>
 
-      {/* ===== Bottom fixed function area — white bubble card ===== */}
       <div className="shrink-0">
         <div
           className={cn(

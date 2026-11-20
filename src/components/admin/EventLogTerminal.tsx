@@ -15,9 +15,8 @@ import type { LogEvent } from '@/types/models'
  * EventLogTerminal — reusable xterm.js terminal that subscribes to the CoreC
  * /logs WebSocket bus and renders live log events in real time.
  *
- * Embeddable beyond DiagnosticsPage
- * (e.g. ConfigCenterPage shows it above the runtime log-level patch card so
- * the operator sees the effect of switching levels immediately).
+ * Embeddable beyond DiagnosticsPage — ConfigCenterPage 将其置于运行时
+ * log-level 补丁卡下方。
  *
  * Props:
  *  - height: CSS height for the terminal area (default h-80).
@@ -68,22 +67,18 @@ export const EventLogTerminal: React.FC<{
     xtermInstance.current = term
     fitAddonRef.current = fitAddon
 
-    // convertEol is true, so rely on writeln's appended line break instead of
-    // an explicit "\r\n" (which would render a blank line after the banner).
+    // convertEol is true — writeln appends the line break.
     // Initial banner says "connecting" — the onStatus callback below updates
     // it to "connected" (or error/reconnecting) once the WebSocket settles.
-    // This avoids the misleading "已连接" (connected) banner that previously
-    // appeared even when the proxy silently dropped the WS upgrade.
     term.writeln(`\x1b[33m[CoreC Stream]\x1b[0m ${tRef.current('diagnostics.streamConnecting')}`)
 
     // Log-rate limiting: buffer incoming log lines and flush to xterm via a
-    // 16ms timer (≈1 frame). This coalesces log floods (error storms can
-    // emit hundreds/sec) so the JS thread isn't saturated by per-message
-    // writeln calls, which would freeze the UI.
+    // timer. This coalesces log floods (error storms can emit hundreds/sec)
+    // so the JS thread isn't saturated by per-message writeln calls.
     const logBuffer: string[] = []
     let flushTimer: ReturnType<typeof setTimeout> | null = null
     let droppedSinceFlush = 0
-    const MAX_BATCH = 200 // cap lines per flush to bound work
+    const MAX_BATCH = 200
 
     const flushBuffer = () => {
       flushTimer = null
@@ -149,8 +144,7 @@ export const EventLogTerminal: React.FC<{
         scheduleFlush()
       },
       (status) => {
-        // Real connection status — write to terminal so the user sees the
-        // actual state instead of a stale static banner.
+        // Real connection status — written to the terminal.
         switch (status) {
           case 'open':
             term.writeln(

@@ -14,8 +14,8 @@ interface UnsavedChangesBannerProps {
 
 /**
  * Shared unsaved-config-changes banner with Discard + Apply buttons and a
- * built-in discard-confirmation dialog. Replaces ~35 lines of duplicated
- * markup in Drivers/Transports/Rules/ConfigCenter pages.
+ * built-in discard-confirmation dialog, used by
+ * Drivers/Transports/Rules/ConfigCenter pages.
  */
 export const UnsavedChangesBanner: React.FC<UnsavedChangesBannerProps> = ({
   dirty,

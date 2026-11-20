@@ -1,9 +1,7 @@
 // @vitest-environment jsdom
 // AppShell — live-stream indicator coverage: the "实时流" badge
-// and the disconnect banner used to render on /monitor only, leaving the
-// seven admin pages (config center, write control — the pages most harmed
-// by a silently dead socket) with no stream status at all. Both must be
-// visible on every instance route, fed by wsStatusStore.
+// and the disconnect banner must be visible on every instance route,
+// fed by wsStatusStore.
 import { cleanup, render, screen } from '@testing-library/react'
 import { act } from 'react'
 import { MemoryRouter } from 'react-router-dom'

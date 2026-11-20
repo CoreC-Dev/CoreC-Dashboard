@@ -1,9 +1,7 @@
 // @vitest-environment jsdom
-// OperationResult: the shared transient feedback strip — one
-// component instead of page-local never-clearing status lines spelled
-// three different ways. Success green / error red, operation context,
-// 5s auto-fade, manual close — and a repeat of the same operation must
-// re-show the strip.
+// OperationResult: the shared transient feedback strip. Success green /
+// error red, operation context, 5s auto-fade, manual close — and a repeat
+// of the same operation must re-show the strip.
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { act } from 'react'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'

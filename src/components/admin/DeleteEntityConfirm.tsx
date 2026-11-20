@@ -1,10 +1,8 @@
 /**
  * DeleteEntityConfirm — the shared delete-confirmation AlertDialog for the
- * entity list pages (drivers / transports / rules). One shared component
- * instead of three copies also keeps RulesPage under the 500-line
- * custom-lint ceiling. The `children` slot carries entity-specific
- * warning blocks — e.g. the dependent-rules scan TransportsPage shows and
- * DriversPage shows for rules consuming the driver.
+ * entity list pages (drivers / transports / rules). The `children` slot
+ * carries entity-specific warning blocks — e.g. the dependent-rules scan
+ * TransportsPage shows and DriversPage shows for rules consuming the driver.
  */
 import type React from 'react'
 import { useTranslation } from 'react-i18next'

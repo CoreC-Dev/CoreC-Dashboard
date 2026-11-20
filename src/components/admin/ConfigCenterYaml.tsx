@@ -31,8 +31,8 @@ import type { ConfigSnapshot } from '@/hooks/useConfigHistory'
 import type { DiffLine } from '@/lib/yamlDiff'
 import { useThemeStore } from '@/stores/themeStore'
 
-/** Changes preview — line-by-line diff against the last submitted YAML.
- *  Skipped (renders nothing) until the first submission exists. */
+/** Changes preview — line-by-line diff against savedConfig
+ *  （服务器配置 seed 后即有基线，无需提交）。 */
 export const DiffPreview: React.FC<{
   lastSubmittedYaml: string | null
   diffOpen: boolean

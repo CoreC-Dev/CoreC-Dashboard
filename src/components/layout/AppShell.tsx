@@ -28,11 +28,6 @@ export const AppShell: React.FC = () => {
   const tone = streamBadgeTone(aggregate)
   const { isMobile, collapsed, setCollapsed, mobileOpen, setMobileOpen } = useSidebarState()
 
-  // Seed configStore from the live server config on first admin mount so
-  // list pages (Drivers/Transports/Rules) have a populated working config
-  // before the operator clicks "Create".  Rendered below only on /admin
-  // routes, so monitor pages do not pay for YAML parsing.
-
   // Main content area — shared by mobile (full-width) and desktop (inside the centered group)
   const mainArea = (
     <div className="flex-1 flex flex-col min-w-0 overflow-hidden h-full">
@@ -100,8 +95,8 @@ export const AppShell: React.FC = () => {
     <div className="h-dvh w-full bg-background text-foreground overflow-hidden relative">
       {/* Instance-level alert subscription: keeps the /logs
            warn/error stream, sound, browser notifications, and the sidebar
-           badge alive on EVERY route of the instance — not just the alerts
-           page. Behavior-only provider; renders nothing. */}
+           badge alive on EVERY route of the instance. Behavior-only
+           provider; renders nothing. */}
       <AlertStreamProvider />
       {location.pathname.includes('/admin') && (
         <Suspense fallback={null}>
@@ -116,10 +111,10 @@ export const AppShell: React.FC = () => {
         />
       </div>
 
-      {/* ===== Route progress bar (composited transform, no layout thrash) ===== */}
+      {/* Route progress bar — composited transform, no layout thrash */}
       <TopProgressBar />
 
-      {/* ===== Mobile sidebar (Radix Dialog-based sheet for a11y) ===== */}
+      {/* Mobile sidebar — Radix Dialog-based sheet */}
       {isMobile && (
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
           <SheetContent
@@ -135,7 +130,7 @@ export const AppShell: React.FC = () => {
         </Sheet>
       )}
 
-      {/* ===== Desktop: centered group — sidebar hugs the content card, symmetric blank on both sides ===== */}
+      {/* Desktop: centered group — sidebar hugs the content card, symmetric blank on both sides */}
       {!isMobile ? (
         <div
           className="h-full mx-auto flex gap-4 py-4 px-4"
@@ -155,11 +150,8 @@ export const AppShell: React.FC = () => {
         mainArea
       )}
 
-      {/* AI assistant — instance-scoped by design, since its tools call the
-           same control-plane REST API as these pages; a bare-homepage chat box
-           would find no active connection. Mounted once outside both
-           layout branches so mobile and desktop share one implementation rather
-           than only the desktop rail it started as. */}
+      {/* AI assistant — instance-scoped; mounted once outside both layout
+           branches so mobile and desktop share one implementation. */}
       <AssistantPanel />
       <CommandPalette />
     </div>

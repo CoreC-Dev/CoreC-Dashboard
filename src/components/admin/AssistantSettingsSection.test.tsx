@@ -2,10 +2,6 @@
 // The provider form is where CJ AI credentials are typed and saved. It renders a
 // list the panel later reads, so its contract is: what the operator types is
 // what onChange hands back, and nothing that cannot work is handed back at all.
-//
-// The form used to have no tests. It is small, but it is the one place in the
-// assistant where a key is entered by hand, which makes "does typing edit the
-// right record" worth a check that is not a screenshot.
 import { cleanup, configure, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ProviderSettings } from '@/components/admin/AssistantSettingsSection'

@@ -7,14 +7,11 @@ import { InstanceSelector, switchInstanceTarget } from '@/components/layout/Inst
 import i18n from '@/i18n'
 import { useInstanceStore } from '@/stores/instanceStore'
 
-// Regression test for the "Maximum update depth exceeded" (#185) bug in
-// InstanceSelector. The selector used to be `useShallow((s) => s.instances.map(
-// (i) => ({ ... })))`. zustand v5 has no equalityFn arg (it uses
-// useSyncExternalStore + Object.is), and useShallow compares array elements by
-// reference — so every getSnapshot() returned a brand-new array of brand-new
-// objects. The loop only kicks in once the store is updated after mount (e.g.
-// a connection probe writes lastKnownInfo), which is why it surfaced on every
-// instance-scoped route in production but not in a plain render.
+// Regression test: InstanceSelector must not enter a render loop when the
+// instance store updates after mount. A `.map(...)` selector returns a fresh
+// array every getSnapshot() under zustand v5's Object.is snapshot comparison;
+// the loop only kicks in once the store is updated after mount (e.g. a
+// connection probe writes lastKnownInfo), not in a plain render.
 //
 // Fake timers: rendering Radix Select + triggering a store-driven re-render
 // schedules React scheduler macrotasks (setTimeout/setImmediate via
@@ -96,7 +93,7 @@ describe('InstanceSelector (#185 regression)', () => {
     )
 
     // Simulate a connection probe writing lastKnownInfo + lastConnectedAt —
-    // the store update that used to trigger the render loop.
+    // a store update after mount.
     act(() => {
       useInstanceStore.getState().setProbeResult('inst_a', true, {
         name: 'Alpha',
@@ -125,8 +122,8 @@ describe('switchInstanceTarget (route preservation)', () => {
   })
 
   it('drops entity-scoped detail segments to the section list page', () => {
-    // The driver `drv-1` belongs to the OLD instance — the new one may not
-    // have it, so the switch lands on the drivers list, not a dead detail.
+    // The driver `drv-1` belongs to the previous instance — the new one may
+    // not have it, so the switch lands on the drivers list, not a dead detail.
     expect(switchInstanceTarget('/corec/inst-a/admin/drivers/drv-1', 'inst-b')).toBe(
       '/corec/inst-b/admin/drivers',
     )
@@ -188,8 +185,8 @@ describe('InstanceSelector dropdown dots (live status)', () => {
     })
     openDropdown()
 
-    // The old dot went green from lastConnectedAt alone ("was ever
-    // connected"); a fresh failure verdict must override it.
+    // A fresh failure verdict must override lastConnectedAt ("was ever
+    // connected").
     const alpha = screen.getByRole('option', { name: /Alpha/ })
     expect(alpha.querySelector('.bg-status-error')).not.toBeNull()
     expect(alpha.querySelector('.bg-status-running')).toBeNull()

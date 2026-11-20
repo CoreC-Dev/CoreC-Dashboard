@@ -33,9 +33,7 @@ const PaletteBody: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const [active, setActive] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  // Focus the search field when the palette opens. Doing it explicitly (rather
-  // than with autoFocus) keeps the a11y linter honest: focus here is the
-  // user's own Cmd/Ctrl-K action, not a page-load focus steal.
+  // Focus the search field when the palette opens.
   useEffect(() => {
     inputRef.current?.focus()
   }, [])

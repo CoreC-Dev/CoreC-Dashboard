@@ -56,8 +56,8 @@ type RestoreMsg = { type: 'success'; text: string } | { type: 'error'; text: str
 /**
  * ServerBackupsPanel — the server-side config backup timeline.
  *
- * CoreC snapshots the persisted config file before every reload (newest 10
- * kept, hub/executor/backups.go). This panel lists them and lets the
+ * CoreC snapshots the persisted config file before every reload
+ * (retention capped by configBackupMax, hub/executor/backups.go). This panel lists them and lets the
  * operator:
  *  - view the line diff of a backup against the CURRENT raw config
  *    (computeLcsDiff, same renderer as the Config Center diff preview);
@@ -419,13 +419,11 @@ export const ConfigBackupsPanel: React.FC = () => {
               onClick={(e) => {
                 // Keep the dialog open until the mutation resolves —
                 // AlertDialogAction closes by default; prevent it so the
-                // result message lands in the panel instead of a silent close.
+                // result message lands in the panel.
                 e.preventDefault()
                 void handleRestoreConfirm()
               }}
               disabled={restoreMutation.isPending}
-              // The danger confirm joins the destructive variant —
-              // status-error red is reserved for status indication.
               className="danger-pulse"
             >
               {restoreMutation.isPending ? (

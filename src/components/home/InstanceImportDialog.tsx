@@ -16,9 +16,7 @@ import { useInstanceStore } from '@/stores/instanceStore'
 
 /**
  * Import dialog for CoreC instance configs — drag & drop, file browse and
- * paste, one behavior for every entry point (the homepage offered
- * drag & drop + file browse while the settings page had a bare textarea for
- * the exact same operation).
+ * paste, one behavior for every entry point.
  *
  * Outcome classification: the store's importInstances returns
  * {added, skipped, invalid, parseError}; each story gets its own copy — a
@@ -65,9 +63,8 @@ export const InstanceImportDialog: React.FC<InstanceImportDialogProps> = ({
     }
   }
 
-  // Never leak the pending success-close timer past unmount. (Inlined
-  // rather than calling clearImportTimer: the unmount cleanup must not
-  // depend on a per-render closure.)
+  // Never leak the pending success-close timer past unmount: the unmount
+  // cleanup reads the ref directly (no per-render closure).
   useEffect(
     () => () => {
       if (successCloseTimer.current !== null) window.clearTimeout(successCloseTimer.current)
@@ -91,13 +88,12 @@ export const InstanceImportDialog: React.FC<InstanceImportDialogProps> = ({
     const result = importInstances(text, 'merge')
     if (result.parseError) {
       // The payload itself was unusable (not JSON / not an array / forbidden
-      // keys) — previously this was reported as "added 0, skipped 0".
+      // keys).
       setFeedback({ tone: 'error', message: t('instances.importInvalid') })
       return
     }
     if (result.added > 0 && result.skipped === 0 && result.invalid === 0) {
-      // Clean import: show a brief confirmation instead of closing silently,
-      // then close the dialog.
+      // Clean import: show a brief confirmation, then close the dialog.
       setFeedback({
         tone: 'success',
         message: t('instances.importSuccess', { added: result.added }),

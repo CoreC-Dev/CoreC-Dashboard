@@ -1,10 +1,8 @@
 // @vitest-environment jsdom
 // InstanceImportDialog — the shared import UI for both entry
-// points (homepage header + settings page). The audit's complaint: the same
-// operation offered drag & drop + file browse on the homepage but only a
-// bare textarea on the settings page. The component must carry the full
-// affordance set AND the honest outcome classification so both
-// pages behave identically.
+// points (homepage header + settings page). The component must carry the
+// full affordance set (drag & drop + file browse + paste) AND the outcome
+// classification so both pages behave identically.
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { InstanceImportDialog } from '@/components/home/InstanceImportDialog'

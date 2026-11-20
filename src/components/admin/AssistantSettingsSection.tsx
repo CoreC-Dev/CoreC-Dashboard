@@ -60,7 +60,7 @@ export const ProviderSettings: React.FC<Props> = ({ providers, selected, onChang
         </Button>
       </div>
 
-      {/* Disclosure: the same sentence the instance key field carries. */}
+      {/* Disclosure: provider 密钥存于本浏览器 localStorage。 */}
       <p className="text-xs text-muted-foreground rounded-xl bg-muted/40 px-3 py-2">
         {t('assistant.settings.secretNotice')}
       </p>

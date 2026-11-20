@@ -1,9 +1,9 @@
 /**
  * ConfigApplyConfirmationDialog
  *
- * Safety gate before PUT /configs (full hot-reload). Because CoreC's
- * config API suspends the ENTIRE engine during reload (non-atomic, no
- * rollback), every config mutation must pass through this dialog:
+ * Safety gate before PUT /configs (full hot-reload): reload 期间 Suspend 引擎；
+ * diff 失败回滚到 pre-reload 组件集（尽力而为，失败记日志继续）。Every config
+ * mutation must pass through this dialog:
  *
  *   1. Shows a side-by-side YAML diff (before → after) so the operator
  *      can see exactly what will change.
@@ -14,10 +14,7 @@
  *   5. During apply (finishing=true), disables all controls and shows
  *      a spinner — closing mid-apply is blocked.
  *
- * Decision-independent: works under both backend paths. Path A validates
- * via POST /configs/validate first (if available); Path B relies on the
- * local zod schema (validateFullConfig). The dialog receives a pre-
- * validated working YAML and only handles the confirmation + apply.
+ * 接收上游预校验的工作 YAML，仅负责确认+应用；validationErrors 由调用方传入展示。
  */
 import { AlertTriangle, CheckCircle2, Loader2 } from 'lucide-react'
 import type React from 'react'
@@ -37,8 +34,6 @@ import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/cn'
 import { parseConfigYaml } from '@/lib/configYaml'
 import { computeLcsDiff } from '@/lib/yamlDiff'
-
-// ─── Diff computation ────────────────────────────────────────────────
 
 /** Order-insensitive deep equality check via canonical JSON serialization.
  *  `JSON.stringify` iterates keys in insertion order, so two logically-
@@ -179,8 +174,6 @@ export function computeConfigDiff(
   }
 }
 
-// ─── Line-level YAML diff ────────────────────────────────────────────
-
 /**
  * Simple line-level diff between two YAML strings.
  * Produces an array of { type: 'same'|'added'|'removed', text } entries.
@@ -197,8 +190,6 @@ export function computeLineDiff(before: string, after: string): DiffLine[] {
     text: l.text,
   }))
 }
-
-// ─── Dialog component ────────────────────────────────────────────────
 
 export interface ConfigApplyConfirmationDialogProps {
   open: boolean
@@ -402,8 +393,6 @@ export const ConfigApplyConfirmationDialog: React.FC<ConfigApplyConfirmationDial
     </AlertDialog>
   )
 }
-
-// ─── Change badge ────────────────────────────────────────────────────
 
 const ChangeBadge: React.FC<{
   label: string

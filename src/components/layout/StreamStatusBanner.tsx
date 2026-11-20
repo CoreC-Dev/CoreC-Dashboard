@@ -6,18 +6,18 @@ import { cn } from '@/lib/cn'
 import { deriveBanner, deriveRateLimited, useWsStatusStore } from '@/stores/wsStatusStore'
 
 /**
- * StreamStatusBanner — page-level connection banner for the monitor pages
- * (mounted by AppShell on /monitor routes).
+ * StreamStatusBanner — page-level connection banner.
+ * 由 AppShell 挂载于所有实例路由（健康时不渲染）。
  *
  * Three states:
  *  - disconnected (amber): the data on screen may be stale and a reconnect
  *    is in flight — "上次更新 {{time}}" tells the operator exactly how old.
- *  - rejected (red): the stream gave up after 10 failed attempts and will
- *    never self-heal — the banner carries the reload guidance AND a retry
- *    button that calls CoreCWebSocket.reconnect() on every rejected stream
- *    (fresh backoff ladder per the audit's "受控 reconnect" requirement).
+ *  - rejected (red): the stream gave up reconnecting (CoreCWebSocket maxRetries)
+ *    and will never self-heal — the banner carries the reload guidance AND a
+ *    retry button that calls CoreCWebSocket.reconnect() on every rejected
+ *    stream (fresh backoff ladder).
  *  - rate-limited (amber strip): a stream is shedding frames at the
- *    >500 msg/s UI protection cap, so numbers may skip.
+ *    maxMsgPerSec UI protection cap, so numbers may skip.
  *
  * The banner disappears by itself when every stream reports 'open' again.
  */

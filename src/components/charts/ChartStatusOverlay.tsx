@@ -10,11 +10,7 @@ interface ChartStatusOverlayProps {
 }
 
 /**
- * Honesty overlay for the two stream charts (/traffic, /memory).
- *
- * On first load a bare pair of axes can't answer "no data yet or not
- * connected?", and after a disconnect the chart just silently froze.
- * This pill says which one it is:
+ * Status overlay for the two stream charts (/traffic, /memory):
  * - empty + connected → 「等待实时数据…」 "Waiting for live data…"
  * - disconnected → 「连接中断，图表已暂停更新」
  * "Disconnected — chart updates paused"
