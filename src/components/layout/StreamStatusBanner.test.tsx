@@ -112,18 +112,10 @@ describe('StreamStatusBanner', () => {
     render(<StreamStatusBanner />)
 
     act(() => store().reportDropped('flooded', 12))
-    expect(
-      screen.getByText(
-        '⚠ Live data exceeds the 500 msg/s UI protection cap — some updates are being dropped to keep the interface responsive',
-      ),
-    ).toBeTruthy()
+    expect(screen.getByText(i18n.t('monitor.streamRateLimited'))).toBeTruthy()
 
     // A connection transition clears the stale hint (drops require a live flow).
     act(() => sink('closed'))
-    expect(
-      screen.queryByText(
-        '⚠ Live data exceeds the 500 msg/s UI protection cap — some updates are being dropped to keep the interface responsive',
-      ),
-    ).toBeNull()
+    expect(screen.queryByText(i18n.t('monitor.streamRateLimited'))).toBeNull()
   })
 })
