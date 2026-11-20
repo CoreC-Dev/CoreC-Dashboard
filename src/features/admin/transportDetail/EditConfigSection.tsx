@@ -81,17 +81,9 @@ const NOTIFY_EDIT_KEYS = new Set([
   'buffer-size',
 ])
 
-const HEADERS_SUPPLEMENT: RegistryEditField = {
-  key: 'headers',
-  labelKey: 'transports.editConfig.headers',
-  kind: 'text',
-  group: 'settings',
-  placeholder: 'Content-Type:application/json',
-}
-
 /** Resolve the curated edit fields for a transport type from the settings
  *  registry, preserving registry order. */
-function getTransportFields(type: string): readonly RegistryEditField[] {
+export function getTransportFields(type: string): readonly RegistryEditField[] {
   const lower = type.toLowerCase()
   const isMqtt = lower.includes('mqtt')
   const isHttp = lower.includes('http')
@@ -99,15 +91,7 @@ function getTransportFields(type: string): readonly RegistryEditField[] {
   if (!isMqtt && !isHttp && !isNotify) return []
   const keys = isMqtt ? MQTT_EDIT_KEYS : isHttp ? HTTP_EDIT_KEYS : NOTIFY_EDIT_KEYS
   const all = registryToEditFields(getTransportFieldRegistry(type), TRANSPORT_TOPLEVEL_FIELDS)
-  const filtered = all.filter((f) => keys.has(f.key))
-  if (isHttp) {
-    // Insert the headers supplement right after `method` (its natural position).
-    const idx = filtered.findIndex((f) => f.key === 'method')
-    const out = [...filtered]
-    out.splice(idx + 1, 0, HEADERS_SUPPLEMENT)
-    return out
-  }
-  return filtered
+  return all.filter((f) => keys.has(f.key))
 }
 
 function parseHeaders(raw: string): Record<string, string> {
