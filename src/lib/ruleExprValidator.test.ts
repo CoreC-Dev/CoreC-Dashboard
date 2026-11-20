@@ -128,6 +128,13 @@ describe('validateRuleExpression', () => {
     expect(r.warnings.some((w) => w.includes('unknown field'))).toBe(false)
   })
 
+  it('accepts timestamp comparisons without an unknown-field warning', () => {
+    // pointEnv injects timestamp as Unix milliseconds (rule/expr.go).
+    const r = validateRuleExpression('timestamp > 1700000000000')
+    expect(r.valid).toBe(true)
+    expect(r.warnings.some((w) => w.includes('unknown field'))).toBe(false)
+  })
+
   it('does not false-positive on parens inside string literals', () => {
     expect(validateRuleExpression("tag == ')('").valid).toBe(true)
     expect(validateRuleExpression("tag == '(test'").valid).toBe(true)
@@ -209,7 +216,16 @@ describe('validateRuleExpression', () => {
 })
 
 describe('VALID_FIELDS', () => {
-  it('contains all 7 valid fields', () => {
-    expect(VALID_FIELDS).toEqual(['driver', 'device', 'group', 'tag', 'quality', 'type', 'value'])
+  it('matches the backend pointEnv field set', () => {
+    expect(VALID_FIELDS).toEqual([
+      'driver',
+      'device',
+      'group',
+      'tag',
+      'quality',
+      'type',
+      'value',
+      'timestamp',
+    ])
   })
 })
