@@ -36,6 +36,14 @@ afterEach(() => {
 })
 
 describe('AssistantPanel', () => {
+  it('renders the floating entry button on mobile viewports (no desktop-only visibility class)', () => {
+    render(<AssistantPanel />)
+
+    const open = screen.getByLabelText(t('assistant.open'))
+    expect(open.className).toContain('flex')
+    expect(open.className).not.toContain('hidden')
+  })
+
   it('opens with an explanation, not a dead input, when no provider is configured', () => {
     render(<AssistantPanel />)
 
