@@ -14,6 +14,7 @@ import type React from 'react'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { WriteHistoryLink } from '@/components/admin/WriteHistoryLink'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -448,7 +449,13 @@ export const DeadLetterTable: React.FC<DeadLetterTableProps> = ({
                     <Clock className="w-3 h-3" />
                     <span>{new Date(dl.failed_at).toLocaleString()}</span>
                     <span>•</span>
-                    <span>{t('write.attemptsExhausted', { count: dl.attempts })}</span>
+                    {dl.transport ? (
+                      <Badge variant="warning" className="font-mono text-[10px]">
+                        {t('write.ingressDrop')} · {dl.transport}
+                      </Badge>
+                    ) : (
+                      <span>{t('write.attemptsExhausted', { count: dl.attempts })}</span>
+                    )}
                   </div>
                 </div>
 

@@ -2,6 +2,7 @@ import { AlertOctagon, Clock, Loader2, Send, ShieldAlert } from 'lucide-react'
 import type React from 'react'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useSearchParams } from 'react-router-dom'
 import { extractApiError } from '@/api/client'
 import { ApiError, useConfigRaw, useDeadLetters, useDrivers, useWriteTag } from '@/api/hooks'
 import { BatchWritePanel } from '@/components/admin/BatchWritePanel'
@@ -32,9 +33,9 @@ import type { DataTypeString } from '@/lib/constants'
 import { parseWriteValue, validateValue } from '@/lib/writeValidation'
 import type { DeadLetterEntry, WriteCommand } from '@/types/models'
 
-/** Stable key for a dead-letter entry (driver + tag + failed_at). */
-const dlqKeyOf = (dl: DeadLetterEntry): string =>
-  `${dl.command.driver}-${dl.command.tag}-${dl.failed_at}`
+/** Stable key for a dead-letter entry (queue source + driver + tag + failed_at). */
+const dlqKeyOf = (source: 'engine' | 'ingress', dl: DeadLetterEntry): string =>
+  `${source}:${dl.command.driver}-${dl.command.tag}-${dl.failed_at}`
 
 /**
  * Re-issues a dead letter via the existing POST /write. Builds a CLEAN
@@ -55,6 +56,12 @@ export const WriteControlPage: React.FC = () => {
   const { data: driversData } = useDrivers()
   const { data: rawYaml } = useConfigRaw()
   const parsedConfig = useParsedConfig(rawYaml)
+  // Deep links (e.g. the transport page's dropped-commands card) land with
+  // ?source=ingress; anything else opens the engine retry-exhausted queue.
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [dlqSource, setDlqSource] = useState<'engine' | 'ingress'>(() =>
+    searchParams.get('source') === 'ingress' ? 'ingress' : 'engine',
+  )
   const {
     data: deadLettersData,
     refetch: refetchDeadLetters,
@@ -62,7 +69,7 @@ export const WriteControlPage: React.FC = () => {
     isLoading: loadingDlq,
     isError: errorDlq,
     error: dlqError,
-  } = useDeadLetters()
+  } = useDeadLetters(dlqSource)
   const writeMutation = useWriteTag()
 
   const [driver, setDriver] = useState('')
@@ -110,8 +117,8 @@ export const WriteControlPage: React.FC = () => {
   // of the rendered list. Newly arriving failures (new failed_at timestamps)
   // still surface, while refetched-but-already-cleared entries stay hidden.
   const visibleDeadLetters = useMemo(
-    () => deadLetters.filter((dl) => !clearedDlqKeys.has(dlqKeyOf(dl))),
-    [deadLetters, clearedDlqKeys],
+    () => deadLetters.filter((dl) => !clearedDlqKeys.has(dlqKeyOf(dlqSource, dl))),
+    [deadLetters, clearedDlqKeys, dlqSource],
   )
 
   // Value parsing lives in lib/writeValidation (parseWriteValue) so the
@@ -195,11 +202,27 @@ export const WriteControlPage: React.FC = () => {
   const handleClearDeadLetters = () => {
     setClearedDlqKeys((prev) => {
       const next = new Set(prev)
-      for (const dl of deadLetters) next.add(dlqKeyOf(dl))
+      for (const dl of deadLetters) next.add(dlqKeyOf(dlqSource, dl))
       return next
     })
     setDlqClearedMsg(t('write.deadLettersCleared'))
     setClearConfirmOpen(false)
+  }
+
+  // Engine ⇄ ingress queue switch; the ?source= URL param mirrors the
+  // selection (replace navigation, no history stacking).
+  const handleDlqSourceChange = (source: 'engine' | 'ingress') => {
+    setDlqSource(source)
+    setDlqClearedMsg(null)
+    setReplayError(null)
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        next.set('source', source)
+        return next
+      },
+      { replace: true },
+    )
   }
 
   return (
@@ -326,7 +349,13 @@ export const WriteControlPage: React.FC = () => {
                   })}
                 </span>
                 <span>•</span>
-                <span>{t('write.attemptsExhausted', { count: pendingReplay.attempts })}</span>
+                {pendingReplay.transport ? (
+                  <span>
+                    {t('write.ingressDrop')} · {pendingReplay.transport}
+                  </span>
+                ) : (
+                  <span>{t('write.attemptsExhausted', { count: pendingReplay.attempts })}</span>
+                )}
               </div>
             </div>
           )}
@@ -365,22 +394,48 @@ export const WriteControlPage: React.FC = () => {
       </Dialog>
 
       {/* Dead Letter Queue Section */}
-      <DeadLetterTable
-        visibleDeadLetters={visibleDeadLetters}
-        loadingDlq={loadingDlq}
-        errorDlq={errorDlq}
-        fetchingDlq={fetchingDlq}
-        dlqError={dlqError}
-        dlqClearedMsg={dlqClearedMsg}
-        replayError={replayError}
-        onRefresh={() => {
-          setDlqClearedMsg(null)
-          refetchDeadLetters()
-        }}
-        onClearAll={() => setClearConfirmOpen(true)}
-        onReplay={handleReplayRequest}
-        isWritePending={writeMutation.isPending}
-      />
+      <div className="space-y-2">
+        {/* Engine ⇄ ingress queue toggle (same Button pattern as writeMode) */}
+        <div className="flex items-center gap-1 p-1 rounded-lg border border-border bg-muted/40 w-fit">
+          <Button
+            variant={dlqSource === 'engine' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => handleDlqSourceChange('engine')}
+            aria-pressed={dlqSource === 'engine'}
+            className="h-7 text-xs"
+          >
+            {t('write.dlqSourceEngine')}
+          </Button>
+          <Button
+            variant={dlqSource === 'ingress' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => handleDlqSourceChange('ingress')}
+            aria-pressed={dlqSource === 'ingress'}
+            className="h-7 text-xs"
+          >
+            {t('write.dlqSourceIngress')}
+          </Button>
+        </div>
+        {dlqSource === 'ingress' && (
+          <p className="text-xs text-muted-foreground">{t('write.dlqSourceIngressDesc')}</p>
+        )}
+        <DeadLetterTable
+          visibleDeadLetters={visibleDeadLetters}
+          loadingDlq={loadingDlq}
+          errorDlq={errorDlq}
+          fetchingDlq={fetchingDlq}
+          dlqError={dlqError}
+          dlqClearedMsg={dlqClearedMsg}
+          replayError={replayError}
+          onRefresh={() => {
+            setDlqClearedMsg(null)
+            refetchDeadLetters()
+          }}
+          onClearAll={() => setClearConfirmOpen(true)}
+          onReplay={handleReplayRequest}
+          isWritePending={writeMutation.isPending}
+        />
+      </div>
 
       {/* Dead letter batch clear confirmation (INDUSTRIAL SAFETY — double confirm) */}
       <AlertDialog open={clearConfirmOpen} onOpenChange={setClearConfirmOpen}>

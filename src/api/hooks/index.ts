@@ -129,11 +129,17 @@ export function useConfigRaw() {
   })
 }
 
-export function useDeadLetters() {
+/**
+ * Dead-letter queue view. `source` selects the queue: 'engine' (default)
+ * is the write pipeline's retry-exhausted commands; 'ingress' is the
+ * transport command-channel drops (GET /write/failed?source=ingress),
+ * whose entries carry the extra `transport` field.
+ */
+export function useDeadLetters(source: 'engine' | 'ingress' = 'engine') {
   // Low-urgency diagnostic queue: 15s poll cadence.
   return useConnectedQuery({
-    queryKey: ['deadLetters'],
-    queryFn: api.getDeadLetters,
+    queryKey: ['deadLetters', source],
+    queryFn: () => api.getDeadLetters(source === 'engine' ? undefined : source),
     refetchInterval: 15000,
   })
 }

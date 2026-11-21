@@ -170,7 +170,7 @@ export const TransportDetailPage: React.FC = () => {
           </CardHeader>
           <CardContent className="pt-0">
             <Link
-              to={`${adminBase}/write`}
+              to={`${adminBase}/write?source=ingress`}
               className="text-xs font-medium text-primary hover:underline"
             >
               {t('transports.viewDeadLetters')} →
