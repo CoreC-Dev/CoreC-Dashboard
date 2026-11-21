@@ -84,7 +84,7 @@ describe('formatRelativeTime', () => {
   })
 
   // Fake t: renders the key plus the count so assertions are locale-free.
-  const t: Translate = (key, opts) => `${key}${opts?.count ?? ''}`
+  const t: Translate = (...args) => `${args[0]}${args[1]?.count ?? ''}`
   const ago = (ms: number) => new Date(Date.now() - ms).toISOString()
 
   it('sub-minute timestamps read "just now" and stay fully opaque', () => {

@@ -23,7 +23,7 @@ import type { CoreCInstance } from '@/types/models'
 // Relaxed async-assertion timeout for heavy render load.
 configure({ asyncUtilTimeout: 4000 })
 
-const t = (key: string, opts?: Record<string, unknown>) => i18n.t(key, opts)
+const t = i18n.t.bind(i18n)
 
 // themeStore reads the system theme via matchMedia at module scope, which
 // jsdom does not implement — stub it before any module import evaluates.

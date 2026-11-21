@@ -18,7 +18,7 @@ afterEach(cleanup)
 // Locale-agnostic lookup: the component renders with the same global i18n
 // instance, so resolving the expected strings through it keeps assertions
 // stable regardless of the saved locale.
-const t = (key: string, opts?: Record<string, unknown>) => i18n.t(key, opts)
+const t = i18n.t.bind(i18n)
 
 function renderDialog() {
   const onSubmit = vi.fn()

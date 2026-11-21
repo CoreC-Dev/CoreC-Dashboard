@@ -9,7 +9,7 @@ import { InstanceImportDialog } from '@/components/home/InstanceImportDialog'
 import i18n from '@/i18n'
 import { useInstanceStore } from '@/stores/instanceStore'
 
-const t = (key: string, opts?: Record<string, unknown>) => i18n.t(key, opts)
+const t = i18n.t.bind(i18n)
 
 /** Scoped queries: the dialog element itself is also labelled with the
  * title (aria-labelledby), so an unscoped getByLabelText matches it too. */

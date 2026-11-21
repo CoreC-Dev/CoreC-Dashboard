@@ -116,8 +116,14 @@ export const matchesQualityFilter = (
 /** Past this age a timestamp cell dims. */
 export const RELATIVE_DIM_MS = 5 * 60_000
 
-/** Minimal t() surface — keeps this lib free of an i18n instance dependency. */
-export type Translate = (key: string, opts?: { count?: number }) => string
+/** Minimal t() surface — keeps this lib free of an i18n instance dependency.
+ * Rest-tuple form so an i18next TFunction is assignable (its overloads require
+ * the options argument to be present in the tuple when given). */
+export type Translate = (
+  ...args:
+    | [key: string]
+    | [key: string, options: { count?: number; defaultValue?: string; [k: string]: unknown }]
+) => string
 
 /** Display shape for a monitor timestamp.
  * - <60s old → common.justNow ("刚刚" / "just now")

@@ -13,7 +13,7 @@ import type { CoreCInstance } from '@/types/models'
 // Relaxed async-assertion timeout for heavy render load.
 configure({ asyncUtilTimeout: 4000 })
 
-const t = (key: string, opts?: Record<string, unknown>) => i18n.t(key, opts)
+const t = i18n.t.bind(i18n)
 
 // Mock fetch — needed by the retry test (probeOneInstance hits the
 // five probe endpoints). Healthy by default.
