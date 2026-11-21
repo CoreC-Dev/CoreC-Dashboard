@@ -192,3 +192,27 @@ describe('detail-page quick-edit reload confirmation gate', () => {
     expect(api.updateConfigs).not.toHaveBeenCalled()
   })
 })
+
+describe('transport dropped-commands card', () => {
+  it('links to the write-control ingress queue when commands were dropped', async () => {
+    vi.mocked(api.getTransport).mockResolvedValueOnce({
+      name: 'mqtt-out',
+      type: 'mqtt',
+      state: 2,
+      published: 5,
+      failed: 0,
+      received: 0,
+      last_publish: '0001-01-01T00:00:00Z',
+      queue_size: 0,
+      dropped_commands: 3,
+    })
+    renderAt(
+      <TransportDetailPage />,
+      '/corec/inst-1/admin/transports/mqtt-out',
+      '/corec/:id/admin/transports/:name',
+    )
+
+    const link = await screen.findByRole('link', { name: /View dead letters/ })
+    expect(link.getAttribute('href')).toContain('/corec/inst-1/admin/write?source=ingress')
+  })
+})

@@ -371,6 +371,8 @@
     "confirmWarning": "注意：控制指令将直接写入现场 PLC 物理寄存器/线圈，请确保操作安全！",
     "deadLetterTitle": "失败下发指令（重试耗尽）",
     "deadLetterDesc": "达到最大重试次数仍失败的控制指令，在此归档供排查与手动重新下发",
+    "deadLetterTitleIngress": "入站丢弃（通道满）",
+    "deadLetterDescIngress": "因传输指令通道满而被丢弃的指令——非重试耗尽。重新下发将经引擎写入路径重发。",
     "dlqSourceEngine": "引擎重试",
     "dlqSourceIngress": "入站丢弃",
     "dlqSourceIngressDesc": "传输 ingress 指令通道满时被丢弃的指令——并非重试耗尽。重新下发经引擎写入路径（POST /write）执行。",

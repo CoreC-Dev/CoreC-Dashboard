@@ -272,6 +272,9 @@ export const WriteForm: React.FC<WriteFormProps> = ({
 
 interface DeadLetterTableProps {
   visibleDeadLetters: DeadLetterEntry[]
+  /** Queue shown: 'engine' = retry-exhausted writes; 'ingress' = transport
+   *  command-channel drops. Selects the card title/description. */
+  source: 'engine' | 'ingress'
   loadingDlq: boolean
   errorDlq: boolean
   fetchingDlq: boolean
@@ -289,6 +292,7 @@ interface DeadLetterTableProps {
 
 export const DeadLetterTable: React.FC<DeadLetterTableProps> = ({
   visibleDeadLetters,
+  source,
   loadingDlq,
   errorDlq,
   fetchingDlq,
@@ -327,9 +331,15 @@ export const DeadLetterTable: React.FC<DeadLetterTableProps> = ({
         <div>
           <CardTitle className="text-sm font-semibold flex items-center space-x-2 text-status-error">
             <AlertOctagon className="w-4 h-4" />
-            <span>{t('write.deadLetterTitle')}</span>
+            <span>
+              {source === 'ingress'
+                ? t('write.deadLetterTitleIngress')
+                : t('write.deadLetterTitle')}
+            </span>
           </CardTitle>
-          <CardDescription className="text-xs">{t('write.deadLetterDesc')}</CardDescription>
+          <CardDescription className="text-xs">
+            {source === 'ingress' ? t('write.deadLetterDescIngress') : t('write.deadLetterDesc')}
+          </CardDescription>
           <WriteHistoryLink />
         </div>
         <div className="flex items-center gap-2">

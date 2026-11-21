@@ -421,6 +421,7 @@ export const WriteControlPage: React.FC = () => {
         )}
         <DeadLetterTable
           visibleDeadLetters={visibleDeadLetters}
+          source={dlqSource}
           loadingDlq={loadingDlq}
           errorDlq={errorDlq}
           fetchingDlq={fetchingDlq}

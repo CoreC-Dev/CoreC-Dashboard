@@ -24,11 +24,12 @@ const ENTRIES = [
   dl('plc2', 'pump_speed', 'disconnected'),
 ]
 
-function renderTable() {
+function renderTable(source: 'engine' | 'ingress' = 'engine') {
   return render(
     <MemoryRouter>
       <DeadLetterTable
         visibleDeadLetters={ENTRIES}
+        source={source}
         loadingDlq={false}
         errorDlq={false}
         fetchingDlq={false}
@@ -79,5 +80,19 @@ describe('DeadLetterTable search', () => {
       fireEvent.change(search, { target: { value: 'no-such-thing' } })
     })
     expect(screen.getByText('No matching dead letters')).toBeTruthy()
+  })
+})
+
+describe('DeadLetterTable source-aware header', () => {
+  it('shows the retry-exhaustion title for the engine queue', () => {
+    renderTable('engine')
+    expect(screen.getByText('Failed writes (retries exhausted)')).toBeTruthy()
+    expect(screen.queryByText('Ingress drops (channel full)')).toBeNull()
+  })
+
+  it('shows the ingress-drop title for the ingress queue', () => {
+    renderTable('ingress')
+    expect(screen.getByText('Ingress drops (channel full)')).toBeTruthy()
+    expect(screen.queryByText('Failed writes (retries exhausted)')).toBeNull()
   })
 })
